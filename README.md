@@ -17,6 +17,8 @@ Research phase. Nothing is decided about the stack yet. There is no code.
 
 ## What is here
 
+- [docs/decisions.md](docs/decisions.md): design calls made so far and what
+  they imply. Read this before proposing architecture.
 - [docs/research/living-world-game-research.md](docs/research/living-world-game-research.md):
   the research report. Covers shipped games (Stardew, Ultima VI/VII, The Sims,
   Radiant AI, Kingdom Come, Hitman, Dwarf Fortress, RimWorld, CK3), research
