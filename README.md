@@ -11,6 +11,12 @@ situations but is not the baseline runtime. The project is developed entirely
 through the cloud coding interface, so everything has to work headless: no GUI
 editor, text-first testing, deploy to the web.
 
+## Design proposals
+
+- [docs/design/world-layout.md](docs/design/world-layout.md): places, doors
+  and floors as a graph of ASCII maps, with the validators and renders that
+  make layout testable from text. Proposal, not decided.
+
 ## Status
 
 Research phase. Nothing is decided about the stack yet. There is no code.
