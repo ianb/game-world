@@ -25,6 +25,8 @@ Research phase. Nothing is decided about the stack yet. There is no code.
   behavior trees, schedule and override stacks, smart objects), LLM-driven NPCs,
   and engine and stack options for a headless, agent-driven, web-deployed
   project. Ends with twelve recommendations and eight open decisions.
+- [docs/research/blocked-sources.md](docs/research/blocked-sources.md):
+  sources the research could not read, as a checklist to revisit.
 - [docs/research/notes/](docs/research/notes/): the raw notes behind the
   report, one file per track, with inline source links and a list of gaps and
   blocked sources per section. See [docs/research/README.md](docs/research/README.md).
