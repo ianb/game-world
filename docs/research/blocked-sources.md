@@ -117,3 +117,31 @@ Nothing blocked these; the researcher ran out of time.
   simulation; any ConcernedApe interview on schedule design. (shipped)
 - [ ] Altera's status after Project Sid; Emily Short's position on LLM NPCs
   (only a 2023 lecture listing was found). (llm)
+
+## Asset generation track (added 2026-10-22)
+
+Notes referenced: `assets-google` = assets_google_image_models.md,
+`assets-alpha` = assets_transparency_and_reference_images.md,
+`assets-pipe` = assets_pipelines_and_pixel_art_tools.md.
+
+- [ ] OpenAI per-image price table for gpt-image-2 / 2.5 and the OpenAI
+  Business Terms (403). Third-party figure of about $0.05 per 2K image was
+  used instead. (assets-alpha)
+- [ ] Ideogram 4.x per-image dollar prices (rendered client-side; use the
+  API's `dry_run=true` PriceQuote instead). (assets-alpha)
+- [ ] Google Agent Platform (ex-Vertex) per-image prices for the Nano Banana
+  models, and the exact text of the Google Cloud indemnity conditions. (assets-google)
+- [ ] Google docs on mask inputs for Nano Banana editing (only "semantic
+  masking" by prompt was found); exact per-tier image rate limits. (assets-google)
+- [ ] Phil Schmid's sticker-generation post and two Medium write-ups on Nano
+  Banana sprites (404/403). (assets-google)
+- [ ] Adobe Firefly API indemnity coverage; Krea API docs; remove.bg pricing. (assets-alpha)
+- [ ] Retro Diffusion and PixelLab per-tier license text (official pages
+  unreachable; the FAQ claim that outputs belong to the user is vendor-stated). (assets-pipe)
+- [ ] Any independent quality review or benchmark of PixelLab or Retro
+  Diffusion output; any background-remover test on pixel art; whether
+  SynthID survives a 16x nearest-neighbour downscale. These are gaps in the
+  world, not blocked pages; the "first experiments" in the asset report are
+  designed to fill them. (assets-google, assets-alpha, assets-pipe)
+- [ ] Rosebud, DragonBones, and the Tuxemon / Sprout Lands / LimeZu asset
+  licences were not covered. (assets-pipe)

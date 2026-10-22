@@ -53,3 +53,21 @@ Implications:
 - This matches the report's stack recommendation (dependency-free simulation
   core, tested in Node, rendered by a thin layer) and the testing and
   inspection approach described there.
+
+## 2026-10-22: Investigate generated art, starting with Google's models
+
+Ian: game assets are hard. Investigate using Google's image models.
+Transparency (alpha output) is very useful. Reference images for consistency
+are very important.
+
+Status: direction, not yet a commitment. The research is in
+`docs/research/generated-game-assets.md`. Its findings that bear on the
+direction:
+
+- No Google model outputs alpha; the working recipe is a solid chroma
+  background plus a light outline, keyed in Node. Reference images are well
+  supported (up to 14 on the current default model).
+- Pixel-native tools (Retro Diffusion, PixelLab) cover the things Google is
+  weakest at: pixel grids, seamless tiles, walk cycles.
+- No image API key exists in the development container. A Gemini key must be
+  added as an environment secret before the listed experiments can run.

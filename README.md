@@ -27,6 +27,10 @@ Research phase. Nothing is decided about the stack yet. There is no code.
   behavior trees, schedule and override stacks, smart objects), LLM-driven NPCs,
   and engine and stack options for a headless, agent-driven, web-deployed
   project. Ends with twelve recommendations and eight open decisions.
+- [docs/research/generated-game-assets.md](docs/research/generated-game-assets.md):
+  research on generating 2D game assets with Google's models and others:
+  transparency, reference images, pixel-art tools, a headless Node pipeline,
+  costs, licensing. Ends with two candidate pipelines and first experiments.
 - [docs/research/blocked-sources.md](docs/research/blocked-sources.md):
   sources the research could not read, as a checklist to revisit.
 - [docs/research/notes/](docs/research/notes/): the raw notes behind the
