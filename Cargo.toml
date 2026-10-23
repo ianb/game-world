@@ -1,0 +1,43 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "MIT"
+publish = false
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+postcard = { version = "1.1", features = ["alloc"] }
+rand = { version = "0.10", default-features = false }
+rand_pcg = { version = "0.10", features = ["serde"] }
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+pathfinding = "4"
+schemars = "1.2"
+thiserror = "2"
+insta = { version = "1", features = ["yaml"] }
+proptest = "1"
+rstest = "0.28"
+clap = { version = "4", features = ["derive"] }
+comfy-table = "8"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"

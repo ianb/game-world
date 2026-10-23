@@ -1,5 +1,8 @@
+target/
 node_modules/
 dist/
+packages/sim-wasm/pkg/
+packages/sim-wasm/pkg-node/
 .DS_Store
 *.log
 .env

@@ -1,0 +1,26 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  CI: "true"
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-nextest,cargo-insta,wasm-bindgen-cli@0.2.129
+      - run: just fmt-check
+      - run: just lint
+      - run: cargo nextest run --workspace --all-features
+      - run: cargo test --workspace --all-features --doc
+      - run: cargo insta test --workspace --all-features --unreferenced=reject
+      - run: just wasm-check

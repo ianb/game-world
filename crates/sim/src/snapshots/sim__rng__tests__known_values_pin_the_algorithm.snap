@@ -1,0 +1,9 @@
+---
+source: crates/sim/src/rng.rs
+expression: v
+---
+[
+    34,
+    51,
+    0,
+]

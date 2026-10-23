@@ -1,0 +1,5 @@
+---
+source: crates/sim/src/sim.rs
+expression: sim.hash().hex()
+---
+6f62a24fb502746c
