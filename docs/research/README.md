@@ -46,3 +46,7 @@ project's prose preferences; the notes were not.
   Rust and compiled stacks, sim/viewer seam, the agent's feedback loop).
   Notes: `notes/engine2_*.md`. Recommends raw Canvas 2D with a Node render
   path, PixiJS as the fallback, and a one-week gating experiment.
+- `rust-stack-and-mobile.md` (2026-10-23): how to build the Rust sim crate,
+  keep the Rust/TypeScript boundary tight, and reach web and mobile. Notes:
+  `notes/stack3_*.md`. Ends with a concrete workspace, crate versions, CI
+  checklist, and a first week of work.

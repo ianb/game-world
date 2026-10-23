@@ -51,6 +51,11 @@ Research phase. Nothing is decided about the stack yet. There is no code.
   Defold and GameMaker run headless, Rust cores and wasm splits, the
   sim/viewer seam and the agent's feedback loop. Recommends Canvas 2D
   verified in Node, gated by a one-week experiment, with PixiJS as fallback.
+- [docs/research/rust-stack-and-mobile.md](docs/research/rust-stack-and-mobile.md):
+  how to build the Rust simulation crate, keep the Rust/TypeScript boundary
+  tight, and reach web and mobile. Ends with a concrete workspace layout,
+  crate versions, a CI checklist, a viewer recommendation under the mobile
+  constraint, and the first week of work.
 - [docs/research/blocked-sources.md](docs/research/blocked-sources.md):
   sources the research could not read, as a checklist to revisit.
 - [docs/research/notes/](docs/research/notes/): the raw notes behind the
@@ -63,6 +68,8 @@ See [docs/design/what-remains.md](docs/design/what-remains.md). The first
 code slice (repo setup, discrete-event time with a calendar, places,
 buildings, validators, views, then villagers on schedules) is unblocked.
 Decided 2026-10-23: the simulation is Rust (compiled to wasm for the
-browser), the viewer is TypeScript with the library still open, web first
-and mobile probable. Research on mobile paths and on keeping the Rust/TS
-boundary tight is next.
+browser), the viewer is TypeScript, web first and mobile probable. The
+Rust stack report lays out the workspace, crate versions, boundary protocol,
+CI checklist and a first week of work. The viewer library (PixiJS as
+renderer, Phaser 4 as the alternative) is decided by a week-two spike.
+Nothing blocks starting the crate.

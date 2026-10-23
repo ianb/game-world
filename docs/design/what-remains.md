@@ -27,9 +27,16 @@ revisited.
 ## 2. Stack (decided: Rust sim, TypeScript viewer; viewer library open)
 
 Decided 2026-10-23 (see decisions.md): the simulation is a Rust crate
-compiled to wasm for the browser; the viewer is TypeScript with the library
-still open; web first and mobile probable. The paragraph below predates
-that decision and is kept for the record.
+compiled to wasm for the browser; the viewer is TypeScript; web first and
+mobile probable. The concrete setup (workspace, crate versions, boundary
+protocol, CI checklist, first week) is in
+`../research/rust-stack-and-mobile.md`. Viewer library: PixiJS 8 as a
+renderer behind a project-owned Viewer module, Phaser 4 as the alternative,
+decided by a week-two spike on context-loss recovery and integer scaling.
+Mobile: PWA from the first deploy, Capacitor 8 for stores, Android built
+and tested in the container, iOS via a rented Mac (Codemagic) and a device
+cloud. The paragraphs below predate the decision and are kept for the
+record.
 
 Simulation design agreed. Renderer still open. The engine deep dive
 (`../research/engine-deep-dive.md`) recommends raw Canvas 2D behind a

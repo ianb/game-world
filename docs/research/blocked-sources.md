@@ -207,3 +207,26 @@ engine2_editor_engines_headless.md, `e2-rust` = engine2_rust_and_compiled_stacks
 - [ ] Measured 60 fps numbers for a town-scale Canvas 2D renderer from an
   external source; the report's gating experiment is designed to produce
   this number locally. (e2-js)
+
+## Rust stack and mobile track (added 2026-10-23)
+
+Notes referenced: `s3-sim` = stack3_rust_sim_toolkit.md, `s3-bound` =
+stack3_rust_ts_boundary.md, `s3-mobile` = stack3_mobile_paths.md.
+
+- [ ] Any 2025-2026 post-mortem of a coding agent working across a Rust/TS
+  wasm boundary; GitHub code search for CLAUDE.md or AGENTS.md conventions
+  in mixed repos was blocked (403). (s3-bound)
+- [ ] specta 2.0 final status; wasm-pack 0.15 CLI-version resolution
+  behaviour; the Rust 1.82/1.87 wasm C-ABI minimum wasm-bindgen version. (s3-bound)
+- [ ] Performance numbers for serde-wasm-bindgen vs MessagePack vs raw memory
+  views at a few hundred entities per tick; what Veloren or OpenFrontIO chose. (s3-bound)
+- [ ] A benchmark of `pathfinding::astar` on grids of a few thousand tiles;
+  the crate's tie-breaking internals. (s3-sim)
+- [ ] getrandom 0.4 wasm configuration (moot if it is kept out of the graph). (s3-sim)
+- [ ] Whether WebGPU is on by default in Android System WebView (no primary
+  source). (s3-mobile)
+- [ ] Capacitor iOS store download size for a wasm plus WebGL game; Tauri 2
+  mobile defaults; any agent-driven mobile game shipping report; 2024-2026
+  mobile sprite-count benchmarks for PixiJS or Phaser in WKWebView. (s3-mobile)
+- [ ] Whether `typescript` 7.0.2 (as npm reported on 2026-10-23) is accepted
+  by Vite 8 and vitest 5; otherwise pin 5.x. (s3-bound)
