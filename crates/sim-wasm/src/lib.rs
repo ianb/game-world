@@ -3,9 +3,10 @@
 //!
 //! Numbers: ticks and ids are `u32`/`u16` so they cross as plain JS numbers. The seed is
 //! two `u32` halves to avoid `BigInt`. Hashes cross as hex strings.
+use characters::Town;
 use sim::input::Input;
 use sim::time::Tick;
-use sim::{DataCharacters, views};
+use sim::views;
 use wasm_bindgen::prelude::*;
 
 /// Protocol version asserted by the TypeScript wrapper at construction.
@@ -25,7 +26,7 @@ fn to_js<T: serde::Serialize>(value: &T) -> Result<JsValue, JsError> {
 #[wasm_bindgen]
 #[derive(Debug)]
 pub struct Sim {
-    inner: sim::Sim<DataCharacters>,
+    inner: sim::Sim<Town>,
 }
 
 #[wasm_bindgen]

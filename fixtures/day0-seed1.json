@@ -1305,12 +1305,351 @@
     {
       "activity": "walking",
       "kind": "Activity",
+      "tick": 63000,
+      "who": 0
+    },
+    {
+      "activity": "bring-pastry",
+      "eta": 63400,
+      "kind": "Departed",
+      "tick": 63000,
+      "who": 0
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63010,
+      "who": 0,
+      "x": 21,
+      "y": 7
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63020,
+      "who": 0,
+      "x": 21,
+      "y": 8
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63030,
+      "who": 0,
+      "x": 21,
+      "y": 9
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63040,
+      "who": 0,
+      "x": 22,
+      "y": 9
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63050,
+      "who": 0,
+      "x": 22,
+      "y": 10
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63060,
+      "who": 0,
+      "x": 22,
+      "y": 11
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63070,
+      "who": 0,
+      "x": 22,
+      "y": 12
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63080,
+      "who": 0,
+      "x": 22,
+      "y": 13
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63090,
+      "who": 0,
+      "x": 22,
+      "y": 14
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63100,
+      "who": 0,
+      "x": 22,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63110,
+      "who": 0,
+      "x": 21,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63120,
+      "who": 0,
+      "x": 20,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63130,
+      "who": 0,
+      "x": 19,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63140,
+      "who": 0,
+      "x": 18,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63150,
+      "who": 0,
+      "x": 17,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63160,
+      "who": 0,
+      "x": 16,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63170,
+      "who": 0,
+      "x": 16,
+      "y": 16
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63180,
+      "who": 0,
+      "x": 16,
+      "y": 17
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63190,
+      "who": 0,
+      "x": 16,
+      "y": 18
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63200,
+      "who": 0,
+      "x": 16,
+      "y": 19
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63210,
+      "who": 0,
+      "x": 16,
+      "y": 20
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63220,
+      "who": 0,
+      "x": 16,
+      "y": 21
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63230,
+      "who": 0,
+      "x": 16,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63240,
+      "who": 0,
+      "x": 15,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63250,
+      "who": 0,
+      "x": 14,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63260,
+      "who": 0,
+      "x": 13,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63270,
+      "who": 0,
+      "x": 12,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63280,
+      "who": 0,
+      "x": 11,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63290,
+      "who": 0,
+      "x": 10,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63300,
+      "who": 0,
+      "x": 9,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63310,
+      "who": 0,
+      "x": 9,
+      "y": 21
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63320,
+      "who": 0,
+      "x": 9,
+      "y": 20
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63330,
+      "who": 0,
+      "x": 9,
+      "y": 19
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63340,
+      "who": 0,
+      "x": 9,
+      "y": 18
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63350,
+      "who": 0,
+      "x": 9,
+      "y": 17
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63360,
+      "who": 0,
+      "x": 9,
+      "y": 16
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63370,
+      "who": 0,
+      "x": 9,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63380,
+      "who": 0,
+      "x": 8,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63390,
+      "who": 0,
+      "x": 7,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 63400,
+      "who": 0,
+      "x": 6,
+      "y": 15
+    },
+    {
+      "activity": "bring-pastry",
+      "kind": "Activity",
+      "tick": 63400,
+      "who": 0
+    },
+    {
+      "activity": "walking",
+      "kind": "Activity",
       "tick": 68400,
       "who": 0
     },
     {
       "activity": "drink",
-      "eta": 68760,
+      "eta": 68420,
       "kind": "Departed",
       "tick": 68400,
       "who": 0
@@ -1320,294 +1659,34 @@
       "place": 0,
       "tick": 68410,
       "who": 0,
-      "x": 21,
-      "y": 7
+      "x": 7,
+      "y": 15
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 68420,
       "who": 0,
-      "x": 21,
-      "y": 8
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68430,
-      "who": 0,
-      "x": 21,
-      "y": 9
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68440,
-      "who": 0,
-      "x": 22,
-      "y": 9
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68450,
-      "who": 0,
-      "x": 22,
-      "y": 10
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68460,
-      "who": 0,
-      "x": 22,
-      "y": 11
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68470,
-      "who": 0,
-      "x": 22,
-      "y": 12
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68480,
-      "who": 0,
-      "x": 22,
-      "y": 13
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68490,
-      "who": 0,
-      "x": 22,
-      "y": 14
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68500,
-      "who": 0,
-      "x": 22,
+      "x": 8,
       "y": 15
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68510,
-      "who": 0,
-      "x": 22,
-      "y": 16
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68520,
-      "who": 0,
-      "x": 21,
-      "y": 16
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68530,
-      "who": 0,
-      "x": 20,
-      "y": 16
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68540,
-      "who": 0,
-      "x": 19,
-      "y": 16
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68550,
-      "who": 0,
-      "x": 18,
-      "y": 16
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68560,
-      "who": 0,
-      "x": 17,
-      "y": 16
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68570,
-      "who": 0,
-      "x": 16,
-      "y": 16
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68580,
-      "who": 0,
-      "x": 16,
-      "y": 17
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68590,
-      "who": 0,
-      "x": 16,
-      "y": 18
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68600,
-      "who": 0,
-      "x": 16,
-      "y": 19
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68610,
-      "who": 0,
-      "x": 16,
-      "y": 20
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68620,
-      "who": 0,
-      "x": 16,
-      "y": 21
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68630,
-      "who": 0,
-      "x": 16,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68640,
-      "who": 0,
-      "x": 15,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68650,
-      "who": 0,
-      "x": 14,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68660,
-      "who": 0,
-      "x": 13,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68670,
-      "who": 0,
-      "x": 12,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68680,
-      "who": 0,
-      "x": 11,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68690,
-      "who": 0,
-      "x": 10,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68700,
-      "who": 0,
-      "x": 9,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68710,
-      "who": 0,
-      "x": 9,
-      "y": 21
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68720,
-      "who": 0,
-      "x": 9,
-      "y": 20
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68730,
-      "who": 0,
-      "x": 9,
-      "y": 19
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68740,
-      "who": 0,
-      "x": 9,
-      "y": 18
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68750,
-      "who": 0,
-      "x": 9,
-      "y": 17
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 68760,
-      "who": 0,
-      "x": 9,
-      "y": 16
     },
     {
       "activity": "drink",
       "kind": "Activity",
-      "tick": 68760,
+      "tick": 68420,
       "who": 0
+    },
+    {
+      "activity": "tend-bar",
+      "kind": "Activity",
+      "tick": 70200,
+      "who": 1
+    },
+    {
+      "activity": "tend-bar",
+      "kind": "Activity",
+      "tick": 72000,
+      "who": 1
     },
     {
       "activity": "walking",
@@ -1617,7 +1696,7 @@
     },
     {
       "activity": "sleep",
-      "eta": 77830,
+      "eta": 77850,
       "kind": "Departed",
       "tick": 77400,
       "who": 0
@@ -1628,7 +1707,7 @@
       "tick": 77410,
       "who": 0,
       "x": 9,
-      "y": 17
+      "y": 15
     },
     {
       "kind": "Moved",
@@ -1636,7 +1715,7 @@
       "tick": 77420,
       "who": 0,
       "x": 9,
-      "y": 18
+      "y": 16
     },
     {
       "kind": "Moved",
@@ -1644,7 +1723,7 @@
       "tick": 77430,
       "who": 0,
       "x": 9,
-      "y": 19
+      "y": 17
     },
     {
       "kind": "Moved",
@@ -1652,7 +1731,7 @@
       "tick": 77440,
       "who": 0,
       "x": 9,
-      "y": 20
+      "y": 18
     },
     {
       "kind": "Moved",
@@ -1660,7 +1739,7 @@
       "tick": 77450,
       "who": 0,
       "x": 9,
-      "y": 21
+      "y": 19
     },
     {
       "kind": "Moved",
@@ -1668,22 +1747,22 @@
       "tick": 77460,
       "who": 0,
       "x": 9,
-      "y": 22
+      "y": 20
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 77470,
       "who": 0,
-      "x": 10,
-      "y": 22
+      "x": 9,
+      "y": 21
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 77480,
       "who": 0,
-      "x": 11,
+      "x": 9,
       "y": 22
     },
     {
@@ -1691,7 +1770,7 @@
       "place": 0,
       "tick": 77490,
       "who": 0,
-      "x": 12,
+      "x": 10,
       "y": 22
     },
     {
@@ -1699,7 +1778,7 @@
       "place": 0,
       "tick": 77500,
       "who": 0,
-      "x": 13,
+      "x": 11,
       "y": 22
     },
     {
@@ -1707,7 +1786,7 @@
       "place": 0,
       "tick": 77510,
       "who": 0,
-      "x": 14,
+      "x": 12,
       "y": 22
     },
     {
@@ -1715,7 +1794,7 @@
       "place": 0,
       "tick": 77520,
       "who": 0,
-      "x": 15,
+      "x": 13,
       "y": 22
     },
     {
@@ -1723,7 +1802,7 @@
       "place": 0,
       "tick": 77530,
       "who": 0,
-      "x": 16,
+      "x": 14,
       "y": 22
     },
     {
@@ -1731,8 +1810,8 @@
       "place": 0,
       "tick": 77540,
       "who": 0,
-      "x": 16,
-      "y": 21
+      "x": 15,
+      "y": 22
     },
     {
       "kind": "Moved",
@@ -1740,7 +1819,7 @@
       "tick": 77550,
       "who": 0,
       "x": 16,
-      "y": 20
+      "y": 22
     },
     {
       "kind": "Moved",
@@ -1748,7 +1827,7 @@
       "tick": 77560,
       "who": 0,
       "x": 16,
-      "y": 19
+      "y": 21
     },
     {
       "kind": "Moved",
@@ -1756,7 +1835,7 @@
       "tick": 77570,
       "who": 0,
       "x": 16,
-      "y": 18
+      "y": 20
     },
     {
       "kind": "Moved",
@@ -1764,7 +1843,7 @@
       "tick": 77580,
       "who": 0,
       "x": 16,
-      "y": 17
+      "y": 19
     },
     {
       "kind": "Moved",
@@ -1772,7 +1851,7 @@
       "tick": 77590,
       "who": 0,
       "x": 16,
-      "y": 16
+      "y": 18
     },
     {
       "kind": "Moved",
@@ -1780,7 +1859,7 @@
       "tick": 77600,
       "who": 0,
       "x": 16,
-      "y": 15
+      "y": 17
     },
     {
       "kind": "Moved",
@@ -1788,7 +1867,7 @@
       "tick": 77610,
       "who": 0,
       "x": 16,
-      "y": 14
+      "y": 16
     },
     {
       "kind": "Moved",
@@ -1796,7 +1875,7 @@
       "tick": 77620,
       "who": 0,
       "x": 16,
-      "y": 13
+      "y": 15
     },
     {
       "kind": "Moved",
@@ -1804,7 +1883,7 @@
       "tick": 77630,
       "who": 0,
       "x": 16,
-      "y": 12
+      "y": 14
     },
     {
       "kind": "Moved",
@@ -1812,7 +1891,7 @@
       "tick": 77640,
       "who": 0,
       "x": 16,
-      "y": 11
+      "y": 13
     },
     {
       "kind": "Moved",
@@ -1820,22 +1899,22 @@
       "tick": 77650,
       "who": 0,
       "x": 16,
-      "y": 10
+      "y": 12
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 77660,
       "who": 0,
-      "x": 15,
-      "y": 10
+      "x": 16,
+      "y": 11
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 77670,
       "who": 0,
-      "x": 14,
+      "x": 16,
       "y": 10
     },
     {
@@ -1843,7 +1922,7 @@
       "place": 0,
       "tick": 77680,
       "who": 0,
-      "x": 13,
+      "x": 15,
       "y": 10
     },
     {
@@ -1851,8 +1930,8 @@
       "place": 0,
       "tick": 77690,
       "who": 0,
-      "x": 13,
-      "y": 9
+      "x": 14,
+      "y": 10
     },
     {
       "kind": "Moved",
@@ -1860,22 +1939,22 @@
       "tick": 77700,
       "who": 0,
       "x": 13,
-      "y": 8
+      "y": 10
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 77710,
       "who": 0,
-      "x": 12,
-      "y": 8
+      "x": 13,
+      "y": 9
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 77720,
       "who": 0,
-      "x": 11,
+      "x": 13,
       "y": 8
     },
     {
@@ -1883,8 +1962,8 @@
       "place": 0,
       "tick": 77730,
       "who": 0,
-      "x": 11,
-      "y": 7
+      "x": 12,
+      "y": 8
     },
     {
       "kind": "Moved",
@@ -1892,22 +1971,22 @@
       "tick": 77740,
       "who": 0,
       "x": 11,
-      "y": 6
+      "y": 8
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 77750,
       "who": 0,
-      "x": 10,
-      "y": 6
+      "x": 11,
+      "y": 7
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 77760,
       "who": 0,
-      "x": 9,
+      "x": 11,
       "y": 6
     },
     {
@@ -1915,8 +1994,8 @@
       "place": 0,
       "tick": 77770,
       "who": 0,
-      "x": 9,
-      "y": 7
+      "x": 10,
+      "y": 6
     },
     {
       "kind": "Moved",
@@ -1924,12 +2003,28 @@
       "tick": 77780,
       "who": 0,
       "x": 9,
+      "y": 6
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 77790,
+      "who": 0,
+      "x": 9,
+      "y": 7
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 77800,
+      "who": 0,
+      "x": 9,
       "y": 8
     },
     {
       "kind": "Moved",
       "place": 1,
-      "tick": 77780,
+      "tick": 77800,
       "who": 0,
       "x": 1,
       "y": 1
@@ -1937,7 +2032,7 @@
     {
       "kind": "Moved",
       "place": 1,
-      "tick": 77790,
+      "tick": 77810,
       "who": 0,
       "x": 2,
       "y": 1
@@ -1945,7 +2040,7 @@
     {
       "kind": "Moved",
       "place": 1,
-      "tick": 77800,
+      "tick": 77820,
       "who": 0,
       "x": 2,
       "y": 2
@@ -1953,7 +2048,7 @@
     {
       "kind": "Moved",
       "place": 1,
-      "tick": 77810,
+      "tick": 77830,
       "who": 0,
       "x": 2,
       "y": 3
@@ -1961,7 +2056,7 @@
     {
       "kind": "Moved",
       "place": 1,
-      "tick": 77820,
+      "tick": 77840,
       "who": 0,
       "x": 2,
       "y": 4
@@ -1969,7 +2064,7 @@
     {
       "activity": "sleep",
       "kind": "Activity",
-      "tick": 77820,
+      "tick": 77840,
       "who": 0
     },
     {
@@ -2438,7 +2533,7 @@
       "tick": 86400
     }
   ],
-  "hash": "6a5435a0ca8b2465",
+  "hash": "c9bb15c68ced83fc",
   "protocol_version": 3,
   "seed": 1
 }

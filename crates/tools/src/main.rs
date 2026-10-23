@@ -1,10 +1,11 @@
 //! `sim-tools`: validators, text views, record and replay. The agent's eyes.
+use characters::Town;
 use clap::{Parser, Subcommand};
 use content::{
     Nav, Pos, Spot, compile, list_doors, list_objects, load_dir, nav, render_place, validate,
 };
 use sim::time::{TICKS_PER_DAY, Tick};
-use sim::{DataCharacters, Sim, views};
+use sim::{Sim, views};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -132,7 +133,7 @@ fn main() -> ExitCode {
             day,
             snapshots,
         } => {
-            let mut sim: Sim<DataCharacters> = Sim::new(seed, content);
+            let mut sim: Sim<Town> = Sim::new(seed, content);
             let start = Tick(day * TICKS_PER_DAY);
             sim.step_until(start).unwrap();
             let mut events = Vec::new();
@@ -163,7 +164,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Command::Events { seed, day } => {
-            let mut sim: Sim<DataCharacters> = Sim::new(seed, content);
+            let mut sim: Sim<Town> = Sim::new(seed, content);
             let start = Tick(day * TICKS_PER_DAY);
             sim.step_until(start).unwrap();
             let events = sim.step_until(start.plus(TICKS_PER_DAY)).unwrap();
@@ -182,7 +183,7 @@ fn main() -> ExitCode {
                 eprintln!("--at must be HH:MM");
                 return ExitCode::from(1);
             };
-            let mut sim: Sim<DataCharacters> = Sim::new(seed, content);
+            let mut sim: Sim<Town> = Sim::new(seed, content);
             sim.step_until(Tick(day * TICKS_PER_DAY).plus(secs))
                 .unwrap();
             print!("{}", views::where_is_everyone(&sim));

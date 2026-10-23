@@ -34,11 +34,13 @@ discrete-event scheduler with a calendar, seeded RNG streams, snapshots and
 per-subsystem hashes, content as JSON compiled to tile grids with
 validators, hierarchical pathfinding, villagers on baseline schedules, text
 views, and a wasm facade whose Node smoke test matches the native hash.
-`just check` runs it all; `cargo run -p tools -- day` shows a day in the
-town. Next: the TypeScript protocol package and viewer (see
-[docs/design/what-remains.md](docs/design/what-remains.md)), and the
-week-two character spike (two villagers written as code against the
-toolbox).
+On top of it: generated TypeScript types with a drift check, a protocol
+package wrapping the wasm behind a `Sim` interface, a vitest contract test
+against a committed fixture, a text viewer in the browser driven by
+Playwright in CI, and the first two villagers written as Rust modules
+(`crates/characters`). `just check` runs it all; `cargo run -p tools -- day`
+shows a day in the town. Next: more villagers and buildings, then the
+renderer spike (see [docs/design/what-remains.md](docs/design/what-remains.md)).
 
 ## What is here
 

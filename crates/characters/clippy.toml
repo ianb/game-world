@@ -1,0 +1,19 @@
+# Determinism guards. The sim must be a pure function of (content, seed, inputs).
+disallowed-types = [
+  { path = "std::collections::HashMap", reason = "iteration order is not deterministic; use BTreeMap or a Vec indexed by a typed id" },
+  { path = "std::collections::HashSet", reason = "iteration order is not deterministic; use BTreeSet" },
+  { path = "std::collections::hash_map::RandomState", reason = "randomized hasher" },
+  { path = "std::hash::RandomState", reason = "randomized hasher" },
+  { path = "std::time::Instant", reason = "no wall clock in the sim; time is the tick" },
+  { path = "std::time::SystemTime", reason = "no wall clock in the sim; time is the tick" },
+  { path = "rand::rngs::StdRng", reason = "not portable across rand versions; use rand_pcg::Pcg32 held in SimState", allow-invalid = true },
+  { path = "rand::rngs::SmallRng", reason = "not portable; use rand_pcg::Pcg32 held in SimState", allow-invalid = true },
+]
+
+disallowed-methods = [
+  { path = "rand::rng", reason = "ambient randomness; use the stream in SimState", allow-invalid = true },
+  { path = "rand::random", reason = "ambient randomness; use the stream in SimState", allow-invalid = true },
+  { path = "rand::random_range", reason = "ambient randomness; use the stream in SimState", allow-invalid = true },
+  { path = "std::time::Instant::now", reason = "no wall clock in the sim" },
+  { path = "std::time::SystemTime::now", reason = "no wall clock in the sim" },
+]

@@ -247,9 +247,14 @@ pathfinding with the travel-time matrix, villagers on baseline schedules
 with movement through doors, the `CharacterSet` interface with `Ctx` and
 commands, text views, `sim-tools` (validate, render, doors, travel-matrix,
 route, day, bundle), and the `sim-wasm` facade with a Node smoke test that
-matches the native weekly hash. Not yet: ts-rs type generation, the
-TypeScript protocol package, vitest contract tests, the viewer, and the
-two-character code-first spike in `crates/characters`.
+matches the native weekly hash. Also done the same day: ts-rs
+type generation with a drift check, the TypeScript protocol package wrapping
+the wasm behind a `Sim` interface, the vitest contract test against a
+committed fixture, a Vite text viewer with a Playwright smoke, and the
+two-character code-first spike (Mara and Tom in `crates/characters`), whose
+verdict is in decisions.md. Not yet: more villagers and buildings, the
+renderer spike (PixiJS versus Phaser 4), relationships, interruptions,
+dialogue.
 
 ## Suggested order
 

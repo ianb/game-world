@@ -402,3 +402,41 @@ Refinement of the characters decision:
   should be functional too. Unresearched candidates: Steel (Scheme in Rust),
   Fennel over mlua, Koto, Gluon (maintenance unknown). Rhai is imperative
   and drops down the list. Research only if the week-two spike shows need.
+
+## 2026-10-23: Character spike verdict: plain Rust modules, low friction
+
+The week-two check from the characters decision ran early, with Mara (mostly
+data) and Tom (eclectic code) in `crates/characters`. Verdict: write the
+rest the same way; no scripting layer is needed.
+
+What worked:
+
+- A struct per villager with only that villager's fields (`Tom { mood,
+  days_since_day_off, fish_caught }`, `Mara { batches_baked,
+  pastries_delivered }`), held by name in `Town`. Mara's code reads
+  `tom.mood` as a typed field. Destructuring `Town` into its fields in the
+  `CharacterSet` match gives each character `&mut` to itself and `&` to the
+  peers it names, with no borrow trouble.
+- Peers are explicit arguments (`mara.plan_day(ctx, rng, tom)`), so which
+  characters depend on which is visible in the signature and checked by the
+  compiler. This is the sparse-attributes idea applied to relationships.
+- The toolbox (`Plan::baseline`, `at`, `drop_activity`, `shift`, `go`,
+  `go_tile`, `wait_minutes`, `together`, `activity_of`, `pick`) covered both
+  characters in about 120 lines. It grows from what characters want to say.
+- Reactive behaviour through `react` plus `Wait` commands (Tom's 20:00
+  check on the room, fishing in randomized stretches) stayed deterministic
+  and snapshot-safe because all randomness comes from the stream handed in.
+- Character state is in the snapshot and the hash for free, via the generic
+  `SimState<C>`.
+
+Rough edges to fix as characters multiply:
+
+- Dispatch matches on the villager's string id. An enum of villagers
+  generated from content, or a const per module, would make a typo a
+  compile error.
+- Toolbox lookups panic on an unknown object or place id. Acceptable while
+  the validator guarantees content ids, but a `Ctx::must_object` with a
+  clearer message is cheap.
+- `react` cannot tell which `Wait` elapsed when a character has several
+  kinds; a tag on `Wait` (or matching on the current activity, as Tom does)
+  is needed once that happens.
