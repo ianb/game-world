@@ -167,8 +167,8 @@ composited with sharp for occasional human review.
 
 Procedural generation is a drafting tool, not a shipping one: a treemap room
 split and a greedy furniture pass that respects door paths and wall
-adjacency can draft a building, and the result is written out as ASCII and
-edited by hand.
+adjacency can draft a building, and the result is written out as the same
+structured source and edited there.
 
 ## Presentation
 
