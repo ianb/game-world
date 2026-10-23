@@ -1,9 +1,14 @@
 // Loads the built viewer in headless Chromium, waits for the sim to advance, and prints the
 // scene dump. Usage: node scripts/viewer-smoke.mjs <url>
+import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 
 const url = process.argv[2] ?? "http://localhost:4173/";
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+// Prefer an explicit CHROMIUM_PATH, then the cloud container's preinstalled Chromium, else
+// whatever `playwright install chromium` provided.
+const preinstalled = "/opt/pw-browsers/chromium";
+const executablePath = process.env.CHROMIUM_PATH || (existsSync(preinstalled) ? preinstalled : undefined);
+const browser = await chromium.launch(executablePath ? { executablePath } : {});
 const page = await browser.newPage({ viewport: { width: 1000, height: 800 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));

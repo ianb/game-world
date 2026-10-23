@@ -32,4 +32,4 @@ jobs:
       - run: just wasm-smoke
       - run: just ts
       - run: pnpm exec playwright install chromium
-      - run: CHROMIUM_PATH= just viewer-smoke
+      - run: just viewer-smoke
