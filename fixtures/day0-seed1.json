@@ -27,7 +27,7 @@
     },
     {
       "activity": "cook",
-      "eta": 21710,
+      "eta": 21700,
       "kind": "Departed",
       "tick": 21600,
       "who": 0
@@ -409,7 +409,7 @@
     },
     {
       "activity": "eat",
-      "eta": 27180,
+      "eta": 27170,
       "kind": "Departed",
       "tick": 27000,
       "who": 2
@@ -572,7 +572,7 @@
     },
     {
       "activity": "roam",
-      "eta": 29180,
+      "eta": 29170,
       "kind": "Departed",
       "tick": 28800,
       "who": 1
@@ -16877,13 +16877,7 @@
     },
     {
       "kind": "Decided",
-      "text": "waited -> note: mood 0 -> 2 (Mara is here drinking); tend-bar for 120m",
-      "tick": 72000,
-      "who": 2
-    },
-    {
-      "activity": "tend-bar",
-      "kind": "Activity",
+      "text": "waited -> note: mood 0 -> 2 (Mara is here drinking)",
       "tick": 72000,
       "who": 2
     },
@@ -16895,7 +16889,7 @@
     },
     {
       "activity": "sleep",
-      "eta": 73980,
+      "eta": 73970,
       "kind": "Departed",
       "tick": 73800,
       "who": 1
@@ -17058,7 +17052,7 @@
     },
     {
       "activity": "sleep",
-      "eta": 77850,
+      "eta": 77840,
       "kind": "Departed",
       "tick": 77400,
       "who": 0
@@ -17443,7 +17437,7 @@
     },
     {
       "activity": "sleep",
-      "eta": 83330,
+      "eta": 83320,
       "kind": "Departed",
       "tick": 82800,
       "who": 2
@@ -17913,7 +17907,7 @@
       "who": 2
     }
   ],
-  "hash": "dff38a8752126ede",
-  "protocol_version": 5,
+  "hash": "ae4e73dacb619faf",
+  "protocol_version": 6,
   "seed": 1
 }

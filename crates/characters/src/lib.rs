@@ -25,6 +25,9 @@ pub struct Town {
 }
 
 impl CharacterSet for Town {
+    /// Bump when any character struct changes shape.
+    const LAYOUT_VERSION: u32 = 1;
+
     fn new(_content: &content::Content, _world: &content::World) -> Self {
         Town {
             mara: mara::Mara::default(),

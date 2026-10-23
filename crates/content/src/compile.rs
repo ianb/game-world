@@ -109,6 +109,8 @@ pub struct Place {
     pub height: u16,
     pub cells: Vec<Cell>,
     pub arrival: Pos,
+    /// Walkable and not covered by a solid object. Built once at the end of compilation.
+    pub passable: Vec<bool>,
 }
 
 impl Place {
@@ -174,7 +176,20 @@ impl World {
     /// Walkable for movement: the cell allows it and no solid object sits there.
     #[must_use]
     pub fn passable(&self, place: usize, x: u16, y: u16) -> bool {
-        self.places[place].walkable(x, y) && !self.blocked_by_object(place, x, y)
+        let p = &self.places[place];
+        p.in_bounds(x, y) && p.passable[usize::from(y) * usize::from(p.width) + usize::from(x)]
+    }
+
+    /// Recomputes every place's passability grid from cells and objects.
+    pub fn finish(&mut self) {
+        for pi in 0..self.places.len() {
+            let (w, h) = (self.places[pi].width, self.places[pi].height);
+            let grid: Vec<bool> = (0..h)
+                .flat_map(|y| (0..w).map(move |x| (x, y)))
+                .map(|(x, y)| self.places[pi].walkable(x, y) && !self.blocked_by_object(pi, x, y))
+                .collect();
+            self.places[pi].passable = grid;
+        }
     }
 }
 
@@ -198,6 +213,7 @@ pub fn compile(content: &Content) -> World {
             height: z.height,
             cells: vec![Cell::Ground; usize::from(z.width) * usize::from(z.height)],
             arrival: z.arrival,
+            passable: Vec::new(),
         };
         for r in &z.blocked {
             fill(&mut place, *r, Cell::Blocked);
@@ -239,6 +255,7 @@ pub fn compile(content: &Content) -> World {
         }
     }
 
+    world.finish();
     world
 }
 
@@ -350,6 +367,7 @@ fn compile_detached(world: &mut World, b: &Building, f: &Floor) {
         height,
         cells: vec![Cell::Void; usize::from(width) * usize::from(height)],
         arrival: f.arrival,
+        passable: Vec::new(),
     };
     let idx = add_place(world, place);
     paint_floor(world, idx, b, f, Pos { x: 0, y: 0 });

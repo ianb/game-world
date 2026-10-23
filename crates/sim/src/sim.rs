@@ -10,12 +10,15 @@ use crate::protocol::Emitted;
 use crate::queue::EventQueue;
 use crate::rng::Streams;
 use crate::snapshot::{self, SnapshotError};
-use crate::time::{TICKS_PER_DAY, Tick};
-use crate::villager::{Movement, VillagerState};
+use crate::time::{TICKS_PER_DAY, TICKS_PER_MINUTE, Tick};
+use crate::villager::{Crossing, Movement, PlannedLeg, VillagerState};
 use content::{Content, Nav, Pos, Spot, WALK_TICKS_PER_TILE, World, nav};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use thiserror::Error;
+
+/// Nested reactions (a greeting answered by a greeting answered by...) stop here.
+const MAX_REACT_DEPTH: u8 = 4;
 
 /// Everything that determines the future. Serializable in full; hashed by subsystem.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -27,8 +30,9 @@ pub struct SimState<C> {
     pub tick: Tick,
     pub rng: Streams,
     pub queue: EventQueue,
-    /// Every input ever applied, in `(tick, seq)` order. The save game.
+    /// Every input ever accepted, in acceptance order, each carrying its `seq`. The save game.
     pub inputs: Vec<Input>,
+    pub next_input_seq: u32,
     pub villagers: Vec<VillagerState>,
     /// Last proximity trigger per (kind, pair with smaller id first), for the cooldown.
     /// Kind 0 is an encounter, 1 is passing.
@@ -37,6 +41,9 @@ pub struct SimState<C> {
     pub markers: Vec<(Tick, String)>,
     /// Character private state.
     pub characters: C,
+    /// Events produced while constructing the sim (the first day's plans), returned by the
+    /// first `step_until`. Part of the state so a restored sim behaves the same.
+    pub pending: Vec<Emitted>,
 }
 
 #[derive(Error, Debug, PartialEq, Eq)]
@@ -59,7 +66,8 @@ pub struct Sim<C: CharacterSet> {
     world: World,
     nav: Nav,
     state: SimState<C>,
-    startup: Vec<Emitted>,
+    /// Transient: current nesting of `react` calls.
+    depth: u8,
 }
 
 /// Content is hashed through JSON rather than postcard because the schedule target uses
@@ -68,6 +76,11 @@ pub struct Sim<C: CharacterSet> {
 pub fn content_hash(content: &Content) -> u64 {
     let bytes = serde_json::to_vec(content).expect("content is always serializable");
     xxhash_rust::xxh3::xxh3_64(&bytes)
+}
+
+/// Asleep or mid-conversation: no proximity triggers to or about them.
+fn unavailable(v: &VillagerState) -> bool {
+    matches!(v.activity.as_str(), "sleep" | "talk")
 }
 
 impl<C: CharacterSet> Sim<C> {
@@ -94,6 +107,8 @@ impl<C: CharacterSet> Sim<C> {
                     plan: BTreeMap::new(),
                     since: Tick::ZERO,
                     resume: None,
+                    talk_until: None,
+                    wait_until: None,
                 }
             })
             .collect();
@@ -108,27 +123,23 @@ impl<C: CharacterSet> Sim<C> {
                 rng: Streams::from_seed(seed),
                 queue,
                 inputs: Vec::new(),
+                next_input_seq: 1,
                 villagers,
                 met: BTreeMap::new(),
                 day_rollovers: 0,
                 markers: Vec::new(),
                 characters,
+                pending: Vec::new(),
             },
             content,
             world,
             nav,
-            startup: Vec::new(),
+            depth: 0,
         };
         let mut out = Vec::new();
         sim.plan_everyone(&mut out);
-        sim.startup = out;
+        sim.state.pending = out;
         sim
-    }
-
-    /// Decisions made while constructing the sim (the first day's plans). Returned by the
-    /// first `step_until` so no trace is lost.
-    fn take_startup(&mut self) -> Vec<Emitted> {
-        std::mem::take(&mut self.startup)
     }
 
     #[must_use]
@@ -168,20 +179,27 @@ impl<C: CharacterSet> Sim<C> {
         }
     }
 
-    /// Queues an input for its tick. Inputs at the current tick are applied on the next step.
-    pub fn apply_input(&mut self, input: Input) -> Result<(), SimError> {
+    /// Accepts an input: assigns its sequence number, logs it, and queues it for its tick.
+    /// Inputs at the current tick are applied on the next step. The order of inputs is the
+    /// order of acceptance, independent of internal events scheduled before or after.
+    pub fn apply_input(&mut self, mut input: Input) -> Result<(), SimError> {
         if input.tick < self.state.tick {
             return Err(SimError::InputInPast {
                 input: input.tick,
                 current: self.state.tick,
             });
         }
-        self.state.queue.schedule(input.tick, Event::Input(input));
+        input.seq = self.state.next_input_seq;
+        self.state.next_input_seq += 1;
+        self.state.inputs.push(input.clone());
+        self.state
+            .queue
+            .schedule_input(input.tick, u64::from(input.seq), Event::Input(input));
         Ok(())
     }
 
-    /// Runs every event due at or before `target`, in `(tick, seq)` order, then sets the
-    /// clock to `target`. Returns what happened, for viewers and external actors.
+    /// Runs every event due at or before `target`, in `(tick, phase, seq)` order, then sets
+    /// the clock to `target`. Returns what happened, for viewers and external actors.
     pub fn step_until(&mut self, target: Tick) -> Result<Vec<Emitted>, SimError> {
         if target < self.state.tick {
             return Err(SimError::StepBackwards {
@@ -189,7 +207,7 @@ impl<C: CharacterSet> Sim<C> {
                 target,
             });
         }
-        let mut out = self.take_startup();
+        let mut out = std::mem::take(&mut self.state.pending);
         while let Some(scheduled) = self.state.queue.pop_due(target) {
             self.state.tick = scheduled.tick;
             self.handle(scheduled.event, &mut out);
@@ -212,15 +230,17 @@ impl<C: CharacterSet> Sim<C> {
                 });
                 self.plan_everyone(out);
             }
-            Event::Input(input) => self.handle_input(input, out),
+            Event::Input(input) => self.handle_input(&input, out),
             Event::WakeUp { who, generation } => {
                 if self.state.villagers[who.index()].plan_generation != generation {
                     return;
                 }
-                let Some(cmd) = self.state.villagers[who.index()].plan.remove(&tick) else {
+                let Some(cmds) = self.state.villagers[who.index()].plan.remove(&tick) else {
                     return;
                 };
-                self.run_command(who, cmd, out);
+                for cmd in cmds {
+                    self.run_command(who, cmd, out);
+                }
             }
             Event::Arrive { who, generation } => {
                 if self.state.villagers[who.index()].generation == generation {
@@ -228,23 +248,30 @@ impl<C: CharacterSet> Sim<C> {
                 }
             }
             Event::Waited { who, generation } => {
-                if self.state.villagers[who.index()].generation == generation {
-                    self.react(who, Trigger::Waited, out);
-                }
-            }
-            Event::TalkEnd {
-                who,
-                other,
-                topic,
-                generation,
-            } => {
-                if self.state.villagers[who.index()].generation != generation {
+                let v = &mut self.state.villagers[who.index()];
+                if v.generation != generation {
                     return;
                 }
-                let resume = self.state.villagers[who.index()]
-                    .resume
-                    .take()
-                    .unwrap_or_else(|| "idle".into());
+                // A conversation defers the wait until it ends.
+                if let Some(end) = v.talk_until
+                    && end > tick
+                {
+                    v.wait_until = Some(end);
+                    self.state
+                        .queue
+                        .schedule(end, Event::Waited { who, generation });
+                    return;
+                }
+                v.wait_until = None;
+                self.react(who, Trigger::Waited, out);
+            }
+            Event::TalkEnd { who, other, topic } => {
+                let v = &mut self.state.villagers[who.index()];
+                if v.talk_until != Some(tick) || v.activity != "talk" {
+                    return;
+                }
+                v.talk_until = None;
+                let resume = v.resume.take().unwrap_or_else(|| "idle".into());
                 self.set_activity(who, &resume, out);
                 self.react(who, Trigger::TalkEnded { other, topic }, out);
             }
@@ -252,7 +279,7 @@ impl<C: CharacterSet> Sim<C> {
         }
     }
 
-    fn handle_input(&mut self, input: Input, out: &mut Vec<Emitted>) {
+    fn handle_input(&mut self, input: &Input, out: &mut Vec<Emitted>) {
         let tick = self.state.tick;
         let summary = match (&input.source, &input.kind) {
             (_, InputKind::Noop) => "noop".to_string(),
@@ -260,12 +287,36 @@ impl<C: CharacterSet> Sim<C> {
                 self.state.markers.push((tick, text.clone()));
                 format!("marker {text:?}")
             }
-            (Source::System, InputKind::Teleport { who, x, y }) => {
+            (Source::System, InputKind::Teleport { who, place, x, y }) => {
+                if who.index() >= self.state.villagers.len()
+                    || place.index() >= self.world.places.len()
+                    || !self.world.passable(place.index(), *x, *y)
+                {
+                    out.push(Emitted::InputRejected {
+                        tick,
+                        reason: format!(
+                            "teleport target {place:?} ({x}, {y}) is not a passable tile"
+                        ),
+                    });
+                    return;
+                }
+                self.interrupt(*who);
                 let v = &mut self.state.villagers[who.index()];
+                v.place = *place;
                 v.pos = Pos { x: *x, y: *y };
-                v.moving = None;
-                v.generation += 1;
-                format!("teleport {who:?} to ({x}, {y})")
+                let (vp, vx, vy) = (v.place, v.pos.x, v.pos.y);
+                out.push(Emitted::Moved {
+                    tick,
+                    who: *who,
+                    place: vp,
+                    x: vx,
+                    y: vy,
+                });
+                format!(
+                    "teleport {} to {} ({x}, {y})",
+                    self.state.villagers[who.index()].name,
+                    self.world.places[place.index()].id
+                )
             }
             (source, InputKind::Teleport { .. }) => {
                 out.push(Emitted::InputRejected {
@@ -275,7 +326,6 @@ impl<C: CharacterSet> Sim<C> {
                 return;
             }
         };
-        self.state.inputs.push(input);
         out.push(Emitted::InputApplied { tick, summary });
     }
 
@@ -317,20 +367,37 @@ impl<C: CharacterSet> Sim<C> {
             v.plan.clear();
             v.plan_generation += 1;
             let generation = v.plan_generation;
-            for p in planned {
+            let mut sorted = planned;
+            sorted.sort_by_key(|p| p.at);
+            for p in sorted {
                 let at = day_start.plus(p.at.seconds());
                 if at < now {
                     continue;
                 }
-                v.plan.insert(at, p.command);
-                self.state
-                    .queue
-                    .schedule(at, Event::WakeUp { who, generation });
+                let slot = v.plan.entry(at).or_default();
+                if slot.is_empty() {
+                    self.state
+                        .queue
+                        .schedule(at, Event::WakeUp { who, generation });
+                }
+                slot.push(p.command);
             }
         }
     }
 
     fn react(&mut self, who: VillagerId, trigger: Trigger, out: &mut Vec<Emitted>) {
+        if self.depth >= MAX_REACT_DEPTH {
+            out.push(Emitted::Decided {
+                tick: self.state.tick,
+                who,
+                text: format!(
+                    "reaction depth limit reached on {}",
+                    trigger.label(&self.ctx())
+                ),
+            });
+            return;
+        }
+        self.depth += 1;
         let (commands, text) = {
             let ctx = Ctx {
                 tick: self.state.tick,
@@ -361,22 +428,31 @@ impl<C: CharacterSet> Sim<C> {
         for cmd in commands {
             self.run_command(who, cmd, out);
         }
+        self.depth -= 1;
+    }
+
+    /// Drops whatever `who` was doing: movement, waits and conversations become stale.
+    fn interrupt(&mut self, who: VillagerId) {
+        let v = &mut self.state.villagers[who.index()];
+        v.generation += 1;
+        v.moving = None;
+        v.wait_until = None;
+        v.talk_until = None;
+        v.resume = None;
     }
 
     fn run_command(&mut self, who: VillagerId, cmd: Command, out: &mut Vec<Emitted>) {
         let tick = self.state.tick;
         match cmd {
             Command::Idle => {
-                let v = &mut self.state.villagers[who.index()];
-                v.moving = None;
-                v.generation += 1;
+                self.interrupt(who);
                 self.set_activity(who, "idle", out);
             }
             Command::Wait { ticks, activity } => {
+                self.interrupt(who);
                 let v = &mut self.state.villagers[who.index()];
-                v.moving = None;
-                v.generation += 1;
                 let generation = v.generation;
+                v.wait_until = Some(tick.plus(ticks));
                 self.set_activity(who, &activity, out);
                 self.state
                     .queue
@@ -412,6 +488,9 @@ impl<C: CharacterSet> Sim<C> {
         }
     }
 
+    /// Starts a conversation. Neither party's pending plan item or wait is cancelled: a
+    /// wait is deferred until the talk ends, and a plan item that fires mid-talk simply ends
+    /// this party's side of it.
     fn talk(
         &mut self,
         who: VillagerId,
@@ -424,26 +503,33 @@ impl<C: CharacterSet> Sim<C> {
         if with == who || with.index() >= self.state.villagers.len() {
             return;
         }
-        let ok = {
+        let reason = {
             let a = &self.state.villagers[who.index()];
             let b = &self.state.villagers[with.index()];
-            a.place == b.place
-                && a.moving.is_none()
-                && b.moving.is_none()
-                && a.activity != "talk"
-                && b.activity != "talk"
+            if a.place != b.place {
+                Some("not in the same place")
+            } else if a.moving.is_some() || b.moving.is_some() {
+                Some("one of them is walking")
+            } else if a.activity == "talk" || b.activity == "talk" {
+                Some("one of them is already talking")
+            } else if b.activity == "sleep" {
+                Some("the other is asleep")
+            } else {
+                None
+            }
         };
-        if !ok {
+        if let Some(reason) = reason {
             out.push(Emitted::Decided {
                 tick,
                 who,
                 text: format!(
-                    "wanted to talk with {} but could not (apart, walking, or busy talking)",
+                    "wanted to talk with {} but {reason}",
                     self.state.villagers[with.index()].name
                 ),
             });
             return;
         }
+        let end = tick.plus(minutes * TICKS_PER_MINUTE);
         out.push(Emitted::Talked {
             tick,
             who,
@@ -454,34 +540,28 @@ impl<C: CharacterSet> Sim<C> {
         for (me, other) in [(who, with), (with, who)] {
             let v = &mut self.state.villagers[me.index()];
             v.resume = Some(v.activity.clone());
-            v.generation += 1;
-            let generation = v.generation;
+            v.talk_until = Some(end);
             self.set_activity(me, "talk", out);
             self.state.queue.schedule(
-                tick.plus(minutes * crate::time::TICKS_PER_MINUTE),
+                end,
                 Event::TalkEnd {
                     who: me,
                     other,
                     topic: topic.clone(),
-                    generation,
                 },
             );
         }
         self.react(with, Trigger::TalkedTo { other: who, topic }, out);
     }
 
-    /// Whether a proximity trigger may fire for this pair now; records it if so.
+    /// Whether a proximity trigger of `kind` may fire for this pair now; records it if so.
     fn pair_ready(&mut self, kind: u8, a: VillagerId, b: VillagerId) -> bool {
-        let key = if a.0 <= b.0 {
-            (kind, a.0, b.0)
-        } else {
-            (kind, b.0, a.0)
-        };
+        let (lo, hi) = if a.0 <= b.0 { (a.0, b.0) } else { (b.0, a.0) };
         let now = self.state.tick;
-        match self.state.met.get(&key) {
+        match self.state.met.get(&(kind, lo, hi)) {
             Some(&last) if now.0.saturating_sub(last.0) < ENCOUNTER_COOLDOWN => false,
             _ => {
-                self.state.met.insert(key, now);
+                self.state.met.insert((kind, lo, hi), now);
                 true
             }
         }
@@ -506,24 +586,30 @@ impl<C: CharacterSet> Sim<C> {
     }
 
     /// `who` just came to rest: fire `Encounter` for every other resting villager with them.
+    /// An encounter also uses up the pair's passing cooldown, so arriving next to someone
+    /// does not fire both.
     fn encounters(&mut self, who: VillagerId, out: &mut Vec<Emitted>) {
-        let me = self.state.villagers[who.index()].clone();
-        let others: Vec<VillagerId> = self
-            .state
-            .villagers
-            .iter()
-            .enumerate()
-            .filter(|(i, v)| {
-                *i != who.index()
-                    && v.moving.is_none()
-                    && !unavailable(v)
-                    && !unavailable(&me)
-                    && self.together(&me, v)
-            })
-            .map(|(i, _)| VillagerId(u16::try_from(i).expect("few villagers")))
-            .collect();
+        let others: Vec<VillagerId> = {
+            let me = &self.state.villagers[who.index()];
+            if unavailable(me) {
+                return;
+            }
+            self.state
+                .villagers
+                .iter()
+                .enumerate()
+                .filter(|(i, v)| {
+                    *i != who.index()
+                        && v.moving.is_none()
+                        && !unavailable(v)
+                        && self.together(me, v)
+                })
+                .map(|(i, _)| VillagerId(u16::try_from(i).expect("few villagers")))
+                .collect()
+        };
         for other in others {
             if self.pair_ready(0, who, other) {
+                self.pair_ready(1, who, other);
                 self.react(who, Trigger::Encounter { other }, out);
                 self.react(other, Trigger::Encounter { other: who }, out);
             }
@@ -574,7 +660,7 @@ impl<C: CharacterSet> Sim<C> {
     fn resolve_target(&self, who: VillagerId, target: &Target) -> Option<Spot> {
         match target {
             Target::Place(p) => {
-                let place = &self.world.places[p.index()];
+                let place = self.world.places.get(p.index())?;
                 Some(Spot {
                     place: p.index(),
                     pos: place.arrival,
@@ -585,15 +671,15 @@ impl<C: CharacterSet> Sim<C> {
                 pos: *pos,
             }),
             Target::Object(o) => {
-                let obj = &self.world.objects[o.index()];
+                let obj = self.world.objects.get(o.index())?;
                 if obj.walkable {
                     return Some(Spot {
                         place: obj.place,
                         pos: obj.at,
                     });
                 }
-                // Nearest access tile to where the villager stands, by BFS from the villager
-                // when in the same place, else the first passable neighbour in N,E,S,W order.
+                // Nearest access tile to where the villager stands when in the same place,
+                // else the first passable neighbour in N, E, S, W order.
                 let v = &self.state.villagers[who.index()];
                 let candidates: Vec<Pos> = content::validate::neighbours(obj.at.x, obj.at.y)
                     .into_iter()
@@ -647,6 +733,14 @@ impl<C: CharacterSet> Sim<C> {
         }
     }
 
+    fn stuck(&mut self, who: VillagerId, reason: String, out: &mut Vec<Emitted>) {
+        let tick = self.state.tick;
+        self.interrupt(who);
+        self.set_activity(who, "idle", out);
+        out.push(Emitted::Stuck { tick, who, reason });
+        self.react(who, Trigger::Stuck, out);
+    }
+
     fn go_to(
         &mut self,
         who: VillagerId,
@@ -656,12 +750,7 @@ impl<C: CharacterSet> Sim<C> {
     ) {
         let tick = self.state.tick;
         let Some(dest) = self.resolve_target(who, target) else {
-            out.push(Emitted::Stuck {
-                tick,
-                who,
-                reason: "target has no reachable tile".into(),
-            });
-            self.react(who, Trigger::Stuck, out);
+            self.stuck(who, "target has no reachable tile".into(), out);
             return;
         };
         let here = {
@@ -672,51 +761,47 @@ impl<C: CharacterSet> Sim<C> {
             }
         };
         if here == dest {
-            let v = &mut self.state.villagers[who.index()];
-            v.moving = None;
-            v.generation += 1;
-            self.set_activity(who, &activity, out);
-            self.react(who, Trigger::Arrived, out);
-            self.encounters(who, out);
+            self.interrupt(who);
+            self.arrive(who, &activity, out);
             return;
         }
         let route = self
             .nav
             .route_filtered(&self.world, here, dest, |d| self.door_allowed(who, d));
         let Some(route) = route else {
-            out.push(Emitted::Stuck {
-                tick,
-                who,
-                reason: format!(
-                    "no route to {} ({}, {})",
-                    self.world.places[dest.place].id, dest.pos.x, dest.pos.y
-                ),
-            });
-            self.react(who, Trigger::Stuck, out);
+            let reason = format!(
+                "no route to {} ({}, {})",
+                self.world.places[dest.place].id, dest.pos.x, dest.pos.y
+            );
+            self.stuck(who, reason, out);
             return;
         };
         let eta = tick.plus(route.ticks());
-        let mut legs: Vec<(PlaceId, Pos, Option<u16>)> = route
+        let mut legs: Vec<PlannedLeg> = route
             .legs
             .iter()
-            .map(|l| {
-                (
-                    PlaceId(u16::try_from(l.place).expect("few places")),
-                    l.to,
-                    l.door.map(|d| u16::try_from(d).expect("few doors")),
-                )
+            .map(|l| PlannedLeg {
+                place: PlaceId(u16::try_from(l.place).expect("few places")),
+                to: l.to,
+                crossing: l.door.map(|d| Crossing {
+                    door: u16::try_from(d).expect("few doors"),
+                    reverse: l.door_reverse,
+                }),
             })
             .collect();
         let first = legs.remove(0);
-        let path =
-            nav::grid_path(&self.world, first.0.index(), here.pos, first.1).unwrap_or_default();
+        let Some(path) = nav::grid_path(&self.world, first.place.index(), here.pos, first.to)
+        else {
+            self.stuck(who, "no path inside the place".into(), out);
+            return;
+        };
+        self.interrupt(who);
         let v = &mut self.state.villagers[who.index()];
-        v.generation += 1;
         let generation = v.generation;
         v.moving = Some(Movement {
             legs,
             path: path.into_iter().skip(1).collect(),
-            door_after: first.2,
+            door_after: first.crossing,
             then: activity.clone(),
         });
         self.set_activity(who, "walking", out);
@@ -732,59 +817,75 @@ impl<C: CharacterSet> Sim<C> {
         );
     }
 
+    /// Reaching a destination: activity, the brain, encounters.
+    fn arrive(&mut self, who: VillagerId, activity: &str, out: &mut Vec<Emitted>) {
+        self.set_activity(who, activity, out);
+        self.react(who, Trigger::Arrived, out);
+        self.encounters(who, out);
+    }
+
     /// One movement step: advance a tile, cross a door at a leg's end, or arrive.
     fn step_movement(&mut self, who: VillagerId, out: &mut Vec<Emitted>) {
         let tick = self.state.tick;
-        let v = &mut self.state.villagers[who.index()];
-        let Some(m) = v.moving.as_mut() else { return };
+        let Some(mut m) = self.state.villagers[who.index()].moving.take() else {
+            return;
+        };
         let mut stepped = false;
         if !m.path.is_empty() {
             let next = m.path.remove(0);
+            let v = &mut self.state.villagers[who.index()];
             v.pos = next;
-            let (place, pos) = (v.place, v.pos);
             out.push(Emitted::Moved {
                 tick,
                 who,
-                place,
-                x: pos.x,
-                y: pos.y,
+                place: v.place,
+                x: next.x,
+                y: next.y,
             });
             stepped = true;
         }
         if m.path.is_empty() {
             // Leg finished. Cross a door if one is pending, then start the next leg.
-            if let Some(door) = m.door_after.take() {
+            if let Some(Crossing { door, reverse }) = m.door_after.take() {
+                if !self.door_allowed(who, usize::from(door)) {
+                    let name = self.world.doors[usize::from(door)].id.clone();
+                    self.stuck(who, format!("door {name} is closed"), out);
+                    return;
+                }
                 let d = &self.world.doors[usize::from(door)];
-                let (to_place, to) = if v.place.index() == d.from_place && v.pos == d.from {
-                    (d.to_place, d.to)
-                } else {
+                let (to_place, to) = if reverse {
                     (d.from_place, d.from)
+                } else {
+                    (d.to_place, d.to)
                 };
+                let v = &mut self.state.villagers[who.index()];
                 v.place = PlaceId(u16::try_from(to_place).expect("few places"));
                 v.pos = to;
-                let (place, pos) = (v.place, v.pos);
                 out.push(Emitted::Moved {
                     tick,
                     who,
-                    place,
-                    x: pos.x,
-                    y: pos.y,
+                    place: v.place,
+                    x: to.x,
+                    y: to.y,
                 });
             }
             if m.legs.is_empty() {
-                let activity = m.then.clone();
-                v.moving = None;
-                v.generation += 1;
-                self.set_activity(who, &activity, out);
-                self.react(who, Trigger::Arrived, out);
-                self.encounters(who, out);
+                let activity = m.then;
+                self.state.villagers[who.index()].generation += 1;
+                self.arrive(who, &activity, out);
                 return;
             }
-            let (place, to, door_after) = m.legs.remove(0);
-            let path = nav::grid_path(&self.world, place.index(), v.pos, to).unwrap_or_default();
+            let next = m.legs.remove(0);
+            let from = self.state.villagers[who.index()].pos;
+            let Some(path) = nav::grid_path(&self.world, next.place.index(), from, next.to) else {
+                self.stuck(who, "no path inside the place".into(), out);
+                return;
+            };
             m.path = path.into_iter().skip(1).collect();
-            m.door_after = door_after;
+            m.door_after = next.crossing;
         }
+        let v = &mut self.state.villagers[who.index()];
+        v.moving = Some(m);
         let generation = v.generation;
         self.state.queue.schedule(
             tick.plus(WALK_TICKS_PER_TILE),
@@ -809,18 +910,18 @@ impl<C: CharacterSet> Sim<C> {
                 &s.markers,
                 &s.characters,
             )),
-            hash_of(&s.inputs),
+            hash_of(&(&s.inputs, s.next_input_seq)),
         )
     }
 
     #[must_use]
     pub fn snapshot(&self) -> Vec<u8> {
-        snapshot::encode(&self.state)
+        snapshot::encode(&self.state, C::LAYOUT_VERSION)
     }
 
     /// Restores a snapshot against the same content it was made from.
     pub fn restore(bytes: &[u8], content: Content) -> Result<Sim<C>, SimError> {
-        let state: SimState<C> = snapshot::decode(bytes)?;
+        let state: SimState<C> = snapshot::decode(bytes, C::LAYOUT_VERSION)?;
         if state.content_hash != content_hash(&content) {
             return Err(SimError::ContentMismatch);
         }
@@ -831,14 +932,9 @@ impl<C: CharacterSet> Sim<C> {
             world,
             nav,
             state,
-            startup: Vec::new(),
+            depth: 0,
         })
     }
-}
-
-/// Asleep or mid-conversation: no proximity triggers to or about them.
-fn unavailable(v: &VillagerState) -> bool {
-    matches!(v.activity.as_str(), "sleep" | "talk")
 }
 
 /// Where a villager begins: the access tile of its bed, else place 0's arrival.

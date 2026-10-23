@@ -34,6 +34,7 @@ impl Sim {
     /// A new town from content JSON (the output of `sim-tools bundle`).
     #[wasm_bindgen(constructor)]
     pub fn new(seed_lo: u32, seed_hi: u32, content_json: &str) -> Result<Sim, JsError> {
+        console_error_panic_hook::set_once();
         let content = content::load_str(content_json).map_err(|e| JsError::new(&e.to_string()))?;
         let problems = content::validate(&content);
         if problems
@@ -50,6 +51,7 @@ impl Sim {
     }
 
     pub fn restore(bytes: &[u8], content_json: &str) -> Result<Sim, JsError> {
+        console_error_panic_hook::set_once();
         let content = content::load_str(content_json).map_err(|e| JsError::new(&e.to_string()))?;
         let inner = sim::Sim::restore(bytes, content).map_err(|e| JsError::new(&e.to_string()))?;
         Ok(Sim { inner })

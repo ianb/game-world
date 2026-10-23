@@ -14,12 +14,11 @@ pub enum Event {
     Arrive { who: VillagerId, generation: u32 },
     /// A `Wait` elapsed. Stale if `generation` no longer matches.
     Waited { who: VillagerId, generation: u32 },
-    /// A conversation ends for `who`. Stale if `generation` no longer matches.
+    /// A conversation ends for `who`. Stale unless `who.talk_until` is exactly this tick.
     TalkEnd {
         who: VillagerId,
         other: VillagerId,
         topic: String,
-        generation: u32,
     },
     /// An object's occupant released it.
     ObjectFree { object: ObjectId },

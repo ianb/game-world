@@ -3,4 +3,9 @@ import type { InputKind } from "./InputKind";
 import type { Source } from "./Source";
 import type { Tick } from "./Tick";
 
-export type Input = { tick: Tick, source: Source, kind: InputKind, };
+export type Input = { tick: Tick, source: Source, kind: InputKind, 
+/**
+ * Assigned by the sim when the input is accepted; 0 when submitted. Orders inputs
+ * for the same tick and makes the log replayable.
+ */
+seq: number, };

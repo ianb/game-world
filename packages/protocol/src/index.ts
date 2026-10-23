@@ -10,7 +10,11 @@ export type { Emitted, Input, VillagerView, WorldView, ClockView };
 export type { InputKind } from "./generated/InputKind";
 export type { Source } from "./generated/Source";
 export type { Calendar } from "./generated/Calendar";
+export type { Season } from "./generated/Season";
+export type { Weekday } from "./generated/Weekday";
+export type { TimeOfDay } from "./generated/TimeOfDay";
 export type { Cell } from "./generated/Cell";
+export type { PlaceKind } from "./generated/PlaceKind";
 export type { PlaceView } from "./generated/PlaceView";
 export type { ObjectView } from "./generated/ObjectView";
 export type { DoorView } from "./generated/DoorView";
@@ -22,18 +26,19 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 5;
+export const PROTOCOL_VERSION = 6;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;
 export const TICKS_PER_DAY = 86_400;
 
-/** The subset of the wasm-bindgen module this wrapper needs. */
+/** The wasm-bindgen module as this wrapper uses it. `Sim.restore` is a static method. */
 export interface WasmModule {
   protocol_version(): number;
-  Sim: new (seedLo: number, seedHi: number, contentJson: string) => WasmSim;
-  // Static method on the class is exposed as a plain function by wasm-bindgen.
-  // Called as `Sim.restore` in the bundler/nodejs output.
+  Sim: {
+    new (seedLo: number, seedHi: number, contentJson: string): WasmSim;
+    restore(bytes: Uint8Array, contentJson: string): WasmSim;
+  };
 }
 
 export interface WasmSim {
@@ -55,16 +60,26 @@ export interface WasmSim {
 export class ProtocolMismatch extends Error {
   constructor(found: number) {
     super(`sim protocol version ${found}, wrapper expects ${PROTOCOL_VERSION}`);
+    this.name = "ProtocolMismatch";
+  }
+}
+
+/** The wasm instance trapped (a Rust panic). Its memory may be torn; make a new one. */
+export class SimDead extends Error {
+  constructor(cause: unknown) {
+    super(`sim instance is dead after a trap: ${String(cause)}`);
+    this.name = "SimDead";
   }
 }
 
 /** The interface the viewer depends on. A remote (server-backed) implementation later
- * satisfies the same shape. */
+ * satisfies the same shape; only the local one can `load` synchronously. */
 export interface Sim {
   readonly tick: number;
   stepUntil(tick: number): Emitted[];
   applyInput(input: Input): void;
   snapshot(): Uint8Array;
+  load(bytes: Uint8Array): void;
   hash(): string;
   hashParts(): string[];
   world(): WorldView;
@@ -75,52 +90,98 @@ export interface Sim {
   placeIds(): string[];
 }
 
-export class LocalSim implements Sim {
-  private readonly inner: WasmSim;
+function assertProtocol(wasm: WasmModule): void {
+  const found = wasm.protocol_version();
+  if (found !== PROTOCOL_VERSION) throw new ProtocolMismatch(found);
+}
 
-  constructor(wasm: WasmModule, seed: number, contentJson: string) {
-    const found = wasm.protocol_version();
-    if (found !== PROTOCOL_VERSION) throw new ProtocolMismatch(found);
-    const seedLo = seed >>> 0;
-    const seedHi = Math.floor(seed / 2 ** 32) >>> 0;
-    this.inner = new wasm.Sim(seedLo, seedHi, contentJson);
+/** Splits a non-negative safe integer seed into the two u32 halves the facade takes. */
+export function splitSeed(seed: number): [lo: number, hi: number] {
+  if (!Number.isSafeInteger(seed) || seed < 0) {
+    throw new RangeError(`seed must be a non-negative safe integer, got ${seed}`);
+  }
+  return [seed % 2 ** 32, Math.floor(seed / 2 ** 32)];
+}
+
+export class LocalSim implements Sim {
+  private inner: WasmSim;
+  private dead: SimDead | null = null;
+
+  private constructor(
+    private readonly wasm: WasmModule,
+    private readonly contentJson: string,
+    inner: WasmSim,
+  ) {
+    this.inner = inner;
+  }
+
+  static create(wasm: WasmModule, seed: number, contentJson: string): LocalSim {
+    assertProtocol(wasm);
+    const [lo, hi] = splitSeed(seed);
+    return new LocalSim(wasm, contentJson, new wasm.Sim(lo, hi, contentJson));
+  }
+
+  static restore(wasm: WasmModule, bytes: Uint8Array, contentJson: string): LocalSim {
+    assertProtocol(wasm);
+    return new LocalSim(wasm, contentJson, wasm.Sim.restore(bytes, contentJson));
+  }
+
+  /** Runs a facade call; a wasm trap marks this instance dead for every later call. */
+  private guard<T>(f: () => T): T {
+    if (this.dead) throw this.dead;
+    try {
+      return f();
+    } catch (e) {
+      if (e instanceof WebAssembly.RuntimeError) {
+        this.dead = new SimDead(e);
+        throw this.dead;
+      }
+      throw e;
+    }
   }
 
   get tick(): number {
-    return this.inner.tick();
+    return this.guard(() => this.inner.tick());
   }
   stepUntil(tick: number): Emitted[] {
-    return this.inner.step_until(tick) as Emitted[];
+    return this.guard(() => this.inner.step_until(tick) as Emitted[]);
   }
   applyInput(input: Input): void {
-    this.inner.apply_input(input);
+    this.guard(() => this.inner.apply_input(input));
   }
   snapshot(): Uint8Array {
-    return this.inner.snapshot();
+    return this.guard(() => this.inner.snapshot());
+  }
+  /** Replaces this instance's state with a snapshot made from the same content. */
+  load(bytes: Uint8Array): void {
+    const next = this.wasm.Sim.restore(bytes, this.contentJson);
+    this.inner.free();
+    this.inner = next;
+    this.dead = null;
   }
   hash(): string {
-    return this.inner.hash();
+    return this.guard(() => this.inner.hash());
   }
   hashParts(): string[] {
-    return this.inner.hash_parts();
+    return this.guard(() => this.inner.hash_parts());
   }
   world(): WorldView {
-    return this.inner.world() as WorldView;
+    return this.guard(() => this.inner.world() as WorldView);
   }
   villagers(): VillagerView[] {
-    return this.inner.villagers() as VillagerView[];
+    return this.guard(() => this.inner.villagers() as VillagerView[]);
   }
   clock(): ClockView {
-    return this.inner.clock() as ClockView;
+    return this.guard(() => this.inner.clock() as ClockView);
   }
   renderPlace(id: string): string {
-    return this.inner.render_place(id);
+    return this.guard(() => this.inner.render_place(id));
   }
   whereIsEveryone(): string {
-    return this.inner.where_is_everyone();
+    return this.guard(() => this.inner.where_is_everyone());
   }
   placeIds(): string[] {
-    return this.inner.place_ids();
+    return this.guard(() => this.inner.place_ids());
   }
   free(): void {
     this.inner.free();

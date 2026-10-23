@@ -222,6 +222,9 @@ pub const ENCOUNTER_RANGE: u16 = 6;
 /// All characters in a town. Implemented once per town by the `characters` crate with a
 /// typed struct per villager; the sim stays generic over it.
 pub trait CharacterSet: Clone + Debug + Serialize + DeserializeOwned {
+    /// Bump whenever any character struct changes shape, so old snapshots are refused.
+    const LAYOUT_VERSION: u32;
+
     /// Initial private state, built from content.
     fn new(content: &Content, world: &World) -> Self;
 
@@ -249,6 +252,8 @@ pub trait CharacterSet: Clone + Debug + Serialize + DeserializeOwned {
 pub struct DataCharacters;
 
 impl CharacterSet for DataCharacters {
+    const LAYOUT_VERSION: u32 = 1;
+
     fn new(_content: &Content, _world: &World) -> Self {
         DataCharacters
     }

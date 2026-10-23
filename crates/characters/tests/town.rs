@@ -127,6 +127,7 @@ fn golden_hash_after_a_week_matches_the_wasm_smoke() {
         tick: at(3, 12, 0),
         source: Source::Player(0),
         kind: InputKind::Marker("midweek".into()),
+        seq: 0,
     })
     .unwrap();
     sim.step_until(Tick(7 * TICKS_PER_DAY)).unwrap();
@@ -168,4 +169,27 @@ fn villagers_greet_talk_and_remember() {
         assert_ne!(v.activity, "talk", "{}", views::where_is_everyone(&sim));
     }
     assert!(events.iter().all(|e| !matches!(e, Emitted::Stuck { .. })));
+}
+
+#[test]
+fn a_conversation_defers_a_wait_instead_of_cancelling_it() {
+    // Pip roams in wait loops all afternoon. The noon talk with Mara must not leave him
+    // stranded: after it ends he keeps roaming (a Waited fires and he moves again).
+    let mut sim: Sim<Town> = Sim::new(7, town());
+    sim.step_until(at(0, 12, 0)).unwrap();
+    let events = sim.step_until(at(0, 13, 30)).unwrap();
+    let pip = sim.ctx().villager_id("pip").unwrap();
+    let talked = events.iter().any(
+        |e| matches!(e, Emitted::Talked { who, topic, .. } if *who == pip && topic == "sweets"),
+    );
+    assert!(talked, "{}", views::itinerary(&sim, pip, &events));
+    let roam_departures_after = events
+        .iter()
+        .filter(|e| matches!(e, Emitted::Departed { who, activity, tick, .. } if *who == pip && activity == "roam" && *tick > at(0, 12, 30)))
+        .count();
+    assert!(
+        roam_departures_after >= 2,
+        "{}",
+        views::itinerary(&sim, pip, &events)
+    );
 }

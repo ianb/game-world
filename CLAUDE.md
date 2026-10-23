@@ -9,11 +9,12 @@ order). Research reports live in `docs/research/`.
 
 ## Commands
 
-`just check` runs everything CI runs: format, clippy with `-D warnings`,
-tests, insta snapshots, the wasm32 check, the generated-types drift check,
-and the TypeScript typecheck, contract test and viewer build. Run it before
-every commit. If `just` or the cargo tools are missing, run
-`scripts/setup.sh` first. `just viewer-smoke` drives the built page in
+`just check` runs format, clippy with `-D warnings`, the test suite with
+insta in check mode, the wasm32 check, the generated-files drift check, the
+wasm hash smoke in Node, and the TypeScript typecheck, contract test and
+viewer build. CI runs `just check viewer-smoke`, which adds the headless
+browser smoke. Run `just check` before every commit. If `just` or the cargo
+tools are missing, run `scripts/setup.sh` first. `just viewer-smoke` drives the built page in
 headless Chromium and prints the scene dump; `just wasm-smoke` runs a week
 in Node and compares the hash with the native golden.
 
@@ -47,11 +48,13 @@ The sim is a pure function of (content, seed, inputs). Enforced by
 Boundary types live in `crates/sim/src/protocol.rs`. They are integer-only,
 carry no `u64`, `usize`, `HashMap` or floats, and use no `serde(with)`.
 `PROTOCOL_VERSION` bumps on any change, and `PROTOCOL_VERSION` in
-`packages/protocol/src/index.ts` must match. Generated TypeScript under
-`packages/protocol/src/generated/` is never hand-edited: run `just
-gen-types` and commit the result. The fixture `fixtures/day0-seed1.json`
-is regenerated with `cargo run -p tools -- events` whenever emitted events
-change; both the Rust test and the vitest contract test check it.
+`packages/protocol/src/index.ts` must match. Generated files are never
+hand-edited: `packages/protocol/src/generated/` (ts-rs) and
+`schemas/content.schema.json` (schemars) are written by `just gen-types`,
+committed, and diff-checked. The test run regenerates them as a side effect.
+The fixture `fixtures/day0-seed1.json` is regenerated with
+`cargo run -p tools -- events` whenever emitted events change; both the Rust
+test and the vitest contract test check it.
 
 ## Prose
 

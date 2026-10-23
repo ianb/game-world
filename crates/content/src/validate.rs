@@ -60,6 +60,7 @@ pub fn validate(content: &Content) -> Vec<ContentError> {
         return r.errors;
     }
     let world = compile(content);
+    check_openings(&world, &mut r);
     check_doors(&world, &mut r);
     check_reachability(&world, &mut r);
     check_objects(&world, &mut r);
@@ -206,9 +207,17 @@ fn check_buildings(content: &Content, r: &mut Report) {
         }
     }
 
+    // Footprints include walls. Two buildings may share a wall line, so the test is whether
+    // either footprint reaches into the other's interior (its footprint minus the walls).
+    let interior = |f: &Rect| Rect {
+        x: f.x + 1,
+        y: f.y + 1,
+        w: f.w.saturating_sub(2),
+        h: f.h.saturating_sub(2),
+    };
     for (i, (a_id, a_zone, a)) in footprints.iter().enumerate() {
         for (b_id, b_zone, b) in footprints.iter().skip(i + 1) {
-            if a_zone == b_zone && a.overlaps(b) {
+            if a_zone == b_zone && (a.overlaps(&interior(b)) || b.overlaps(&interior(a))) {
                 r.error(
                     format!("buildings/{a_id}"),
                     format!("footprint overlaps building {b_id}"),
@@ -218,6 +227,7 @@ fn check_buildings(content: &Content, r: &mut Report) {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 fn check_floor(b: &Building, f: &Floor, r: &mut Report) {
     let subj = |s: &str| format!("buildings/{}: floor {}: {s}", b.id, f.id);
     let mut room_ids = BTreeSet::new();
@@ -242,6 +252,14 @@ fn check_floor(b: &Building, f: &Floor, r: &mut Report) {
                     subj(&format!("room {}", a.id)),
                     format!("overlaps room {}", bb.id),
                 );
+            } else if a.rect.with_walls().overlaps(&bb.rect) {
+                r.error(
+                    subj(&format!("room {}", a.id)),
+                    format!(
+                        "touches room {}; leave one wall tile between rooms, or make them one room",
+                        bb.id
+                    ),
+                );
             }
         }
     }
@@ -260,15 +278,24 @@ fn check_floor(b: &Building, f: &Floor, r: &mut Report) {
                 );
             }
         }
-        // The opening must be a wall tile of every room it names.
+        // The opening must be a wall tile of every room it names, and not a corner.
         for id in &o.between {
             if let Some(room) = f.rooms.iter().find(|rm| &rm.id == id) {
-                let on_wall = room.rect.with_walls().contains(o.at.x, o.at.y)
-                    && !room.rect.contains(o.at.x, o.at.y);
+                let walls = room.rect.with_walls();
+                let on_wall = walls.contains(o.at.x, o.at.y) && !room.rect.contains(o.at.x, o.at.y);
                 if !on_wall {
                     r.error(
                         subj(&format!("opening at {:?}", o.at)),
                         format!("not on a wall of room {id}"),
+                    );
+                    continue;
+                }
+                let corner_x = o.at.x == walls.x || o.at.x + 1 == walls.right();
+                let corner_y = o.at.y == walls.y || o.at.y + 1 == walls.bottom();
+                if corner_x && corner_y {
+                    r.error(
+                        subj(&format!("opening at {:?}", o.at)),
+                        format!("on a corner of room {id}; nothing can pass"),
                     );
                 }
             }
@@ -305,6 +332,29 @@ fn check_floor(b: &Building, f: &Floor, r: &mut Report) {
             subj("arrival"),
             format!("{:?} is not inside a room", f.arrival),
         );
+    }
+}
+
+/// Every opening must have passable tiles on two opposite sides (it is a gap in a wall).
+fn check_openings(world: &World, r: &mut Report) {
+    for (pi, p) in world.places.iter().enumerate() {
+        for y in 0..p.height {
+            for x in 0..p.width {
+                if p.cell(x, y) != Cell::Opening {
+                    continue;
+                }
+                let north = world.passable(pi, x, y.wrapping_sub(1));
+                let south = world.passable(pi, x, y + 1);
+                let west = world.passable(pi, x.wrapping_sub(1), y);
+                let east = world.passable(pi, x + 1, y);
+                if !((north && south) || (west && east)) {
+                    r.error(
+                        format!("place {}", p.id),
+                        format!("opening at ({x}, {y}) does not connect two passable tiles"),
+                    );
+                }
+            }
+        }
     }
 }
 
@@ -621,11 +671,11 @@ fn check_villagers(content: &Content, world: &World, r: &mut Report) {
             }
         }
     }
-    let mut bed_owner_count: BTreeMap<&str, usize> = BTreeMap::new();
     for o in world.objects.iter().filter(|o| o.kind == "bed") {
-        if let Some(owner) = &o.owner {
-            *bed_owner_count.entry(owner.as_str()).or_default() += 1;
-            if !content.villagers.iter().any(|v| &v.id == owner) {
+        if let Some(owner) = &o.owner
+            && !content.villagers.iter().any(|v| &v.id == owner)
+        {
+            {
                 r.warn(
                     format!("buildings/{}: object {}", o.building, o.id),
                     format!("owner {owner:?} is not a villager"),

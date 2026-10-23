@@ -14,7 +14,13 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 await page.goto(url, { waitUntil: "networkidle" });
-await page.waitForFunction(() => typeof window.__scene === "function");
+try {
+  await page.waitForFunction(() => typeof window.__scene === "function", undefined, { timeout: 15_000 });
+} catch (e) {
+  console.error("page never exposed __scene;", errors.length ? `errors: ${errors.join("; ")}` : String(e));
+  await browser.close();
+  process.exit(1);
+}
 const first = await page.evaluate(() => window.__scene());
 await page.waitForTimeout(1500);
 const second = await page.evaluate(() => window.__scene());

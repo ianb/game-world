@@ -31,7 +31,7 @@ Mara
   21:37 sleep
   00:00 [plan: 06:00 cook @ stove_house; 06:40 bake @ oven_bakery; 09:00 tend-shop @ counter_bakery; 13:00 eat @ table_house; 14:00 tend-shop @ counter_bakery; 19:00 drink @ table_tavern_1; 21:30 sleep @ bed_mara]
 Tom
-  07:30 leaves for eat, eta 07:33
+  07:30 leaves for eat, eta 07:32
   07:32 eat
   10:30 leaves for fish, eta 10:36
   10:36 fish
@@ -53,7 +53,7 @@ Tom
   20:30 greets Pip
   21:35 [passing Mara -> greet Mara]
   21:35 greets Mara
-  23:00 leaves for sleep, eta 23:03
+  23:00 leaves for sleep, eta 23:02
   23:02 sleep
   00:00 [plan: 07:30 eat @ table_house; 10:00 tend-bar @ bar_tavern; 19:30 tend-bar for 30m; 22:00 close-up @ bar_tavern; 23:00 sleep @ bed_tom]
 Mara { batches_baked: 7, pastries_delivered: 1, fish_stories_heard: 0 }

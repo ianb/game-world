@@ -2,4 +2,4 @@
 source: crates/characters/tests/town.rs
 expression: sim.hash().hex()
 ---
-aff13efd65a65b8d
+fe750f454a28ddbf

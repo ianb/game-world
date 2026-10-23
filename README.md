@@ -40,8 +40,8 @@ views, and a wasm facade whose Node smoke test matches the native hash.
 On top of it: generated TypeScript types with a drift check, a protocol
 package wrapping the wasm behind a `Sim` interface, a vitest contract test
 against a committed fixture, a text viewer in the browser driven by
-Playwright in CI, and the first two villagers written as Rust modules
-(`crates/characters`). `just check` runs it all; `cargo run -p tools -- day`
+Playwright in CI, and the first three placeholder villagers written as Rust modules
+(`crates/characters`), who greet, talk and remember. `just check` runs it all; `cargo run -p tools -- day`
 shows a day in the town. Next: more villagers and buildings, then the
 renderer spike (see [docs/design/what-remains.md](docs/design/what-remains.md)).
 
@@ -88,7 +88,7 @@ code slice (repo setup, discrete-event time with a calendar, places,
 buildings, validators, views, then villagers on schedules) is unblocked.
 Decided 2026-10-23: the simulation is Rust (compiled to wasm for the
 browser), the viewer is TypeScript, web first and mobile probable. The
-Rust stack report lays out the workspace, crate versions, boundary protocol,
-CI checklist and a first week of work. The viewer library (PixiJS as
-renderer, Phaser 4 as the alternative) is decided by a week-two spike.
-Nothing blocks starting the crate.
+Rust stack report lays out the workspace, crate versions, boundary protocol
+and CI checklist. The viewer library (PixiJS as renderer, Phaser 4 as the
+alternative) is decided by a spike that needs a resolution and tile-size
+call. The cast and town are placeholders until Ian's own.

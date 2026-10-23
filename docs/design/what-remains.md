@@ -58,10 +58,9 @@ engine would point at Phaser 4 or Godot instead).
   wasm export for the browser.
 - Renderer: see above. Whatever is chosen sits behind the same interface
   and consumes the sim's event stream; the sim never learns which.
-- Layout: a Cargo workspace (`sim`, `content` as serde data with schemas,
-  `tools` as Rust binaries for views, validators and the playtest harness,
-  `sim-wasm` bindings) beside a pnpm workspace (`web` viewer, generated
-  types). One top-level build entry point.
+- Layout: a Cargo workspace (`content`, `sim`, `characters`, `tools`,
+  `sim-wasm`) beside a pnpm workspace (`packages/protocol`,
+  `packages/sim-wasm`, `packages/viewer`). `just` is the one entry point.
 - Deployment: static files on Cloudflare Pages. No server until something
   needs one. Keep `sim` free of browser APIs so a Durable Object can run it
   later.
@@ -76,12 +75,13 @@ The defaults below for clock speed and day span still stand.
 - Tick length. Default: one tick is one game-second, with 60 ticks per
   game-minute; schedules are written in minutes, movement in ticks.
 - Clock speed. Stardew runs a game day (6:00 to 2:00) in about 14 real
-  minutes. Default: one game-minute per real second, tunable.
+  minutes. The text viewer defaults to six game-minutes per real second with
+  a speed ladder; the real value is a tuning call for the renderer.
 - Day span and sleep. Default: the clock runs 6:00 to midnight; the player
   sleeping or the clock passing midnight ends the day; NPC days are computed
   at dawn as in Stardew.
-- Calendar. Default: days of the week only, so schedules can vary by
-  weekday. Seasons and festivals later.
+- Calendar: built. Weekdays, four seasons of 28 days, years. Schedules key
+  on day patterns; festivals later.
 - Determinism: the sim never reads real time; the renderer feeds ticks.
 
 ## 4. Movement and space (now)
@@ -246,7 +246,7 @@ the first town (house with detached upstairs, bakery, tavern, square),
 pathfinding with the travel-time matrix, villagers on baseline schedules
 with movement through doors, the `CharacterSet` interface with `Ctx` and
 commands, text views, `sim-tools` (validate, render, doors, travel-matrix,
-route, day, bundle), and the `sim-wasm` facade with a Node smoke test that
+route, day, where, events, png, bundle), and the `sim-wasm` facade with a Node smoke test that
 matches the native weekly hash. Also done the same day: ts-rs
 type generation with a drift check, the TypeScript protocol package wrapping
 the wasm behind a `Sim` interface, the vitest contract test against a
@@ -260,8 +260,7 @@ conversations, dialogue content.
 
 ## Suggested order
 
-1. Repo setup: pnpm workspace, `sim` and `tools` packages, vitest,
-   `CLAUDE.md`.
+1. Repo setup (done): Cargo and pnpm workspaces, `just check`, CI.
 2. Time, places, rooms, doors, buildings, the compiler to tiles, the
    validators, the views.
 3. Three buildings and a square; the travel-time matrix and itinerary.

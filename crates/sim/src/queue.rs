@@ -1,5 +1,10 @@
-//! The discrete-event heap. Total order by `(tick, seq)`, so no two events ever tie, and
-//! serialized as a sorted list so a restored queue hashes the same as a live one.
+//! The discrete-event heap. Total order by `(tick, phase, seq)`, so no two events ever tie,
+//! and serialized as a sorted list so a restored queue hashes the same as a live one.
+//!
+//! Phase 0 is inputs, ordered by the input's own sequence number (assigned when the sim
+//! accepts it, stored in the log), so a replayed log reproduces the same order however
+//! early or late the client submitted each input. Phase 1 is internal events in scheduling
+//! order. Inputs for a tick therefore always apply before that tick's internal events.
 use crate::event::Event;
 use crate::time::Tick;
 use serde::{Deserialize, Serialize};
@@ -9,6 +14,8 @@ use std::collections::BinaryHeap;
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Serialize, Deserialize)]
 pub struct Scheduled {
     pub tick: Tick,
+    /// 0 = input, 1 = internal.
+    pub phase: u8,
     pub seq: u64,
     pub event: Event,
 }
@@ -46,11 +53,27 @@ impl From<EventQueue> for QueueRepr {
 }
 
 impl EventQueue {
+    /// Schedules an internal event (phase 1) in scheduling order.
     pub fn schedule(&mut self, tick: Tick, event: Event) -> u64 {
         let seq = self.next_seq;
         self.next_seq += 1;
-        self.heap.push(Reverse(Scheduled { tick, seq, event }));
+        self.heap.push(Reverse(Scheduled {
+            tick,
+            phase: 1,
+            seq,
+            event,
+        }));
         seq
+    }
+
+    /// Schedules an input (phase 0) under the sequence number stored in the input log.
+    pub fn schedule_input(&mut self, tick: Tick, input_seq: u64, event: Event) {
+        self.heap.push(Reverse(Scheduled {
+            tick,
+            phase: 0,
+            seq: input_seq,
+            event,
+        }));
     }
 
     /// The earliest scheduled tick, if any.
@@ -106,10 +129,11 @@ mod tests {
                 object: crate::ids::ObjectId(0),
             },
         );
-        let order: Vec<(u32, u64)> = std::iter::from_fn(|| q.pop_due(Tick(10)))
-            .map(|s| (s.tick.0, s.seq))
+        q.schedule_input(Tick(5), 7, Event::DayRollover);
+        let order: Vec<(u32, u8, u64)> = std::iter::from_fn(|| q.pop_due(Tick(10)))
+            .map(|s| (s.tick.0, s.phase, s.seq))
             .collect();
-        assert_eq!(order, vec![(5, 1), (5, 2), (10, 0)]);
+        assert_eq!(order, vec![(5, 0, 7), (5, 1, 1), (5, 1, 2), (10, 1, 0)]);
     }
 
     #[test]

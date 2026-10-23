@@ -18,18 +18,16 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: just,cargo-nextest,cargo-insta,wasm-bindgen-cli@0.2.129
-      - run: just fmt-check
-      - run: just lint
-      - run: cargo nextest run --workspace --all-features
-      - run: cargo test --workspace --all-features --doc
-      - run: cargo insta test --workspace --all-features --unreferenced=reject
-      - run: just wasm-check
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - uses: pnpm/action-setup@v4
-      - run: just gen-types-check
-      - run: just wasm-smoke
-      - run: just ts
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install chromium
-      - run: just viewer-smoke
+      # One just invocation so shared prerequisites (build-wasm, ts) run once.
+      - run: just check viewer-smoke

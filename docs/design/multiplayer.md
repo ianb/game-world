@@ -27,17 +27,21 @@ The viewer depends on an interface, not on the wasm module:
 
 ```
 interface Sim {
-  stepUntil(tick): SimEvent[]      // or: subscribe(events)
-  applyInput(input: PlayerInput)   // input carries playerId; tick is assigned by the sim owner
+  stepUntil(tick): Emitted[]     // local: runs the sim; remote: drains events received so far
+  applyInput(input: Input)       // input carries its source; the sim owner assigns tick order
   snapshot(): Uint8Array
-  load(bytes: Uint8Array)
+  load(bytes: Uint8Array)        // local only; a remote viewer receives snapshots from the server
   hash(): string
 }
 ```
 
-`LocalSim` wraps the wasm build. `RemoteSim` wraps a WebSocket. The viewer
-and its tests do not know which one they have. Keeping this honest in
-single-player is the entire preparation cost.
+This is the shape of `Sim` in `packages/protocol/src/index.ts` today.
+`LocalSim` wraps the wasm build. A `RemoteSim` would wrap a WebSocket: the
+server steps, the client's `stepUntil` returns whatever events have arrived
+up to that tick, and input acceptance becomes asynchronous. The viewer
+already tolerates events arriving in batches, so the change is in the
+implementation, not the interface. Keeping this honest in single-player is
+the entire preparation cost.
 
 ## Hosting sketch
 

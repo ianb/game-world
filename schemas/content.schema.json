@@ -293,7 +293,7 @@
       ]
     },
     "Rect": {
-      "description": "`[x, y, width, height]` in tiles. For a room, the interior floor tiles; walls are derived\naround it.",
+      "description": "A rectangle in tiles (`x`, `y`, `w`, `h`). For a room, the interior floor tiles; walls\nare derived around it.",
       "type": "object",
       "properties": {
         "h": {

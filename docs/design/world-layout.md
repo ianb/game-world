@@ -163,8 +163,8 @@ Rules carried over from the research, restated for structured source:
 - Door tiles sit on a room edge, never inside a room's walkable interior.
   Arrival tiles are at least one tile inside the destination and off any
   door tile.
-- Place ids are stable paths (`bakery/upstairs`); a `formerIds` list is kept
-  on renames.
+- Place ids are stable paths (`bakery/upstairs`). A rename list for old ids
+  can be added when renames start happening.
 - Tile coordinates only. Pixels belong to the compiler.
 - Schedules name a place id plus a tile or object, never a building id.
 
@@ -180,8 +180,9 @@ export can come later if a person wants to open a map in an editor.
 
 ## The test-and-adjust loop
 
-Editing is editing text. Testing is running validators and renders in Node.
-The loop is edit, run, read, edit.
+Editing is editing JSON. Testing is running the validators and text views
+(`sim-tools validate`, `render`, `where`, `day`). The loop is edit, run,
+read, edit.
 
 Validators (fail the suite). Schema validation of the structured source
 comes first and catches the typo class the research worried about in ASCII

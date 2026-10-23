@@ -29,6 +29,28 @@ fn marker(tick: Tick, text: &str) -> Input {
         tick,
         source: Source::Player(0),
         kind: InputKind::Marker(text.into()),
+        seq: 0,
+    }
+}
+
+fn teleport(
+    tick: Tick,
+    source: Source,
+    who: sim::ids::VillagerId,
+    place: u16,
+    x: u16,
+    y: u16,
+) -> Input {
+    Input {
+        tick,
+        source,
+        kind: InputKind::Teleport {
+            who,
+            place: sim::ids::PlaceId(place),
+            x,
+            y,
+        },
+        seq: 0,
     }
 }
 
@@ -177,16 +199,9 @@ fn inputs_apply_in_order_and_bad_ones_are_rejected() {
             current: Tick(100)
         })
     );
-    sim.apply_input(Input {
-        tick: Tick(101),
-        source: Source::Player(3),
-        kind: InputKind::Teleport {
-            who: villager(&sim, "tom"),
-            x: 1,
-            y: 1,
-        },
-    })
-    .unwrap();
+    let tom = villager(&sim, "tom");
+    sim.apply_input(teleport(Tick(101), Source::Player(3), tom, 0, 20, 20))
+        .unwrap();
     let events = sim.step_until(Tick(101)).unwrap();
     assert!(
         events
@@ -246,4 +261,130 @@ proptest! {
         resumed.step_until(Tick((t + k) * 60)).unwrap();
         prop_assert_eq!(straight.hash(), resumed.hash());
     }
+}
+
+#[test]
+fn teleport_onto_a_wall_is_rejected_and_onto_ground_moves() {
+    let mut sim = new_sim(1);
+    let tom = villager(&sim, "tom");
+    sim.apply_input(teleport(Tick(10), Source::System, tom, 0, 4, 4))
+        .unwrap(); // a wall tile
+    sim.apply_input(teleport(Tick(10), Source::System, tom, 0, 20, 20))
+        .unwrap();
+    let events = sim.step_until(Tick(10)).unwrap();
+    assert!(events.iter().any(|e| matches!(e, Emitted::InputRejected { reason, .. } if reason.contains("not a passable tile"))));
+    let t = &sim.state().villagers[tom.index()];
+    assert_eq!((t.place.0, t.pos.x, t.pos.y), (0, 20, 20));
+}
+
+#[test]
+fn input_order_does_not_depend_on_when_inputs_were_submitted() {
+    // Early: all inputs queued before any internal event for their ticks exists.
+    let mut early = new_sim(5);
+    for t in [at(0, 6, 5), at(0, 9, 0), at(0, 13, 1)] {
+        early.apply_input(marker(t, "m")).unwrap();
+    }
+    early.step_until(at(1, 0, 0)).unwrap();
+    // Late: each input queued moments before its tick, after the day's events are queued.
+    let mut late = new_sim(5);
+    for t in [at(0, 6, 5), at(0, 9, 0), at(0, 13, 1)] {
+        late.step_until(t.minus(1)).unwrap();
+        late.apply_input(marker(t, "m")).unwrap();
+    }
+    late.step_until(at(1, 0, 0)).unwrap();
+    assert_eq!(
+        early.hash(),
+        late.hash(),
+        "{:?}",
+        early.hash().first_difference(&late.hash())
+    );
+    // And a replay of the recorded log from scratch matches too.
+    let mut replay = new_sim(5);
+    for input in &early.state().inputs {
+        replay
+            .apply_input(Input {
+                seq: 0,
+                ..input.clone()
+            })
+            .unwrap();
+    }
+    replay.step_until(at(1, 0, 0)).unwrap();
+    assert_eq!(early.hash(), replay.hash());
+}
+
+#[test]
+fn eta_matches_arrival() {
+    let mut sim = new_sim(2);
+    let events = sim.step_until(at(1, 0, 0)).unwrap();
+    let mut pending: std::collections::BTreeMap<u16, Tick> = std::collections::BTreeMap::new();
+    for e in &events {
+        match e {
+            Emitted::Departed { who, eta, .. } => {
+                pending.insert(who.0, *eta);
+            }
+            Emitted::Activity {
+                who,
+                activity,
+                tick,
+            } if activity != "walking" => {
+                if let Some(eta) = pending.remove(&who.0) {
+                    assert_eq!(
+                        *tick,
+                        eta,
+                        "{} arrived at {tick} but eta was {eta}",
+                        sim.state().villagers[who.index()].name
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+    assert!(pending.is_empty(), "every departure arrived");
+}
+
+/// Two planned items at the same minute both run.
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct Collider;
+
+impl sim::CharacterSet for Collider {
+    const LAYOUT_VERSION: u32 = 1;
+    fn new(_: &Content, _: &content::World) -> Self {
+        Collider
+    }
+    fn plan_day(
+        &mut self,
+        _who: sim::ids::VillagerId,
+        _ctx: &sim::Ctx<'_>,
+        _rng: &mut rand_pcg::Pcg32,
+    ) -> Vec<sim::Planned> {
+        vec![
+            sim::Planned {
+                at: sim::time::TimeOfDay::new(8, 0, 0),
+                command: sim::Command::Note("first".into()),
+            },
+            sim::Planned {
+                at: sim::time::TimeOfDay::new(8, 0, 0),
+                command: sim::Command::Wait {
+                    ticks: 60,
+                    activity: "second".into(),
+                },
+            },
+        ]
+    }
+}
+
+#[test]
+fn planned_items_at_the_same_minute_both_run() {
+    let mut sim: Sim<Collider> = Sim::new(1, town());
+    let events = sim.step_until(at(0, 8, 1)).unwrap();
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, Emitted::Activity { activity, .. } if activity == "second"))
+    );
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, Emitted::Decided { text, .. } if text.contains("note: first")))
+    );
 }

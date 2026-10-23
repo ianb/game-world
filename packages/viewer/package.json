@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc --noEmit -p .",
-    "test": "echo 'no viewer tests yet'"
+    "test": "node -e \"console.log('viewer: no unit tests; the Playwright smoke is just viewer-smoke')\""
   },
   "dependencies": {
     "@game-world/protocol": "workspace:*",

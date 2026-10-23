@@ -14,10 +14,11 @@ fmt-check:
 lint:
     cargo clippy --workspace --all-targets --all-features -- -D warnings
 
+# One run of the suite under nextest, with insta in check mode so a changed or stale
+# snapshot fails here as it does in CI.
 test:
-    cargo nextest run --workspace --all-features
+    cargo insta test --workspace --all-features --test-runner nextest --check --unreferenced=reject
     cargo test --workspace --all-features --doc
-    cargo insta test --workspace --all-features --check --unreferenced=reject
 
 # Review and accept insta snapshots locally; CI never writes them.
 snap:
@@ -25,9 +26,13 @@ snap:
 
 # The sim must compile for wasm with no ambient-randomness or wall-clock crates in the graph.
 wasm-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
     cargo check -p sim-wasm --target wasm32-unknown-unknown
-    @! cargo tree -p sim-wasm --target wasm32-unknown-unknown -e normal | grep -E 'getrandom|ahash|instant|web-time' \
-        || (echo "forbidden crate in the wasm dependency graph" && exit 1)
+    tree=$(cargo tree -p sim-wasm --target wasm32-unknown-unknown -e normal)
+    if grep -E 'getrandom|ahash|instant|web-time' <<< "$tree"; then
+        echo "forbidden crate in the wasm dependency graph"; exit 1
+    fi
 
 # Build the wasm package for the viewer (bundler) and for vitest (nodejs).
 build-wasm:
@@ -52,8 +57,12 @@ gen-types:
 # Fail if the committed bindings or schema do not match the Rust types. Untracked files
 # count as drift too.
 gen-types-check: gen-types
-    git add -N packages/protocol/src/generated schemas
-    git diff --exit-code --stat packages/protocol/src/generated schemas || (echo "generated files are stale: run just gen-types and commit" && exit 1)
+    #!/usr/bin/env bash
+    set -euo pipefail
+    untracked=$(git ls-files --others --exclude-standard packages/protocol/src/generated schemas)
+    if [ -n "$untracked" ] || ! git diff --exit-code --stat packages/protocol/src/generated schemas; then
+        echo "generated files are stale: run just gen-types and commit"; exit 1
+    fi
 
 # TypeScript: typecheck, the wasm contract test, and the viewer build. Needs build-wasm first.
 ts: build-wasm
@@ -65,10 +74,16 @@ ts: build-wasm
 # Serve the built viewer and drive it with headless Chromium; prints the scene dump.
 viewer-smoke: ts
     #!/usr/bin/env bash
-    set -u
-    (cd packages/viewer && pnpm exec vite preview --port 4173 --strictPort > /dev/null 2>&1) &
-    sleep 3
+    set -uo pipefail
+    log=target/viewer-preview.log
+    (cd packages/viewer && exec pnpm exec vite preview --port 4173 --strictPort) > "$log" 2>&1 &
+    server=$!
+    for _ in $(seq 1 50); do
+        if curl -sf -o /dev/null http://localhost:4173/; then break; fi
+        sleep 0.2
+    done
     node scripts/viewer-smoke.mjs http://localhost:4173/
     status=$?
-    pkill -f "vite preview --port 4173" > /dev/null 2>&1 || true
+    kill "$server" 2>/dev/null; wait "$server" 2>/dev/null
+    if [ "$status" -ne 0 ]; then echo "--- preview server log"; cat "$log"; fi
     exit $status

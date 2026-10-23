@@ -2,9 +2,11 @@
 //! door-to-door distances inside each place, then grid search inside the current place.
 //! Derived data, rebuilt from content, never part of a snapshot.
 //!
-//! Determinism: neighbours are visited N, E, S, W; door ends are numbered in declaration
-//! order but the route search is a shortest-path search with a total tie-break on node
-//! index, so declaration order cannot change the result (see the shuffle test).
+//! Determinism: neighbours are visited N, E, S, W, successor lists are sorted, and every
+//! cost is an integer, so the same inputs always give the same path. Door ends are numbered
+//! in declaration order; the shuffle test checks that order does not change the route.
+//! A door crossing costs nothing, matching movement, where the crossing happens in the same
+//! event as the last step of the leg.
 use crate::compile::World;
 use crate::model::Pos;
 use crate::validate::neighbours;
@@ -56,6 +58,8 @@ pub struct Leg {
     pub to: Pos,
     /// Door record index crossed at the end of this leg, if any.
     pub door: Option<usize>,
+    /// True when the crossing goes from the door's `to` end back to its `from` end.
+    pub door_reverse: bool,
     /// Tiles walked in this leg (0 when already there).
     pub tiles: u32,
 }
@@ -171,7 +175,7 @@ impl Nav {
                     let twin = ei ^ 1;
                     let may_cross = allow(end.door) && (!end.far || !door.one_way);
                     if may_cross {
-                        out.push((Node::End(twin), 1));
+                        out.push((Node::End(twin), 0));
                     }
                     // Walk to another end in the same place.
                     for &ej in &self.ends_by_place[spot.place] {
@@ -212,6 +216,7 @@ impl Nav {
                             from: cur.pos,
                             to: spot.pos,
                             door: Some(end.door),
+                            door_reverse: end.far,
                             tiles: walked,
                         });
                         cur = self.ends[ei ^ 1].1;
@@ -229,6 +234,7 @@ impl Nav {
                         from: cur.pos,
                         to: to.pos,
                         door: None,
+                        door_reverse: false,
                         tiles: walked,
                     });
                     i += 1;

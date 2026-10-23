@@ -6,8 +6,8 @@ use schemars::JsonSchema;
 #[cfg(feature = "schema")]
 use ts_rs::TS;
 
-/// `[x, y, width, height]` in tiles. For a room, the interior floor tiles; walls are derived
-/// around it.
+/// A rectangle in tiles (`x`, `y`, `w`, `h`). For a room, the interior floor tiles; walls
+/// are derived around it.
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
 #[cfg_attr(feature = "schema", ts(export))]

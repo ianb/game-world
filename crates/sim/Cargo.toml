@@ -22,6 +22,7 @@ schema = ["dep:ts-rs", "content/schema"]
 
 [dev-dependencies]
 insta.workspace = true
+rand_pcg.workspace = true
 proptest.workspace = true
 rstest.workspace = true
 

@@ -97,10 +97,11 @@ impl Tom {
                     (false, true) => "nobody here, but a pastry came by",
                     (false, false) => "nobody came",
                 };
-                vec![
-                    Command::Note(format!("mood {before} -> {} ({why})", self.mood)),
-                    wait_minutes(120, "tend-bar"),
-                ]
+                // No further wait: he keeps the `tend-bar` activity until the 22:00 item.
+                vec![Command::Note(format!(
+                    "mood {before} -> {} ({why})",
+                    self.mood
+                ))]
             }
             // A real conversation cheers him up a little. Greetings need no reply: the sim
             // fires Passing to both parties, so he greets on his own trigger.

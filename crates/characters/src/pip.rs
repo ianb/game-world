@@ -62,6 +62,17 @@ impl Pip {
                     vec![Command::Note("no bun today".into())]
                 }
             }
+            // An unroutable roam target: shrug and try somewhere else.
+            Trigger::Stuck => {
+                let town = ctx.place_id("town").expect("town exists");
+                match ctx.random_tile(town, content::Cell::Ground, rng) {
+                    Some(p) => vec![
+                        Command::Note("couldn't get there; trying elsewhere".into()),
+                        go_tile(ctx, "town", p.x, p.y, "roam"),
+                    ],
+                    None => vec![wait_minutes(5, "roam")],
+                }
+            }
             // Greets anyone passing, once per cooldown; the sim handles the pairing.
             Trigger::Passing { other } | Trigger::Encounter { other }
                 if activity_of(ctx, "pip") != "sleep" =>

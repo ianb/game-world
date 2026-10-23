@@ -6,15 +6,31 @@ use content::Pos;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+/// A door crossing at the end of a leg: door index, and whether the crossing goes from the
+/// door's `to` end back to its `from` end.
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub struct Crossing {
+    pub door: u16,
+    pub reverse: bool,
+}
+
+/// One leg of a planned walk still to come.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub struct PlannedLeg {
+    pub place: PlaceId,
+    pub to: Pos,
+    pub crossing: Option<Crossing>,
+}
+
 /// A planned walk: legs across places, the current leg's remaining tiles.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub struct Movement {
-    /// Remaining legs after the current one: (place, to, door to cross after).
-    pub legs: Vec<(PlaceId, Pos, Option<u16>)>,
+    /// Remaining legs after the current one.
+    pub legs: Vec<PlannedLeg>,
     /// Tiles still to step through in the current leg, in order.
     pub path: Vec<Pos>,
     /// Door to cross when the current leg ends.
-    pub door_after: Option<u16>,
+    pub door_after: Option<Crossing>,
     /// What to do on arrival.
     pub then: String,
 }
@@ -32,10 +48,14 @@ pub struct VillagerState {
     pub plan_generation: u32,
     pub activity: String,
     pub moving: Option<Movement>,
-    /// Today's remaining planned commands, by tick.
-    pub plan: BTreeMap<Tick, Command>,
+    /// Today's remaining planned commands, by tick, in the order they were planned.
+    pub plan: BTreeMap<Tick, Vec<Command>>,
     /// Tick of the last change of activity, for views.
     pub since: Tick,
     /// Activity to return to when a conversation ends.
     pub resume: Option<String>,
+    /// When the current conversation ends, if talking.
+    pub talk_until: Option<Tick>,
+    /// When the current `Wait` elapses, if waiting. A conversation defers it.
+    pub wait_until: Option<Tick>,
 }

@@ -1,6 +1,6 @@
 //! Inputs are the only way anything outside the sim affects it. Each carries provenance and
 //! is applied at the tick its owner assigned.
-use crate::ids::VillagerId;
+use crate::ids::{PlaceId, VillagerId};
 use crate::time::Tick;
 use serde::{Deserialize, Serialize};
 
@@ -23,8 +23,14 @@ pub enum InputKind {
     Noop,
     /// A human-readable marker that shows up in traces.
     Marker(String),
-    /// Debug: move a villager instantly. Rejected for non-system sources.
-    Teleport { who: VillagerId, x: u16, y: u16 },
+    /// Debug: move a villager instantly to a passable tile. Rejected for non-system sources
+    /// and for impassable targets.
+    Teleport {
+        who: VillagerId,
+        place: PlaceId,
+        x: u16,
+        y: u16,
+    },
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
@@ -34,4 +40,8 @@ pub struct Input {
     pub tick: Tick,
     pub source: Source,
     pub kind: InputKind,
+    /// Assigned by the sim when the input is accepted; 0 when submitted. Orders inputs
+    /// for the same tick and makes the log replayable.
+    #[serde(default)]
+    pub seq: u32,
 }

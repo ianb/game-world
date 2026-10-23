@@ -7,10 +7,11 @@
     <link rel="icon" href="data:," />
     <style>
       body { margin: 0; background: #111; color: #ddd; font: 14px/1.25 ui-monospace, monospace; }
-      header { padding: 8px 12px; background: #222; display: flex; gap: 16px; align-items: baseline; }
-      main { padding: 12px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
-      pre { margin: 0; white-space: pre; }
-      button { font: inherit; }
+      header { padding: 8px 12px; background: #222; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+      main { padding: 12px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); }
+      pre { margin: 0; white-space: pre; overflow-x: auto; }
+      h2 { font-size: 14px; margin: 8px 0 4px; color: #aaa; }
+      button { font: inherit; min-height: 44px; min-width: 64px; }
     </style>
   </head>
   <body>

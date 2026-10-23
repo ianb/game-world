@@ -11,7 +11,11 @@ pub fn render_place(world: &World, place: usize, overlay: &[(Pos, char)]) -> Str
     let mut rows: Vec<Vec<char>> = (0..p.height)
         .map(|y| (0..p.width).map(|x| p.cell(x, y).glyph()).collect())
         .collect();
-    for o in world.objects.iter().filter(|o| o.place == place) {
+    for o in world
+        .objects
+        .iter()
+        .filter(|o| o.place == place && p.in_bounds(o.at.x, o.at.y))
+    {
         let glyph = o.kind.chars().next().unwrap_or('?').to_ascii_lowercase();
         rows[usize::from(o.at.y)][usize::from(o.at.x)] = glyph;
     }
