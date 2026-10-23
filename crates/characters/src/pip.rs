@@ -6,7 +6,6 @@ use crate::toolbox::{Plan, activity_of, go_tile, pick, wait_minutes};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
-use sim::ids::VillagerId;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Pip {
@@ -73,9 +72,4 @@ impl Pip {
             _ => Vec::new(),
         }
     }
-}
-
-#[allow(dead_code)]
-fn _id(v: VillagerId) -> u16 {
-    v.0
 }

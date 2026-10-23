@@ -37,7 +37,8 @@ function draw(): void {
 let last = performance.now();
 let carry = 0;
 function frame(now: number): void {
-  const dt = (now - last) / 1000;
+  // Cap the catch-up after a hidden tab so a long absence does not freeze the page.
+  const dt = Math.min((now - last) / 1000, 1);
   last = now;
   if (!paused) {
     carry += dt * speed * TICKS_PER_MINUTE;

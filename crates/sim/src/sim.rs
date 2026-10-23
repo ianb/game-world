@@ -516,8 +516,8 @@ impl<C: CharacterSet> Sim<C> {
             .filter(|(i, v)| {
                 *i != who.index()
                     && v.moving.is_none()
-                    && v.activity != "talk"
-                    && me.activity != "talk"
+                    && !unavailable(v)
+                    && !unavailable(&me)
                     && self.together(&me, v)
             })
             .map(|(i, _)| VillagerId(u16::try_from(i).expect("few villagers")))
@@ -544,6 +544,7 @@ impl<C: CharacterSet> Sim<C> {
             .filter(|(i, v)| {
                 *i != who.index()
                     && v.place == place
+                    && !unavailable(v)
                     && v.pos.x.abs_diff(pos.x) + v.pos.y.abs_diff(pos.y) <= 1
             })
             .map(|(i, _)| VillagerId(u16::try_from(i).expect("few villagers")))
@@ -801,7 +802,13 @@ impl<C: CharacterSet> Sim<C> {
             hash_of(&(s.tick, s.content_hash, s.seed)),
             hash_of(&s.rng),
             hash_of(&s.queue),
-            hash_of(&(&s.villagers, s.day_rollovers, &s.markers, &s.characters)),
+            hash_of(&(
+                &s.villagers,
+                &s.met,
+                s.day_rollovers,
+                &s.markers,
+                &s.characters,
+            )),
             hash_of(&s.inputs),
         )
     }
@@ -827,6 +834,11 @@ impl<C: CharacterSet> Sim<C> {
             startup: Vec::new(),
         })
     }
+}
+
+/// Asleep or mid-conversation: no proximity triggers to or about them.
+fn unavailable(v: &VillagerState) -> bool {
+    matches!(v.activity.as_str(), "sleep" | "talk")
 }
 
 /// Where a villager begins: the access tile of its bed, else place 0's arrival.

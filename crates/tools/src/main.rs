@@ -101,6 +101,17 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
+    if !matches!(cli.command, Command::Validate) {
+        let errors: Vec<String> = validate(&content)
+            .into_iter()
+            .filter(|p| p.severity == content::validate::Severity::Error)
+            .map(|p| p.to_string())
+            .collect();
+        if !errors.is_empty() {
+            eprintln!("content has errors; run `validate`:\n{}", errors.join("\n"));
+            return ExitCode::from(2);
+        }
+    }
     match cli.command {
         Command::Validate => {
             let problems = validate(&content);

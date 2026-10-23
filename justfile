@@ -43,14 +43,17 @@ wasm-smoke: build-wasm
     node packages/sim-wasm/smoke.mjs target/content-bundle.json \
         "$(grep -v '^---' crates/characters/tests/snapshots/town__golden_hash_after_a_week_matches_the_wasm_smoke.snap | grep -v '^$' | grep -v '^source' | grep -v '^expression' | tail -1)"
 
-# Regenerate the TypeScript bindings from the Rust boundary types.
+# Regenerate the TypeScript bindings and the content JSON Schema from the Rust types.
 gen-types:
     rm -rf packages/protocol/src/generated
     cargo test -q -p sim --features schema export_bindings
+    cargo test -q -p content --features schema export_schema
 
-# Fail if the committed bindings do not match the Rust types.
+# Fail if the committed bindings or schema do not match the Rust types. Untracked files
+# count as drift too.
 gen-types-check: gen-types
-    git diff --exit-code --stat packages/protocol/src/generated || (echo "generated TypeScript is stale: run just gen-types and commit" && exit 1)
+    git add -N packages/protocol/src/generated schemas
+    git diff --exit-code --stat packages/protocol/src/generated schemas || (echo "generated files are stale: run just gen-types and commit" && exit 1)
 
 # TypeScript: typecheck, the wasm contract test, and the viewer build. Needs build-wasm first.
 ts: build-wasm

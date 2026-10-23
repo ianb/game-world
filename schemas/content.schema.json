@@ -1,0 +1,453 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Content",
+  "description": "Everything loaded from the content directory.",
+  "type": "object",
+  "properties": {
+    "buildings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Building"
+      }
+    },
+    "villagers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Villager"
+      }
+    },
+    "zones": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Zone"
+      }
+    }
+  },
+  "required": [
+    "zones",
+    "buildings",
+    "villagers"
+  ],
+  "$defs": {
+    "Building": {
+      "type": "object",
+      "properties": {
+        "at": {
+          "description": "Where building-local (0, 0) lands in the zone.",
+          "$ref": "#/$defs/Pos"
+        },
+        "doors": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DoorSpec"
+          }
+        },
+        "floors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Floor"
+          }
+        },
+        "id": {
+          "type": "string"
+        },
+        "zone": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "zone",
+        "at",
+        "floors"
+      ]
+    },
+    "DayPattern": {
+      "description": "Which days a schedule entry applies to. More specific patterns win over `daily`.",
+      "type": "string",
+      "enum": [
+        "daily",
+        "weekday",
+        "weekend",
+        "mon",
+        "tue",
+        "wed",
+        "thu",
+        "fri",
+        "sat",
+        "sun"
+      ]
+    },
+    "DoorEnd": {
+      "description": "One end of a door record, in building-local coordinates when `floor` is set, zone\ncoordinates when `zone` is set.",
+      "type": "object",
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/Pos"
+        },
+        "floor": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "zone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "at"
+      ]
+    },
+    "DoorSpec": {
+      "description": "A link between two places (stairs, a cellar hatch, a back gate). Both directions unless\n`one_way`. Doors inside one inline floor, or from an inline floor to its zone, are\n`Opening`s instead.",
+      "type": "object",
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/DoorEnd"
+        },
+        "hours": {
+          "description": "\"06:00-20:00\". Villagers who are not the owner may pass only inside these hours.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "id": {
+          "type": "string"
+        },
+        "one_way": {
+          "type": "boolean",
+          "default": false
+        },
+        "owner": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "to": {
+          "$ref": "#/$defs/DoorEnd"
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to"
+      ]
+    },
+    "Floor": {
+      "description": "One floor of a building. Inline floors are composited into the zone grid at footprint\nscale; detached floors are their own place, reached by a door (stairs).",
+      "type": "object",
+      "properties": {
+        "arrival": {
+          "description": "Where a debug warp lands. Must be inside a room and off any door tile.",
+          "$ref": "#/$defs/Pos"
+        },
+        "detached": {
+          "description": "The stated reason this floor is not inline. Required for a detached floor; the\nvalidator warns on a detached ground floor without one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "id": {
+          "type": "string"
+        },
+        "level": {
+          "description": "0 is the ground floor, negative is below ground.",
+          "type": "integer",
+          "format": "int8",
+          "maximum": 127,
+          "minimum": -128
+        },
+        "objects": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ObjectSpec"
+          }
+        },
+        "openings": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Opening"
+          }
+        },
+        "rooms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Room"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "rooms",
+        "arrival"
+      ]
+    },
+    "ObjectSpec": {
+      "type": "object",
+      "properties": {
+        "activity": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "at": {
+          "$ref": "#/$defs/Pos"
+        },
+        "capacity": {
+          "description": "Declared only where contention is wanted. See decisions.md.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint8",
+          "default": null,
+          "maximum": 255,
+          "minimum": 0
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "description": "bed, counter, oven, table, chair, stove, shelf...",
+          "type": "string"
+        },
+        "owner": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "room": {
+          "type": "string"
+        },
+        "walkable": {
+          "description": "True for things you can stand on or walk through (rugs, doormats). Default blocks.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "room",
+        "at"
+      ]
+    },
+    "Opening": {
+      "description": "A walkable gap in a wall between two rooms of the same floor, or between a ground-floor\nroom and the outside (`between` then names one room and the zone is implied).",
+      "type": "object",
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/Pos"
+        },
+        "between": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "at",
+        "between"
+      ]
+    },
+    "Pos": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "y": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ]
+    },
+    "Rect": {
+      "description": "`[x, y, width, height]` in tiles. For a room, the interior floor tiles; walls are derived\naround it.",
+      "type": "object",
+      "properties": {
+        "h": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "w": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "x": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "y": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ]
+    },
+    "Room": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "rect": {
+          "$ref": "#/$defs/Rect"
+        }
+      },
+      "required": [
+        "id",
+        "rect"
+      ]
+    },
+    "ScheduleEntry": {
+      "description": "One baseline schedule entry: at `at`, leave for the target and do `activity` there.\nThe time is a departure time; travel is computed.",
+      "type": "object",
+      "properties": {
+        "activity": {
+          "type": "string"
+        },
+        "at": {
+          "description": "\"HH:MM\"",
+          "type": "string"
+        },
+        "days": {
+          "$ref": "#/$defs/DayPattern"
+        },
+        "object": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "place": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "days",
+        "at",
+        "activity"
+      ]
+    },
+    "Villager": {
+      "type": "object",
+      "properties": {
+        "bed": {
+          "description": "Object id of this villager's bed.",
+          "type": "string"
+        },
+        "home": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "schedule": {
+          "description": "Baseline schedule. Character code may extend or override it.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ScheduleEntry"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "home",
+        "bed"
+      ]
+    },
+    "Zone": {
+      "description": "An outdoor place. One continuous grid at the same scale as interiors.",
+      "type": "object",
+      "properties": {
+        "arrival": {
+          "description": "Where a debug warp lands.",
+          "$ref": "#/$defs/Pos"
+        },
+        "blocked": {
+          "description": "Impassable terrain (water, trees, cliffs).",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Rect"
+          }
+        },
+        "height": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "id": {
+          "type": "string"
+        },
+        "width": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        }
+      },
+      "required": [
+        "id",
+        "width",
+        "height",
+        "arrival"
+      ]
+    }
+  }
+}

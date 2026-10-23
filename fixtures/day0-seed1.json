@@ -423,20 +423,6 @@
       "y": 5
     },
     {
-      "kind": "Decided",
-      "text": "passing Pip -> greet Pip",
-      "tick": 27010,
-      "who": 2
-    },
-    {
-      "kind": "Talked",
-      "minutes": 0,
-      "tick": 27010,
-      "topic": "greeting",
-      "who": 2,
-      "with": 1
-    },
-    {
       "kind": "Moved",
       "place": 1,
       "tick": 27020,
@@ -16052,20 +16038,6 @@
     },
     {
       "kind": "Decided",
-      "text": "Mara talked about greeting -> greet Mara",
-      "tick": 63390,
-      "who": 2
-    },
-    {
-      "kind": "Talked",
-      "minutes": 0,
-      "tick": 63390,
-      "topic": "greeting",
-      "who": 2,
-      "with": 0
-    },
-    {
-      "kind": "Decided",
       "text": "passing Mara -> greet Mara",
       "tick": 63390,
       "who": 2
@@ -16824,20 +16796,6 @@
       "topic": "greeting",
       "who": 0,
       "with": 2
-    },
-    {
-      "kind": "Decided",
-      "text": "Mara talked about greeting -> greet Mara",
-      "tick": 68410,
-      "who": 2
-    },
-    {
-      "kind": "Talked",
-      "minutes": 0,
-      "tick": 68410,
-      "topic": "greeting",
-      "who": 2,
-      "with": 0
     },
     {
       "kind": "Decided",
@@ -17907,20 +17865,6 @@
       "y": 5
     },
     {
-      "kind": "Decided",
-      "text": "passing Pip -> greet Pip",
-      "tick": 83310,
-      "who": 2
-    },
-    {
-      "kind": "Talked",
-      "minutes": 0,
-      "tick": 83310,
-      "topic": "greeting",
-      "who": 2,
-      "with": 1
-    },
-    {
       "kind": "Moved",
       "place": 1,
       "tick": 83320,
@@ -17969,7 +17913,7 @@
       "who": 2
     }
   ],
-  "hash": "bd2ab389155a57e0",
+  "hash": "dff38a8752126ede",
   "protocol_version": 5,
   "seed": 1
 }
