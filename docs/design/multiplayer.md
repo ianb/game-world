@@ -1,7 +1,8 @@
-# Multiplayer shape
+# Multiplayer and external actors
 
 Status: design note, 2026-10-23. Not scheduled. Written so the single-player
-build does not close doors.
+build does not close doors. Covers live multiuser and the same boundary
+used for LLM dialogue and other external actors.
 
 ## What the current architecture already gives
 
@@ -59,6 +60,37 @@ with a different host.
 - Save files are snapshots plus input logs; a server has the same two
   things.
 
+## External actors use the same door
+
+An LLM for dialogue, a drama director, or any future slow or
+nondeterministic component is an actor outside the sim: it subscribes to
+events and submits inputs, like a player. The sim stays synchronous and
+pure, and replay stays deterministic because the actor's responses are in
+the input log.
+
+```
+            events                          events
+  Sim  ───────────────►  Viewer      Sim  ───────────────►  Villager brain (LLM)
+   ▲                                  ▲                        │
+   └──── inputs (playerId) ───────────┘◄── inputs (actorId) ───┘
+```
+
+Protocol consequences:
+
+- Inputs carry provenance: `PlayerInput { source: Player(id) | Actor(id), ... }`.
+  The sim can apply different rules per source (a brain may only speak for
+  its own villager; a director may only schedule exchanges).
+- The sim emits request events when it wants help: `LineNeeded { villager,
+  situation, facts, deadlineTick }`. The actor answers with an input. If the
+  answer arrives after the deadline or no longer fits, the sim drops it and
+  falls back to an authored line.
+- The event stream must carry enough context for an actor to act without
+  reading sim state directly, which also keeps the wire format complete for
+  remote viewers.
+- A scripted brain and a model-backed brain are interchangeable behind the
+  same actor interface, so "mostly scripts, LLM for high-plot moments" is a
+  routing decision, not an architecture change.
+
 ## Open decisions, when scheduled
 
 1. Server-authoritative or lockstep (recommendation above).
@@ -66,3 +98,6 @@ with a different host.
 3. Whether a shared town is persistent across days or sessions are rooms.
 4. Identity and presence (who is who in the town, what other players look
    like to villagers).
+5. Where external actors run: in the browser beside the viewer (single
+   player, key exposure concerns), or on the server beside the sim.
+6. Deadline and fallback policy for request events.

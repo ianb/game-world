@@ -314,3 +314,31 @@ and emits typed events. What it fixes in place from the start:
   small, integer-only and serializable.
 
 See `design/multiplayer.md` for the shape and the choice to make later.
+
+## 2026-10-23: LLM dialogue is an external actor, not part of the sim
+
+Ian: LLM dialogue would probably be another entity external to the sim,
+which receives inputs and produces responses asynchronously.
+
+Decided as the shape (the LLM itself is still "later, maybe"):
+
+- The sim is synchronous and pure. Anything slow, external or
+  nondeterministic (a model call, a network peer, a future director) lives
+  outside it as an actor that subscribes to the event stream and submits
+  inputs, exactly like a player. This is the AI Town lesson from the
+  research: model calls are asynchronous operations that can only submit
+  inputs.
+- Replay stays deterministic because the actor's responses enter the input
+  log. A replay never calls the model; it replays what the model said.
+- Inputs carry provenance (player id, or actor id such as
+  `villager-brain`, `director`), so the sim can apply different rules to
+  each source and tooling can show who caused what.
+- The sim emits request events when it wants something from an external
+  actor ("villager X is in situation S with facts F; a line is needed") and
+  must cope with a late, missing or invalid response: the conversation may
+  have moved on, so the sim validates every input against current state and
+  drops what no longer applies.
+- The same door serves scripted brains. A villager's decision-making can be
+  in-sim (fast, deterministic) or external (slow, model-backed) without the
+  sim knowing which, which is how "mostly scripts, LLM for high-plot
+  moments" gets implemented.
