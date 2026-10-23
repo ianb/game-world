@@ -376,3 +376,29 @@ Decided:
 Check: in week two, write two characters this way (one mostly data, one
 mostly code with eclectic behaviour) and judge the friction before writing
 twelve.
+
+## 2026-10-23: Typed struct per character; a functional language if any
+
+Ian: intra-game used a class per distinct entity, which let code touch other
+entities and still be type-checked. Is that possible here? And if a language
+is embedded, it can and should be functional, since the code has to be more
+or less functional to fit the system.
+
+Refinement of the characters decision:
+
+- Each character is its own struct type whose fields are that character's
+  sparse attributes (`Thug { anger: u8, .. }`, `Mara { worried_about_rent:
+  bool, .. }`). The world holds them as named typed fields
+  (`Characters { mara: Mara, thug: Thug, .. }`), so one character's code can
+  read another's fields and the compiler checks it.
+- Reads across characters are typed field access through `&Ctx`. Writes go
+  through commands, which may be typed per character (`ThugCmd::CalmDown`).
+  Dispatch over all characters is an enum or generated match, never a trait
+  object, so no fields are erased. Shared behaviour is a trait the relevant
+  structs implement.
+- Adding a character touches one struct field and one match arm.
+- A brain is a pure function `(state, ctx) -> commands`, so the system is
+  already functional in shape. If an embedded language is ever wanted it
+  should be functional too. Unresearched candidates: Steel (Scheme in Rust),
+  Fennel over mlua, Koto, Gluon (maintenance unknown). Rhai is imperative
+  and drops down the list. Research only if the week-two spike shows need.

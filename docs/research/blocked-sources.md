@@ -230,3 +230,10 @@ stack3_rust_ts_boundary.md, `s3-mobile` = stack3_mobile_paths.md.
   mobile sprite-count benchmarks for PixiJS or Phaser in WKWebView. (s3-mobile)
 - [ ] Whether `typescript` 7.0.2 (as npm reported on 2026-10-23) is accepted
   by Vite 8 and vitest 5; otherwise pin 5.x. (s3-bound)
+
+## Not yet researched (added 2026-10-23)
+
+- [ ] Embedded functional languages for Rust, in case character code wants a
+  scripting layer: Steel, Fennel over mlua, Koto, Gluon. Maintenance status,
+  wasm support, determinism, serde interop, agent familiarity. Only needed
+  if the week-two character spike shows friction with plain Rust modules.
