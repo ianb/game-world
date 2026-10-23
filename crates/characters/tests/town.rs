@@ -116,3 +116,19 @@ fn snapshot_round_trip_with_character_state() {
     assert_eq!(a, b);
     assert_eq!(live.hash(), restored.hash());
 }
+
+/// Same inputs as packages/sim-wasm/smoke.mjs, which compares the wasm build's hash to
+/// this snapshot.
+#[test]
+fn golden_hash_after_a_week_matches_the_wasm_smoke() {
+    use sim::input::{Input, InputKind, Source};
+    let mut sim: Sim<Town> = Sim::new(2026, town());
+    sim.apply_input(Input {
+        tick: at(3, 12, 0),
+        source: Source::Player(0),
+        kind: InputKind::Marker("midweek".into()),
+    })
+    .unwrap();
+    sim.step_until(Tick(7 * TICKS_PER_DAY)).unwrap();
+    insta::assert_snapshot!(sim.hash().hex());
+}

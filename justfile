@@ -3,7 +3,7 @@
 default: check
 
 # Everything that must pass before a commit.
-check: fmt-check lint test wasm-check gen-types-check ts
+check: fmt-check lint test wasm-check gen-types-check wasm-smoke ts
 
 fmt:
     cargo fmt --all
@@ -41,7 +41,7 @@ build-wasm:
 # Build the wasm, run a week in Node, and compare the hash with the native golden snapshot.
 wasm-smoke: build-wasm
     node packages/sim-wasm/smoke.mjs target/content-bundle.json \
-        "$(grep -v '^---' crates/sim/tests/snapshots/town__golden_hash_after_a_week.snap | grep -v '^$' | grep -v '^source' | grep -v '^expression' | tail -1)"
+        "$(grep -v '^---' crates/characters/tests/snapshots/town__golden_hash_after_a_week_matches_the_wasm_smoke.snap | grep -v '^$' | grep -v '^source' | grep -v '^expression' | tail -1)"
 
 # Regenerate the TypeScript bindings from the Rust boundary types.
 gen-types:
