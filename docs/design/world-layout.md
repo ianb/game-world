@@ -1,7 +1,8 @@
 # World layout: places, doors, floors
 
 Status: proposal, revised 2026-10-23 after the research in
-[world-layout-research.md](../research/world-layout-research.md). Not
+[world-layout-research.md](../research/world-layout-research.md) and the
+decisions of the same date in [decisions.md](../decisions.md). Not
 decided. Responds to the need for a way to lay out buildings and the town,
 test the layout, adjust it, and handle interiors, exteriors and multiple
 floors, all from a text-only workflow.
@@ -33,16 +34,21 @@ Proposal: an authored graph.
   and offset (the Pokémon map-connection shape), even if there is only one
   zone at first. This keeps a stitched continuous exterior available later
   without re-authoring.
-- Interiors can be any size. Stardew interiors run 2.7x to 7.4x their
-  footprints and no game enforces a fit. The render reports the ratio; no
-  validator fails on it.
-- Same tile size indoors and out. Only the map dimensions change.
+- Single scale. An interior fits inside its building's footprint, so a
+  building is sized to hold its rooms. Stardew's larger-inside convention is
+  not used. A validator enforces the fit.
+- Same tile size indoors and out.
+- Outdoors is one large place, or a few, split only at natural edges (a
+  river, a tree line, the road out of town). Zones are mainly interiors and
+  floors.
 
 What was dropped from the first draft: the claim that off-screen NPCs can
 move at the place level only. Stardew updates every NPC in every location
 every tick, and no 2D town game that teleports NPCs on a travel-time estimate
 was found. At a few dozen NPCs and places, simulate everyone on real tiles.
-Add place-level LOD only if a profile shows a need.
+Scaling tricks (teleport along the route after the travel time, or skipping
+ticks in places with no observer) are a later addition; the place graph and
+travel-time matrix leave room for them.
 
 ## Pathfinding
 
@@ -57,83 +63,77 @@ silently (Stardew caps at 30,000 and returns null).
 Schedules address a place id plus a tile or object, never a building id.
 That rule is the local form of the Ultima VII lesson.
 
-## Authoring form: ASCII in TypeScript
+## Authoring form: structured data, with generated views
 
-Each place is an ASCII block with a legend, written as a TypeScript literal:
-a template string for the grid, a legend object beside it, and door, object
-and stair declarations as typed data. NetHack 3.7 moved its level grammar
-into Lua in exactly this shape, and it gives types without writing a parser
-for the outer structure. The grid parser is small.
+The source is for the agent, not for people, so it should be whatever the
+agent writes most reliably: typed, structured data with coordinates. Rooms
+are rectangles. Walls are derived from room edges (the Sims model: walls on
+tile edges, rooms by flood fill). Doors, stairs and objects are records with
+tile positions. The agent writes `{ x: 3, y: 5 }` more reliably than it
+counts characters across a grid, and a schema validates every field.
 
 ```ts
 export const bakery = building("bakery", {
-  footprint: {
-    grid: `
-      ######
-      #....#
-      #....#
-      ##D###`,
-    door: "D",
-  },
-  places: {
-    ground: place({
-      floor: 0,
-      legend: { "#": wall, ".": floor, C: counter, O: oven, T: table, S: stairUp, D: door },
-      grid: `
-        ############
-        #OO.....T..#
-        #CC.....T..#
-        #..........#
-        #..........#
-        #S.........#
-        #..........#
-        #####D######`,
-      objects: [
-        { glyph: "O", kind: "oven", owner: "mara" },
-        { glyph: "C", kind: "counter", activity: "tend-shop" },
-        { glyph: "T", kind: "table", activity: "eat", capacity: 2 },
+  at: [12, 18],                       // footprint origin on town/square
+  floors: [
+    {
+      id: "ground",
+      rooms: [
+        { id: "shop",    rect: [0, 0, 8, 6] },
+        { id: "kitchen", rect: [8, 0, 4, 6] },
       ],
-      arrival: "D",
-    }),
-    upstairs: place({ floor: 1, /* ... */ }),
-  },
+      openings: [
+        { between: ["shop", "kitchen"], at: [8, 3] },          // interior doorway
+      ],
+      objects: [
+        { kind: "counter", room: "shop",    at: [1, 2], activity: "tend-shop" },
+        { kind: "oven",    room: "kitchen", at: [9, 1], owner: "mara" },
+        { kind: "table",   room: "shop",    at: [6, 1], activity: "eat", capacity: 2 },
+      ],
+      arrival: [4, 5],
+    },
+    { id: "upstairs", rooms: [{ id: "bedroom", rect: [0, 0, 6, 6] }], objects: [
+        { kind: "bed", room: "bedroom", at: [1, 1], owner: "mara" },
+      ], arrival: [3, 4] },
+  ],
   doors: [
-    { glyph: "D", to: { place: "town/square", tile: [14, 22] }, hours: "06:00-20:00", unlessOwner: true },
-    { glyph: "S", to: { place: "bakery/upstairs", glyph: "S" } },
+    { id: "front", from: { floor: "ground", at: [4, 6] }, to: { place: "town/square", at: [16, 25] },
+      hours: "06:00-20:00", unlessOwner: true },
+    { id: "stairs", from: { floor: "ground", at: [0, 5] }, to: { floor: "upstairs", at: [0, 5] } },
   ],
 });
 ```
 
-Format rules the research argued for:
+Rules carried over from the research, restated for structured source:
 
-- The legend is per place and may inherit from the building. One glyph can
-  bind to a stack (tile plus object plus NPC), which is how DCSS and
-  PuzzleScript avoid running out of letters.
-- The parser errors on ragged rows, unknown glyphs and characters that are
-  not single-column. DCSS silently defaults unknown glyphs to floor and
-  that is a documented source of bugs.
-- Door tiles sit on a place boundary (a grid edge or against a wall), never
-  on a through-path. Stardew's warp tiles are both triggers and barriers,
-  and warps on walkways cause accidental teleports and blocked NPC paths.
-- Arrival tiles are at least one tile inside the destination and off any
-  door tile, to prevent ping-pong between places.
-- Place ids are stable. A `formerIds` list is kept on renames (Stardew's
-  `FormerLocationNames`), so schedules and dialogue do not break.
+- A door is one record with both endpoints and an optional `oneWay`. The
+  reverse is implied otherwise.
+- Door tiles sit on a room edge, never inside a room's walkable interior.
+  Arrival tiles are at least one tile inside the destination and off any
+  door tile.
+- Place ids are stable paths (`bakery/upstairs`); a `formerIds` list is kept
+  on renames.
 - Tile coordinates only. Pixels belong to the compiler.
+- Schedules name a place id plus a tile or object, never a building id.
 
-The format compiles to the renderer's own tile layers. The autotiler is
-written in the project: a Wang-set resolver for ground and floors and a small
-pattern matcher for walls. LDtk and Tiled export can be added later if a
-person wants to open a map in an editor, with two caveats: LDtk bakes
-autotile results in its editor so a code-written file has no tiles until
-re-saved, and there is no Node parser for Tiled `.world` files.
+Views are generated, never edited: an ASCII render per place (with a
+legend), the town overview, tables and itineraries. Any amount of tooling
+to produce views is fine. An ASCII-input path can be added as a convenience
+if a case ever wants it, but it is not the source.
+
+The compiler turns rooms and openings into wall and floor tiles and runs the
+autotiler (a Wang-set resolver for ground and floors, a small pattern
+matcher for walls), producing the renderer's own layers. LDtk or Tiled
+export can come later if a person wants to open a map in an editor.
 
 ## The test-and-adjust loop
 
 Editing is editing text. Testing is running validators and renders in Node.
 The loop is edit, run, read, edit.
 
-Validators (fail the suite):
+Validators (fail the suite). Schema validation of the structured source
+comes first and catches the typo class the research worried about in ASCII
+sources.
 
 | Check | Failure it prevents |
 |---|---|
@@ -148,6 +148,8 @@ Validators (fail the suite):
 | Route table independent of declaration order (shuffle test); grid search cap asserted | Order-dependent routes, silent null paths |
 | Every sleeping NPC has a bed; a bed has at most one owner | Kingdom Come's "ran out of beds" |
 | Stairs pair across floors; each place declares its floor index | Mismatched stairs |
+| Every floor's rooms fit inside the building footprint (single scale) | Larger-inside interiors |
+| Rooms on a floor do not overlap; every room has at least one opening or door | Sealed or doubled rooms |
 | Footprints do not overlap on the town grid; each footprint door opens onto a walkable town tile | Buildings in buildings |
 | Exterior edge records are mirrored on both zones | Future stitching impossible |
 | Capacity declared only where contention is wanted; warn where schedules send more than one NPC to an undeclared place at once | Unintended contention, per the loose-inventory decision |
@@ -155,8 +157,7 @@ Validators (fail the suite):
 Renders (snapshot-tested as text files, read by a person or the agent):
 
 - A place at time T with NPCs as letters and a who-is-where legend.
-- The town at time T with a count per building and the footprint-to-interior
-  ratio per building.
+- The town at time T with a count per building.
 - A travel-time matrix between places.
 - One NPC's day as an itinerary: departures, doors taken, arrivals, waits.
 - The door listing per building.
@@ -186,8 +187,8 @@ the cheap exterior cues.
 
 A thin vertical slice in the text-first simulation package:
 
-1. Types for Place, Door, Building, Object; the grid parser with legend and
-   the strict error cases.
+1. Types for Building, Floor, Room, Door, Object with schema validation;
+   the compiler from rooms and openings to tiles.
 2. The validators above, as tests.
 3. Three buildings (a two-floor house, a shop, a tavern) and a town square.
 4. The route table with door-to-door weights, grid A*, and the travel-time
@@ -201,10 +202,13 @@ later.
 
 1. Tile size (16 or 32 px) is an art decision, carried over from the asset
    research; the layout does not depend on it.
-2. Whether exterior zones start as one place or several.
+2. Where the outdoor place splits, if at all, and whether the first town is
+   one outdoor place.
 3. How much of the legibility budget (map markers, notebook) is in the first
    playable.
-4. Whether to adopt Stardew's hour-and-owner door conditions as the only
-   conditions, or allow arbitrary predicates from the start.
-5. Whether procedural drafting of buildings is worth building before a
-   handful of buildings exist by hand.
+4. Whether door conditions are only hours and owner, or arbitrary
+   predicates from the start.
+5. Whether rooms are rectangles only, or rectangles plus L-shapes and
+   polygons from the start.
+6. Whether procedural drafting of buildings is worth building before a
+   handful exist by hand.

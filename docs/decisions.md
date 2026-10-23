@@ -71,3 +71,57 @@ direction:
   weakest at: pixel grids, seamless tiles, walk cycles.
 - No image API key exists in the development container. A Gemini key must be
   added as an environment secret before the listed experiments can run.
+
+## 2026-10-23: Simulate everyone on real tiles now; scaling tricks later
+
+Ian: for scaling up the size we would need things like teleport, or even
+just abbreviating all action when no one is around. That can probably be
+added later.
+
+Implications:
+
+- The first build simulates every NPC on real tiles in every place every
+  tick, as Stardew does.
+- The architecture keeps the door for later LOD open: the travel-time matrix
+  and the place graph already exist, so "teleport along the route after the
+  travel time" or "skip ticks in places with no observer" can be added
+  without re-authoring content.
+
+## 2026-10-23: Source is for the agent, not humans; tooling is unlimited
+
+Ian: source legibility is only for the agent, not humans, and can include
+any amount of tooling to understand. Template-string grids are cute but not
+necessary or particularly helpful for agent authoring.
+
+Implications:
+
+- The map source is structured, typed data (rooms as rectangles, doors and
+  objects as records with coordinates), not hand-drawn ASCII. The agent is
+  better at writing coordinates and rectangles than at counting characters
+  in a grid.
+- ASCII, tables, itineraries and PNGs are generated views for inspection,
+  never the source of truth. Any number of such tools can exist.
+- The strict-parser concerns from the research (ragged rows, unknown glyphs)
+  mostly disappear; what remains is schema validation of the structured
+  data.
+
+## 2026-10-23: Zones yes, single scale, outdoors mostly continuous
+
+Ian: zones are fine, but I want a single scale. Outdoors have limited zone
+opportunities.
+
+Reading taken here (correct it if wrong): "single scale" means one
+consistent world scale, so an interior fits inside the footprint of its
+building rather than being larger on the inside. Not just one tile size.
+
+Implications:
+
+- Buildings are sized to hold their interiors. The footprint-fit check comes
+  back as a default validator, not a reported ratio.
+- Interior places exist for the door graph and scene swap, not to gain
+  space. A small cottage is a small room.
+- Outdoors is one large place, or a few, split only where geography gives a
+  natural edge (a river, a forest line, a road out of town). Zones are
+  mainly interiors and floors.
+- This makes a later continuous exterior with visible interiors (the Ultima
+  VII look) cheaper, since interiors already match the footprints.
