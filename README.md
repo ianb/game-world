@@ -62,5 +62,7 @@ Research phase. Nothing is decided about the stack yet. There is no code.
 See [docs/design/what-remains.md](docs/design/what-remains.md). The first
 code slice (repo setup, discrete-event time with a calendar, places,
 buildings, validators, views, then villagers on schedules) is unblocked.
-The renderer choice is still open; the engine deep dive recommends Canvas 2D
-behind a backend interface with a gating experiment, and it is Ian's call.
+Decided 2026-10-23: the simulation is Rust (compiled to wasm for the
+browser), the viewer is TypeScript with the library still open, web first
+and mobile probable. Research on mobile paths and on keeping the Rust/TS
+boundary tight is next.

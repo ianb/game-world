@@ -24,7 +24,12 @@ revisited.
   No farming, no inventory, no money.
 - Who the player is in the town (see section 7).
 
-## 2. Stack (sim decided; renderer open, recommendation on the table)
+## 2. Stack (decided: Rust sim, TypeScript viewer; viewer library open)
+
+Decided 2026-10-23 (see decisions.md): the simulation is a Rust crate
+compiled to wasm for the browser; the viewer is TypeScript with the library
+still open; web first and mobile probable. The paragraph below predates
+that decision and is kept for the record.
 
 Simulation design agreed. Renderer still open. The engine deep dive
 (`../research/engine-deep-dive.md`) recommends raw Canvas 2D behind a
@@ -40,14 +45,16 @@ text scene dump as the primary check. Not decided; depends on what the
 earlier hesitation about PixiJS was about (renderer-only versus full
 engine would point at Phaser 4 or Godot instead).
 
-- Simulation: a dependency-free TypeScript package, integer ticks, one
-  seeded RNG passed explicitly, no wall clock or DOM, per-tick state hash,
-  input log as save and replay. Tests in Node with vitest.
+- Simulation: a Rust crate (superseding the TypeScript plan): integer
+  ticks, discrete-event scheduler, one seeded portable RNG, no wall clock,
+  per-tick state hash, input log as save and replay; `insta` and `proptest`;
+  wasm export for the browser.
 - Renderer: see above. Whatever is chosen sits behind the same interface
   and consumes the sim's event stream; the sim never learns which.
-- Package layout: `sim` (world, places, NPCs, time, pathfinding), `content`
-  (buildings, villagers, schedules, lines, as typed data), `tools` (views,
-  validators, playtest harness), `web` (renderer and UI). pnpm workspace.
+- Layout: a Cargo workspace (`sim`, `content` as serde data with schemas,
+  `tools` as Rust binaries for views, validators and the playtest harness,
+  `sim-wasm` bindings) beside a pnpm workspace (`web` viewer, generated
+  types). One top-level build entry point.
 - Deployment: static files on Cloudflare Pages. No server until something
   needs one. Keep `sim` free of browser APIs so a Durable Object can run it
   later.
@@ -200,6 +207,11 @@ From the asset research.
   is also for Playwright).
 
 ## 14. Repo conventions (now)
+
+- Boundary processes (decided as a concern, details from research):
+  generated TS types from Rust, typed event stream out and typed inputs in,
+  shared fixtures for `insta` and vitest, pinned toolchains, CI drift
+  checks.
 
 - A `CLAUDE.md` for this repo: the prose rules (game text is the author's
   voice; prompts, if any, written flat; engineering prose light), how

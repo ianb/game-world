@@ -245,3 +245,44 @@ engine owns state, the model returns text plus a closed set of flags,
 grounded in the fact bag, with a per-scene budget.
 
 **Headless testing.** Lots of options; no decision needed.
+
+## 2026-10-23: Rust simulation, TypeScript viewer, web for sure, mobile probably
+
+Ian: Rust makes sense for the simulation, and it is an experiment worth
+running since there has been no agent project in Rust before. The
+two-language barrier is not a big worry; it needs processes to keep it tight
+and consistent, which is doable. Rust sim with a TS viewer is reasonable.
+Deploy to web for sure, and probably mobile.
+
+Background: Ian's stated taste is for highly typed, deterministic systems
+rather than libraries built for casual experimental development, and the
+impression (self-described as based on little) that PixiJS is clever and
+simple rather than robust. The agent-benchmark evidence in
+`research/engine-deep-dive.md` (Rust at or above TypeScript for coding
+agents, 2025 figures) points the same way.
+
+Decided:
+
+- The simulation core is a Rust crate: no wall clock, no ambient
+  randomness, ordered collections, one seeded portable RNG, a discrete-event
+  scheduler, serde for content and snapshots, `insta` and `proptest` for
+  tests. It compiles to wasm for the browser and runs natively for tests
+  and tools.
+- The viewer is TypeScript. Which library is still open; the Canvas 2D
+  recommendation is withdrawn in favour of whatever best serves web and
+  mobile (see the next research track).
+- The Rust/TS boundary is a first-class engineering concern with explicit
+  processes: generated types (ts-rs or typeshare), a typed event stream as
+  the only direction of flow from sim to viewer and typed inputs the other
+  way, shared fixtures checked by both `insta` and vitest, pinned toolchain
+  versions, one build entry point, and CI that fails on drift.
+- Deployment: web first. Mobile is probable, so the viewer and input design
+  assume touch from the start (click-to-walk is already the primary
+  control), integer-scaled pixel art on small screens, and a packaging path
+  (PWA, Capacitor, or a native shell) to be chosen from research.
+
+Implications for the build order in `design/what-remains.md`: steps 1 to 4
+(repo setup, time and calendar, places and buildings with validators and
+views, villagers on schedules) move to Rust. The text views and playtest
+harness are Rust binaries. The content format is serde-backed (RON or JSON
+with schemas) rather than TypeScript literals.
