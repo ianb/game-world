@@ -2,6 +2,7 @@
 //! pond, late openings when he is low, and an evening check on whether anyone came.
 use crate::mara::Mara;
 use crate::toolbox::{Plan, activity_of, go_tile, pick, together, wait_minutes, weekday};
+use content::{Pos, Rect};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
@@ -10,12 +11,26 @@ use sim::time::Weekday;
 /// Fishing spots on the pond's west bank, in building-free ground.
 const FISHING_SPOTS: [(u16, u16); 3] = [(29, 21), (29, 22), (29, 23)];
 
+/// The tavern's yard: the building, the lane along its south side and a margin round it.
+/// Tom keeps this clear of weeds; the rest of the green can go wild.
+const YARD: Rect = Rect {
+    x: 2,
+    y: 12,
+    w: 17,
+    h: 13,
+};
+/// How many patches he will clear in one morning before opening.
+const WEEDING_PATCHES: u8 = 4;
+const WEEDING_RADIUS: u16 = 2;
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Tom {
     /// Negative is grumpy. Nudged by how the evening went.
     pub mood: i8,
     pub days_since_day_off: u8,
     pub fish_caught: u16,
+    /// Patches cleared so far this morning.
+    pub weeded_today: u8,
 }
 
 impl Default for Tom {
@@ -24,6 +39,7 @@ impl Default for Tom {
             mood: -1,
             days_since_day_off: 0,
             fish_caught: 0,
+            weeded_today: 0,
         }
     }
 }
@@ -50,6 +66,26 @@ impl Tom {
         }
         self.days_since_day_off = self.days_since_day_off.saturating_add(1);
 
+        // Before opening: if the yard has gone to weed, go and clear the nearest patch.
+        // Arriving there starts the loop in `react`.
+        self.weeded_today = 0;
+        let town = ctx.place_id("town").expect("town exists");
+        let tavern_door = Pos { x: 9, y: 22 };
+        if let Some(patch) = ctx.nearest_overgrown(town, YARD, tavern_door) {
+            plan.at(
+                8,
+                30,
+                Command::Note(format!(
+                    "the yard needs weeding ({} tiles)",
+                    ctx.overgrown_tiles(town)
+                        .iter()
+                        .filter(|p| YARD.contains(p.x, p.y))
+                        .count()
+                )),
+            );
+            plan.at(8, 31, go_tile(ctx, "town", patch.x, patch.y, "weeding"));
+        }
+
         if self.mood <= -3 {
             plan.shift((10, 0), (11, 0));
             plan.at(
@@ -71,6 +107,31 @@ impl Tom {
         mara: &Mara,
     ) -> Vec<Command> {
         match trigger {
+            Trigger::Arrived if activity_of(ctx, "tom") == "weeding" => {
+                vec![
+                    Command::Clear {
+                        radius: WEEDING_RADIUS,
+                    },
+                    wait_minutes(12, "weeding"),
+                ]
+            }
+            Trigger::Waited if activity_of(ctx, "tom") == "weeding" => {
+                self.weeded_today += 1;
+                let town = ctx.place_id("town").expect("town exists");
+                let here = ctx
+                    .villager(ctx.villager_id("tom").expect("tom exists"))
+                    .pos;
+                match ctx.nearest_overgrown(town, YARD, here) {
+                    Some(next) if self.weeded_today < WEEDING_PATCHES => {
+                        vec![go_tile(ctx, "town", next.x, next.y, "weeding")]
+                    }
+                    Some(_) => vec![
+                        Command::Note("enough weeding for one morning".into()),
+                        Command::Idle,
+                    ],
+                    None => vec![Command::Note("the yard is clear".into()), Command::Idle],
+                }
+            }
             Trigger::Arrived if activity_of(ctx, "tom") == "fish" => {
                 // A fishing afternoon: wait a while, maybe catch something, repeat.
                 vec![wait_minutes(*pick(rng, &[40u32, 55, 70]), "fish")]

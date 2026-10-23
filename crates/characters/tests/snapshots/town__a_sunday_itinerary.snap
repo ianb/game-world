@@ -63,6 +63,6 @@ Tom
   9:36pm greets Mara
   11:00pm leaves for sleep, eta 11:02pm
   11:02pm sleep
-  12:00am [plan: 7:30am eat @ table_house; 10:00am tend-bar @ bar_tavern; 7:30pm tend-bar for 30m; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
+  12:00am [plan: 7:30am eat @ table_house; 8:30am note: the yard needs weeding (19 tiles); 8:31am weeding @ town (14, 23); 10:00am tend-bar @ bar_tavern; 7:30pm tend-bar for 30m; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
 Mara { batches_baked: 7, pastries_delivered: 1, fish_stories_heard: 0 }
-Tom { mood: 5, days_since_day_off: 1, fish_caught: 3 }
+Tom { mood: 5, days_since_day_off: 1, fish_caught: 3, weeded_today: 0 }

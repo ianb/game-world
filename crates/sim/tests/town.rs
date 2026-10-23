@@ -388,3 +388,36 @@ fn planned_items_at_the_same_minute_both_run() {
             .any(|e| matches!(e, Emitted::Decided { text, .. } if text.contains("note: first")))
     );
 }
+
+#[test]
+fn ground_wears_grows_and_is_cleared() {
+    use content::Pos;
+    use sim::protocol::Surface;
+    use sim::terrain::{GROWTH_OVERGROWN, GROWTH_TALL};
+    let mut sim = new_sim(7);
+    let townp = sim.world().place_index["town"];
+    // A corner nobody visits: grass goes tall after a week and to brush after four.
+    let corner = Pos { x: 37, y: 27 };
+    assert_eq!(sim.surface(townp, corner), Some(Surface::Grass));
+    sim.step_until(Tick(u32::from(GROWTH_TALL) * TICKS_PER_DAY))
+        .unwrap();
+    assert_eq!(sim.surface(townp, corner), Some(Surface::TallGrass));
+    sim.step_until(Tick(u32::from(GROWTH_OVERGROWN) * TICKS_PER_DAY))
+        .unwrap();
+    assert_eq!(sim.surface(townp, corner), Some(Surface::Brush));
+    // The street outside the bakery is walked every day and stays a clean path.
+    assert_eq!(
+        sim.surface(townp, Pos { x: 22, y: 11 }),
+        Some(Surface::Path)
+    );
+    // Indoors has no surface.
+    let upstairs = sim.world().place_index["house/upstairs"];
+    assert_eq!(sim.surface(upstairs, Pos { x: 2, y: 2 }), None);
+    // Clearing resets growth around a tile and reports how many tiles changed.
+    let world = sim.world().clone();
+    let mut terrain = sim.terrain().clone();
+    let place = sim::ids::PlaceId(u16::try_from(townp).unwrap());
+    let changed = terrain.clear(&world, place, corner, 1);
+    assert_eq!(changed, 9, "the 3x3 block around the corner is all grass");
+    assert_eq!(terrain.surface(&world, townp, corner), Some(Surface::Grass));
+}

@@ -2,9 +2,10 @@
 //! villagers as bright squares with a per-villager outline. For a person, or the agent's
 //! image reader, to glance at.
 use characters::Town;
-use content::{Cell, World};
+use content::{Cell, Pos, World};
 use image::{Rgb, RgbImage};
 use sim::Sim;
+use sim::terrain::Surface;
 
 const TILE: u32 = 8;
 
@@ -18,6 +19,19 @@ fn cell_colour(c: Cell) -> Rgb<u8> {
         Cell::Opening => Rgb([220, 200, 150]),
         Cell::Door => Rgb([230, 190, 90]),
         Cell::Void => Rgb([20, 20, 20]),
+    }
+}
+
+fn surface_colour(s: Surface) -> Rgb<u8> {
+    match s {
+        Surface::Grass => Rgb([96, 140, 72]),
+        Surface::TallGrass => Rgb([76, 118, 58]),
+        Surface::Brush => Rgb([58, 92, 50]),
+        Surface::Track => Rgb([136, 150, 84]),
+        Surface::Cowpath => Rgb([168, 150, 96]),
+        Surface::Path => Rgb([176, 150, 96]),
+        Surface::WeedyPath => Rgb([140, 140, 80]),
+        Surface::OvergrownPath => Rgb([96, 120, 60]),
     }
 }
 
@@ -36,13 +50,13 @@ fn outline(img: &mut RgbImage, x: u32, y: u32, w: u32, h: u32, colour: Rgb<u8>) 
     fill(img, x + w - 1, y, 1, h, colour);
 }
 
-/// `wear(x, y)` is the footfall level of a tile (0 untouched, 1 track, 2 worn path).
+/// `surface(x, y)` is the living ground of an outdoor tile, None indoors.
 #[must_use]
 pub fn render_place(
     world: &World,
     place: usize,
     villagers: &[(usize, content::Pos, usize)],
-    wear: &dyn Fn(u16, u16) -> u8,
+    surface: &dyn Fn(u16, u16) -> Option<Surface>,
 ) -> RgbImage {
     let p = &world.places[place];
     let mut img = RgbImage::new(u32::from(p.width) * TILE, u32::from(p.height) * TILE);
@@ -54,11 +68,7 @@ pub fn render_place(
                 u32::from(y) * TILE,
                 TILE,
                 TILE,
-                match (p.cell(x, y), wear(x, y)) {
-                    (Cell::Ground, 1) => Rgb([136, 150, 84]),
-                    (Cell::Ground, 2) => Rgb([168, 150, 96]),
-                    (cell, _) => cell_colour(cell),
-                },
+                surface(x, y).map_or_else(|| cell_colour(p.cell(x, y)), surface_colour),
             );
         }
     }
@@ -121,7 +131,7 @@ pub fn render_town(sim: &Sim<Town>) -> RgbImage {
         .map(|(i, v)| (v.place.index(), v.pos, i))
         .collect();
     let images: Vec<RgbImage> = (0..world.places.len())
-        .map(|i| render_place(world, i, &villagers, &|x, y| sim.wear_level(i, x, y)))
+        .map(|i| render_place(world, i, &villagers, &|x, y| sim.surface(i, Pos { x, y })))
         .collect();
     let gap = TILE;
     let width = images.iter().map(RgbImage::width).max().unwrap_or(1);

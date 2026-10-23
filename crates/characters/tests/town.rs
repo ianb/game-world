@@ -193,3 +193,36 @@ fn a_conversation_defers_a_wait_instead_of_cancelling_it() {
         views::itinerary(&sim, pip, &events)
     );
 }
+
+#[test]
+fn tom_weeds_the_yard_once_it_grows() {
+    use sim::protocol::Surface;
+    let mut sim: Sim<Town> = Sim::new(5, town());
+    let townp = sim.world().place_index["town"];
+    let lane_end = content::Pos { x: 16, y: 22 };
+    // Two weeks in, the far end of the lane is weedy or has just been cleared.
+    let events = sim.step_until(at(14, 0, 0)).unwrap();
+    let cleared: Vec<_> = events
+        .iter()
+        .filter(|e| matches!(e, Emitted::Cleared { .. }))
+        .collect();
+    assert!(!cleared.is_empty(), "Tom never weeded");
+    let notes: Vec<String> = events
+        .iter()
+        .filter_map(|e| match e {
+            Emitted::Decided { text, .. } if text.contains("weeding") => Some(text.clone()),
+            _ => None,
+        })
+        .collect();
+    assert!(!notes.is_empty(), "no weeding note");
+    let surface = sim.surface(townp, lane_end).unwrap();
+    assert!(
+        matches!(surface, Surface::Path | Surface::WeedyPath),
+        "lane end is {surface:?}"
+    );
+    // The far corner of the green is nobody's job and goes wild.
+    assert_eq!(
+        sim.surface(townp, content::Pos { x: 37, y: 27 }),
+        Some(Surface::TallGrass)
+    );
+}

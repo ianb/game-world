@@ -5,7 +5,8 @@ use std::fmt::Write as _;
 
 /// Legend: `·` ground, `░` path, `♣` blocked, `█` wall, space = floor, `▫` opening, `▪` door
 /// tile, lowercase letter = object (first letter of its kind). Overlay glyphs win: uppercase
-/// letters are villagers, `∙` and `▒` are trodden ground.
+/// letters are villagers; `∙` track, `▒` cowpath, `"` tall grass, `┈` weedy path and `♠`
+/// brush or an overgrown path are the living ground (see `sim::terrain::Surface`).
 #[must_use]
 pub fn render_place(world: &World, place: usize, overlay: &[(Pos, char)]) -> String {
     let p = &world.places[place];

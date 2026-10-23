@@ -120,6 +120,16 @@ impl Sim {
         }
     }
 
+    /// The living ground of a place (surfaces row-major), or an error for an unknown id or
+    /// an indoor place.
+    pub fn terrain(&self, id: &str) -> Result<JsValue, JsError> {
+        let world = self.inner.world();
+        let Some(&i) = world.place_index.get(id) else {
+            return Err(JsError::new("unknown place"));
+        };
+        to_js(&self.inner.terrain().view(world, i))
+    }
+
     #[must_use]
     pub fn where_is_everyone(&self) -> String {
         views::where_is_everyone(&self.inner)

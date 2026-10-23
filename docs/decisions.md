@@ -472,3 +472,37 @@ Decided:
 Implications: the protocol version is 7 (`Cell` gained `Path`). Costs
 are integers because the sim has no floats. Wear thresholds are constants
 in `crates/sim/src/sim.rs`; tuning them changes every golden hash.
+
+## 2026-10-23: Grass grows back, and somebody has to cut it
+
+Ian: "Seems like grass and possibly weeds should grow day to day, recovering
+the cowpaths potentially, and leading to maintenance needs as things may
+overgrow."
+
+Decided:
+
+- Every outdoor tile carries two counters in `SimState.terrain`: `wear`
+  (footfall, as before) and `growth` (days since the tile was last trampled
+  or cleared). Growth rises by 1 a day on grass and laid paths, drops by 4
+  per step, and is capped at 60. At 7 grass is tall (cost 6) and a path is
+  weedy (cost 2); at 28 both are overgrown (brush, cost 9; an overgrown
+  path, cost 4). Growth wins over wear: a disused cowpath grows over in a
+  week even though its wear takes longer to fade.
+- Maintenance is a command. `Command::Clear { radius }` zeroes growth
+  around the villager and emits `Cleared`; the character pairs it with a
+  `Wait` for the time the work takes. `Ctx::overgrown_tiles` and
+  `Ctx::nearest_overgrown(place, area, from)` let a character see what
+  needs doing. Tom clears the tavern's yard before opening, a few patches a
+  morning; the rest of the green is nobody's job and goes wild, which is the
+  intended look: trodden routes and kept yards, meadow beyond.
+- Surfaces are a boundary type (`protocol::Surface`) with a `TerrainView`
+  per place, so a graphical renderer gets the same picture the text views
+  do. Glyphs: `"` tall grass, `┈` weedy path, `♠` brush or an overgrown
+  path.
+
+Implications: protocol 8, snapshot format 3, character layout 2. The
+counters are dense per zone (two bytes a tile), which is fine at this scale
+and would want a sparse form for a very large outdoors. Pip's random
+roaming tramples the green into a patchwork; a wandering routine that
+prefers paths would change the look, and is a character decision, not a
+terrain one.

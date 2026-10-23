@@ -10,6 +10,7 @@ use crate::protocol::Emitted;
 use crate::queue::EventQueue;
 use crate::rng::Streams;
 use crate::snapshot::{self, SnapshotError};
+use crate::terrain::{Surface, Terrain};
 use crate::time::{TICKS_PER_DAY, TICKS_PER_MINUTE, Tick};
 use crate::villager::{Crossing, Movement, PlannedLeg, VillagerState};
 use content::{Content, Nav, Pos, Spot, WALK_TICKS_PER_TILE, World, nav};
@@ -37,9 +38,9 @@ pub struct SimState<C> {
     /// Last proximity trigger per (kind, pair with smaller id first), for the cooldown.
     /// Kind 0 is an encounter, 1 is passing.
     pub met: BTreeMap<(u8, u16, u16), Tick>,
-    /// Footfall on ground tiles, by (place, x, y). Trodden ground gets cheaper to route
-    /// over, so villagers wear cowpaths; it fades a little each day.
-    pub wear: BTreeMap<(u16, u16, u16), u16>,
+    /// Wear and growth on every outdoor tile: cowpaths form where villagers walk, grass
+    /// and weeds grow where they do not.
+    pub terrain: Terrain,
     pub day_rollovers: u32,
     pub markers: Vec<(Tick, String)>,
     /// Character private state.
@@ -80,14 +81,6 @@ pub fn content_hash(content: &Content) -> u64 {
     let bytes = serde_json::to_vec(content).expect("content is always serializable");
     xxhash_rust::xxh3::xxh3_64(&bytes)
 }
-
-/// Footfall at which ground starts to read as a track, and as a path.
-pub const WEAR_TRACK: u16 = 24;
-pub const WEAR_PATH: u16 = 80;
-/// Footfall never counts above this.
-pub const WEAR_MAX: u16 = 255;
-/// Footfall lost per day of disuse.
-pub const WEAR_FADE_PER_DAY: u16 = 2;
 
 /// Asleep or mid-conversation: no proximity triggers to or about them.
 fn unavailable(v: &VillagerState) -> bool {
@@ -137,7 +130,7 @@ impl<C: CharacterSet> Sim<C> {
                 next_input_seq: 1,
                 villagers,
                 met: BTreeMap::new(),
-                wear: BTreeMap::new(),
+                terrain: Terrain::new(&world),
                 day_rollovers: 0,
                 markers: Vec::new(),
                 characters,
@@ -188,6 +181,7 @@ impl<C: CharacterSet> Sim<C> {
             world: &self.world,
             nav: &self.nav,
             villagers: &self.state.villagers,
+            terrain: &self.state.terrain,
         }
     }
 
@@ -233,7 +227,7 @@ impl<C: CharacterSet> Sim<C> {
         match event {
             Event::DayRollover => {
                 self.state.day_rollovers += 1;
-                self.fade_wear();
+                self.state.terrain.new_day(&self.world);
                 self.state
                     .queue
                     .schedule(tick.plus(TICKS_PER_DAY), Event::DayRollover);
@@ -358,6 +352,7 @@ impl<C: CharacterSet> Sim<C> {
                     world: &self.world,
                     nav: &self.nav,
                     villagers: &self.state.villagers,
+                    terrain: &self.state.terrain,
                 };
                 let planned =
                     self.state
@@ -419,6 +414,7 @@ impl<C: CharacterSet> Sim<C> {
                 world: &self.world,
                 nav: &self.nav,
                 villagers: &self.state.villagers,
+                terrain: &self.state.terrain,
             };
             let label = trigger.label(&ctx);
             let commands =
@@ -473,6 +469,19 @@ impl<C: CharacterSet> Sim<C> {
             }
             Command::GoTo { target, activity } => self.go_to(who, &target, activity, out),
             Command::Note(_) => {}
+            Command::Clear { radius } => {
+                let v = &self.state.villagers[who.index()];
+                let (place, at) = (v.place, v.pos);
+                let tiles = self.state.terrain.clear(&self.world, place, at, radius);
+                out.push(Emitted::Cleared {
+                    tick,
+                    who,
+                    place,
+                    x: at.x,
+                    y: at.y,
+                    tiles,
+                });
+            }
             Command::Greet { with } => {
                 if with == who || with.index() >= self.state.villagers.len() {
                     return;
@@ -748,46 +757,27 @@ impl<C: CharacterSet> Sim<C> {
         }
     }
 
-    /// Footfall on a tile, for views: 0 untouched, 1 a track, 2 a worn path.
     #[must_use]
-    pub fn wear_level(&self, place: usize, x: u16, y: u16) -> u8 {
-        let key = (u16::try_from(place).expect("few places"), x, y);
-        match self.state.wear.get(&key).copied().unwrap_or(0) {
-            w if w >= WEAR_PATH => 2,
-            w if w >= WEAR_TRACK => 1,
-            _ => 0,
-        }
+    pub fn terrain(&self) -> &Terrain {
+        &self.state.terrain
     }
 
-    /// Step cost for routing: the cell's base cost, with trodden ground cheaper.
+    /// What a tile looks like now, or None for a cell that neither wears nor grows.
+    #[must_use]
+    pub fn surface(&self, place: usize, pos: Pos) -> Option<Surface> {
+        self.state.terrain.surface(&self.world, place, pos)
+    }
+
+    /// Step cost for routing: indoor cells and doors by their base cost, outdoor tiles by
+    /// their surface.
     fn step_cost(&self, place: usize, pos: Pos) -> Option<u32> {
         if !self.world.passable(place, pos.x, pos.y) {
             return None;
         }
-        let base = self.world.places[place].cell(pos.x, pos.y).base_cost();
-        if base <= 1 {
-            return Some(base);
-        }
-        Some(match self.wear_level(place, pos.x, pos.y) {
-            2 => 1,
-            1 => 2,
-            _ => base,
-        })
-    }
-
-    fn tread(&mut self, place: PlaceId, pos: Pos) {
-        if self.world.places[place.index()].cell(pos.x, pos.y) != content::Cell::Ground {
-            return;
-        }
-        let w = self.state.wear.entry((place.0, pos.x, pos.y)).or_insert(0);
-        *w = w.saturating_add(1).min(WEAR_MAX);
-    }
-
-    fn fade_wear(&mut self) {
-        for w in self.state.wear.values_mut() {
-            *w = w.saturating_sub(WEAR_FADE_PER_DAY);
-        }
-        self.state.wear.retain(|_, w| *w > 0);
+        Some(self.surface(place, pos).map_or_else(
+            || self.world.places[place].cell(pos.x, pos.y).base_cost(),
+            Surface::cost,
+        ))
     }
 
     fn stuck(&mut self, who: VillagerId, reason: String, out: &mut Vec<Emitted>) {
@@ -906,7 +896,7 @@ impl<C: CharacterSet> Sim<C> {
                 x: next.x,
                 y: next.y,
             });
-            self.tread(place, next);
+            self.state.terrain.tread(&self.world, place, next);
             stepped = true;
         }
         if m.path.is_empty() {
@@ -974,6 +964,7 @@ impl<C: CharacterSet> Sim<C> {
             hash_of(&(
                 &s.villagers,
                 &s.met,
+                &s.terrain,
                 s.day_rollovers,
                 &s.markers,
                 &s.characters,

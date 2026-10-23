@@ -47,6 +47,9 @@ let drawnPaused = !paused;
 function glyphClass(ch: string): string | null {
   switch (ch) {
     case "·": return "g-ground";
+    case "\"": return "g-tall";
+    case "♠": return "g-brush";
+    case "┈": return "g-weedy";
     case "░": return "g-path";
     case "∙": return "g-track";
     case "▒": return "g-cowpath";

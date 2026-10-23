@@ -19,12 +19,12 @@ const page = `<title>Game World</title>
   :root {
     --bg: #f4f2ec; --fg: #1d1b16; --muted: #6b6659; --bar: #e6e2d6; --rule: #cfc9b8; --accent: #8a5a2b;
     --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-    --c-ground: #4f8a3c; --c-path: #9a7a2e; --c-track: #b8923e; --c-water: #3f6fa8; --c-wall: #8a8578; --c-object: #9b4fb0; --c-villager: #0b7f8a;
+    --c-ground: #4f8a3c; --c-tall: #3f7f2e; --c-brush: #2f5a2a; --c-weedy: #7a7230; --c-path: #9a7a2e; --c-track: #b8923e; --c-water: #3f6fa8; --c-wall: #8a8578; --c-object: #9b4fb0; --c-villager: #0b7f8a;
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --bg: #121311; --fg: #dcd8cc; --muted: #9a9484; --bar: #1e201c; --rule: #33362f; --accent: #d9a35e; --c-ground: #5f9a4a; --c-path: #b8923e; --c-track: #e8c76a; --c-water: #4e7fb8; --c-wall: #777; --c-object: #c77dd6; --c-villager: #5fe0e0; color-scheme: dark; }
+    :root:not([data-theme="light"]) { --bg: #121311; --fg: #dcd8cc; --muted: #9a9484; --bar: #1e201c; --rule: #33362f; --accent: #d9a35e; --c-ground: #5f9a4a; --c-tall: #7fbf5a; --c-brush: #3f7a3a; --c-weedy: #8f8a4a; --c-path: #b8923e; --c-track: #e8c76a; --c-water: #4e7fb8; --c-wall: #777; --c-object: #c77dd6; --c-villager: #5fe0e0; color-scheme: dark; }
   }
-  :root[data-theme="dark"] { --bg: #121311; --fg: #dcd8cc; --muted: #9a9484; --bar: #1e201c; --rule: #33362f; --accent: #d9a35e; --c-ground: #5f9a4a; --c-path: #b8923e; --c-track: #e8c76a; --c-water: #4e7fb8; --c-wall: #777; --c-object: #c77dd6; --c-villager: #5fe0e0; color-scheme: dark; }
+  :root[data-theme="dark"] { --bg: #121311; --fg: #dcd8cc; --muted: #9a9484; --bar: #1e201c; --rule: #33362f; --accent: #d9a35e; --c-ground: #5f9a4a; --c-tall: #7fbf5a; --c-brush: #3f7a3a; --c-weedy: #8f8a4a; --c-path: #b8923e; --c-track: #e8c76a; --c-water: #4e7fb8; --c-wall: #777; --c-object: #c77dd6; --c-villager: #5fe0e0; color-scheme: dark; }
   body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.3 var(--mono); font-variant-numeric: tabular-nums; }
   header {
     position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2;
@@ -44,7 +44,7 @@ const page = `<title>Game World</title>
   h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 8px 0 4px; }
   button { font: inherit; min-height: 44px; min-width: 64px; background: var(--bg); color: var(--fg); border: 1px solid var(--rule); border-radius: 4px; }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .g-ground { color: var(--c-ground); } .g-path { color: var(--c-path); } .g-track { color: var(--c-track); }
+  .g-ground { color: var(--c-ground); } .g-tall { color: var(--c-tall); font-weight: bold; } .g-brush { color: var(--c-brush); } .g-weedy { color: var(--c-weedy); } .g-path { color: var(--c-path); } .g-track { color: var(--c-track); }
   .g-cowpath { color: var(--c-track); font-weight: bold; } .g-blocked { color: var(--c-water); } .g-wall { color: var(--c-wall); }
   .g-door { color: var(--fg); font-weight: bold; } .g-object { color: var(--c-object); } .g-villager { color: var(--c-villager); font-weight: bold; }
   @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }

@@ -14,6 +14,7 @@ pub mod queue;
 pub mod rng;
 pub mod sim;
 pub mod snapshot;
+pub mod terrain;
 pub mod time;
 pub mod views;
 pub mod villager;

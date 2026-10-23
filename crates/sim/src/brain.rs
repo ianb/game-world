@@ -1,9 +1,10 @@
 //! The character interface. A character set owns every villager's typed private state,
 //! reads the world through `Ctx`, and writes by returning commands. The sim applies them.
 use crate::ids::{ObjectId, PlaceId, VillagerId};
+use crate::terrain::Terrain;
 use crate::time::{Calendar, Tick, TimeOfDay};
 use crate::villager::VillagerState;
-use content::{Content, Nav, Pos, World};
+use content::{Content, Nav, Pos, Rect, World};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::fmt::Debug;
@@ -17,6 +18,7 @@ pub struct Ctx<'a> {
     pub world: &'a World,
     pub nav: &'a Nav,
     pub villagers: &'a [VillagerState],
+    pub terrain: &'a Terrain,
 }
 
 impl Ctx<'_> {
@@ -65,6 +67,21 @@ impl Ctx<'_> {
         }
         let n = u32::try_from(candidates.len()).expect("small grid");
         Some(candidates[rng.random_range(0..n) as usize])
+    }
+
+    /// Outdoor tiles in `place` that are tall, weedy or overgrown, row-major.
+    #[must_use]
+    pub fn overgrown_tiles(&self, place: PlaceId) -> Vec<Pos> {
+        self.terrain.overgrown_tiles(self.world, place.index())
+    }
+
+    /// The overgrown tile inside `area` nearest to `from` (Manhattan), if any.
+    #[must_use]
+    pub fn nearest_overgrown(&self, place: PlaceId, area: Rect, from: Pos) -> Option<Pos> {
+        self.overgrown_tiles(place)
+            .into_iter()
+            .filter(|p| area.contains(p.x, p.y))
+            .min_by_key(|p| from.x.abs_diff(p.x) + from.y.abs_diff(p.y))
     }
 
     /// Villagers in the same place as `who`, excluding `who`.
@@ -116,6 +133,9 @@ pub enum Command {
         topic: String,
         minutes: u32,
     },
+    /// Clear grass and weeds within `radius` tiles of where you stand. Instant; pair it
+    /// with a `Wait` for the time the work takes. Emits `Cleared`.
+    Clear { radius: u16 },
 }
 
 impl Command {
@@ -138,6 +158,7 @@ impl Command {
                     ctx.villager(*with).name
                 )
             }
+            Command::Clear { radius } => format!("clear within {radius}"),
         }
     }
 }

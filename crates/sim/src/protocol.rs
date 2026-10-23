@@ -68,6 +68,41 @@ pub enum Emitted {
         topic: String,
         minutes: u32,
     },
+    /// `who` cleared growth on `tiles` tiles around (x, y) in `place`.
+    Cleared {
+        tick: Tick,
+        who: VillagerId,
+        place: PlaceId,
+        x: u16,
+        y: u16,
+        tiles: u16,
+    },
+}
+
+/// What an outdoor tile looks like once wear and growth are applied to its cell.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum Surface {
+    Grass,
+    TallGrass,
+    Brush,
+    Track,
+    Cowpath,
+    Path,
+    WeedyPath,
+    OvergrownPath,
+}
+
+/// The living ground of one place, row-major; None for cells that neither wear nor grow.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct TerrainView {
+    pub place: PlaceId,
+    pub width: u16,
+    pub height: u16,
+    pub tiles: Vec<Option<Surface>>,
 }
 
 impl Emitted {
@@ -82,7 +117,8 @@ impl Emitted {
             | Emitted::Activity { tick, .. }
             | Emitted::Stuck { tick, .. }
             | Emitted::Decided { tick, .. }
-            | Emitted::Talked { tick, .. } => *tick,
+            | Emitted::Talked { tick, .. }
+            | Emitted::Cleared { tick, .. } => *tick,
         }
     }
 
@@ -94,7 +130,8 @@ impl Emitted {
             | Emitted::Activity { who, .. }
             | Emitted::Stuck { who, .. }
             | Emitted::Decided { who, .. }
-            | Emitted::Talked { who, .. } => Some(*who),
+            | Emitted::Talked { who, .. }
+            | Emitted::Cleared { who, .. } => Some(*who),
             _ => None,
         }
     }

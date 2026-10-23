@@ -34,20 +34,20 @@ pub fn where_is_everyone<C: CharacterSet>(sim: &Sim<C>) -> String {
 }
 
 /// A place with villagers drawn as the first letter of their names (uppercase).
-/// Glyphs for trodden ground: a track, then a worn path (a cowpath).
-pub const TRACK_GLYPH: char = '∙';
-pub const COWPATH_GLYPH: char = '▒';
-
+/// A place with the living ground and villagers drawn in. Villagers are the first letter
+/// of their names, uppercase. Ground glyphs follow `terrain::Surface`.
 #[must_use]
 pub fn render_place_now<C: CharacterSet>(sim: &Sim<C>, place: usize) -> String {
     let p = &sim.world().places[place];
     let mut overlay: Vec<(Pos, char)> = Vec::new();
     for y in 0..p.height {
         for x in 0..p.width {
-            match sim.wear_level(place, x, y) {
-                2 => overlay.push((Pos { x, y }, COWPATH_GLYPH)),
-                1 => overlay.push((Pos { x, y }, TRACK_GLYPH)),
-                _ => {}
+            let pos = Pos { x, y };
+            if let Some(surface) = sim.surface(place, pos) {
+                let glyph = surface.glyph();
+                if glyph != p.cell(x, y).glyph() {
+                    overlay.push((pos, glyph));
+                }
             }
         }
     }
@@ -98,6 +98,9 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
             }
             Emitted::Decided { text, .. } => {
                 let _ = writeln!(out, "  {t} [{text}]");
+            }
+            Emitted::Cleared { x, y, tiles, .. } => {
+                let _ = writeln!(out, "  {t} clears {tiles} tiles around ({x}, {y})");
             }
             Emitted::Talked {
                 with,
