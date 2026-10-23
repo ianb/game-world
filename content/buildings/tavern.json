@@ -1,0 +1,24 @@
+{
+  "id": "tavern",
+  "zone": "town",
+  "at": { "x": 4, "y": 14 },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        { "id": "hall", "rect": { "x": 1, "y": 1, "w": 10, "h": 6 } }
+      ],
+      "openings": [
+        { "at": { "x": 5, "y": 7 }, "between": ["hall"] }
+      ],
+      "objects": [
+        { "id": "bar_tavern", "kind": "counter", "room": "hall", "at": { "x": 1, "y": 1 }, "activity": "tend-bar" },
+        { "id": "table_tavern_1", "kind": "table", "room": "hall", "at": { "x": 4, "y": 2 }, "activity": "drink", "capacity": 2 },
+        { "id": "table_tavern_2", "kind": "table", "room": "hall", "at": { "x": 8, "y": 2 }, "activity": "drink", "capacity": 2 },
+        { "id": "table_tavern_3", "kind": "table", "room": "hall", "at": { "x": 8, "y": 5 }, "activity": "drink", "capacity": 2 }
+      ],
+      "arrival": { "x": 5, "y": 5 }
+    }
+  ]
+}

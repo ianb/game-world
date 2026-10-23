@@ -256,6 +256,7 @@ dependencies = [
 name = "content"
 version = "0.1.0"
 dependencies = [
+ "insta",
  "schemars",
  "serde",
  "serde_json",

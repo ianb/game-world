@@ -1,0 +1,50 @@
+{
+  "id": "house",
+  "zone": "town",
+  "at": { "x": 4, "y": 4 },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        { "id": "kitchen", "rect": { "x": 1, "y": 1, "w": 5, "h": 4 } },
+        { "id": "parlor", "rect": { "x": 7, "y": 1, "w": 5, "h": 4 } }
+      ],
+      "openings": [
+        { "at": { "x": 6, "y": 2 }, "between": ["kitchen", "parlor"] },
+        { "at": { "x": 9, "y": 5 }, "between": ["parlor"] }
+      ],
+      "objects": [
+        { "id": "stove_house", "kind": "stove", "room": "kitchen", "at": { "x": 1, "y": 1 }, "activity": "cook" },
+        { "id": "table_house", "kind": "table", "room": "parlor", "at": { "x": 9, "y": 2 }, "activity": "eat", "capacity": 2 }
+      ],
+      "arrival": { "x": 3, "y": 3 }
+    },
+    {
+      "id": "upstairs",
+      "level": 1,
+      "detached": "upper floor",
+      "rooms": [
+        { "id": "hall", "rect": { "x": 1, "y": 1, "w": 7, "h": 2 } },
+        { "id": "bedroom_a", "rect": { "x": 1, "y": 4, "w": 3, "h": 3 } },
+        { "id": "bedroom_b", "rect": { "x": 5, "y": 4, "w": 3, "h": 3 } }
+      ],
+      "openings": [
+        { "at": { "x": 2, "y": 3 }, "between": ["hall", "bedroom_a"] },
+        { "at": { "x": 6, "y": 3 }, "between": ["hall", "bedroom_b"] }
+      ],
+      "objects": [
+        { "id": "bed_mara", "kind": "bed", "room": "bedroom_a", "at": { "x": 1, "y": 4 }, "owner": "mara" },
+        { "id": "bed_tom", "kind": "bed", "room": "bedroom_b", "at": { "x": 7, "y": 4 }, "owner": "tom" }
+      ],
+      "arrival": { "x": 4, "y": 2 }
+    }
+  ],
+  "doors": [
+    {
+      "id": "stairs",
+      "from": { "floor": "ground", "at": { "x": 5, "y": 4 } },
+      "to": { "floor": "upstairs", "at": { "x": 1, "y": 1 } }
+    }
+  ]
+}

@@ -11,6 +11,9 @@ serde_json.workspace = true
 schemars = { workspace = true, optional = true }
 thiserror.workspace = true
 
+[dev-dependencies]
+insta.workspace = true
+
 [features]
 schema = ["dep:schemars"]
 
