@@ -151,9 +151,37 @@ towns felt large and sprawling next to the countryside, and you spend a lot
 of time walking around the outside of buildings. True in real life, but not
 in a fun way.
 
-Status: open, not decided. The proposal in `design/world-layout.md` now
-carries an `inline`/`detached` switch per floor so the model supports both
-and mixtures (ground floors inline, upper floors detached; open structures
-inline, houses detached). The walking cost is to be measured with the
-travel-time matrix and itinerary tools on the same town laid out both ways
-before choosing.
+Status: decided the same day; see the next entry.
+
+## 2026-10-23: Inline by default; detached for specific reasons
+
+Ian: that sounds like a good approach. Keep detached, but use it for
+specific reasons.
+
+Decision: the world is unified at one scale. Ground floors are inline on the
+exterior grid at footprint scale, with roofs hidden when the player is
+inside. Detached places remain in the model and are used only where there is
+a reason, each reason stated in the building's source.
+
+Reasons that justify a detached place:
+
+- Upper floors and cellars (stairs cut to a new scene; avoids a Z axis).
+- An interior that must be larger than its footprint for gameplay (a tavern
+  hall, a workshop floor), where the exterior would otherwise sprawl.
+- A space that is a different world in feel (a cave, a dream, a shrine).
+- Anything the renderer cannot show inline without special work.
+
+Implications:
+
+- The exterior is one continuous grid per outdoor zone, and the town is
+  built dense: shared walls, alleys, back doors, gates and cut-throughs.
+- The renderer owes roof hiding per building from the first visual build.
+  Scene swap stays for detached places.
+- Every detached floor carries a `detached: "<reason>"` field, so a reviewer
+  can see why it is not inline. The validator warns on a detached ground
+  floor with no reason.
+- NPC legibility is mostly solved by the continuous exterior; map markers
+  or a notebook are now a nice-to-have rather than a first-playable budget
+  item.
+- The travel-time matrix and itinerary tools still measure the walking
+  cost; they tune density and speed rather than decide the model.

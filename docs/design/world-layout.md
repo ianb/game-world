@@ -28,9 +28,10 @@ Proposal: an authored graph.
   `oneWay`, optional conditions (hours, owner, lock). The reverse direction
   is implied unless `oneWay` is set. Stairs are doors.
 - A **building** is a footprint on the exterior grid plus an ordered list of
-  interior places. Each floor is `inline` (on the exterior grid at footprint
-  scale) or `detached` (its own grid). The footprint's door and the ground
-  floor's door are the same record.
+  interior places. A floor is inline (on the exterior grid at footprint
+  scale, the default for ground floors) or `detached: "<reason>"` (its own
+  grid). The footprint's door and the ground floor's door are the same
+  record.
 - **Exterior zones** are places joined by edge records carrying a direction
   and offset (the Pokémon map-connection shape), even if there is only one
   zone at first. This keeps a stitched continuous exterior available later
@@ -52,7 +53,7 @@ Scaling tricks (teleport along the route after the travel time, or skipping
 ticks in places with no observer) are a later addition; the place graph and
 travel-time matrix leave room for them.
 
-## Unified versus detached interiors (open)
+## Unified versus detached interiors (decided: inline by default)
 
 Ian, 2026-10-23: a unified scale and layout as in Ultima VI could be nice.
 It allows forms like a carport or a porch without trouble. The scale is
@@ -90,11 +91,15 @@ pathfinding so the player watches a walk rather than steering it. Ultima VII
 had single-door buildings and no auto-walk, which is much of why its towns
 felt like a chore.
 
-The text-first tooling can measure this before anything is drawn: the
-travel-time matrix for the same town laid out unified and detached, and the
-one-NPC itinerary showing how much of the day is spent walking. Build the
-`inline`/`detached` switch into the model, lay out the first town both ways
-in data, and decide from the numbers and a playable.
+Decision (2026-10-23, see decisions.md): inline by default. Ground floors
+sit on the exterior grid at footprint scale with roof hiding. A floor is
+detached only for a stated reason: upper floors and cellars, an interior that
+must be larger than its footprint for gameplay, a space that is a different
+world in feel, or something the renderer cannot show inline. Each detached
+floor carries `detached: "<reason>"`, and the validator warns on a detached
+ground floor without one. The town is built dense (shared walls, alleys,
+back doors, gates, cut-throughs), and the travel-time matrix and itinerary
+tools tune density and walking speed.
 
 ## Pathfinding
 
@@ -197,6 +202,8 @@ sources.
 | Rooms on a floor do not overlap; every room has at least one opening or door | Sealed or doubled rooms |
 | Footprints do not overlap on the town grid; each footprint door opens onto a walkable town tile | Buildings in buildings |
 | Exterior edge records are mirrored on both zones | Future stitching impossible |
+| Inline floors fit their footprint; detached floors carry a reason, and a detached ground floor without one warns | Sprawl by accident, detachment by habit |
+| Every inline floor has a roof region covering its rooms and nothing else | Roofs lifting in the garden, or never lifting |
 | Capacity declared only where contention is wanted; warn where schedules send more than one NPC to an undeclared place at once | Unintended contention, per the loose-inventory decision |
 
 Renders (snapshot-tested as text files, read by a person or the agent):
@@ -218,17 +225,17 @@ structured source and edited there.
 
 ## Presentation
 
-Detached places use scene swap, as in Stardew: camera bounds per place, an
-arrival tile, a fade. Inline floors need roof hiding per building (Ultima
-VII's single lift cutoff is the simplest form, with the documented failure
-modes of roofs lifting in the garden or never lifting). Floor slicing (Sims,
+Inline floors need roof hiding per building from the first visual build.
+Ultima VII's single lift cutoff is the simplest form; the documented failure
+modes are roofs lifting in the garden or never lifting, which the roof-region
+validator above targets. Detached places use scene swap, as in Stardew:
+camera bounds per place, an arrival tile, a fade. Floor slicing (Sims,
 Project Zomboid) is not planned; upper floors are detached.
 
-The cost players name under scene swap is losing track of people. Stardew
-left villager map markers to a mod. Budget NPC legibility into the first
-playable: villager markers on the town map, or a people-against-time
-notebook in the Majora's Mask shape. Lit windows at night and door hours are
-the cheap exterior cues.
+With a continuous exterior, most NPC movement is visible, which is the
+legibility cost scene swap pays and this layout mostly avoids. Lit windows at
+night and door hours remain cheap cues; map markers or a notebook are a
+later nice-to-have.
 
 ## What to build first
 
@@ -237,7 +244,8 @@ A thin vertical slice in the text-first simulation package:
 1. Types for Building, Floor, Room, Door, Object with schema validation;
    the compiler from rooms and openings to tiles.
 2. The validators above, as tests.
-3. Three buildings (a two-floor house, a shop, a tavern) and a town square.
+3. Three buildings (a two-floor house with a detached upstairs, a shop, a
+   tavern) inline on a dense town square, with roof regions.
 4. The route table with door-to-door weights, grid A*, and the travel-time
    matrix.
 5. The time-T render and the one-NPC itinerary trace, snapshot-tested.
@@ -251,14 +259,11 @@ later.
    research; the layout does not depend on it.
 2. Where the outdoor place splits, if at all, and whether the first town
    and its surroundings are one outdoor place.
-3. How much of the legibility budget (map markers, notebook) is in the first
-   playable.
+3. Whether map markers or a notebook are wanted at all now that the exterior
+   is continuous.
 4. Whether door conditions are only hours and owner, or arbitrary
    predicates from the start.
 5. Whether rooms are rectangles only, or rectangles plus L-shapes and
    polygons from the start.
 6. Whether procedural drafting of buildings is worth building before a
    handful exist by hand.
-7. Unified or detached interiors, per building or per town. See the section
-   above; to be decided from a text-first comparison of the same town both
-   ways.

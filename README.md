@@ -13,9 +13,10 @@ editor, text-first testing, deploy to the web.
 
 ## Design proposals
 
-- [docs/design/world-layout.md](docs/design/world-layout.md): places, doors
-  and floors as a graph of ASCII maps, with the validators and renders that
-  make layout testable from text. Revised after research; not decided.
+- [docs/design/world-layout.md](docs/design/world-layout.md): a unified
+  one-scale world with inline ground floors and detached places for stated
+  reasons, authored as structured data, with the validators and generated
+  views that make layout testable from text.
 
 ## Status
 
