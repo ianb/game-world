@@ -40,7 +40,7 @@ for (const place of world.places) {
   const section = document.createElement("section");
   const h = document.createElement("h2");
   h.textContent = place.key;
-  const canvas = new PlaceCanvas(tileset, place, world.objects);
+  const canvas = new PlaceCanvas(tileset, place, world.objects, world.roofs);
   const pre = document.createElement("pre");
   pre.hidden = !showText;
   section.append(h, canvas.canvas, pre);

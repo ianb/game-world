@@ -1,7 +1,7 @@
 // The tile renderer: one canvas per place, drawn from the sim's views with the placeholder
 // tileset in public/tiles.png. Pixel art at native size, scaled up by CSS at an integer
 // factor. The text views stay the source of truth for tests; this is for eyes.
-import type { Cell, ObjectView, PlaceView, Sim, Surface, VillagerView } from "@game-world/protocol";
+import type { Cell, ObjectView, PlaceView, RoofView, Sim, Surface, VillagerView } from "@game-world/protocol";
 
 interface Atlas {
   tile: number;
@@ -121,6 +121,8 @@ export class PlaceCanvas {
   readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
   private readonly objects: ObjectView[];
+  /** Inline buildings' footprints in this place, for their name labels. */
+  private readonly roofs: RoofView[];
   private readonly outdoors: boolean;
   /** Villager key -> sprite variant, in first-seen order. */
   private readonly variants = new Map<string, number>();
@@ -129,6 +131,7 @@ export class PlaceCanvas {
     private readonly tiles: Tileset,
     private readonly place: PlaceView,
     objects: ObjectView[],
+    roofs: RoofView[] = [],
   ) {
     this.canvas = document.createElement("canvas");
     this.canvas.width = place.width * tiles.size;
@@ -141,6 +144,7 @@ export class PlaceCanvas {
     ctx.imageSmoothingEnabled = false;
     this.ctx = ctx;
     this.objects = objects.filter((o) => o.place === place.id);
+    this.roofs = roofs.filter((r) => r.place === place.id);
     this.outdoors = place.kind === "Zone";
   }
 
@@ -211,6 +215,21 @@ export class PlaceCanvas {
       }
     }
     for (const o of this.objects) tiles.draw(ctx, objectTile(o.kind), o.pos.x, o.pos.y);
+    // Building names, on the top wall of each footprint.
+    ctx.font = "bold 8px ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    for (const r of this.roofs) {
+      const s = tiles.size;
+      const label = r.building.replace(/[_-]+/g, " ");
+      const cx = (r.rect.x + r.rect.w / 2) * s;
+      const top = r.rect.y * s + 2;
+      const w = ctx.measureText(label).width + 6;
+      ctx.fillStyle = "rgba(20, 16, 10, 0.7)";
+      ctx.fillRect(cx - w / 2, top - 1, w, 11);
+      ctx.fillStyle = "#f4e8c8";
+      ctx.fillText(label, cx, top);
+    }
     for (const v of villagers) {
       if (v.place !== place.id) continue;
       let variant = this.variants.get(v.key);
