@@ -407,7 +407,12 @@ pub fn parse_time(text: &str) -> Option<u32> {
     } else {
         (t.as_str(), None)
     };
-    let (hours, minutes) = digits.split_once(':')?;
+    // "2pm" is allowed; "14" without a suffix is not, since it reads as a bare number.
+    let (hours, minutes) = match digits.split_once(':') {
+        Some((h, m)) => (h, m),
+        None if suffix.is_some() => (digits, "0"),
+        None => return None,
+    };
     let hours: u32 = hours.parse().ok()?;
     let minutes: u32 = minutes.parse().ok()?;
     let hours = match suffix {
@@ -422,7 +427,7 @@ pub fn parse_time(text: &str) -> Option<u32> {
     (minutes < 60).then_some(hours * 3600 + minutes * 60)
 }
 
-/// Parses "HH:MM-HH:MM" into (open, close) in seconds of day.
+/// Parses "open-close" (either time form) into seconds of day.
 #[must_use]
 pub fn parse_hours(spec: &str) -> Option<(u32, u32)> {
     let (open, close) = spec.split_once('-')?;

@@ -75,3 +75,17 @@ fn overlapping_footprints_are_reported() {
         text.join("\n")
     );
 }
+
+#[test]
+fn times_parse_in_both_forms() {
+    use content::validate::parse_time;
+    assert_eq!(parse_time("7:15am"), Some(7 * 3600 + 15 * 60));
+    assert_eq!(parse_time("7:15 pm"), Some(19 * 3600 + 15 * 60));
+    assert_eq!(parse_time("12:00am"), Some(0));
+    assert_eq!(parse_time("12pm"), Some(12 * 3600));
+    assert_eq!(parse_time("2pm"), Some(14 * 3600));
+    assert_eq!(parse_time("19:15"), Some(19 * 3600 + 15 * 60));
+    assert_eq!(parse_time("14"), None);
+    assert_eq!(parse_time("13pm"), None);
+    assert_eq!(parse_time("24:00"), None);
+}

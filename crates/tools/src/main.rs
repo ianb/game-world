@@ -56,7 +56,7 @@ enum Command {
         seed: u64,
         #[arg(long, default_value_t = 0)]
         day: u32,
-        /// "HH:MM"
+        /// Time of day, like "2pm", "7:15am" or "19:15".
         #[arg(long, default_value = "12:00")]
         at: String,
         #[arg(long, default_value = "target/town.png")]
@@ -68,7 +68,7 @@ enum Command {
         seed: u64,
         #[arg(long, default_value_t = 0)]
         day: u32,
-        /// "HH:MM"
+        /// Time of day, like "2pm", "7:15am" or "19:15".
         #[arg(long, default_value = "12:00")]
         at: String,
     },
@@ -211,7 +211,7 @@ fn main() -> ExitCode {
         }
         Command::Png { seed, day, at, out } => {
             let Some(secs) = content::validate::parse_time(&at) else {
-                eprintln!("--at must be HH:MM");
+                eprintln!("--at must be a time of day, like 2pm, 7:15am or 19:15");
                 return ExitCode::from(1);
             };
             let mut sim: Sim<Town> = Sim::new(seed, content);
@@ -228,7 +228,7 @@ fn main() -> ExitCode {
         }
         Command::Where { seed, day, at } => {
             let Some(secs) = content::validate::parse_time(&at) else {
-                eprintln!("--at must be HH:MM");
+                eprintln!("--at must be a time of day, like 2pm, 7:15am or 19:15");
                 return ExitCode::from(1);
             };
             let mut sim: Sim<Town> = Sim::new(seed, content);
