@@ -102,6 +102,21 @@ impl Tom {
                     wait_minutes(120, "tend-bar"),
                 ]
             }
+            // Being talked to cheers him up a little; a greeting in passing gets one back.
+            Trigger::TalkedTo { other, topic } if activity_of(ctx, "tom") != "sleep" => {
+                if topic == "greeting" {
+                    vec![Command::Greet { with: other }]
+                } else {
+                    self.mood = self.mood.saturating_add(1).min(5);
+                    vec![Command::Note(format!(
+                        "glad of the company (mood {})",
+                        self.mood
+                    ))]
+                }
+            }
+            Trigger::Passing { other } if activity_of(ctx, "tom") != "sleep" => {
+                vec![Command::Greet { with: other }]
+            }
             _ => Vec::new(),
         }
     }

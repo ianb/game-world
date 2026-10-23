@@ -57,6 +57,7 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
     let mut out = String::new();
     let name = &sim.state().villagers[who.index()].name;
     let _ = writeln!(out, "{name}");
+    let mut last_activity = String::new();
     for e in events.iter().filter(|e| e.who() == Some(who)) {
         let t = e.tick().calendar().time;
         match e {
@@ -68,9 +69,10 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
                 );
             }
             Emitted::Activity { activity, .. } if activity != "walking" => {
-                let v = &sim.state().villagers[who.index()];
-                let _ = v;
-                let _ = writeln!(out, "  {t} {activity}");
+                if *activity != last_activity {
+                    let _ = writeln!(out, "  {t} {activity}");
+                }
+                last_activity.clone_from(activity);
             }
             Emitted::Moved { place, x, y, .. } => {
                 // Only report place changes, not every tile.
@@ -81,6 +83,19 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
             }
             Emitted::Decided { text, .. } => {
                 let _ = writeln!(out, "  {t} [{text}]");
+            }
+            Emitted::Talked {
+                with,
+                topic,
+                minutes,
+                ..
+            } => {
+                let other = &sim.state().villagers[with.index()].name;
+                if *minutes == 0 {
+                    let _ = writeln!(out, "  {t} greets {other}");
+                } else {
+                    let _ = writeln!(out, "  {t} talks with {other} about {topic} ({minutes}m)");
+                }
             }
             _ => {}
         }

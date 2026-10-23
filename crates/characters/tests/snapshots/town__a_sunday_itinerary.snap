@@ -9,36 +9,68 @@ Mara
   06:45 bake
   09:00 leaves for tend-shop, eta 09:01
   09:01 tend-shop
+  12:05 [passing Pip -> greet Pip]
+  12:05 greets Pip
+  12:05 talk
+  12:10 tend-shop
+  12:30 [passing Pip -> greet Pip]
+  12:30 greets Pip
   13:00 leaves for eat, eta 13:03
   13:03 eat
   14:00 leaves for wander, eta 14:03
   14:03 wander
+  14:12 [passing Pip -> greet Pip]
+  14:12 greets Pip
+  17:50 [passing Pip -> greet Pip]
+  17:50 greets Pip
   19:00 leaves for drink, eta 19:03
   19:03 drink
   21:30 leaves for sleep, eta 21:37
+  21:35 [passing Tom -> greet Tom]
+  21:35 greets Tom
   21:37 sleep
   00:00 [plan: 06:00 cook @ stove_house; 06:40 bake @ oven_bakery; 09:00 tend-shop @ counter_bakery; 13:00 eat @ table_house; 14:00 tend-shop @ counter_bakery; 19:00 drink @ table_tavern_1; 21:30 sleep @ bed_mara]
 Tom
   07:30 leaves for eat, eta 07:33
+  07:30 [passing Pip -> greet Pip]
+  07:30 greets Pip
   07:32 eat
   10:30 leaves for fish, eta 10:36
   10:36 fish
-  10:36 [Arrived -> fish for 40m]
-  10:36 fish
-  11:16 [Waited -> fish for 40m]
-  11:16 fish
-  11:56 [Waited -> fish for 70m]
-  11:56 fish
-  13:06 [Waited -> fish for 70m]
-  13:06 fish
-  14:16 [Waited -> fish for 55m]
-  14:16 fish
-  15:11 [Waited -> fish for 70m]
-  15:11 fish
+  10:36 [arrived -> fish for 40m]
+  11:16 [waited -> fish for 40m]
+  11:33 [Pip talked about greeting -> greet Pip]
+  11:33 greets Pip
+  11:33 [passing Pip -> greet Pip]
+  11:33 greets Pip
+  11:56 [waited -> fish for 70m]
+  13:06 [waited -> fish for 55m]
+  14:01 [waited -> fish for 55m]
+  14:56 [waited -> fish for 70m]
+  15:00 [Pip talked about greeting -> greet Pip]
+  15:00 greets Pip
+  15:00 [passing Pip -> greet Pip]
+  15:00 greets Pip
   16:00 leaves for rest, eta 16:05
   16:05 rest
+  18:01 [Pip talked about greeting -> greet Pip]
+  18:01 greets Pip
+  18:01 [passing Pip -> greet Pip]
+  18:01 greets Pip
+  18:01 [Pip talked about greeting -> greet Pip]
+  18:01 greets Pip
+  20:30 [Pip talked about greeting -> greet Pip]
+  20:30 greets Pip
+  20:30 [passing Pip -> greet Pip]
+  20:30 greets Pip
+  21:35 [Mara talked about greeting -> greet Mara]
+  21:35 greets Mara
+  21:35 [passing Mara -> greet Mara]
+  21:35 greets Mara
   23:00 leaves for sleep, eta 23:03
+  23:02 [passing Pip -> greet Pip]
+  23:02 greets Pip
   23:02 sleep
   00:00 [plan: 07:30 eat @ table_house; 10:00 tend-bar @ bar_tavern; 19:30 tend-bar for 30m; 22:00 close-up @ bar_tavern; 23:00 sleep @ bed_tom]
-Mara { batches_baked: 7, pastries_delivered: 1 }
-Tom { mood: 5, days_since_day_off: 1, fish_caught: 1 }
+Mara { batches_baked: 7, pastries_delivered: 1, fish_stories_heard: 0 }
+Tom { mood: 5, days_since_day_off: 1, fish_caught: 2 }

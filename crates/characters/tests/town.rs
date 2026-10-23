@@ -132,3 +132,40 @@ fn golden_hash_after_a_week_matches_the_wasm_smoke() {
     sim.step_until(Tick(7 * TICKS_PER_DAY)).unwrap();
     insta::assert_snapshot!(sim.hash().hex());
 }
+
+#[test]
+fn villagers_greet_talk_and_remember() {
+    let mut sim: Sim<Town> = Sim::new(7, town());
+    let events = sim.step_until(at(1, 0, 0)).unwrap();
+    let talks: Vec<(&str, u32)> = events
+        .iter()
+        .filter_map(|e| match e {
+            Emitted::Talked { topic, minutes, .. } => Some((topic.as_str(), *minutes)),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        talks.contains(&("sweets", 5)),
+        "Pip pesters Mara at noon: {talks:?}"
+    );
+    assert!(
+        talks.contains(&("the day", 10)),
+        "Mara and Tom talk at the tavern: {talks:?}"
+    );
+    assert!(
+        talks
+            .iter()
+            .filter(|(t, m)| *t == "greeting" && *m == 0)
+            .count()
+            >= 4,
+        "greetings in passing: {talks:?}"
+    );
+    let c = &sim.state().characters;
+    assert_eq!(c.pip.buns, 1, "{:?}", c.pip);
+    assert!(c.tom.mood > -1, "company cheered Tom up: {:?}", c.tom);
+    // Nobody is left stuck in "talk": conversations resume the previous activity.
+    for v in &sim.state().villagers {
+        assert_ne!(v.activity, "talk", "{}", views::where_is_everyone(&sim));
+    }
+    assert!(events.iter().all(|e| !matches!(e, Emitted::Stuck { .. })));
+}

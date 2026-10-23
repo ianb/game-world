@@ -50,6 +50,23 @@ impl Ctx<'_> {
             .map(|&i| PlaceId(u16::try_from(i).expect("few places")))
     }
 
+    /// A random passable tile of the given cell kind in a place, for wandering.
+    #[must_use]
+    pub fn random_tile(&self, place: PlaceId, kind: content::Cell, rng: &mut Pcg32) -> Option<Pos> {
+        use rand::RngExt;
+        let p = &self.world.places[place.index()];
+        let candidates: Vec<Pos> = (0..p.height)
+            .flat_map(|y| (0..p.width).map(move |x| (x, y)))
+            .filter(|&(x, y)| p.cell(x, y) == kind && self.world.passable(place.index(), x, y))
+            .map(|(x, y)| Pos { x, y })
+            .collect();
+        if candidates.is_empty() {
+            return None;
+        }
+        let n = u32::try_from(candidates.len()).expect("small grid");
+        Some(candidates[rng.random_range(0..n) as usize])
+    }
+
     /// Villagers in the same place as `who`, excluding `who`.
     #[must_use]
     pub fn same_place(&self, who: VillagerId) -> Vec<VillagerId> {
@@ -88,6 +105,17 @@ pub enum Command {
     /// Does nothing to the world; emits a `Decided` line so a reader can see why the
     /// character chose what it chose. Character code should say its reasons.
     Note(String),
+    /// A word in passing. Works whether or not either party is walking; changes nothing
+    /// but emits `Talked` and gives the other party a `TalkedTo` trigger.
+    Greet { with: VillagerId },
+    /// A conversation. Both must be in the same place and standing still. Both switch to
+    /// the `talk` activity for `minutes`, then resume what they were doing and get a
+    /// `TalkEnded` trigger. Ignored if either is already talking.
+    Talk {
+        with: VillagerId,
+        topic: String,
+        minutes: u32,
+    },
 }
 
 impl Command {
@@ -99,6 +127,17 @@ impl Command {
             Command::Wait { ticks, activity } => format!("{activity} for {}m", ticks / 60),
             Command::Idle => "idle".to_string(),
             Command::Note(text) => format!("note: {text}"),
+            Command::Greet { with } => format!("greet {}", ctx.villager(*with).name),
+            Command::Talk {
+                with,
+                topic,
+                minutes,
+            } => {
+                format!(
+                    "talk with {} about {topic} for {minutes}m",
+                    ctx.villager(*with).name
+                )
+            }
         }
     }
 }
@@ -137,7 +176,7 @@ pub struct Planned {
 }
 
 /// Why the brain was asked.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Trigger {
     /// Reached the target of a `GoTo`.
     Arrived,
@@ -145,7 +184,40 @@ pub enum Trigger {
     Waited,
     /// Could not reach the target.
     Stuck,
+    /// You and `other` are now in the same place and both standing still (one of you just
+    /// arrived). Fired to both, at most once per pair per `ENCOUNTER_COOLDOWN`.
+    Encounter { other: VillagerId },
+    /// You passed within a tile of `other` while at least one of you was walking. Fired to
+    /// both, with the same cooldown.
+    Passing { other: VillagerId },
+    /// `other` greeted you or started a conversation with you.
+    TalkedTo { other: VillagerId, topic: String },
+    /// A conversation with `other` finished. Your previous activity is already restored.
+    TalkEnded { other: VillagerId, topic: String },
 }
+
+impl Trigger {
+    /// Short label with names, for traces.
+    #[must_use]
+    pub fn label(&self, ctx: &Ctx<'_>) -> String {
+        let name = |v: &VillagerId| ctx.villager(*v).name.clone();
+        match self {
+            Trigger::Arrived => "arrived".into(),
+            Trigger::Waited => "waited".into(),
+            Trigger::Stuck => "stuck".into(),
+            Trigger::Encounter { other } => format!("encounter {}", name(other)),
+            Trigger::Passing { other } => format!("passing {}", name(other)),
+            Trigger::TalkedTo { other, topic } => format!("{} talked about {topic}", name(other)),
+            Trigger::TalkEnded { other, topic } => format!("finished {topic} with {}", name(other)),
+        }
+    }
+}
+
+/// Minimum ticks between proximity triggers of one kind for the same pair.
+pub const ENCOUNTER_COOLDOWN: u32 = 20 * 60;
+
+/// How close two villagers outdoors must be to count as meeting.
+pub const ENCOUNTER_RANGE: u16 = 6;
 
 /// All characters in a town. Implemented once per town by the `characters` crate with a
 /// typed struct per villager; the sim stays generic over it.

@@ -1,0 +1,38 @@
+{
+  "id": "pip",
+  "name": "Pip",
+  "home": "house",
+  "bed": "bed_pip",
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "08:00",
+      "place": "town",
+      "activity": "roam"
+    },
+    {
+      "days": "daily",
+      "at": "12:00",
+      "object": "counter_bakery",
+      "activity": "pester"
+    },
+    {
+      "days": "daily",
+      "at": "12:30",
+      "place": "town",
+      "activity": "roam"
+    },
+    {
+      "days": "daily",
+      "at": "18:00",
+      "object": "table_house",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "20:30",
+      "object": "bed_pip",
+      "activity": "sleep"
+    }
+  ]
+}

@@ -18,6 +18,9 @@ editor, text-first testing, deploy to the web.
   reasons, authored as structured data, with the validators and generated
   views that make layout testable from text.
 
+- [docs/design/interactions.md](docs/design/interactions.md): proximity
+  triggers, greetings and conversations between villagers, and what the
+  placeholder routines do with them.
 - [docs/design/multiplayer.md](docs/design/multiplayer.md): the shape live
   multiuser would take on the current architecture, the interface invariant
   to keep now, and the same boundary used for LLM dialogue and other

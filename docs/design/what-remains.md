@@ -252,9 +252,11 @@ type generation with a drift check, the TypeScript protocol package wrapping
 the wasm behind a `Sim` interface, the vitest contract test against a
 committed fixture, a Vite text viewer with a Playwright smoke, and the
 two-character code-first spike (Mara and Tom in `crates/characters`), whose
-verdict is in decisions.md. Not yet: more villagers and buildings, the
-renderer spike (PixiJS versus Phaser 4), relationships, interruptions,
-dialogue.
+verdict is in decisions.md. Also: interactions (encounters, passing, greetings, conversations with
+resume), a decision trace, a PNG renderer, and a third placeholder villager
+(see `interactions.md`). Not yet: Ian's cast and town, the renderer spike
+(PixiJS versus Phaser 4), relationships as a ledger, interruptions beyond
+conversations, dialogue content.
 
 ## Suggested order
 

@@ -1,5 +1,7 @@
 //! The `Sim` handle: step, apply inputs, emit events, snapshot, hash.
-use crate::brain::{CharacterSet, Command, Ctx, Target, Trigger};
+use crate::brain::{
+    CharacterSet, Command, Ctx, ENCOUNTER_COOLDOWN, ENCOUNTER_RANGE, Target, Trigger,
+};
 use crate::event::Event;
 use crate::hash::{HashParts, hash_of};
 use crate::ids::{PlaceId, VillagerId};
@@ -28,6 +30,9 @@ pub struct SimState<C> {
     /// Every input ever applied, in `(tick, seq)` order. The save game.
     pub inputs: Vec<Input>,
     pub villagers: Vec<VillagerState>,
+    /// Last proximity trigger per (kind, pair with smaller id first), for the cooldown.
+    /// Kind 0 is an encounter, 1 is passing.
+    pub met: BTreeMap<(u8, u16, u16), Tick>,
     pub day_rollovers: u32,
     pub markers: Vec<(Tick, String)>,
     /// Character private state.
@@ -88,6 +93,7 @@ impl<C: CharacterSet> Sim<C> {
                     moving: None,
                     plan: BTreeMap::new(),
                     since: Tick::ZERO,
+                    resume: None,
                 }
             })
             .collect();
@@ -103,6 +109,7 @@ impl<C: CharacterSet> Sim<C> {
                 queue,
                 inputs: Vec::new(),
                 villagers,
+                met: BTreeMap::new(),
                 day_rollovers: 0,
                 markers: Vec::new(),
                 characters,
@@ -225,6 +232,22 @@ impl<C: CharacterSet> Sim<C> {
                     self.react(who, Trigger::Waited, out);
                 }
             }
+            Event::TalkEnd {
+                who,
+                other,
+                topic,
+                generation,
+            } => {
+                if self.state.villagers[who.index()].generation != generation {
+                    return;
+                }
+                let resume = self.state.villagers[who.index()]
+                    .resume
+                    .take()
+                    .unwrap_or_else(|| "idle".into());
+                self.set_activity(who, &resume, out);
+                self.react(who, Trigger::TalkEnded { other, topic }, out);
+            }
             Event::ObjectFree { .. } => {}
         }
     }
@@ -317,13 +340,14 @@ impl<C: CharacterSet> Sim<C> {
                 nav: &self.nav,
                 villagers: &self.state.villagers,
             };
+            let label = trigger.label(&ctx);
             let commands =
                 self.state
                     .characters
                     .react(who, trigger, &ctx, &mut self.state.rng.idle);
             let text = (!commands.is_empty()).then(|| {
                 let items: Vec<String> = commands.iter().map(|c| c.summary(&ctx)).collect();
-                format!("{trigger:?} -> {}", items.join("; "))
+                format!("{label} -> {}", items.join("; "))
             });
             (commands, text)
         };
@@ -360,6 +384,175 @@ impl<C: CharacterSet> Sim<C> {
             }
             Command::GoTo { target, activity } => self.go_to(who, &target, activity, out),
             Command::Note(_) => {}
+            Command::Greet { with } => {
+                if with == who || with.index() >= self.state.villagers.len() {
+                    return;
+                }
+                out.push(Emitted::Talked {
+                    tick,
+                    who,
+                    with,
+                    topic: "greeting".into(),
+                    minutes: 0,
+                });
+                self.react(
+                    with,
+                    Trigger::TalkedTo {
+                        other: who,
+                        topic: "greeting".into(),
+                    },
+                    out,
+                );
+            }
+            Command::Talk {
+                with,
+                topic,
+                minutes,
+            } => self.talk(who, with, topic, minutes, out),
+        }
+    }
+
+    fn talk(
+        &mut self,
+        who: VillagerId,
+        with: VillagerId,
+        topic: String,
+        minutes: u32,
+        out: &mut Vec<Emitted>,
+    ) {
+        let tick = self.state.tick;
+        if with == who || with.index() >= self.state.villagers.len() {
+            return;
+        }
+        let ok = {
+            let a = &self.state.villagers[who.index()];
+            let b = &self.state.villagers[with.index()];
+            a.place == b.place
+                && a.moving.is_none()
+                && b.moving.is_none()
+                && a.activity != "talk"
+                && b.activity != "talk"
+        };
+        if !ok {
+            out.push(Emitted::Decided {
+                tick,
+                who,
+                text: format!(
+                    "wanted to talk with {} but could not (apart, walking, or busy talking)",
+                    self.state.villagers[with.index()].name
+                ),
+            });
+            return;
+        }
+        out.push(Emitted::Talked {
+            tick,
+            who,
+            with,
+            topic: topic.clone(),
+            minutes,
+        });
+        for (me, other) in [(who, with), (with, who)] {
+            let v = &mut self.state.villagers[me.index()];
+            v.resume = Some(v.activity.clone());
+            v.generation += 1;
+            let generation = v.generation;
+            self.set_activity(me, "talk", out);
+            self.state.queue.schedule(
+                tick.plus(minutes * crate::time::TICKS_PER_MINUTE),
+                Event::TalkEnd {
+                    who: me,
+                    other,
+                    topic: topic.clone(),
+                    generation,
+                },
+            );
+        }
+        self.react(with, Trigger::TalkedTo { other: who, topic }, out);
+    }
+
+    /// Whether a proximity trigger may fire for this pair now; records it if so.
+    fn pair_ready(&mut self, kind: u8, a: VillagerId, b: VillagerId) -> bool {
+        let key = if a.0 <= b.0 {
+            (kind, a.0, b.0)
+        } else {
+            (kind, b.0, a.0)
+        };
+        let now = self.state.tick;
+        match self.state.met.get(&key) {
+            Some(&last) if now.0.saturating_sub(last.0) < ENCOUNTER_COOLDOWN => false,
+            _ => {
+                self.state.met.insert(key, now);
+                true
+            }
+        }
+    }
+
+    /// Together: same room, or both outside any room and within `ENCOUNTER_RANGE` tiles.
+    fn together(&self, a: &VillagerState, b: &VillagerState) -> bool {
+        if a.place != b.place {
+            return false;
+        }
+        let place = a.place.index();
+        match (
+            self.world.room_at(place, a.pos.x, a.pos.y),
+            self.world.room_at(place, b.pos.x, b.pos.y),
+        ) {
+            (Some(ra), Some(rb)) => ra == rb,
+            (None, None) => {
+                a.pos.x.abs_diff(b.pos.x) + a.pos.y.abs_diff(b.pos.y) <= ENCOUNTER_RANGE
+            }
+            _ => false,
+        }
+    }
+
+    /// `who` just came to rest: fire `Encounter` for every other resting villager with them.
+    fn encounters(&mut self, who: VillagerId, out: &mut Vec<Emitted>) {
+        let me = self.state.villagers[who.index()].clone();
+        let others: Vec<VillagerId> = self
+            .state
+            .villagers
+            .iter()
+            .enumerate()
+            .filter(|(i, v)| {
+                *i != who.index()
+                    && v.moving.is_none()
+                    && v.activity != "talk"
+                    && me.activity != "talk"
+                    && self.together(&me, v)
+            })
+            .map(|(i, _)| VillagerId(u16::try_from(i).expect("few villagers")))
+            .collect();
+        for other in others {
+            if self.pair_ready(0, who, other) {
+                self.react(who, Trigger::Encounter { other }, out);
+                self.react(other, Trigger::Encounter { other: who }, out);
+            }
+        }
+    }
+
+    /// `who` just stepped: fire `Passing` for anyone within one tile.
+    fn passing(&mut self, who: VillagerId, out: &mut Vec<Emitted>) {
+        let (place, pos) = {
+            let v = &self.state.villagers[who.index()];
+            (v.place, v.pos)
+        };
+        let others: Vec<VillagerId> = self
+            .state
+            .villagers
+            .iter()
+            .enumerate()
+            .filter(|(i, v)| {
+                *i != who.index()
+                    && v.place == place
+                    && v.pos.x.abs_diff(pos.x) + v.pos.y.abs_diff(pos.y) <= 1
+            })
+            .map(|(i, _)| VillagerId(u16::try_from(i).expect("few villagers")))
+            .collect();
+        for other in others {
+            if self.pair_ready(1, who, other) {
+                self.react(who, Trigger::Passing { other }, out);
+                self.react(other, Trigger::Passing { other: who }, out);
+            }
         }
     }
 
@@ -483,6 +676,7 @@ impl<C: CharacterSet> Sim<C> {
             v.generation += 1;
             self.set_activity(who, &activity, out);
             self.react(who, Trigger::Arrived, out);
+            self.encounters(who, out);
             return;
         }
         let route = self
@@ -542,6 +736,7 @@ impl<C: CharacterSet> Sim<C> {
         let tick = self.state.tick;
         let v = &mut self.state.villagers[who.index()];
         let Some(m) = v.moving.as_mut() else { return };
+        let mut stepped = false;
         if !m.path.is_empty() {
             let next = m.path.remove(0);
             v.pos = next;
@@ -553,6 +748,7 @@ impl<C: CharacterSet> Sim<C> {
                 x: pos.x,
                 y: pos.y,
             });
+            stepped = true;
         }
         if m.path.is_empty() {
             // Leg finished. Cross a door if one is pending, then start the next leg.
@@ -580,6 +776,7 @@ impl<C: CharacterSet> Sim<C> {
                 v.generation += 1;
                 self.set_activity(who, &activity, out);
                 self.react(who, Trigger::Arrived, out);
+                self.encounters(who, out);
                 return;
             }
             let (place, to, door_after) = m.legs.remove(0);
@@ -592,6 +789,9 @@ impl<C: CharacterSet> Sim<C> {
             tick.plus(WALK_TICKS_PER_TILE),
             Event::Arrive { who, generation },
         );
+        if stepped {
+            self.passing(who, out);
+        }
     }
 
     #[must_use]

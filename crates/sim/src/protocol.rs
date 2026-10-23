@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 4;
+pub const PROTOCOL_VERSION: u32 = 5;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -60,6 +60,14 @@ pub enum Emitted {
         who: VillagerId,
         text: String,
     },
+    /// `who` greeted or started talking with `with`. `minutes` is 0 for a greeting.
+    Talked {
+        tick: Tick,
+        who: VillagerId,
+        with: VillagerId,
+        topic: String,
+        minutes: u32,
+    },
 }
 
 impl Emitted {
@@ -73,7 +81,8 @@ impl Emitted {
             | Emitted::Departed { tick, .. }
             | Emitted::Activity { tick, .. }
             | Emitted::Stuck { tick, .. }
-            | Emitted::Decided { tick, .. } => *tick,
+            | Emitted::Decided { tick, .. }
+            | Emitted::Talked { tick, .. } => *tick,
         }
     }
 
@@ -84,7 +93,8 @@ impl Emitted {
             | Emitted::Departed { who, .. }
             | Emitted::Activity { who, .. }
             | Emitted::Stuck { who, .. }
-            | Emitted::Decided { who, .. } => Some(*who),
+            | Emitted::Decided { who, .. }
+            | Emitted::Talked { who, .. } => Some(*who),
             _ => None,
         }
     }

@@ -163,6 +163,14 @@ impl World {
             .any(|o| o.place == place && !o.walkable && o.at.x == x && o.at.y == y)
     }
 
+    /// Index into `rooms` of the room containing the tile, if any.
+    #[must_use]
+    pub fn room_at(&self, place: usize, x: u16, y: u16) -> Option<usize> {
+        self.rooms
+            .iter()
+            .position(|r| r.place == place && r.rect.contains(x, y))
+    }
+
     /// Walkable for movement: the cell allows it and no solid object sits there.
     #[must_use]
     pub fn passable(&self, place: usize, x: u16, y: u16) -> bool {

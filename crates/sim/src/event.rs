@@ -14,6 +14,13 @@ pub enum Event {
     Arrive { who: VillagerId, generation: u32 },
     /// A `Wait` elapsed. Stale if `generation` no longer matches.
     Waited { who: VillagerId, generation: u32 },
+    /// A conversation ends for `who`. Stale if `generation` no longer matches.
+    TalkEnd {
+        who: VillagerId,
+        other: VillagerId,
+        topic: String,
+        generation: u32,
+    },
     /// An object's occupant released it.
     ObjectFree { object: ObjectId },
     /// A player or external actor input, applied at its tick in `(tick, seq)` order.

@@ -36,4 +36,6 @@ pub struct VillagerState {
     pub plan: BTreeMap<Tick, Command>,
     /// Tick of the last change of activity, for views.
     pub since: Tick,
+    /// Activity to return to when a conversation ends.
+    pub resume: Option<String>,
 }

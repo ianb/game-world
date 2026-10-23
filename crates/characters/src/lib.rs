@@ -6,6 +6,7 @@
 #![deny(clippy::float_arithmetic)]
 
 pub mod mara;
+pub mod pip;
 pub mod tom;
 pub mod toolbox;
 
@@ -20,6 +21,7 @@ use sim::ids::VillagerId;
 pub struct Town {
     pub mara: mara::Mara,
     pub tom: tom::Tom,
+    pub pip: pip::Pip,
 }
 
 impl CharacterSet for Town {
@@ -27,14 +29,16 @@ impl CharacterSet for Town {
         Town {
             mara: mara::Mara::default(),
             tom: tom::Tom::default(),
+            pip: pip::Pip::default(),
         }
     }
 
     fn plan_day(&mut self, who: VillagerId, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
-        let Town { mara, tom } = self;
+        let Town { mara, tom, pip } = self;
         match ctx.villager(who).id.as_str() {
             "mara" => mara.plan_day(ctx, rng, tom),
             "tom" => tom.plan_day(ctx, rng),
+            "pip" => pip.plan_day(ctx, rng),
             _ => baseline_plan(who, ctx),
         }
     }
@@ -46,10 +50,11 @@ impl CharacterSet for Town {
         ctx: &Ctx<'_>,
         rng: &mut Pcg32,
     ) -> Vec<Command> {
-        let Town { mara, tom } = self;
+        let Town { mara, tom, pip } = self;
         match ctx.villager(who).id.as_str() {
-            "mara" => mara.react(trigger, ctx),
+            "mara" => mara.react(trigger, ctx, tom),
             "tom" => tom.react(trigger, ctx, rng, mara),
+            "pip" => pip.react(trigger, ctx, rng, mara),
             _ => Vec::new(),
         }
     }

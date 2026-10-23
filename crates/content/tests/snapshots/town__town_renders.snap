@@ -52,9 +52,10 @@ house/upstairs (9x8) arrival (4, 2)
   3 ##+###+##
   4 #b,,#,,b#
   5 #,,,#,,,#
-  6 #,,,#,,,#
+  6 #,,,#b,,#
   7 #########
 bed_mara bed at (1, 4) in house/bedroom_a owner=mara
+bed_pip bed at (5, 6) in house/bedroom_b owner=pip
 bed_tom bed at (7, 4) in house/bedroom_b owner=tom
 
 stairs (house): town (9, 8) <-> house/upstairs (1, 1)
