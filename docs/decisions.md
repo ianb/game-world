@@ -110,9 +110,9 @@ Implications:
 Ian: zones are fine, but I want a single scale. Outdoors have limited zone
 opportunities.
 
-Reading taken here (correct it if wrong): "single scale" means one
-consistent world scale, so an interior fits inside the footprint of its
-building rather than being larger on the inside. Not just one tile size.
+Reading taken here, corrected the same day (see the next entry): "single
+scale" was misread as interiors fitting their footprints. It means one tile
+scale across town and countryside.
 
 Implications:
 
@@ -125,3 +125,20 @@ Implications:
   mainly interiors and floors.
 - This makes a later continuous exterior with visible interiors (the Ultima
   VII look) cheaper, since interiors already match the footprints.
+
+## 2026-10-23: Correction: larger-inside interiors are fine; no overworld scale
+
+Ian: tesseracts (interiors larger than their footprints) are fine. What is
+not wanted is Ultima IV's two scales, a town map at one scale and a
+countryside map where a tile is a mile.
+
+Implications:
+
+- Interiors may exceed their footprints, as in Stardew. No footprint-fit
+  validator. The render may report the ratio for interest.
+- The countryside is at the same tile scale as the town. There is no
+  overworld map and no scale change when leaving town. Walking to the next
+  farm is walking the tiles.
+- This makes the outdoor world large in tiles, which is the reason outdoor
+  zones exist at all: a river, a forest line or a road can split the
+  outdoors into places joined by edge records, all at one scale.

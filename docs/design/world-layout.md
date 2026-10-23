@@ -34,13 +34,14 @@ Proposal: an authored graph.
   and offset (the Pokémon map-connection shape), even if there is only one
   zone at first. This keeps a stitched continuous exterior available later
   without re-authoring.
-- Single scale. An interior fits inside its building's footprint, so a
-  building is sized to hold its rooms. Stardew's larger-inside convention is
-  not used. A validator enforces the fit.
-- Same tile size indoors and out.
-- Outdoors is one large place, or a few, split only at natural edges (a
-  river, a tree line, the road out of town). Zones are mainly interiors and
-  floors.
+- Interiors may be larger than their footprints, as in Stardew (2.7x to
+  7.4x there). No validator enforces a fit; the render may report the ratio.
+- Single scale across town and countryside. One tile means the same
+  distance everywhere, and there is no Ultima IV-style overworld map at a
+  different scale. Same tile size indoors and out.
+- Outdoors is therefore large, and is one place or a few, split only at
+  natural edges (a river, a tree line, the road out of town) into places
+  joined by edge records. Zones are otherwise interiors and floors.
 
 What was dropped from the first draft: the claim that off-screen NPCs can
 move at the place level only. Stardew updates every NPC in every location
@@ -148,7 +149,6 @@ sources.
 | Route table independent of declaration order (shuffle test); grid search cap asserted | Order-dependent routes, silent null paths |
 | Every sleeping NPC has a bed; a bed has at most one owner | Kingdom Come's "ran out of beds" |
 | Stairs pair across floors; each place declares its floor index | Mismatched stairs |
-| Every floor's rooms fit inside the building footprint (single scale) | Larger-inside interiors |
 | Rooms on a floor do not overlap; every room has at least one opening or door | Sealed or doubled rooms |
 | Footprints do not overlap on the town grid; each footprint door opens onto a walkable town tile | Buildings in buildings |
 | Exterior edge records are mirrored on both zones | Future stitching impossible |
@@ -157,7 +157,8 @@ sources.
 Renders (snapshot-tested as text files, read by a person or the agent):
 
 - A place at time T with NPCs as letters and a who-is-where legend.
-- The town at time T with a count per building.
+- The town at time T with a count per building and the footprint-to-interior
+  ratio per building, for interest.
 - A travel-time matrix between places.
 - One NPC's day as an itinerary: departures, doors taken, arrivals, waits.
 - The door listing per building.
@@ -202,8 +203,8 @@ later.
 
 1. Tile size (16 or 32 px) is an art decision, carried over from the asset
    research; the layout does not depend on it.
-2. Where the outdoor place splits, if at all, and whether the first town is
-   one outdoor place.
+2. Where the outdoor place splits, if at all, and whether the first town
+   and its surroundings are one outdoor place.
 3. How much of the legibility budget (map markers, notebook) is in the first
    playable.
 4. Whether door conditions are only hours and owner, or arbitrary
