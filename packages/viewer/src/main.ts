@@ -189,8 +189,17 @@ $("text").addEventListener("click", () => {
 declare global {
   interface Window {
     __scene: () => { tick: number; clock: string; everyone: string; hash: string; places: string[]; canvases: number };
+    /** Runs the sim forward by whole days and redraws, for screenshots. */
+    __advance: (days: number) => void;
   }
 }
+window.__advance = (days: number) => {
+  paused = true;
+  gameTick += Math.max(0, Math.floor(days)) * 24 * 60 * TICKS_PER_MINUTE;
+  sim.stepUntil(gameTick);
+  drawnTick = -1;
+  draw();
+};
 window.__scene = () => ({
   tick: sim.tick,
   clock: clockEl.textContent ?? "",

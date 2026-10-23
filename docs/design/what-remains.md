@@ -296,5 +296,6 @@ Deferred on purpose; fix when the code they touch is next changed.
    first drama exchange, in whatever order the playable suggests.
 
 Steps 1 to 4 are text-only and are unblocked. Step 5 has started: tiles
-and sprites draw from the views; roof hiding, the player and click-to-walk
-remain. Step 6 (talk) is deferred and may be LLM-driven.
+and sprites draw from the views with auto-shaped edges; the player and
+click-to-walk are off the list for now (decisions.md, "no player yet").
+Step 6 (talk) is deferred and may be LLM-driven.

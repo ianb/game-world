@@ -20,7 +20,9 @@ in Node and compares the hash with the native golden.
 
 Text views are how you see the town: `cargo run -p tools -- day` for a day's
 itineraries, `render`, `route`, `travel-matrix`, `where`. The viewer's
-`window.__scene()` returns the same views from the browser.
+`window.__scene()` returns the same views from the browser. To see the
+tiles as drawn, build the viewer and run `node scripts/viewer-shot.mjs
+--days 20 --place town`, then read the PNG it writes.
 
 Snapshots: run `just snap` (which is `cargo insta test --accept`) locally,
 read the `.snap` diff, and commit it with a reason in the message. CI never

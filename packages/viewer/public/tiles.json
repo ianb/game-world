@@ -105,6 +105,186 @@
     "villager_3": {
       "col": 1,
       "row": 3
+    },
+    "water_full": {
+      "col": 2,
+      "row": 3
+    },
+    "water_h": {
+      "col": 3,
+      "row": 3
+    },
+    "water_v": {
+      "col": 4,
+      "row": 3
+    },
+    "water_out": {
+      "col": 5,
+      "row": 3
+    },
+    "water_in": {
+      "col": 6,
+      "row": 3
+    },
+    "canopy_full": {
+      "col": 7,
+      "row": 3
+    },
+    "canopy_h": {
+      "col": 0,
+      "row": 4
+    },
+    "canopy_v": {
+      "col": 1,
+      "row": 4
+    },
+    "canopy_out": {
+      "col": 2,
+      "row": 4
+    },
+    "canopy_in": {
+      "col": 3,
+      "row": 4
+    },
+    "path_full": {
+      "col": 4,
+      "row": 4
+    },
+    "path_h": {
+      "col": 5,
+      "row": 4
+    },
+    "path_v": {
+      "col": 6,
+      "row": 4
+    },
+    "path_out": {
+      "col": 7,
+      "row": 4
+    },
+    "path_in": {
+      "col": 0,
+      "row": 5
+    },
+    "weedy_path_full": {
+      "col": 1,
+      "row": 5
+    },
+    "weedy_path_h": {
+      "col": 2,
+      "row": 5
+    },
+    "weedy_path_v": {
+      "col": 3,
+      "row": 5
+    },
+    "weedy_path_out": {
+      "col": 4,
+      "row": 5
+    },
+    "weedy_path_in": {
+      "col": 5,
+      "row": 5
+    },
+    "overgrown_path_full": {
+      "col": 6,
+      "row": 5
+    },
+    "overgrown_path_h": {
+      "col": 7,
+      "row": 5
+    },
+    "overgrown_path_v": {
+      "col": 0,
+      "row": 6
+    },
+    "overgrown_path_out": {
+      "col": 1,
+      "row": 6
+    },
+    "overgrown_path_in": {
+      "col": 2,
+      "row": 6
+    },
+    "track_full": {
+      "col": 3,
+      "row": 6
+    },
+    "track_h": {
+      "col": 4,
+      "row": 6
+    },
+    "track_v": {
+      "col": 5,
+      "row": 6
+    },
+    "track_out": {
+      "col": 6,
+      "row": 6
+    },
+    "track_in": {
+      "col": 7,
+      "row": 6
+    },
+    "cowpath_full": {
+      "col": 0,
+      "row": 7
+    },
+    "cowpath_h": {
+      "col": 1,
+      "row": 7
+    },
+    "cowpath_v": {
+      "col": 2,
+      "row": 7
+    },
+    "cowpath_out": {
+      "col": 3,
+      "row": 7
+    },
+    "cowpath_in": {
+      "col": 4,
+      "row": 7
+    },
+    "tall_grass_full": {
+      "col": 5,
+      "row": 7
+    },
+    "tall_grass_h": {
+      "col": 6,
+      "row": 7
+    },
+    "tall_grass_v": {
+      "col": 7,
+      "row": 7
+    },
+    "tall_grass_out": {
+      "col": 0,
+      "row": 8
+    },
+    "tall_grass_in": {
+      "col": 1,
+      "row": 8
+    },
+    "brush_full": {
+      "col": 2,
+      "row": 8
+    },
+    "brush_h": {
+      "col": 3,
+      "row": 8
+    },
+    "brush_v": {
+      "col": 4,
+      "row": 8
+    },
+    "brush_out": {
+      "col": 5,
+      "row": 8
+    },
+    "brush_in": {
+      "col": 6,
+      "row": 8
     }
   }
 }

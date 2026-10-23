@@ -41,7 +41,8 @@ const page = `<title>Game World</title>
   }
   main > * { min-width: 0; }
   pre { margin: 0; white-space: pre; overflow-x: auto; }
-  canvas.place { display: block; image-rendering: pixelated; image-rendering: crisp-edges; max-width: 100%; }
+  canvas.place { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+  #places { grid-column: 1 / -1; }
   h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 8px 0 4px; }
   button { font: inherit; min-height: 44px; min-width: 64px; background: var(--bg); color: var(--fg); border: 1px solid var(--rule); border-radius: 4px; }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

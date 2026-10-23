@@ -27,18 +27,55 @@ export class Tileset {
     return this.atlas.tile;
   }
 
+  has(name: string): boolean {
+    return name in this.atlas.tiles;
+  }
+
   draw(ctx: CanvasRenderingContext2D, name: string, x: number, y: number): void {
     const t = this.atlas.tiles[name] ?? this.atlas.tiles["obj_generic"];
     if (!t) return;
     const s = this.atlas.tile;
     ctx.drawImage(this.image, t.col * s, t.row * s, s, s, x * s, y * s, s, s);
   }
+
+  /** Draws one quadrant (qx, qy in 0..1) of a shape tile into the same quadrant of (x, y). */
+  drawQuadrant(ctx: CanvasRenderingContext2D, name: string, qx: number, qy: number, x: number, y: number): void {
+    const t = this.atlas.tiles[name];
+    if (!t) return;
+    const s = this.atlas.tile;
+    const h = s / 2;
+    ctx.drawImage(this.image, t.col * s + qx * h, t.row * s + qy * h, h, h, x * s + qx * h, y * s + qy * h, h, h);
+  }
+}
+
+/** Features drawn over a background with auto-shaped edges, and which of them join up. */
+const FEATURE_GROUP: Record<string, string> = {
+  water: "water",
+  canopy: "canopy",
+  path: "path",
+  weedy_path: "path",
+  overgrown_path: "path",
+  track: "path",
+  cowpath: "path",
+  tall_grass: "grass",
+  brush: "grass",
+};
+
+type Shape = "full" | "h" | "v" | "out" | "in";
+
+/** The shape of one quadrant given whether the feature continues to its two cardinal
+ * neighbours and its diagonal. */
+function quadrantShape(side: boolean, vertical: boolean, diagonal: boolean): Shape {
+  if (side && vertical) return diagonal ? "full" : "in";
+  if (vertical) return "v";
+  if (side) return "h";
+  return "out";
 }
 
 const CELL_TILE: Record<Cell, string> = {
   Ground: "grass",
   Path: "path",
-  Blocked: "tree",
+  Blocked: "canopy",
   Water: "water",
   Wall: "wall",
   Floor: "floor",
@@ -100,22 +137,52 @@ export class PlaceCanvas {
     this.outdoors = place.kind === "Zone";
   }
 
-  /** Integer upscale so the place fits the given width, at least 1, at most `max`. */
+  /** Integer upscale so the place fits the given width, at most `max`. Only the width is
+   * set; the height follows, so tiles stay square when the page is narrower than 1x. */
   fit(width: number, max = 3): void {
     const scale = Math.max(1, Math.min(max, Math.floor(width / this.canvas.width)));
     this.canvas.style.width = `${this.canvas.width * scale}px`;
-    this.canvas.style.height = `${this.canvas.height * scale}px`;
+    this.canvas.style.maxWidth = "100%";
+    this.canvas.style.height = "auto";
   }
 
   draw(sim: Sim, villagers: VillagerView[]): void {
     const { ctx, tiles, place } = this;
     const terrain = this.outdoors ? sim.terrain(place.key).tiles : null;
-    for (let y = 0; y < place.height; y++) {
-      for (let x = 0; x < place.width; x++) {
-        const i = y * place.width + x;
-        const surface = terrain?.[i] ?? null;
-        const cell = place.cells[i] ?? "Void";
-        tiles.draw(ctx, surface ? SURFACE_TILE[surface] : CELL_TILE[cell], x, y);
+    const background = this.outdoors ? "grass" : "floor";
+    const w = place.width;
+    const h = place.height;
+    // The tile name for every cell, then a second pass shapes the auto-tiled ones.
+    const names: string[] = new Array<string>(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const surface = terrain?.[i] ?? null;
+      names[i] = surface ? SURFACE_TILE[surface] : CELL_TILE[place.cells[i] ?? "Void"];
+    }
+    // Off the map counts as the same feature, so a border forest runs off the edge.
+    const group = (x: number, y: number, self: string): boolean => {
+      if (x < 0 || y < 0 || x >= w || y >= h) return true;
+      return FEATURE_GROUP[names[y * w + x] ?? ""] === self;
+    };
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const name = names[y * w + x] ?? "void";
+        const g = FEATURE_GROUP[name];
+        if (!g || !tiles.has(`${name}_out`)) {
+          tiles.draw(ctx, name, x, y);
+          continue;
+        }
+        tiles.draw(ctx, background, x, y);
+        const n = group(x, y - 1, g), s = group(x, y + 1, g);
+        const e = group(x + 1, y, g), wst = group(x - 1, y, g);
+        const quads: [number, number, boolean, boolean, boolean][] = [
+          [0, 0, n, wst, group(x - 1, y - 1, g)],
+          [1, 0, n, e, group(x + 1, y - 1, g)],
+          [0, 1, s, wst, group(x - 1, y + 1, g)],
+          [1, 1, s, e, group(x + 1, y + 1, g)],
+        ];
+        for (const [qx, qy, vert, side, diag] of quads) {
+          tiles.drawQuadrant(ctx, `${name}_${quadrantShape(side, vert, diag)}`, qx, qy, x, y);
+        }
       }
     }
     for (const o of this.objects) tiles.draw(ctx, objectTile(o.kind), o.pos.x, o.pos.y);

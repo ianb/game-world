@@ -47,7 +47,9 @@ drawn by `scripts/make-tileset.mjs` (`just tileset`); generated art replaces
 `packages/viewer/public/tiles.png` later, keeping the names in `tiles.json`.
 Without a browser: `cargo run -p tools -- day --seed 7` prints everyone's
 day, and `cargo run -p tools -- png --at 2pm` writes a picture to
-`target/town.png`.
+`target/town.png`. After `pnpm --filter @game-world/viewer build`,
+`node scripts/viewer-shot.mjs --days 20` screenshots the town's tiles as
+the browser draws them.
 
 A hosted copy can be built with `node scripts/artifact-page.mjs target/artifact`
 after `pnpm --filter @game-world/viewer build`; it is the same page with the

@@ -536,3 +536,40 @@ bumped for the terrain change, so this bump covers both). Each frame redraws
 every tile of every place; fine at this size, and a dirty-tile cache is the
 first optimisation when it is not. Villager sprites snap to tiles; the view
 has `next_tile` for interpolation when walking should look smooth.
+
+## 2026-10-23: Auto-shaped tiles over a background; no player yet
+
+Ian: "Can we put some auto-shaping on the tiles? Like the lake shouldn't
+have square corners. This might require a sense of 'background', like the
+background of the lake is the grass, in a building the background is a
+floor. And now that we're using images, can we make the tiles square? I'm
+comfortable with simulation without a player for now, so we'll keep going
+that way."
+
+Decided:
+
+- Every cell has a background: grass outdoors, floor indoors. Features
+  (water, the canopy that `blocked` draws as, paths of every kind, tall
+  grass, brush) draw over it in four 8 px quadrants, each shaped by whether
+  the feature continues to that quadrant's two cardinal neighbours and the
+  diagonal: full, an edge, an outer corner (rounded) or an inner corner
+  (notched). Features that join (`path` with `cowpath` and `track`, `tall
+  grass` with `brush`) share a group. Off the map counts as the feature, so
+  the border forest runs off the edge. Walls, floors and doors stay plain.
+- The tileset carries five shape tiles per feature (`water_full`,
+  `water_h`, `water_v`, `water_out`, `water_in`), each holding its four
+  quadrant variants; the renderer reads sub-rects. Generated art fills the
+  same names.
+- Tiles were already square in the atlas; the page squashed them because
+  the canvas kept a fixed CSS height while its width shrank. The canvas now
+  sets only its width and the places span the full page width.
+- `scripts/viewer-shot.mjs` screenshots one place after running the sim
+  forward some days, at 2x, through a `window.__advance(days)` hook. It is
+  how the agent looks at the tiles.
+- No player for now: the game is a simulation to watch. Player walking,
+  click-to-walk and roof hiding by the player's room come off the near list.
+
+Implications: the renderer does nine neighbour lookups per feature tile,
+still cheap at this size. Inner corners are notched rather than rounded
+inward, which reads fine for water and paths. Wall shaping (a top face,
+corners) is the next thing that would make buildings look right.

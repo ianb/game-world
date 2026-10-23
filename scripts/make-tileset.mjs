@@ -8,6 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 const T = 16;
 const COLS = 8;
 
+// Blocked cells draw as a canopy blob; the lone `tree` tile stays for objects later.
 // A small deterministic PRNG so the committed PNG is reproducible.
 let seed = 0x9e3779b9;
 function rnd() {
@@ -94,6 +95,68 @@ outfits.forEach(([skin, hair, shirt], i) => {
     t.rect(5, 15, 2, 1, hex("#2a2a2a")); t.rect(9, 15, 2, 1, hex("#2a2a2a"));
   };
 });
+
+// Auto-shaped features: drawn over a background (grass outdoors, floor indoors) in four
+// 8px quadrants, each picked by whether the feature continues to that quadrant's two
+// cardinal neighbours and its diagonal. Five shape tiles per feature: `full`, `h` (an
+// edge along the top or bottom), `v` (an edge along a side), `out` (an outer corner,
+// rounded), `in` (an inner corner, notched). Each shape tile holds the four quadrant
+// variants in their own quadrants, so the renderer reads an 8px sub-rect.
+const AUTO = {
+  water: { draw: tiles.water, rim: hex("#8cc0e8") },
+  canopy: { draw: (t) => { t.fill(hex("#2f6a30")); t.speckle(hex("#3f8a3c"), 28); t.speckle(hex("#245824"), 18); t.blob(4, 4, 2, hex("#4a9a44")); t.blob(11, 10, 2, hex("#4a9a44")); }, rim: hex("#1f4a22") },
+  path: { draw: tiles.path, rim: null },
+  weedy_path: { draw: tiles.weedy_path, rim: null },
+  overgrown_path: { draw: tiles.overgrown_path, rim: null },
+  track: { draw: (t) => { pathBase(t); t.speckle(hex(grass[0]), 30); t.speckle(hex(grass[2]), 10); }, rim: null },
+  cowpath: { draw: (t) => { pathBase(t); t.speckle(hex(grass[0]), 10); }, rim: null },
+  tall_grass: { draw: tiles.tall_grass, rim: null },
+  brush: { draw: tiles.brush, rim: hex("#2f5a2a") },
+};
+
+// Shape masks in top-left orientation: (0, 0) is the tile's outer corner.
+const SHAPES = {
+  full: () => true,
+  h: () => true,
+  v: () => true,
+  out: (x, y) => (7.5 - x) ** 2 + (7.5 - y) ** 2 <= 64,
+  in: (x, y) => (x + 0.5) ** 2 + (y + 0.5) ** 2 >= 9,
+};
+// Which quadrant edges are feature edges, for the rim: [top, left] in TL orientation.
+const EDGES = { full: [false, false], h: [true, false], v: [false, true], out: [true, true], in: [false, false] };
+
+for (const [feature, { draw, rim }] of Object.entries(AUTO)) {
+  for (const [shape, inside] of Object.entries(SHAPES)) {
+    if (shape === "full") {
+      tiles[`${feature}_full`] = draw;
+      continue;
+    }
+    tiles[`${feature}_${shape}`] = (t) => {
+      const full = new Tile();
+      draw(full);
+      const [edgeTop, edgeLeft] = EDGES[shape];
+      for (const [qx, qy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+        for (let y = 0; y < 8; y++) {
+          for (let x = 0; x < 8; x++) {
+            // Orient so (0, 0) is the outer corner of this quadrant.
+            const ox = qx ? 7 - x : x;
+            const oy = qy ? 7 - y : y;
+            if (!inside(ox, oy)) continue;
+            const px = qx * 8 + x, py = qy * 8 + y;
+            let c = full.px[py * T + px];
+            if (rim) {
+              const onRim =
+                (edgeTop && oy === 0) || (edgeLeft && ox === 0) ||
+                !inside(ox + 1, oy) || !inside(ox, oy + 1) || !inside(ox - 1, oy) || !inside(ox, oy - 1);
+              if (onRim) c = rim;
+            }
+            t.set(px, py, c);
+          }
+        }
+      }
+    };
+  }
+}
 
 const names = Object.keys(tiles);
 const rows = Math.ceil(names.length / COLS);
