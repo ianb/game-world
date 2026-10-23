@@ -145,3 +145,36 @@ Notes referenced: `assets-google` = assets_google_image_models.md,
   designed to fill them. (assets-google, assets-alpha, assets-pipe)
 - [ ] Rosebud, DragonBones, and the Tuxemon / Sprout Lands / LimeZu asset
   licences were not covered. (assets-pipe)
+
+## World layout track (added 2026-10-23)
+
+Notes referenced: `layout-games` = layout_world_structure_in_shipped_games.md,
+`layout-tools` = layout_tooling_formats_and_generation.md,
+`layout-present` = layout_presenting_interiors_and_floors.md.
+
+- [ ] Exult forum threads and Exult Studio HTML docs, and Ultima Codex IFIX
+  (fixed-object) format details (Cloudflare blocks). Would confirm how upper
+  storeys and roofs are stored and the modders' account of empty upper
+  floors. (layout-games, layout-present)
+- [ ] ColePowered, Shadows of Doubt DevBlog #13 on building generation (body
+  not extractable). (layout-games, layout-tools)
+- [ ] Botea, Müller, Schaeffer, "Near Optimal Hierarchical Path-Finding"
+  (HPA*) PDF (503). (layout-games)
+- [ ] A Link to the Past entrance and room tables. (layout-games)
+- [ ] The Indie Stone's original Build 42 post on the height-limit change. (layout-games)
+- [ ] Merrell et al. 2011 "Interactive Furniture Layout Using Interior Design
+  Guidelines" and Lopes et al. 2010 floorplan generation PDFs (503). (layout-tools)
+- [ ] Brogue blueprint/vault source (404). (layout-tools)
+- [ ] Tiled's current `main.cpp`, to confirm the exact CLI flags
+  (`--export-formats`, `--project`). LDtk Super Simple Export `data.json`
+  fields and the multi-world folder layout. (layout-tools)
+- [ ] Any primary source on The Sims' wall-on-edge representation (FreeSO's
+  reimplementation was used). (layout-games, layout-tools)
+- [ ] Exult official FAQ, Bulbapedia, TV Tropes, Prima guides, the Sims
+  fandom wiki and the Dwarf Fortress wiki (403/429/503); claims from them
+  are marked "(excerpt)". (layout-present)
+- [ ] Any ConcernedApe statement on choosing separate interior maps or on
+  villager map markers; any technical source on Harvest Moon, Graveyard
+  Keeper or Moonlighter scene structure; any GDC talk comparing scene swap
+  with seamless interiors. These are gaps in the world rather than blocked
+  pages. (layout-games, layout-present)

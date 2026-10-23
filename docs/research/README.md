@@ -33,3 +33,11 @@ abstracts or secondary write-ups and are labeled that way in the notes.
 
 The notes are unedited research output. The reports were written to the
 project's prose preferences; the notes were not.
+
+## Later tracks
+
+- `generated-game-assets.md` (2026-10-22): generating 2D game assets with
+  Google's models and others. Notes: `notes/assets_*.md`.
+- `world-layout-research.md` (2026-10-23): world structure, map tooling,
+  presentation and validation for interiors, exteriors and floors. Notes:
+  `notes/layout_*.md`. Feeds `../design/world-layout.md`.

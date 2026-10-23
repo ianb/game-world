@@ -15,7 +15,7 @@ editor, text-first testing, deploy to the web.
 
 - [docs/design/world-layout.md](docs/design/world-layout.md): places, doors
   and floors as a graph of ASCII maps, with the validators and renders that
-  make layout testable from text. Proposal, not decided.
+  make layout testable from text. Revised after research; not decided.
 
 ## Status
 
@@ -37,6 +37,10 @@ Research phase. Nothing is decided about the stack yet. There is no code.
   research on generating 2D game assets with Google's models and others:
   transparency, reference images, pixel-art tools, a headless Node pipeline,
   costs, licensing. Ends with two candidate pipelines and first experiments.
+- [docs/research/world-layout-research.md](docs/research/world-layout-research.md):
+  research on how games structure interiors, exteriors and floors, map tooling
+  and text formats, procedural layout, presentation, and validation. Includes a
+  check of the layout proposal against the evidence.
 - [docs/research/blocked-sources.md](docs/research/blocked-sources.md):
   sources the research could not read, as a checklist to revisit.
 - [docs/research/notes/](docs/research/notes/): the raw notes behind the
