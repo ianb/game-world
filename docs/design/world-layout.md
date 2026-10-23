@@ -28,8 +28,9 @@ Proposal: an authored graph.
   `oneWay`, optional conditions (hours, owner, lock). The reverse direction
   is implied unless `oneWay` is set. Stairs are doors.
 - A **building** is a footprint on the exterior grid plus an ordered list of
-  interior places. The footprint's door and the ground floor's door are the
-  same record.
+  interior places. Each floor is `inline` (on the exterior grid at footprint
+  scale) or `detached` (its own grid). The footprint's door and the ground
+  floor's door are the same record.
 - **Exterior zones** are places joined by edge records carrying a direction
   and offset (the Pokémon map-connection shape), even if there is only one
   zone at first. This keeps a stitched continuous exterior available later
@@ -50,6 +51,50 @@ was found. At a few dozen NPCs and places, simulate everyone on real tiles.
 Scaling tricks (teleport along the route after the travel time, or skipping
 ticks in places with no observer) are a later addition; the place graph and
 travel-time matrix leave room for them.
+
+## Unified versus detached interiors (open)
+
+Ian, 2026-10-23: a unified scale and layout as in Ultima VI could be nice.
+It allows forms like a carport or a porch without trouble. The scale is
+awkward, though: Ultima towns felt large and sprawling next to the
+countryside, and you spend a lot of time walking around the outside of
+buildings. True in real life, but not in a fun way.
+
+The two ends:
+
+| | Unified (Ultima VI/VII) | Detached (Stardew) |
+|---|---|---|
+| Interiors | On the exterior grid at footprint scale; roofs hide when inside | Separate grids, scene swap at the door |
+| Open forms (carport, porch, market stall, open barn) | Natural | Awkward; either exterior decoration or a tiny interior |
+| Seeing NPCs move between buildings | Continuous, visible through doors and windows | They vanish at doors; legibility needs map markers |
+| Town size | Buildings must hold their rooms, so towns sprawl and walks are long | Compact exteriors, roomy interiors |
+| Floors | Need a Z layer on the same grid, or stairs that swap scenes | Each floor is its own grid |
+| Renderer | Roof groups per building, occlusion rules | Camera bounds and a fade |
+
+The data model does not have to pick one. A building's floors can be
+declared `inline` (rendered on the exterior grid at footprint scale, roof
+hidden when the player is inside) or `detached` (its own grid, scene swap).
+Both are places in the door graph. Mixed layouts follow:
+
+- Ground floors inline, upper floors detached. Walking in and out of a shop
+  is continuous; stairs cut to a new scene. This is also how the Ultima VII
+  Z problem is avoided without a Z axis.
+- Open structures inline (carport, porch, stall, barn), closed houses
+  detached.
+- A whole town unified, a farmhouse detached, chosen per building.
+
+The walking problem is a pacing problem, and it is tunable separately from
+the model: town density (buildings sharing walls, alleys, back doors),
+outdoor walking speed or a run, gates and cut-throughs, and click-to-walk
+pathfinding so the player watches a walk rather than steering it. Ultima VII
+had single-door buildings and no auto-walk, which is much of why its towns
+felt like a chore.
+
+The text-first tooling can measure this before anything is drawn: the
+travel-time matrix for the same town laid out unified and detached, and the
+one-NPC itinerary showing how much of the day is spent walking. Build the
+`inline`/`detached` switch into the model, lay out the first town both ways
+in data, and decide from the numbers and a playable.
 
 ## Pathfinding
 
@@ -173,10 +218,11 @@ structured source and edited there.
 
 ## Presentation
 
-Scene swap on doors, as in Stardew. It commits the renderer to the least:
-camera bounds per place, an arrival tile, a fade. Roof fading (Ultima VII)
-and floor slicing (Sims, Project Zomboid) both add per-building authoring and
-both have documented readability failures, so neither is planned.
+Detached places use scene swap, as in Stardew: camera bounds per place, an
+arrival tile, a fade. Inline floors need roof hiding per building (Ultima
+VII's single lift cutoff is the simplest form, with the documented failure
+modes of roofs lifting in the garden or never lifting). Floor slicing (Sims,
+Project Zomboid) is not planned; upper floors are detached.
 
 The cost players name under scene swap is losing track of people. Stardew
 left villager map markers to a mod. Budget NPC legibility into the first
@@ -213,3 +259,6 @@ later.
    polygons from the start.
 6. Whether procedural drafting of buildings is worth building before a
    handful exist by hand.
+7. Unified or detached interiors, per building or per town. See the section
+   above; to be decided from a text-first comparison of the same town both
+   ways.

@@ -142,3 +142,18 @@ Implications:
 - This makes the outdoor world large in tiles, which is the reason outdoor
   zones exist at all: a river, a forest line or a road can split the
   outdoors into places joined by edge records, all at one scale.
+
+## 2026-10-23: Open: unified (Ultima VI) versus detached (Stardew) interiors
+
+Ian: an actual unified scale and layout as in Ultima VI could be nice and
+allows forms like a carport without trouble. The scale is awkward: Ultima
+towns felt large and sprawling next to the countryside, and you spend a lot
+of time walking around the outside of buildings. True in real life, but not
+in a fun way.
+
+Status: open, not decided. The proposal in `design/world-layout.md` now
+carries an `inline`/`detached` switch per floor so the model supports both
+and mixtures (ground floors inline, upper floors detached; open structures
+inline, houses detached). The walking cost is to be measured with the
+travel-time matrix and itinerary tools on the same town laid out both ways
+before choosing.
