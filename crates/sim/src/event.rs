@@ -8,10 +8,12 @@ use serde::{Deserialize, Serialize};
 pub enum Event {
     /// Midnight. Schedules are resolved for the new day and the next rollover is queued.
     DayRollover,
-    /// A villager's brain asked to be woken. Stale if `generation` no longer matches.
+    /// A planned command's departure time. Stale if `generation` no longer matches.
     WakeUp { who: VillagerId, generation: u32 },
-    /// A villager reaches the next tile of its path. Stale if `generation` no longer matches.
+    /// A villager steps to the next tile of its path. Stale if `generation` no longer matches.
     Arrive { who: VillagerId, generation: u32 },
+    /// A `Wait` elapsed. Stale if `generation` no longer matches.
+    Waited { who: VillagerId, generation: u32 },
     /// An object's occupant released it.
     ObjectFree { object: ObjectId },
     /// A player or external actor input, applied at its tick in `(tick, seq)` order.

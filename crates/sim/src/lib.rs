@@ -4,6 +4,7 @@
 //! function of (content, seed, inputs). See `docs/decisions.md`.
 #![deny(clippy::float_arithmetic)]
 
+pub mod brain;
 pub mod event;
 pub mod hash;
 pub mod ids;
@@ -14,6 +15,9 @@ pub mod rng;
 pub mod sim;
 pub mod snapshot;
 pub mod time;
+pub mod views;
+pub mod villager;
 
+pub use brain::{CharacterSet, Command, Ctx, DataCharacters, Planned, Target, Trigger};
 pub use sim::{Sim, SimError, SimState};
 pub use time::Tick;

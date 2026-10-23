@@ -168,6 +168,58 @@ pub struct Building {
     pub doors: Vec<DoorSpec>,
 }
 
+/// Which days a schedule entry applies to. More specific patterns win over `daily`.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "lowercase")]
+pub enum DayPattern {
+    Daily,
+    Weekday,
+    Weekend,
+    Mon,
+    Tue,
+    Wed,
+    Thu,
+    Fri,
+    Sat,
+    Sun,
+}
+
+impl DayPattern {
+    /// Higher is more specific.
+    #[must_use]
+    pub fn specificity(&self) -> u8 {
+        match self {
+            DayPattern::Daily => 0,
+            DayPattern::Weekday | DayPattern::Weekend => 1,
+            _ => 2,
+        }
+    }
+}
+
+/// Where a schedule entry sends the villager: next to an object, or a place's arrival tile.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct ScheduleTarget {
+    #[serde(default)]
+    pub object: Option<String>,
+    #[serde(default)]
+    pub place: Option<String>,
+}
+
+/// One baseline schedule entry: at `at`, leave for the target and do `activity` there.
+/// The time is a departure time; travel is computed.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct ScheduleEntry {
+    pub days: DayPattern,
+    /// "HH:MM"
+    pub at: String,
+    #[serde(flatten)]
+    pub target: ScheduleTarget,
+    pub activity: String,
+}
+
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Villager {
@@ -176,6 +228,9 @@ pub struct Villager {
     pub home: String,
     /// Object id of this villager's bed.
     pub bed: String,
+    /// Baseline schedule. Character code may extend or override it.
+    #[serde(default)]
+    pub schedule: Vec<ScheduleEntry>,
 }
 
 /// Everything loaded from the content directory.

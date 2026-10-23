@@ -3,6 +3,8 @@ use clap::{Parser, Subcommand};
 use content::{
     Nav, Pos, Spot, compile, list_doors, list_objects, load_dir, nav, render_place, validate,
 };
+use sim::time::{TICKS_PER_DAY, Tick};
+use sim::{DataCharacters, Sim, views};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -32,6 +34,18 @@ enum Command {
     Doors,
     /// Travel times between every place's arrival tile.
     TravelMatrix,
+    /// Run the town for a day with the baseline characters and print every villager's
+    /// itinerary, plus where everyone is at the given hours.
+    Day {
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        /// Day index to run (0 is the first day).
+        #[arg(long, default_value_t = 0)]
+        day: u32,
+        /// Hours at which to print the town, e.g. 9 14 20.
+        #[arg(long, value_delimiter = ',', default_values_t = vec![9u32, 14, 20])]
+        snapshots: Vec<u32>,
+    },
     /// Route between two tiles, printed as legs and drawn on the places it crosses.
     Route {
         from_place: String,
@@ -91,6 +105,34 @@ fn main() -> ExitCode {
         Command::Doors => {
             let world = compile::compile(&content);
             println!("{}", list_doors(&world));
+            ExitCode::SUCCESS
+        }
+        Command::Day {
+            seed,
+            day,
+            snapshots,
+        } => {
+            let mut sim: Sim<DataCharacters> = Sim::new(seed, content);
+            let start = Tick(day * TICKS_PER_DAY);
+            sim.step_until(start).unwrap();
+            let mut events = Vec::new();
+            let mut hours: Vec<u32> = snapshots;
+            hours.sort_unstable();
+            for h in hours {
+                events.extend(sim.step_until(start.at_time(h.min(23), 0)).unwrap());
+                print!("{}", views::where_is_everyone(&sim));
+                for i in 0..sim.world().places.len() {
+                    print!("{}", views::render_place_now(&sim, i));
+                }
+                println!();
+            }
+            events.extend(sim.step_until(start.plus(TICKS_PER_DAY)).unwrap());
+            for i in 0..sim.state().villagers.len() {
+                let who = sim::ids::VillagerId(u16::try_from(i).unwrap());
+                print!("{}", views::itinerary(&sim, who, &events));
+                print!("{}", views::place_changes(&sim, who, &events));
+            }
+            println!("hash {}", sim.hash().hex());
             ExitCode::SUCCESS
         }
         Command::TravelMatrix => {

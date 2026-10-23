@@ -345,17 +345,20 @@ fn check_doors(world: &World, r: &mut Report) {
     }
 }
 
+/// Parses "HH:MM" into seconds of day.
+#[must_use]
+pub fn parse_time(text: &str) -> Option<u32> {
+    let (hours, minutes) = text.split_once(':')?;
+    let hours: u32 = hours.parse().ok()?;
+    let minutes: u32 = minutes.parse().ok()?;
+    (hours < 24 && minutes < 60).then_some(hours * 3600 + minutes * 60)
+}
+
 /// Parses "HH:MM-HH:MM" into (open, close) in seconds of day.
 #[must_use]
 pub fn parse_hours(spec: &str) -> Option<(u32, u32)> {
     let (open, close) = spec.split_once('-')?;
-    let parse = |text: &str| -> Option<u32> {
-        let (hours, minutes) = text.split_once(':')?;
-        let hours: u32 = hours.parse().ok()?;
-        let minutes: u32 = minutes.parse().ok()?;
-        (hours < 24 && minutes < 60).then_some(hours * 3600 + minutes * 60)
-    };
-    Some((parse(open)?, parse(close)?))
+    Some((parse_time(open)?, parse_time(close)?))
 }
 
 /// Flood fill of passable tiles from a start, four-connected.
@@ -593,6 +596,28 @@ fn check_villagers(content: &Content, world: &World, r: &mut Report) {
                         ),
                     );
                 }
+            }
+        }
+    }
+    for v in &content.villagers {
+        let subj = format!("villagers/{}", v.id);
+        for (i, e) in v.schedule.iter().enumerate() {
+            let es = format!("{subj}: schedule[{i}]");
+            if parse_time(&e.at).is_none() {
+                r.error(&es, format!("at {:?} is not HH:MM", e.at));
+            }
+            match (&e.target.object, &e.target.place) {
+                (Some(o), None) => {
+                    if !world.objects.iter().any(|x| &x.id == o) {
+                        r.error(&es, format!("object {o:?} not found"));
+                    }
+                }
+                (None, Some(p)) => {
+                    if !world.place_index.contains_key(p) {
+                        r.error(&es, format!("place {p:?} not found"));
+                    }
+                }
+                _ => r.error(&es, "set exactly one of `object` or `place`"),
             }
         }
     }
