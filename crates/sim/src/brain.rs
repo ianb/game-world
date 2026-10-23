@@ -1,12 +1,14 @@
 //! The character interface. A character set owns every villager's typed private state,
 //! reads the world through `Ctx`, and writes by returning commands. The sim applies them.
 use crate::ids::{ObjectId, PlaceId, VillagerId};
+use crate::needs::{Need, Needs};
 use crate::terrain::Terrain;
 use crate::time::{Calendar, Tick, TimeOfDay};
 use crate::villager::VillagerState;
 use content::{Content, Nav, Pos, Rect, World};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use std::collections::BTreeMap;
 use std::fmt::Debug;
 
 /// Read-only view of the sim for character code.
@@ -19,6 +21,8 @@ pub struct Ctx<'a> {
     pub nav: &'a Nav,
     pub villagers: &'a [VillagerState],
     pub terrain: &'a Terrain,
+    /// Goods on objects, by object index then good.
+    pub stock: &'a BTreeMap<u16, BTreeMap<String, u16>>,
 }
 
 impl Ctx<'_> {
@@ -67,6 +71,58 @@ impl Ctx<'_> {
         }
         let n = u32::try_from(candidates.len()).expect("small grid");
         Some(candidates[rng.random_range(0..n) as usize])
+    }
+
+    #[must_use]
+    pub fn coins(&self, who: VillagerId) -> u32 {
+        self.villager(who).coins
+    }
+
+    #[must_use]
+    pub fn needs(&self, who: VillagerId) -> &Needs {
+        &self.villager(who).needs
+    }
+
+    /// Goods of one kind on an object.
+    #[must_use]
+    pub fn stock(&self, object: ObjectId, good: &str) -> u16 {
+        self.stock
+            .get(&object.0)
+            .and_then(|goods| goods.get(good))
+            .copied()
+            .unwrap_or(0)
+    }
+
+    /// Objects of a kind, in content order.
+    #[must_use]
+    pub fn objects_of_kind(&self, kind: &str) -> Vec<ObjectId> {
+        self.world
+            .objects
+            .iter()
+            .enumerate()
+            .filter(|(_, o)| o.kind == kind)
+            .map(|(i, _)| ObjectId(u16::try_from(i).expect("few objects")))
+            .collect()
+    }
+
+    /// The object of a kind nearest to `who` by travel time, if any is reachable.
+    #[must_use]
+    pub fn nearest_object(&self, who: VillagerId, kind: &str) -> Option<ObjectId> {
+        let v = self.villager(who);
+        let here = content::Spot::new(v.place.index(), v.pos.x, v.pos.y);
+        self.objects_of_kind(kind)
+            .into_iter()
+            .filter_map(|id| {
+                let o = &self.world.objects[id.index()];
+                let access = content::validate::neighbours(o.at.x, o.at.y)
+                    .into_iter()
+                    .find(|&(x, y)| self.world.passable(o.place, x, y))?;
+                let there = content::Spot::new(o.place, access.0, access.1);
+                let cost = self.nav.route(self.world, here, there)?.cost;
+                Some((cost, id))
+            })
+            .min_by_key(|(cost, id)| (*cost, id.0))
+            .map(|(_, id)| id)
     }
 
     /// Outdoor tiles in `place` that are tall, weedy or overgrown, row-major.
@@ -136,6 +192,35 @@ pub enum Command {
     /// Clear grass and weeds within `radius` tiles of where you stand. Instant; pair it
     /// with a `Wait` for the time the work takes. Emits `Cleared`.
     Clear { radius: u16 },
+    /// Move money. Pays what the payer has if that is less than `amount`. Emits `Paid`.
+    Pay {
+        from: Party,
+        to: Party,
+        amount: u32,
+        what: String,
+    },
+    /// Change the goods on an object by `delta` (never below zero). Emits `Stocked`.
+    Stock {
+        object: ObjectId,
+        good: String,
+        delta: i32,
+    },
+    /// Go to `target`, do `activity` there for `minutes`, then walk back to where you were
+    /// and resume what you were doing. A second interlude while one is running keeps the
+    /// first return point.
+    Interlude {
+        target: Target,
+        activity: String,
+        minutes: u32,
+    },
+}
+
+/// Who pays or is paid. `Outside` is the world beyond the town: pensions come from it,
+/// supplies are bought from it.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+pub enum Party {
+    Villager(VillagerId),
+    Outside,
 }
 
 impl Command {
@@ -159,6 +244,38 @@ impl Command {
                 )
             }
             Command::Clear { radius } => format!("clear within {radius}"),
+            Command::Pay {
+                from,
+                to,
+                amount,
+                what,
+            } => {
+                let name = |p: &Party| match p {
+                    Party::Villager(v) => ctx.villager(*v).name.clone(),
+                    Party::Outside => "outside".to_string(),
+                };
+                format!("{} pays {} {amount} for {what}", name(from), name(to))
+            }
+            Command::Stock {
+                object,
+                good,
+                delta,
+            } => {
+                let key = ctx
+                    .world
+                    .objects
+                    .get(object.index())
+                    .map_or_else(|| format!("object#{}", object.0), |o| o.id.clone());
+                format!("{good} {delta:+} at {key}")
+            }
+            Command::Interlude {
+                target,
+                activity,
+                minutes,
+            } => format!(
+                "{activity} for {minutes}m @ {} then back",
+                target.summary(ctx)
+            ),
         }
     }
 }
@@ -215,6 +332,10 @@ pub enum Trigger {
     TalkedTo { other: VillagerId, topic: String },
     /// A conversation with `other` finished. Your previous activity is already restored.
     TalkEnded { other: VillagerId, topic: String },
+    /// A need of yours got pressing (70) or urgent (90). `level` is its value now.
+    Need { need: Need, level: u8 },
+    /// Back from an errand (an `Interlude`), at the spot and activity you left.
+    Resumed,
 }
 
 impl Trigger {
@@ -230,6 +351,8 @@ impl Trigger {
             Trigger::Passing { other } => format!("passing {}", name(other)),
             Trigger::TalkedTo { other, topic } => format!("{} talked about {topic}", name(other)),
             Trigger::TalkEnded { other, topic } => format!("finished {topic} with {}", name(other)),
+            Trigger::Need { need, level } => format!("{} ({level})", need.name()),
+            Trigger::Resumed => "resumed".into(),
         }
     }
 }

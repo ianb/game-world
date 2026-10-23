@@ -1,6 +1,7 @@
 //! Per-villager simulation state: where they are, where they are going, what they are doing.
 use crate::brain::Command;
 use crate::ids::PlaceId;
+use crate::needs::Needs;
 use crate::time::Tick;
 use content::Pos;
 use serde::{Deserialize, Serialize};
@@ -33,6 +34,8 @@ pub struct Movement {
     pub door_after: Option<Crossing>,
     /// What to do on arrival.
     pub then: String,
+    /// True when this is the walk back from an errand: arrival resumes rather than starts.
+    pub resuming: bool,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -58,4 +61,23 @@ pub struct VillagerState {
     pub talk_until: Option<Tick>,
     /// When the current `Wait` elapses, if waiting. A conversation defers it.
     pub wait_until: Option<Tick>,
+    pub coins: u32,
+    pub needs: Needs,
+    /// A short errand (a drink, the privy) in the middle of something else: where to go
+    /// back to when it is done.
+    pub interlude: Option<Interlude>,
+    /// Ticks of an interrupted wait to re-arm once the walk back ends.
+    pub resume_wait: Option<u32>,
+}
+
+/// An errand that returns the villager to where they were.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Interlude {
+    pub activity: String,
+    pub minutes: u32,
+    pub back_place: PlaceId,
+    pub back_pos: Pos,
+    pub back_activity: String,
+    /// Ticks left on a `Wait` that the errand interrupted, re-armed on return.
+    pub back_wait: Option<u32>,
 }

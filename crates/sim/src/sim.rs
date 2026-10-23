@@ -1,18 +1,19 @@
 //! The `Sim` handle: step, apply inputs, emit events, snapshot, hash.
 use crate::brain::{
-    CharacterSet, Command, Ctx, ENCOUNTER_COOLDOWN, ENCOUNTER_RANGE, Target, Trigger,
+    CharacterSet, Command, Ctx, ENCOUNTER_COOLDOWN, ENCOUNTER_RANGE, Party, Target, Trigger,
 };
 use crate::event::Event;
 use crate::hash::{HashParts, hash_of};
-use crate::ids::{PlaceId, VillagerId};
+use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::input::{Input, InputKind, Source};
+use crate::needs::Needs;
 use crate::protocol::Emitted;
 use crate::queue::EventQueue;
 use crate::rng::Streams;
 use crate::snapshot::{self, SnapshotError};
 use crate::terrain::{Surface, Terrain};
-use crate::time::{TICKS_PER_DAY, TICKS_PER_MINUTE, Tick};
-use crate::villager::{Crossing, Movement, PlannedLeg, VillagerState};
+use crate::time::{TICKS_PER_DAY, TICKS_PER_HOUR, TICKS_PER_MINUTE, Tick};
+use crate::villager::{Crossing, Interlude, Movement, PlannedLeg, VillagerState};
 use content::{Content, Nav, Pos, Spot, WALK_TICKS_PER_TILE, World, nav};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -38,6 +39,9 @@ pub struct SimState<C> {
     /// Last proximity trigger per (kind, pair with smaller id first), for the cooldown.
     /// Kind 0 is an encounter, 1 is passing.
     pub met: BTreeMap<(u8, u16, u16), Tick>,
+    /// Goods on objects, by object index then good name. Sloppy by design: no weights,
+    /// no capacities, just counts where somebody cares.
+    pub stock: BTreeMap<u16, BTreeMap<String, u16>>,
     /// Wear and growth on every outdoor tile: cowpaths form where villagers walk, grass
     /// and weeds grow where they do not.
     pub terrain: Terrain,
@@ -94,7 +98,7 @@ impl<C: CharacterSet> Sim<C> {
     pub fn new(seed: u64, content: Content) -> Sim<C> {
         let world = content::compile::compile(&content);
         let nav = Nav::build(&world);
-        let villagers = content
+        let villagers: Vec<VillagerState> = content
             .villagers
             .iter()
             .map(|v| {
@@ -113,23 +117,39 @@ impl<C: CharacterSet> Sim<C> {
                     resume: None,
                     talk_until: None,
                     wait_until: None,
+                    coins: v.coins,
+                    needs: Needs::default(),
+                    interlude: None,
+                    resume_wait: None,
                 }
             })
             .collect();
         let characters = C::new(&content, &world);
+        let mut rng = Streams::from_seed(seed);
+        let mut villagers = villagers;
+        for v in &mut villagers {
+            v.needs = Needs::starting(&mut rng.body);
+        }
         let mut queue = EventQueue::default();
         queue.schedule(Tick(TICKS_PER_DAY), Event::DayRollover);
+        // Each body ticks hourly, staggered a few minutes apart so nobody acts in step.
+        for (i, _) in villagers.iter().enumerate() {
+            let who = VillagerId(u16::try_from(i).expect("few villagers"));
+            let offset = u32::try_from(i).expect("few villagers") * 7 * TICKS_PER_MINUTE;
+            queue.schedule(Tick(TICKS_PER_HOUR + offset), Event::Body { who });
+        }
         let mut sim = Sim {
             state: SimState {
                 seed,
                 content_hash: content_hash(&content),
                 tick: Tick::ZERO,
-                rng: Streams::from_seed(seed),
+                rng,
                 queue,
                 inputs: Vec::new(),
                 next_input_seq: 1,
                 villagers,
                 met: BTreeMap::new(),
+                stock: starting_stock(&content, &world),
                 terrain: Terrain::new(&world),
                 day_rollovers: 0,
                 markers: Vec::new(),
@@ -182,6 +202,7 @@ impl<C: CharacterSet> Sim<C> {
             nav: &self.nav,
             villagers: &self.state.villagers,
             terrain: &self.state.terrain,
+            stock: &self.state.stock,
         }
     }
 
@@ -270,6 +291,17 @@ impl<C: CharacterSet> Sim<C> {
                     return;
                 }
                 v.wait_until = None;
+                if let Some(back) = v.interlude.take()
+                    && v.activity == back.activity
+                {
+                    let target = Target::Tile {
+                        place: back.back_place,
+                        pos: back.back_pos,
+                    };
+                    v.resume_wait = back.back_wait;
+                    self.go_to_with(who, &target, back.back_activity, true, out);
+                    return;
+                }
                 self.react(who, Trigger::Waited, out);
             }
             Event::TalkEnd { who, other, topic } => {
@@ -283,6 +315,27 @@ impl<C: CharacterSet> Sim<C> {
                 self.react(who, Trigger::TalkEnded { other, topic }, out);
             }
             Event::ObjectFree { .. } => {}
+            Event::Body { who } => {
+                self.state
+                    .queue
+                    .schedule(tick.plus(TICKS_PER_HOUR), Event::Body { who });
+                let asleep = self.state.villagers[who.index()].activity == "sleep";
+                let crossed = self.state.villagers[who.index()]
+                    .needs
+                    .hour(asleep, &mut self.state.rng.body);
+                for need in crossed {
+                    let level = self.state.villagers[who.index()].needs.get(need);
+                    out.push(Emitted::Need {
+                        tick,
+                        who,
+                        need,
+                        level,
+                    });
+                    if !asleep {
+                        self.react(who, Trigger::Need { need, level }, out);
+                    }
+                }
+            }
         }
     }
 
@@ -353,6 +406,7 @@ impl<C: CharacterSet> Sim<C> {
                     nav: &self.nav,
                     villagers: &self.state.villagers,
                     terrain: &self.state.terrain,
+                    stock: &self.state.stock,
                 };
                 let planned =
                     self.state
@@ -415,6 +469,7 @@ impl<C: CharacterSet> Sim<C> {
                 nav: &self.nav,
                 villagers: &self.state.villagers,
                 terrain: &self.state.terrain,
+                stock: &self.state.stock,
             };
             let label = trigger.label(&ctx);
             let commands =
@@ -469,6 +524,22 @@ impl<C: CharacterSet> Sim<C> {
             }
             Command::GoTo { target, activity } => self.go_to(who, &target, activity, out),
             Command::Note(_) => {}
+            Command::Pay {
+                from,
+                to,
+                amount,
+                what,
+            } => self.pay(who, from, to, amount, what, out),
+            Command::Stock {
+                object,
+                good,
+                delta,
+            } => self.stock(who, object, &good, delta, out),
+            Command::Interlude {
+                target,
+                activity,
+                minutes,
+            } => self.interlude(who, &target, activity, minutes, out),
             Command::Clear { radius } => {
                 let v = &self.state.villagers[who.index()];
                 let (place, at) = (v.place, v.pos);
@@ -671,6 +742,7 @@ impl<C: CharacterSet> Sim<C> {
         if v.activity != activity {
             v.activity = activity.to_string();
             v.since = tick;
+            v.needs.on_activity(activity);
         }
         out.push(Emitted::Activity {
             tick,
@@ -780,6 +852,116 @@ impl<C: CharacterSet> Sim<C> {
         ))
     }
 
+    fn pay(
+        &mut self,
+        who: VillagerId,
+        from: Party,
+        to: Party,
+        amount: u32,
+        what: String,
+        out: &mut Vec<Emitted>,
+    ) {
+        let tick = self.state.tick;
+        let available = match from {
+            Party::Villager(v) => self.state.villagers[v.index()].coins,
+            Party::Outside => u32::MAX,
+        };
+        let amount = amount.min(available);
+        if let Party::Villager(v) = from {
+            self.state.villagers[v.index()].coins -= amount;
+        }
+        if let Party::Villager(v) = to {
+            let c = &mut self.state.villagers[v.index()].coins;
+            *c = c.saturating_add(amount);
+        }
+        let party = |p: Party| match p {
+            Party::Villager(v) => Some(v),
+            Party::Outside => None,
+        };
+        out.push(Emitted::Paid {
+            tick,
+            who,
+            from: party(from),
+            to: party(to),
+            amount,
+            what,
+        });
+    }
+
+    fn stock(
+        &mut self,
+        who: VillagerId,
+        object: ObjectId,
+        good: &str,
+        delta: i32,
+        out: &mut Vec<Emitted>,
+    ) {
+        let tick = self.state.tick;
+        if object.index() >= self.world.objects.len() {
+            return;
+        }
+        let goods = self.state.stock.entry(object.0).or_default();
+        let count = goods.entry(good.to_string()).or_insert(0);
+        let before = i32::from(*count);
+        let after = u16::try_from((before + delta).max(0)).unwrap_or(u16::MAX);
+        *count = after;
+        let delta = i32::from(after) - before;
+        if after == 0 {
+            goods.remove(good);
+        }
+        out.push(Emitted::Stocked {
+            tick,
+            who,
+            object,
+            good: good.to_string(),
+            delta,
+            now: after,
+        });
+    }
+
+    /// An errand that comes back: remember where to return to, then go.
+    fn interlude(
+        &mut self,
+        who: VillagerId,
+        target: &Target,
+        activity: String,
+        minutes: u32,
+        out: &mut Vec<Emitted>,
+    ) {
+        let v = &mut self.state.villagers[who.index()];
+        if let Some(i) = &mut v.interlude {
+            i.activity.clone_from(&activity);
+            i.minutes = minutes;
+        } else {
+            // Where to come back to: the current spot and what was going on, or
+            // the destination and purpose if mid-journey.
+            let (back_place, back_pos, back_activity) = match &v.moving {
+                Some(m) => match m.legs.last() {
+                    Some(l) => (l.place, l.to, m.then.clone()),
+                    None => (
+                        v.place,
+                        m.path.last().copied().unwrap_or(v.pos),
+                        m.then.clone(),
+                    ),
+                },
+                None => (v.place, v.pos, v.activity.clone()),
+            };
+            let back_wait = v
+                .wait_until
+                .filter(|end| end.0 > self.state.tick.0)
+                .map(|end| end.0 - self.state.tick.0);
+            v.interlude = Some(Interlude {
+                activity: activity.clone(),
+                minutes,
+                back_place,
+                back_pos,
+                back_activity,
+                back_wait,
+            });
+        }
+        self.go_to(who, target, activity, out);
+    }
+
     fn stuck(&mut self, who: VillagerId, reason: String, out: &mut Vec<Emitted>) {
         let tick = self.state.tick;
         self.interrupt(who);
@@ -793,6 +975,18 @@ impl<C: CharacterSet> Sim<C> {
         who: VillagerId,
         target: &Target,
         activity: String,
+        out: &mut Vec<Emitted>,
+    ) {
+        self.go_to_with(who, target, activity, false, out);
+    }
+
+    /// `resuming` marks the walk back from an errand; arrival then fires `Resumed`.
+    fn go_to_with(
+        &mut self,
+        who: VillagerId,
+        target: &Target,
+        activity: String,
+        resuming: bool,
         out: &mut Vec<Emitted>,
     ) {
         let tick = self.state.tick;
@@ -809,7 +1003,7 @@ impl<C: CharacterSet> Sim<C> {
         };
         if here == dest {
             self.interrupt(who);
-            self.arrive(who, &activity, out);
+            self.arrive(who, &activity, resuming, out);
             return;
         }
         let cost = |place: usize, pos: Pos| self.step_cost(place, pos);
@@ -856,6 +1050,7 @@ impl<C: CharacterSet> Sim<C> {
             path: path.into_iter().skip(1).collect(),
             door_after: first.crossing,
             then: activity.clone(),
+            resuming,
         });
         self.set_activity(who, "walking", out);
         out.push(Emitted::Departed {
@@ -871,8 +1066,38 @@ impl<C: CharacterSet> Sim<C> {
     }
 
     /// Reaching a destination: activity, the brain, encounters.
-    fn arrive(&mut self, who: VillagerId, activity: &str, out: &mut Vec<Emitted>) {
+    fn arrive(&mut self, who: VillagerId, activity: &str, resuming: bool, out: &mut Vec<Emitted>) {
         self.set_activity(who, activity, out);
+        if resuming {
+            // Re-arm the wait the errand interrupted, with the time it had left.
+            if let Some(left) = self.state.villagers[who.index()].resume_wait.take() {
+                let tick = self.state.tick;
+                let v = &mut self.state.villagers[who.index()];
+                let generation = v.generation;
+                v.wait_until = Some(tick.plus(left));
+                self.state
+                    .queue
+                    .schedule(tick.plus(left), Event::Waited { who, generation });
+            }
+            self.react(who, Trigger::Resumed, out);
+            self.encounters(who, out);
+            return;
+        }
+        let errand = self.state.villagers[who.index()]
+            .interlude
+            .as_ref()
+            .filter(|i| i.activity == activity)
+            .map(|i| i.minutes);
+        if let Some(minutes) = errand {
+            let tick = self.state.tick;
+            let v = &mut self.state.villagers[who.index()];
+            let generation = v.generation;
+            v.wait_until = Some(tick.plus(minutes * TICKS_PER_MINUTE));
+            self.state.queue.schedule(
+                tick.plus(minutes * TICKS_PER_MINUTE),
+                Event::Waited { who, generation },
+            );
+        }
         self.react(who, Trigger::Arrived, out);
         self.encounters(who, out);
     }
@@ -927,7 +1152,7 @@ impl<C: CharacterSet> Sim<C> {
             if m.legs.is_empty() {
                 let activity = m.then;
                 self.state.villagers[who.index()].generation += 1;
-                self.arrive(who, &activity, out);
+                self.arrive(who, &activity, m.resuming, out);
                 return;
             }
             let next = m.legs.remove(0);
@@ -965,6 +1190,7 @@ impl<C: CharacterSet> Sim<C> {
                 &s.villagers,
                 &s.met,
                 &s.terrain,
+                &s.stock,
                 s.day_rollovers,
                 &s.markers,
                 &s.characters,
@@ -997,6 +1223,25 @@ impl<C: CharacterSet> Sim<C> {
 }
 
 /// Where a villager begins: the access tile of its bed, else place 0's arrival.
+/// Goods declared on objects in content, keyed like the live stock map.
+fn starting_stock(content: &Content, world: &World) -> BTreeMap<u16, BTreeMap<String, u16>> {
+    let specs = content
+        .buildings
+        .iter()
+        .flat_map(|b| b.floors.iter().flat_map(|f| f.objects.iter()))
+        .chain(content.zones.iter().flat_map(|z| z.objects.iter()));
+    let mut stock = BTreeMap::new();
+    for spec in specs.filter(|o| !o.stock.is_empty()) {
+        if let Some(i) = world.objects.iter().position(|o| o.id == spec.id) {
+            stock.insert(
+                u16::try_from(i).expect("few objects"),
+                spec.stock.iter().map(|(k, v)| (k.clone(), *v)).collect(),
+            );
+        }
+    }
+    stock
+}
+
 fn start_spot(world: &World, bed: &str) -> (PlaceId, Pos) {
     if let Some(obj) = world.objects.iter().find(|o| o.id == bed) {
         let access = content::validate::neighbours(obj.at.x, obj.at.y)

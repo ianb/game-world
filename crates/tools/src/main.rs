@@ -62,6 +62,16 @@ enum Command {
         #[arg(long, default_value = "target/town.png")]
         out: PathBuf,
     },
+    /// Money, needs and goods at a given day and time.
+    Economy {
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        #[arg(long, default_value_t = 0)]
+        day: u32,
+        /// Time of day, like "2pm", "7:15am" or "19:15".
+        #[arg(long, default_value = "12:00")]
+        at: String,
+    },
     /// Where everyone is at a given day and time, with the places drawn.
     Where {
         #[arg(long, default_value_t = 1)]
@@ -224,6 +234,17 @@ fn main() -> ExitCode {
             }
             println!("wrote {} ({}x{})", out.display(), img.width(), img.height());
             print!("{}", views::where_is_everyone(&sim));
+            ExitCode::SUCCESS
+        }
+        Command::Economy { seed, day, at } => {
+            let Some(secs) = content::validate::parse_time(&at) else {
+                eprintln!("--at must be a time of day, like 2pm, 7:15am or 19:15");
+                return ExitCode::from(1);
+            };
+            let mut sim: Sim<Town> = Sim::new(seed, content);
+            sim.step_until(Tick(day * TICKS_PER_DAY).plus(secs))
+                .unwrap();
+            print!("{}", views::economy(&sim));
             ExitCode::SUCCESS
         }
         Command::Where { seed, day, at } => {

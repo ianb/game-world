@@ -1,7 +1,9 @@
 //! Tom, who keeps the tavern. The eclectic one: a mood only he tracks, Sundays off at the
 //! pond, late openings when he is low, and an evening check on whether anyone came.
 use crate::mara::Mara;
-use crate::toolbox::{Plan, activity_of, go_tile, pick, together, wait_minutes, weekday};
+use crate::toolbox::{
+    Plan, activity_of, go_tile, pay, pick, satisfy, stock, together, wait_minutes, weekday,
+};
 use content::{Pos, Rect};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
@@ -22,6 +24,8 @@ const YARD: Rect = Rect {
 /// How many patches he will clear in one morning before opening.
 const WEEDING_PATCHES: u8 = 4;
 const WEEDING_RADIUS: u16 = 2;
+/// A loaf a day for the bar.
+pub const BAR_BREAD_PRICE: u32 = 2;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Tom {
@@ -94,6 +98,13 @@ impl Tom {
                 Command::Note(format!("opening late, mood {}", self.mood)),
             );
         }
+        // Bread for the bar's lunches, paid for at opening time; the loaves move with it.
+        plan.at(
+            10,
+            5,
+            pay(ctx, "tom", "mara", BAR_BREAD_PRICE, "bread for the bar"),
+        );
+        plan.at(10, 5, stock(ctx, "shelf_bakery", "bread", -1));
         // Mid-evening check on the room.
         plan.at(19, 30, wait_minutes(30, "tend-bar"));
         plan.build()
@@ -173,6 +184,7 @@ impl Tom {
                     self.mood
                 ))]
             }
+            Trigger::Need { need, level } => satisfy(ctx, "tom", need, level, "table_house"),
             Trigger::Passing { other } if activity_of(ctx, "tom") != "sleep" => {
                 vec![Command::Greet { with: other }]
             }

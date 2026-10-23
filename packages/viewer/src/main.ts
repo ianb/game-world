@@ -1,7 +1,7 @@
 // The viewer: the sim advancing in the browser, drawn as tiles, with the text views the
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import * as wasm from "@game-world/sim-wasm";
-import { LocalSim, TICKS_PER_MINUTE, at, type Sim } from "@game-world/protocol";
+import { LocalSim, TICKS_PER_MINUTE, at, type Sim, type StockView, type VillagerView } from "@game-world/protocol";
 import { PlaceCanvas, Tileset, legend } from "./render";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -47,6 +47,124 @@ for (const place of world.places) {
   placesEl.appendChild(section);
   pres.set(place.key, pre);
   canvases.push(canvas);
+  canvas.canvas.addEventListener("pointermove", (e) => {
+    const t = canvas.tileAt(e.clientX, e.clientY);
+    hover = t ? { kind: "tile", place: canvas.id, x: t.x, y: t.y } : null;
+    drawnTick = -1;
+  });
+  canvas.canvas.addEventListener("pointerleave", () => {
+    hover = null;
+    drawnTick = -1;
+  });
+  canvas.canvas.addEventListener("click", (e) => {
+    const t = canvas.tileAt(e.clientX, e.clientY);
+    if (!t) return;
+    // Clicking a villager pins the person; clicking anything else pins the tile.
+    const v = sim.villagers().find((v) => v.place === canvas.id && v.pos.x === t.x && v.pos.y === t.y);
+    pinned = v ? { kind: "villager", key: v.key } : { kind: "tile", place: canvas.id, x: t.x, y: t.y };
+    drawnTick = -1;
+  });
+}
+
+// What the inspector shows: the pinned thing, else whatever the pointer is over.
+type Focus = { kind: "tile"; place: number; x: number; y: number } | { kind: "villager"; key: string };
+let hover: Focus | null = null;
+let pinned: Focus | null = null;
+const inspectEl = $("inspect");
+
+function describeNeeds(v: VillagerView): string {
+  const n = v.needs;
+  const word = (x: number): string => (x >= 90 ? "urgent" : x >= 70 ? "pressing" : x >= 40 ? "some" : "fine");
+  return `hunger ${n.hunger} (${word(n.hunger)}), thirst ${n.thirst} (${word(n.thirst)}), sleep ${n.sleep} (${word(n.sleep)}), bladder ${n.bladder} (${word(n.bladder)})`;
+}
+
+function sinceText(tick: number): string {
+  const t = (tick % (24 * 60 * TICKS_PER_MINUTE)) / TICKS_PER_MINUTE;
+  return twelveHour(Math.floor(t / 60), Math.floor(t % 60));
+}
+
+function describeVillager(v: VillagerView, stock: StockView[]): string[] {
+  const place = world.places.find((p) => p.id === v.place);
+  const lines = [
+    `${v.name}`,
+    `${v.activity}${v.heading_for ? ` (heading for ${v.heading_for})` : ""} since ${sinceText(v.since)}`,
+    `at ${place?.key ?? "?"} (${v.pos.x}, ${v.pos.y})`,
+    `${v.coins} coins`,
+    describeNeeds(v),
+  ];
+  void stock;
+  return lines;
+}
+
+function describeTile(f: { place: number; x: number; y: number }, villagers: VillagerView[], stock: StockView[]): string[] {
+  const place = world.places.find((p) => p.id === f.place);
+  if (!place) return ["?"];
+  const i = f.y * place.width + f.x;
+  const cell = place.cells[i] ?? "Void";
+  const lines = [`${place.key} (${f.x}, ${f.y})`];
+  if (place.kind === "Zone") {
+    const t = sim.terrain(place.key);
+    const surface = t.tiles[i];
+    const cost = t.cost[i] ?? 0;
+    lines.push(`${surface ?? cell}${cost ? `, step cost ${cost}` : ", impassable"}`);
+    if (surface) lines.push(`wear ${t.wear[i] ?? 0}, growth ${t.growth[i] ?? 0}`);
+  } else {
+    lines.push(cell);
+  }
+  for (const o of world.objects) {
+    if (o.place !== f.place || o.pos.x !== f.x || o.pos.y !== f.y) continue;
+    const goods = stock.filter((s) => s.key === o.key).map((s) => `${s.good} ${s.count}`);
+    lines.push(`${o.kind} ${o.key}${o.room ? ` in ${o.building}/${o.room}` : ""}${goods.length ? `: ${goods.join(", ")}` : ""}`);
+  }
+  for (const v of villagers) {
+    if (v.place === f.place && v.pos.x === f.x && v.pos.y === f.y) lines.push(...describeVillager(v, stock));
+  }
+  return lines;
+}
+
+function inspect(villagers: VillagerView[]): void {
+  const focus = pinned ?? hover;
+  if (!focus) {
+    inspectEl.textContent = "hover or click a tile; click a name for the person";
+    return;
+  }
+  const stock = sim.economy();
+  const lines =
+    focus.kind === "villager"
+      ? (() => {
+          const v = villagers.find((x) => x.key === focus.key);
+          return v ? describeVillager(v, stock) : ["?"];
+        })()
+      : describeTile(focus, villagers, stock);
+  inspectEl.textContent = (pinned ? "pinned: " : "") + lines.join("\n");
+}
+
+/** Where to draw the highlight on a place, from the focus. */
+function highlightFor(placeId: number, villagers: VillagerView[]): { x: number; y: number } | null {
+  const focus = pinned ?? hover;
+  if (!focus) return null;
+  if (focus.kind === "tile") return focus.place === placeId ? { x: focus.x, y: focus.y } : null;
+  const v = villagers.find((x) => x.key === focus.key);
+  return v && v.place === placeId ? { x: v.pos.x, y: v.pos.y } : null;
+}
+
+/** The who-is-where list as buttons, one per villager, so a name can be clicked. */
+function listEveryone(villagers: VillagerView[]): void {
+  const frag = document.createDocumentFragment();
+  for (const v of villagers) {
+    const b = document.createElement("button");
+    b.className = "name";
+    b.type = "button";
+    const place = world.places.find((p) => p.id === v.place);
+    b.textContent = `${v.name}: ${v.activity}${v.heading_for ? ` → ${v.heading_for}` : ""} at ${place?.key ?? "?"}`;
+    if (pinned?.kind === "villager" && pinned.key === v.key) b.setAttribute("aria-pressed", "true");
+    b.addEventListener("click", () => {
+      pinned = pinned?.kind === "villager" && pinned.key === v.key ? null : { kind: "villager", key: v.key };
+      drawnTick = -1;
+    });
+    frag.append(b);
+  }
+  everyoneEl.replaceChildren(frag);
 }
 // What the ground can look like, so cowpaths and overgrowth are recognisable when they
 // appear. Grass wears to a track and a cowpath where villagers walk; untrodden grass goes
@@ -154,9 +272,10 @@ function draw(): void {
   const cal = clock.calendar;
   clockEl.textContent = `Y${cal.year} ${cal.season} ${cal.day_of_season} (${cal.weekday}) ${twelveHour(clock.time.hour, clock.time.minute)}`;
   speedEl.textContent = paused ? "paused" : `${SPEEDS[speedIndex]} game-min/s`;
-  everyoneEl.textContent = sim.whereIsEveryone();
   const villagers = sim.villagers();
-  for (const c of canvases) c.draw(sim, villagers);
+  listEveryone(villagers);
+  for (const c of canvases) c.draw(sim, villagers, highlightFor(c.id, villagers));
+  inspect(villagers);
   if (showText) for (const [id, pre] of pres) paint(pre, sim.renderPlace(id));
 }
 

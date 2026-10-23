@@ -254,8 +254,10 @@ committed fixture, a Vite text viewer with a Playwright smoke, and the
 two-character code-first spike (Mara and Tom in `crates/characters`), whose
 verdict is in decisions.md. Also: interactions (encounters, passing, greetings, conversations with
 resume), a decision trace, a PNG renderer, and a third placeholder villager
-(see `interactions.md`), terrain costs with cowpaths and regrowth, and a
-tile renderer with placeholder art (`packages/viewer/src/render.ts`). Not
+(see `interactions.md`), terrain costs with cowpaths and regrowth, a
+tile renderer with placeholder art (`packages/viewer/src/render.ts`) with
+an inspector, a small economy (coins, stock, a carter and a pensioner; see
+decisions.md) and bodily needs with errands that return. Not
 yet: Ian's cast and town, a renderer library if one turns out to be needed
 (the canvas renderer is plain Canvas 2D), relationships as a ledger,
 interruptions beyond conversations, dialogue content.

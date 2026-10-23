@@ -22,6 +22,8 @@ pub enum Event {
     },
     /// An object's occupant released it.
     ObjectFree { object: ObjectId },
+    /// An hour of `who`'s body: needs rise, sleep repays.
+    Body { who: VillagerId },
     /// A player or external actor input, applied at its tick in `(tick, seq)` order.
     Input(Input),
 }

@@ -94,7 +94,14 @@ fn mara_reaches_the_bakery_counter_and_everyone_sleeps_at_night() {
     sim.step_until(at(0, 23, 30)).unwrap();
     for v in &sim.state().villagers {
         assert_eq!(v.activity, "sleep", "{}", views::where_is_everyone(&sim));
-        assert_eq!(sim.world().places[v.place.index()].id, "house/upstairs");
+        // Everyone is in the place their bed is in.
+        let bed = sim
+            .world()
+            .objects
+            .iter()
+            .find(|o| o.kind == "bed" && o.owner.as_deref() == Some(v.id.as_str()))
+            .unwrap_or_else(|| panic!("{} has no bed", v.name));
+        assert_eq!(v.place.index(), bed.place, "{} sleeps by their bed", v.name);
     }
 }
 
@@ -397,7 +404,7 @@ fn ground_wears_grows_and_is_cleared() {
     let mut sim = new_sim(7);
     let townp = sim.world().place_index["town"];
     // A corner nobody visits: grass goes tall after a week and to brush after four.
-    let corner = Pos { x: 37, y: 27 };
+    let corner = Pos { x: 45, y: 2 };
     assert_eq!(sim.surface(townp, corner), Some(Surface::Grass));
     sim.step_until(Tick(u32::from(GROWTH_TALL) * TICKS_PER_DAY))
         .unwrap();

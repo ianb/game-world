@@ -1,0 +1,73 @@
+{
+  "id": "cottage",
+  "zone": "town",
+  "at": {
+    "x": 34,
+    "y": 13
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 6,
+            "h": 4
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 0
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_nell",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "owner": "nell",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_nell",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 5,
+            "y": 3
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "chair_nell",
+          "kind": "chair",
+          "room": "room",
+          "at": {
+            "x": 6,
+            "y": 1
+          },
+          "activity": "rest"
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 3
+      }
+    }
+  ]
+}

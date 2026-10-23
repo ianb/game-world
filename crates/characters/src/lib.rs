@@ -5,7 +5,9 @@
 //! checks it.
 #![deny(clippy::float_arithmetic)]
 
+pub mod hal;
 pub mod mara;
+pub mod nell;
 pub mod pip;
 pub mod tom;
 pub mod toolbox;
@@ -22,26 +24,38 @@ pub struct Town {
     pub mara: mara::Mara,
     pub tom: tom::Tom,
     pub pip: pip::Pip,
+    pub nell: nell::Nell,
+    pub hal: hal::Hal,
 }
 
 impl CharacterSet for Town {
     /// Bump when any character struct changes shape.
-    const LAYOUT_VERSION: u32 = 2;
+    const LAYOUT_VERSION: u32 = 3;
 
     fn new(_content: &content::Content, _world: &content::World) -> Self {
         Town {
             mara: mara::Mara::default(),
             tom: tom::Tom::default(),
             pip: pip::Pip::default(),
+            nell: nell::Nell::default(),
+            hal: hal::Hal::default(),
         }
     }
 
     fn plan_day(&mut self, who: VillagerId, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
-        let Town { mara, tom, pip } = self;
+        let Town {
+            mara,
+            tom,
+            pip,
+            nell,
+            hal,
+        } = self;
         match ctx.villager(who).id.as_str() {
             "mara" => mara.plan_day(ctx, rng, tom),
             "tom" => tom.plan_day(ctx, rng),
             "pip" => pip.plan_day(ctx, rng),
+            "nell" => nell.plan_day(ctx, rng),
+            "hal" => hal.plan_day(ctx, rng),
             _ => baseline_plan(who, ctx),
         }
     }
@@ -53,11 +67,19 @@ impl CharacterSet for Town {
         ctx: &Ctx<'_>,
         rng: &mut Pcg32,
     ) -> Vec<Command> {
-        let Town { mara, tom, pip } = self;
+        let Town {
+            mara,
+            tom,
+            pip,
+            nell,
+            hal,
+        } = self;
         match ctx.villager(who).id.as_str() {
             "mara" => mara.react(trigger, ctx, tom),
             "tom" => tom.react(trigger, ctx, rng, mara),
             "pip" => pip.react(trigger, ctx, rng, mara),
+            "nell" => nell.react(&trigger, ctx),
+            "hal" => hal.react(&trigger, ctx),
             _ => Vec::new(),
         }
     }

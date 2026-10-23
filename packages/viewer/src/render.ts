@@ -103,6 +103,13 @@ function objectTile(kind: string): string {
     case "oven":
     case "stove":
     case "shelf":
+    case "pantry":
+    case "barrel":
+    case "cart":
+    case "privy":
+    case "well":
+    case "bench":
+    case "chair":
       return `obj_${kind}`;
     default:
       return "obj_generic";
@@ -146,7 +153,25 @@ export class PlaceCanvas {
     this.canvas.style.height = "auto";
   }
 
-  draw(sim: Sim, villagers: VillagerView[]): void {
+  /** The tile under a mouse or touch position on the canvas, or null when off it. */
+  tileAt(clientX: number, clientY: number): { x: number; y: number } | null {
+    const r = this.canvas.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return null;
+    const x = Math.floor(((clientX - r.left) / r.width) * this.place.width);
+    const y = Math.floor(((clientY - r.top) / r.height) * this.place.height);
+    if (x < 0 || y < 0 || x >= this.place.width || y >= this.place.height) return null;
+    return { x, y };
+  }
+
+  get key(): string {
+    return this.place.key;
+  }
+
+  get id(): number {
+    return this.place.id;
+  }
+
+  draw(sim: Sim, villagers: VillagerView[], highlight: { x: number; y: number } | null = null): void {
     const { ctx, tiles, place } = this;
     const terrain = this.outdoors ? sim.terrain(place.key).tiles : null;
     const background = this.outdoors ? "grass" : "floor";
@@ -195,6 +220,14 @@ export class PlaceCanvas {
       }
       tiles.draw(ctx, `villager_${variant}`, v.pos.x, v.pos.y);
     }
+    if (highlight) {
+      const s = tiles.size;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(highlight.x * s + 0.5, highlight.y * s + 0.5, s - 1, s - 1);
+      ctx.strokeStyle = "#000000";
+      ctx.strokeRect(highlight.x * s + 1.5, highlight.y * s + 1.5, s - 3, s - 3);
+    }
     // Name labels last, so they sit over everything.
     ctx.font = "7px ui-monospace, monospace";
     ctx.textAlign = "center";
@@ -216,7 +249,7 @@ export class PlaceCanvas {
 /** A strip of named tiles, for a legend: each tile at 2x with its label underneath. */
 export function legend(tiles: Tileset, entries: [name: string, label: string][]): HTMLCanvasElement {
   const s = tiles.size;
-  const cellW = 64;
+  const cellW = 84;
   const canvas = document.createElement("canvas");
   canvas.width = entries.length * cellW;
   canvas.height = s * 2 + 14;

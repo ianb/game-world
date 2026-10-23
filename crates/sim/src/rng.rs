@@ -21,6 +21,8 @@ pub struct Streams {
     pub idle: Pcg32,
     /// Social: who approaches whom, exchange outcomes.
     pub social: Pcg32,
+    /// Bodies: how fast needs rise, hour to hour.
+    pub body: Pcg32,
 }
 
 impl Streams {
@@ -30,6 +32,7 @@ impl Streams {
             schedule: Pcg32::seed_from_u64(split_mix(seed, 0)),
             idle: Pcg32::seed_from_u64(split_mix(seed, 1)),
             social: Pcg32::seed_from_u64(split_mix(seed, 2)),
+            body: Pcg32::seed_from_u64(split_mix(seed, 3)),
         }
     }
 }

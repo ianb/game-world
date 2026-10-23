@@ -1,0 +1,57 @@
+{
+  "id": "hal",
+  "name": "Hal",
+  "home": "cartyard",
+  "bed": "bed_hal",
+  "coins": 20,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_hal",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:30am",
+      "object": "cart_hal",
+      "activity": "tend-cart"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_tavern_1",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "1:30pm",
+      "object": "cart_hal",
+      "activity": "tend-cart"
+    },
+    {
+      "days": "fri",
+      "at": "8:00pm",
+      "object": "table_tavern_3",
+      "activity": "drink"
+    },
+    {
+      "days": "sat",
+      "at": "8:00pm",
+      "object": "table_tavern_3",
+      "activity": "drink"
+    },
+    {
+      "days": "sun",
+      "at": "8:00pm",
+      "object": "table_tavern_3",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "10:30pm",
+      "object": "bed_hal",
+      "activity": "sleep"
+    }
+  ]
+}

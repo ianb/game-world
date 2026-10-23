@@ -3,6 +3,7 @@
   "name": "Pip",
   "home": "house",
   "bed": "bed_pip",
+  "coins": 0,
   "schedule": [
     {
       "days": "daily",

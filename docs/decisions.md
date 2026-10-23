@@ -573,3 +573,97 @@ Implications: the renderer does nine neighbour lookups per feature tile,
 still cheap at this size. Inner corners are notched rather than rounded
 inward, which reads fine for water and paths. Wall shaping (a top face,
 corners) is the next thing that would make buildings look right.
+
+## 2026-10-23: An inspector in the viewer
+
+Ian: "I'd like to be able to mouse over or maybe click things and learn
+about them (type of tile, any stats)." And: "should be able to click on a
+name and see info on the person too."
+
+Decided:
+
+- Hovering a tile on any place shows its cell or surface, step cost, wear
+  and growth, any object on it with its goods, and any villager on it.
+  Clicking pins: a villager if one stands there, else the tile. The
+  who-is-where list is buttons; clicking a name pins that person, and the
+  panel follows them. The pinned or hovered tile is outlined on the map.
+- The data comes from the views, not from the page: `TerrainView` now
+  carries wear, growth and cost per tile, `VillagerView` carries coins and
+  needs, and `economy()` lists goods on objects. Anything the inspector
+  shows is something the sim already exposes across the boundary.
+
+Implications: protocol 10. The inspector reads the whole terrain view of a
+place on every frame it is open; fine here, a per-tile call if places get
+large. Touch works the same as a click (pointer events); there is no hover
+on a phone, so pinning is the way in.
+
+## 2026-10-23: A small economy, and a town big enough to hold it
+
+Ian: "We need to expand the town some so it can have some kind of economy.
+Even if it's like... pensioners that receive money, some services, some
+supplies entering."
+
+Decided:
+
+- Money is a count of coins on each villager, in the state and the hash.
+  Goods are counts by name on objects (`SimState.stock`), sloppy by design:
+  no weights, no capacities, no inventory on people. Content declares
+  starting coins on villagers and starting stock on objects.
+- Two commands move things: `Pay { from, to, amount, what }` between
+  villagers or the world outside the town (`Party::Outside`), paying what
+  the payer has when short; `Stock { object, good, delta }`, never below
+  zero. Both emit events (`Paid`, `Stocked`) that the itinerary prints and
+  the `economy` text view and the inspector summarise. Character code
+  decides when to pay and what to stock; the sim only keeps the books.
+- The loop: a pension (from outside) to Nell weekly; Nell buys bread from
+  Mara and ale from Tom; Hal the carter goes out along the road twice a
+  week, pays the market (to outside) for flour and ale, sells them to Mara
+  and Tom; Mara bakes flour into bread when the shelf is low and buys ale;
+  Tom buys bread for the bar and sells ale and lunch; Pip gets a bun free.
+  Money in equals money out at 20 a week, so the town's total holds; what
+  drifts is who has it. Prices are constants in the character modules.
+- The town grew to 48 by 36 with a cottage (Nell), a cart yard (Hal), a
+  well and a bench on the square, three privies, a copse, and the street
+  continued east to the edge as the road out. Zones can place objects
+  directly (`objects` in zone coordinates, on ground or path).
+- Nell, Hal, the cottage and the cart yard are placeholders in my words,
+  like Mara, Tom and Pip. Rename and rewrite at will.
+
+Implications: tuning is by watching `cargo run -p tools -- economy --day N`
+over weeks, not by reasoning about it. The first version collapsed in four
+weeks (Hal could not afford loads once Tom was short, and the shortfall
+cascaded); half loads when short, a margin on ale and a cheaper lunch made
+it hold for twelve weeks of seed 1. Stock still creeps up slowly, which a
+bake that skips when the shelf is full only partly answers. Snapshot 4,
+character layout 3.
+
+## 2026-10-23: Bodies
+
+Ian: "Let's put in some basic physical functions too, food, water,
+sleepiness, bathroom. A bit stochastic."
+
+Decided:
+
+- Four needs on every villager (hunger, thirst, sleep, bladder), 0 to 100,
+  in the state and the hash. Once an hour each body ticks, staggered a few
+  minutes apart per villager; each need rises by its base rate plus a roll
+  from a new `body` RNG stream, half as fast while asleep. Sleep repays
+  while sleeping. Eating zeroes hunger, drinking zeroes thirst, the privy
+  zeroes bladder, applied when the activity starts.
+- At 70 and 90 the character gets `Trigger::Need`; hunger, thirst and
+  bladder keep asking hourly while above 90, so a need that got urgent
+  overnight is dealt with in the morning. The sim never acts on a need by
+  itself; the toolbox's `satisfy` is the baseline answer (the nearest
+  privy, the well, a loaf from the bakery or the larder at home when urgent
+  and broke, a yawn for sleep) and every character currently uses it.
+- Errands come back. `Command::Interlude { target, activity, minutes }`
+  goes somewhere, does the thing for a while, walks back to the spot and
+  activity the villager left, re-arms any wait it interrupted, and fires
+  `Resumed` instead of `Arrived` so purchase-on-arrival code does not run
+  twice. Privies and the well are zone objects next to buildings.
+
+Implications: needs are sim-owned because they are universal, unlike
+Tom's mood; a character can still override `satisfy`. Rates are constants
+in `crates/sim/src/needs.rs`. The hourly body tick is the first thing in
+the sim that runs on a clock rather than on a schedule entry; it is one
+event per villager per hour, so cheap.

@@ -1,31 +1,37 @@
 {
   "id": "town",
-  "width": 40,
-  "height": 30,
+  "width": 48,
+  "height": 36,
   "blocked": [
     {
       "x": 0,
       "y": 0,
-      "w": 40,
+      "w": 48,
       "h": 1
     },
     {
       "x": 0,
       "y": 0,
       "w": 1,
-      "h": 30
+      "h": 36
     },
     {
-      "x": 39,
+      "x": 47,
       "y": 0,
       "w": 1,
-      "h": 30
+      "h": 36
     },
     {
       "x": 0,
-      "y": 29,
-      "w": 40,
+      "y": 35,
+      "w": 48,
       "h": 1
+    },
+    {
+      "x": 38,
+      "y": 27,
+      "w": 6,
+      "h": 5
     }
   ],
   "water": [
@@ -52,7 +58,7 @@
     {
       "x": 8,
       "y": 11,
-      "w": 24,
+      "w": 39,
       "h": 1
     },
     {
@@ -72,6 +78,65 @@
       "y": 22,
       "w": 9,
       "h": 1
+    },
+    {
+      "x": 37,
+      "y": 12,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "x": 8,
+      "y": 22,
+      "w": 1,
+      "h": 3
+    }
+  ],
+  "objects": [
+    {
+      "id": "well_square",
+      "kind": "well",
+      "at": {
+        "x": 22,
+        "y": 16
+      },
+      "activity": "drink"
+    },
+    {
+      "id": "privy_house",
+      "kind": "privy",
+      "at": {
+        "x": 2,
+        "y": 8
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_tavern",
+      "kind": "privy",
+      "at": {
+        "x": 17,
+        "y": 15
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_cottage",
+      "kind": "privy",
+      "at": {
+        "x": 44,
+        "y": 15
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "bench_square",
+      "kind": "bench",
+      "at": {
+        "x": 24,
+        "y": 19
+      },
+      "activity": "rest"
     }
   ],
   "arrival": {

@@ -6,8 +6,11 @@ import type { VillagerView } from "./generated/VillagerView";
 import type { WorldView } from "./generated/WorldView";
 import type { ClockView } from "./generated/ClockView";
 import type { TerrainView } from "./generated/TerrainView";
+import type { StockView } from "./generated/StockView";
 
-export type { Emitted, Input, VillagerView, WorldView, ClockView, TerrainView };
+export type { Emitted, Input, VillagerView, WorldView, ClockView, TerrainView, StockView };
+export type { NeedsView } from "./generated/NeedsView";
+export type { Need } from "./generated/Need";
 export type { Surface } from "./generated/Surface";
 export type { InputKind } from "./generated/InputKind";
 export type { Source } from "./generated/Source";
@@ -28,7 +31,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 9;
+export const PROTOCOL_VERSION = 10;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;
@@ -56,6 +59,7 @@ export interface WasmSim {
   world(): unknown;
   villagers(): unknown;
   terrain(id: string): unknown;
+  economy(): unknown;
   clock(): unknown;
   free(): void;
 }
@@ -89,6 +93,8 @@ export interface Sim {
   villagers(): VillagerView[];
   /** The living ground of an outdoor place. Throws for an indoor or unknown place. */
   terrain(id: string): TerrainView;
+  /** Goods on objects. */
+  economy(): StockView[];
   clock(): ClockView;
   renderPlace(id: string): string;
   whereIsEveryone(): string;
@@ -178,6 +184,9 @@ export class LocalSim implements Sim {
   }
   terrain(id: string): TerrainView {
     return this.guard(() => this.inner.terrain(id) as TerrainView);
+  }
+  economy(): StockView[] {
+    return this.guard(() => this.inner.economy() as StockView[]);
   }
   clock(): ClockView {
     return this.guard(() => this.inner.clock() as ClockView);

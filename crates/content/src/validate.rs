@@ -107,6 +107,22 @@ fn check_ids(content: &Content, r: &mut Report) {
             }
         }
     }
+    for z in &content.zones {
+        for o in &z.objects {
+            if !objects.insert(o.id.clone()) {
+                r.error(
+                    format!("zones/{}: object {}", z.id, o.id),
+                    "duplicate object id",
+                );
+            }
+            if !o.room.is_empty() {
+                r.error(
+                    format!("zones/{}: object {}", z.id, o.id),
+                    "a zone object has no room",
+                );
+            }
+        }
+    }
 }
 
 #[allow(clippy::too_many_lines)]
@@ -551,13 +567,19 @@ fn check_objects(world: &World, r: &mut Report) {
     for o in &world.objects {
         let subj = format!("buildings/{}: object {}", o.building, o.id);
         let p = &world.places[o.place];
-        if p.cell(o.at.x, o.at.y) != Cell::Floor {
+        let cell = p.cell(o.at.x, o.at.y);
+        // A zone object (no room) stands outdoors; a building object stands on its floor.
+        let ok = if o.room.is_empty() {
+            matches!(cell, Cell::Ground | Cell::Path)
+        } else {
+            cell == Cell::Floor
+        };
+        if !ok {
             r.error(
                 &subj,
                 format!(
-                    "at {:?} is not interior floor ({:?})",
-                    o.at,
-                    p.cell(o.at.x, o.at.y)
+                    "at {:?} is not somewhere an object can stand ({cell:?})",
+                    o.at
                 ),
             );
             continue;

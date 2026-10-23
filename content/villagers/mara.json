@@ -3,14 +3,55 @@
   "name": "Mara",
   "home": "house",
   "bed": "bed_mara",
+  "coins": 30,
   "schedule": [
-    { "days": "daily", "at": "06:00", "object": "stove_house", "activity": "cook" },
-    { "days": "daily", "at": "06:40", "object": "oven_bakery", "activity": "bake" },
-    { "days": "daily", "at": "09:00", "object": "counter_bakery", "activity": "tend-shop" },
-    { "days": "daily", "at": "13:00", "object": "table_house", "activity": "eat" },
-    { "days": "daily", "at": "14:00", "object": "counter_bakery", "activity": "tend-shop" },
-    { "days": "weekend", "at": "14:00", "place": "town", "activity": "wander" },
-    { "days": "daily", "at": "19:00", "object": "table_tavern_1", "activity": "drink" },
-    { "days": "daily", "at": "21:30", "object": "bed_mara", "activity": "sleep" }
+    {
+      "days": "daily",
+      "at": "06:00",
+      "object": "stove_house",
+      "activity": "cook"
+    },
+    {
+      "days": "daily",
+      "at": "06:40",
+      "object": "oven_bakery",
+      "activity": "bake"
+    },
+    {
+      "days": "daily",
+      "at": "09:00",
+      "object": "counter_bakery",
+      "activity": "tend-shop"
+    },
+    {
+      "days": "daily",
+      "at": "13:00",
+      "object": "table_house",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "14:00",
+      "object": "counter_bakery",
+      "activity": "tend-shop"
+    },
+    {
+      "days": "weekend",
+      "at": "14:00",
+      "place": "town",
+      "activity": "wander"
+    },
+    {
+      "days": "daily",
+      "at": "19:00",
+      "object": "table_tavern_1",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "21:30",
+      "object": "bed_mara",
+      "activity": "sleep"
+    }
   ]
 }

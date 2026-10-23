@@ -1,25 +1,103 @@
 {
   "id": "bakery",
   "zone": "town",
-  "at": { "x": 18, "y": 4 },
+  "at": {
+    "x": 18,
+    "y": 4
+  },
   "floors": [
     {
       "id": "ground",
       "level": 0,
       "rooms": [
-        { "id": "shop", "rect": { "x": 1, "y": 1, "w": 7, "h": 5 } },
-        { "id": "kitchen", "rect": { "x": 9, "y": 1, "w": 4, "h": 5 } }
+        {
+          "id": "shop",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 7,
+            "h": 5
+          }
+        },
+        {
+          "id": "kitchen",
+          "rect": {
+            "x": 9,
+            "y": 1,
+            "w": 4,
+            "h": 5
+          }
+        }
       ],
       "openings": [
-        { "at": { "x": 8, "y": 3 }, "between": ["shop", "kitchen"] },
-        { "at": { "x": 4, "y": 6 }, "between": ["shop"] }
+        {
+          "at": {
+            "x": 8,
+            "y": 3
+          },
+          "between": [
+            "shop",
+            "kitchen"
+          ]
+        },
+        {
+          "at": {
+            "x": 4,
+            "y": 6
+          },
+          "between": [
+            "shop"
+          ]
+        }
       ],
       "objects": [
-        { "id": "counter_bakery", "kind": "counter", "room": "shop", "at": { "x": 2, "y": 2 }, "activity": "tend-shop" },
-        { "id": "oven_bakery", "kind": "oven", "room": "kitchen", "at": { "x": 9, "y": 1 }, "owner": "mara", "activity": "bake" },
-        { "id": "shelf_bakery", "kind": "shelf", "room": "shop", "at": { "x": 7, "y": 1 } }
+        {
+          "id": "counter_bakery",
+          "kind": "counter",
+          "room": "shop",
+          "at": {
+            "x": 2,
+            "y": 2
+          },
+          "activity": "tend-shop"
+        },
+        {
+          "id": "oven_bakery",
+          "kind": "oven",
+          "room": "kitchen",
+          "at": {
+            "x": 9,
+            "y": 1
+          },
+          "owner": "mara",
+          "activity": "bake"
+        },
+        {
+          "id": "shelf_bakery",
+          "kind": "shelf",
+          "room": "shop",
+          "at": {
+            "x": 7,
+            "y": 1
+          }
+        },
+        {
+          "id": "pantry_bakery",
+          "kind": "pantry",
+          "room": "kitchen",
+          "at": {
+            "x": 12,
+            "y": 1
+          },
+          "stock": {
+            "flour": 6
+          }
+        }
       ],
-      "arrival": { "x": 4, "y": 4 }
+      "arrival": {
+        "x": 4,
+        "y": 4
+      }
     }
   ]
 }

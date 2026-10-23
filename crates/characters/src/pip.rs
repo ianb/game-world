@@ -2,7 +2,7 @@
 //! turns up at the bakery at noon to pester Mara for a bun. Eclectic by design, to exercise
 //! wandering, greetings and conversations.
 use crate::mara::Mara;
-use crate::toolbox::{Plan, activity_of, go_tile, pick, wait_minutes};
+use crate::toolbox::{Plan, activity_of, go_tile, pick, satisfy, stock, stock_of, wait_minutes};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
@@ -54,14 +54,21 @@ impl Pip {
                 }
             }
             Trigger::TalkEnded { other, topic } if topic == "sweets" => {
-                // Mara cannot hand Pip anything; Pip notices the shelf and updates himself.
-                if Some(other) == ctx.villager_id("mara") && mara.batches_baked > 0 {
+                // A bun off the shelf, free, if there is one and Mara has baked today.
+                if Some(other) == ctx.villager_id("mara")
+                    && mara.batches_baked > 0
+                    && stock_of(ctx, "shelf_bakery", "bread") > 0
+                {
                     self.buns += 1;
-                    vec![Command::Note(format!("got a bun ({} so far)", self.buns))]
+                    vec![
+                        stock(ctx, "shelf_bakery", "bread", -1),
+                        Command::Note(format!("got a bun ({} so far)", self.buns)),
+                    ]
                 } else {
                     vec![Command::Note("no bun today".into())]
                 }
             }
+            Trigger::Need { need, level } => satisfy(ctx, "pip", need, level, "table_house"),
             // An unroutable roam target: shrug and try somewhere else.
             Trigger::Stuck => {
                 let town = ctx.place_id("town").expect("town exists");

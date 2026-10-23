@@ -240,7 +240,21 @@ pub fn compile(content: &Content) -> World {
         for r in &z.water {
             fill(&mut place, *r, Cell::Water);
         }
-        add_place(&mut world, place);
+        let idx = add_place(&mut world, place);
+        for o in &z.objects {
+            world.objects.push(CompiledObject {
+                id: o.id.clone(),
+                kind: o.kind.clone(),
+                place: idx,
+                at: o.at,
+                owner: o.owner.clone(),
+                capacity: o.capacity,
+                activity: o.activity.clone(),
+                walkable: o.walkable,
+                building: z.id.clone(),
+                room: String::new(),
+            });
+        }
     }
 
     for b in &content.buildings {

@@ -1,13 +1,13 @@
 //! Boundary types: what crosses from the sim to the viewer and back. Integer-only, no maps,
 //! no `u64`/`usize`, no `serde(with)`. Bump `PROTOCOL_VERSION` on any change.
 use crate::brain::CharacterSet;
-use crate::ids::{PlaceId, VillagerId};
+use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::sim::Sim;
 use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 9;
+pub const PROTOCOL_VERSION: u32 = 10;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -77,6 +77,65 @@ pub enum Emitted {
         y: u16,
         tiles: u16,
     },
+    /// Money moved. `from` or `to` is None for the world outside the town. `amount` is
+    /// what actually moved, which is less than asked when the payer was short.
+    Paid {
+        tick: Tick,
+        who: VillagerId,
+        from: Option<VillagerId>,
+        to: Option<VillagerId>,
+        amount: u32,
+        what: String,
+    },
+    /// Goods on an object changed by `delta`; `now` is the count after.
+    Stocked {
+        tick: Tick,
+        who: VillagerId,
+        object: ObjectId,
+        good: String,
+        delta: i32,
+        now: u16,
+    },
+    /// A need of `who` got pressing or urgent.
+    Need {
+        tick: Tick,
+        who: VillagerId,
+        need: Need,
+        level: u8,
+    },
+}
+
+/// A bodily need.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum Need {
+    Hunger,
+    Thirst,
+    Sleep,
+    Bladder,
+}
+
+/// Need levels, 0 (met) to 100.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct NeedsView {
+    pub hunger: u8,
+    pub thirst: u8,
+    pub sleep: u8,
+    pub bladder: u8,
+}
+
+/// Goods on one object.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct StockView {
+    pub object: ObjectId,
+    pub key: String,
+    pub good: String,
+    pub count: u16,
 }
 
 /// What an outdoor tile looks like once wear and growth are applied to its cell.
@@ -103,6 +162,10 @@ pub struct TerrainView {
     pub width: u16,
     pub height: u16,
     pub tiles: Vec<Option<Surface>>,
+    /// Footfall and growth counters per tile, and the step cost (0 where impassable).
+    pub wear: Vec<u8>,
+    pub growth: Vec<u8>,
+    pub cost: Vec<u16>,
 }
 
 impl Emitted {
@@ -118,7 +181,10 @@ impl Emitted {
             | Emitted::Stuck { tick, .. }
             | Emitted::Decided { tick, .. }
             | Emitted::Talked { tick, .. }
-            | Emitted::Cleared { tick, .. } => *tick,
+            | Emitted::Cleared { tick, .. }
+            | Emitted::Paid { tick, .. }
+            | Emitted::Stocked { tick, .. }
+            | Emitted::Need { tick, .. } => *tick,
         }
     }
 
@@ -131,7 +197,10 @@ impl Emitted {
             | Emitted::Stuck { who, .. }
             | Emitted::Decided { who, .. }
             | Emitted::Talked { who, .. }
-            | Emitted::Cleared { who, .. } => Some(*who),
+            | Emitted::Cleared { who, .. }
+            | Emitted::Paid { who, .. }
+            | Emitted::Stocked { who, .. }
+            | Emitted::Need { who, .. } => Some(*who),
             _ => None,
         }
     }
@@ -153,6 +222,8 @@ pub struct VillagerView {
     pub heading_for: Option<String>,
     /// Next tile on the current path, for interpolation.
     pub next_tile: Option<Pos>,
+    pub coins: u32,
+    pub needs: NeedsView,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -299,6 +370,29 @@ pub fn villager_views<C: CharacterSet>(sim: &Sim<C>) -> Vec<VillagerView> {
             since: v.since,
             heading_for: v.moving.as_ref().map(|m| m.then.clone()),
             next_tile: v.moving.as_ref().and_then(|m| m.path.first().copied()),
+            coins: v.coins,
+            needs: v.needs.view(),
+        })
+        .collect()
+}
+
+/// Every good on every object, in object order.
+#[must_use]
+pub fn stock_views<C: CharacterSet>(sim: &Sim<C>) -> Vec<StockView> {
+    let world = sim.world();
+    sim.state()
+        .stock
+        .iter()
+        .flat_map(|(&object, goods)| {
+            goods.iter().map(move |(good, &count)| StockView {
+                object: ObjectId(object),
+                key: world
+                    .objects
+                    .get(usize::from(object))
+                    .map_or_else(String::new, |o| o.id.clone()),
+                good: good.clone(),
+                count,
+            })
         })
         .collect()
 }

@@ -9,6 +9,7 @@ pub mod event;
 pub mod hash;
 pub mod ids;
 pub mod input;
+pub mod needs;
 pub mod protocol;
 pub mod queue;
 pub mod rng;

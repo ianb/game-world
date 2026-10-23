@@ -226,15 +226,35 @@ impl Terrain {
     #[must_use]
     pub fn view(&self, world: &World, place: usize) -> TerrainView {
         let p = &world.places[place];
-        let tiles = (0..p.height)
+        let positions: Vec<Pos> = (0..p.height)
             .flat_map(|y| (0..p.width).map(move |x| Pos { x, y }))
-            .map(|pos| self.surface(world, place, pos))
+            .collect();
+        let tiles: Vec<Option<Surface>> = positions
+            .iter()
+            .map(|&pos| self.surface(world, place, pos))
+            .collect();
+        let cost = positions
+            .iter()
+            .zip(&tiles)
+            .map(|(&pos, surface)| {
+                if !world.passable(place, pos.x, pos.y) {
+                    return 0;
+                }
+                let c = surface.map_or_else(|| p.cell(pos.x, pos.y).base_cost(), Surface::cost);
+                u16::try_from(c).unwrap_or(u16::MAX)
+            })
             .collect();
         TerrainView {
             place: PlaceId(u16::try_from(place).expect("few places")),
             width: p.width,
             height: p.height,
             tiles,
+            wear: positions.iter().map(|&pos| self.wear(place, pos)).collect(),
+            growth: positions
+                .iter()
+                .map(|&pos| self.growth(place, pos))
+                .collect(),
+            cost,
         }
     }
 

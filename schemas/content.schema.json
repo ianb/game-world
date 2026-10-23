@@ -226,7 +226,7 @@
           "type": "string"
         },
         "kind": {
-          "description": "bed, counter, oven, table, chair, stove, shelf...",
+          "description": "bed, counter, oven, table, chair, stove, shelf, privy, well, cart...",
           "type": "string"
         },
         "owner": {
@@ -237,7 +237,20 @@
           "default": null
         },
         "room": {
-          "type": "string"
+          "description": "The room, for a building object. Empty for an object placed in a zone.",
+          "type": "string",
+          "default": ""
+        },
+        "stock": {
+          "description": "Goods on it when the town starts, by name.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "uint16",
+            "maximum": 65535,
+            "minimum": 0
+          },
+          "default": {}
         },
         "walkable": {
           "description": "True for things you can stand on or walk through (rugs, doormats). Default blocks.",
@@ -248,7 +261,6 @@
       "required": [
         "id",
         "kind",
-        "room",
         "at"
       ]
     },
@@ -385,6 +397,13 @@
           "description": "Object id of this villager's bed.",
           "type": "string"
         },
+        "coins": {
+          "description": "Money to start with.",
+          "type": "integer",
+          "format": "uint32",
+          "default": 0,
+          "minimum": 0
+        },
         "home": {
           "type": "string"
         },
@@ -434,6 +453,14 @@
         },
         "id": {
           "type": "string"
+        },
+        "objects": {
+          "description": "Things standing outdoors (a well, a privy, a bench), in zone coordinates.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ObjectSpec"
+          }
         },
         "paths": {
           "description": "Made paths and roads: cheap to walk, so routes prefer them.",

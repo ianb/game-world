@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use thiserror::Error;
 
 /// Bumped whenever the state layout changes. Old snapshots are refused, not migrated.
-pub const SNAPSHOT_VERSION: u32 = 3;
+pub const SNAPSHOT_VERSION: u32 = 4;
 
 #[derive(Serialize, Deserialize)]
 struct Envelope<S> {

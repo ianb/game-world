@@ -79,6 +79,13 @@ const tiles = {
   obj_stove: (t) => { t.rect(1, 1, 14, 14, hex("#3a3a3a")); t.rect(2, 2, 12, 12, hex("#555555")); t.blob(5, 5, 2, hex("#222222")); t.blob(10, 5, 2, hex("#222222")); t.blob(5, 10, 2, hex("#222222")); t.blob(10, 10, 2, hex("#222222")); },
   obj_shelf: (t) => { t.rect(1, 0, 14, 16, hex(wood[2])); t.rect(2, 1, 12, 14, hex(wood[0])); for (let y = 2; y < 15; y += 5) { t.rect(2, y + 3, 12, 1, hex(wood[2])); t.rect(3, y, 2, 3, hex("#c04a4a")); t.rect(7, y, 2, 3, hex("#4a7ac0")); t.rect(11, y, 2, 3, hex("#d0b040")); } },
   obj_generic: (t) => { t.rect(2, 2, 12, 12, hex("#9b4fb0")); t.rect(3, 3, 10, 10, hex("#c77dd6")); },
+  obj_pantry: (t) => { t.rect(2, 6, 5, 9, hex("#c9b07a")); t.rect(8, 8, 6, 7, hex("#b89a66")); t.rect(3, 5, 3, 2, hex("#a88a5a")); t.rect(9, 7, 4, 2, hex("#8f7649")); t.speckle(hex("#e0d0a0"), 6); },
+  obj_barrel: (t) => { t.rect(3, 2, 10, 12, hex("#8a6238")); t.rect(3, 4, 10, 1, hex("#555555")); t.rect(3, 11, 10, 1, hex("#555555")); t.rect(5, 2, 1, 12, hex("#6b4a2c")); t.rect(10, 2, 1, 12, hex("#6b4a2c")); },
+  obj_cart: (t) => { t.rect(2, 4, 12, 7, hex("#9a7046")); t.rect(2, 4, 12, 1, hex("#c9a070")); t.blob(4, 12, 2, hex("#333333")); t.blob(11, 12, 2, hex("#333333")); t.rect(14, 6, 2, 1, hex("#7a5836")); },
+  obj_privy: (t) => { t.rect(3, 1, 10, 14, hex("#6b5a3a")); t.rect(4, 2, 8, 12, hex("#8a7248")); t.rect(7, 3, 2, 2, hex("#3a3020")); t.rect(6, 8, 4, 6, hex("#5a4a2c")); t.rect(2, 0, 12, 2, hex("#4a3a22")); },
+  obj_well: (t) => { t.blob(8, 9, 5, hex("#8d8a80")); t.blob(8, 9, 3, hex("#3a6fa8")); t.rect(3, 3, 1, 7, hex("#6b4a2c")); t.rect(12, 3, 1, 7, hex("#6b4a2c")); t.rect(2, 2, 12, 2, hex("#8a6238")); },
+  obj_bench: (t) => { t.rect(1, 6, 14, 3, hex("#9a7046")); t.rect(1, 6, 14, 1, hex("#c9a070")); t.rect(2, 9, 2, 4, hex("#6b4a2c")); t.rect(12, 9, 2, 4, hex("#6b4a2c")); },
+  obj_chair: (t) => { t.rect(4, 2, 8, 2, hex("#6b4a2c")); t.rect(4, 4, 2, 5, hex("#6b4a2c")); t.rect(4, 8, 8, 3, hex("#9a7046")); t.rect(4, 11, 2, 4, hex("#6b4a2c")); t.rect(10, 11, 2, 4, hex("#6b4a2c")); },
 };
 
 // Villagers: a simple front-facing figure, four palettes.

@@ -3,42 +3,50 @@ source: crates/sim/tests/town.rs
 expression: out
 ---
 Y1 Spring 1 (Mon) 2:00pm
+Hal      town             (10,27)  tend-cart    since 1:32pm
 Mara     town             (13, 7)  walking      since 2:00pm -> tend-shop
+Nell     town             (39,15)  walking      since 2:00pm -> rest
 Pip      town             (20,20)  roam         since 12:32pm
 Tom      town             ( 6,15)  tend-bar     since 10:07am
 
-town (40x30) arrival (20, 20)
-    0123456789012345678901234567890123456789
-  0 ♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣
-  1 ♣······································♣
-  2 ♣······································♣
-  3 ♣······································♣
-  4 ♣···█████████████·██████████████·······♣
-  5 ♣···█s    █     █·█      s█o   █·······♣
-  6 ♣···█     ▫  t  █·█ c     █    █·······♣
-  7 ♣···█     █  M  █·█       ▫    █·······♣
-  8 ♣···█    ▪█     █·█       █    █·······♣
-  9 ♣···█████████▫███·█       █    █·······♣
- 10 ♣············░····████▫█████████·······♣
- 11 ♣·······░░░░░░░░░░░░░░░░░░░░░░░░·······♣
- 12 ♣···················░··················♣
- 13 ♣···················░··················♣
- 14 ♣···████████████····░··················♣
- 15 ♣···█cT        █····░··················♣
- 16 ♣···█   t   t  █····░··················♣
- 17 ♣···█          █····░··················♣
- 18 ♣···█          █····░··················♣
- 19 ♣···█       t  █·░░░░░░░···············♣
- 20 ♣···█          █·░░░P░░░······≈≈≈≈≈≈···♣
- 21 ♣···█████▫██████·░░░░░░░······≈≈≈≈≈≈···♣
- 22 ♣········░░░░░░░░░············≈≈≈≈≈≈···♣
- 23 ♣·····························≈≈≈≈≈≈···♣
- 24 ♣·····························≈≈≈≈≈≈···♣
- 25 ♣······································♣
- 26 ♣······································♣
- 27 ♣······································♣
- 28 ♣······································♣
- 29 ♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣
+town (48x36) arrival (20, 20)
+    012345678901234567890123456789012345678901234567
+  0 ♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣
+  1 ♣··············································♣
+  2 ♣··············································♣
+  3 ♣··············································♣
+  4 ♣···█████████████·██████████████···············♣
+  5 ♣···█s    █     █·█      s█o  p█···············♣
+  6 ♣···█     ▫  t  █·█ c     █    █···············♣
+  7 ♣···█     █  M  █·█       ▫    █···············♣
+  8 ♣·p·█    ▪█     █·█       █    █···············♣
+  9 ♣···█████████▫███·█       █    █···············♣
+ 10 ♣············░····████▫█████████···············♣
+ 11 ♣·······░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░♣
+ 12 ♣···················░················░·········♣
+ 13 ♣···················░·············███▫████·····♣
+ 14 ♣···████████████····░·············█b    c█·····♣
+ 15 ♣···█cT        █·p··░·············█    N █··p··♣
+ 16 ♣···█   t   t  █····░·w···········█    t █·····♣
+ 17 ♣···█          █····░·············█      █·····♣
+ 18 ♣···█          █····░·············████████·····♣
+ 19 ♣···█       t  █·░░░░░░░b······················♣
+ 20 ♣···█b         █·░░░P░░░······≈≈≈≈≈≈···········♣
+ 21 ♣···█████▫██████·░░░░░░░······≈≈≈≈≈≈···········♣
+ 22 ♣·······░░░░░░░░░░············≈≈≈≈≈≈···········♣
+ 23 ♣·······░·····················≈≈≈≈≈≈···········♣
+ 24 ♣·······░·····················≈≈≈≈≈≈···········♣
+ 25 ♣··█████▫████··································♣
+ 26 ♣··█b       █··································♣
+ 27 ♣··█      H █·························♣♣♣♣♣♣···♣
+ 28 ♣··█      c █·························♣♣♣♣♣♣···♣
+ 29 ♣··█   t    █·························♣♣♣♣♣♣···♣
+ 30 ♣··██████████·························♣♣♣♣♣♣···♣
+ 31 ♣·····································♣♣♣♣♣♣···♣
+ 32 ♣··············································♣
+ 33 ♣··············································♣
+ 34 ♣··············································♣
+ 35 ♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣
 house/upstairs (9x8) arrival (4, 2)
     012345678
   0 █████████
@@ -54,18 +62,48 @@ Mara
   12:00am [plan: 6:00am cook @ stove_house; 6:40am bake @ oven_bakery; 9:00am tend-shop @ counter_bakery; 1:00pm eat @ table_house; 2:00pm tend-shop @ counter_bakery; 7:00pm drink @ table_tavern_1; 9:30pm sleep @ bed_mara]
   6:00am leaves for cook, eta 6:01am
   6:01am cook
+  6:07am thirsty (72)
   6:40am leaves for bake, eta 6:45am
   6:45am bake
+  7:07am needs the privy (70)
   9:00am leaves for tend-shop, eta 9:01am
   9:01am tend-shop
+  9:07am hungry (75)
+  9:07am thirsty (100)
+  9:07am needs the privy (93)
+  10:07am thirsty (100)
+  10:07am needs the privy (100)
+  11:07am hungry (93)
+  11:07am thirsty (100)
+  11:07am needs the privy (100)
+  12:07pm hungry (99)
+  12:07pm thirsty (100)
+  12:07pm needs the privy (100)
   1:00pm leaves for eat, eta 1:03pm
   1:03pm eat
+  1:07pm needs the privy (100)
   2:00pm leaves for tend-shop, eta 2:03pm
   2:03pm tend-shop
+  2:07pm thirsty (93)
+  2:07pm needs the privy (100)
+  3:07pm thirsty (100)
+  3:07pm needs the privy (100)
+  4:07pm thirsty (100)
+  4:07pm needs the privy (100)
+  5:07pm thirsty (100)
+  5:07pm needs the privy (100)
+  6:07pm thirsty (100)
+  6:07pm needs the privy (100)
   7:00pm leaves for drink, eta 7:06pm
   7:06pm drink
+  7:07pm needs the privy (100)
+  8:07pm needs the privy (100)
+  9:07pm needs the privy (100)
+  9:07pm sleepy (75)
   9:30pm leaves for sleep, eta 9:38pm
   9:38pm sleep
+  10:07pm needs the privy (100)
+  11:07pm needs the privy (100)
   12:00am [plan: 6:00am cook @ stove_house; 6:40am bake @ oven_bakery; 9:00am tend-shop @ counter_bakery; 1:00pm eat @ table_house; 2:00pm tend-shop @ counter_bakery; 7:00pm drink @ table_tavern_1; 9:30pm sleep @ bed_mara]
   6:00am enters house/upstairs at (2, 3)
   6:00am enters town at (9, 8)
@@ -73,13 +111,45 @@ Mara
 
 Tom
   12:00am [plan: 7:30am eat @ table_house; 10:00am tend-bar @ bar_tavern; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
+  7:28am needs the privy (73)
   7:30am leaves for eat, eta 7:32am
   7:32am eat
+  9:28am needs the privy (96)
   10:00am leaves for tend-bar, eta 10:07am
   10:07am tend-bar
+  10:28am needs the privy (100)
+  11:28am needs the privy (100)
+  12:28pm thirsty (76)
+  12:28pm needs the privy (100)
+  1:28pm needs the privy (100)
+  2:28pm thirsty (93)
+  2:28pm needs the privy (100)
+  3:28pm thirsty (100)
+  3:28pm needs the privy (100)
+  4:28pm thirsty (100)
+  4:28pm needs the privy (100)
+  5:28pm thirsty (100)
+  5:28pm needs the privy (100)
+  6:28pm hungry (72)
+  6:28pm thirsty (100)
+  6:28pm needs the privy (100)
+  7:28pm thirsty (100)
+  7:28pm needs the privy (100)
+  8:28pm thirsty (100)
+  8:28pm needs the privy (100)
+  8:28pm sleepy (72)
+  9:28pm hungry (93)
+  9:28pm thirsty (100)
+  9:28pm needs the privy (100)
   10:00pm close-up
+  10:28pm hungry (97)
+  10:28pm thirsty (100)
+  10:28pm needs the privy (100)
   11:00pm leaves for sleep, eta 11:10pm
   11:10pm sleep
+  11:28pm hungry (99)
+  11:28pm thirsty (100)
+  11:28pm needs the privy (100)
   12:00am [plan: 7:30am eat @ table_house; 10:00am tend-bar @ bar_tavern; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
   7:30am enters house/upstairs at (6, 5)
   7:31am enters town at (9, 8)

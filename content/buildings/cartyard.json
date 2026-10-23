@@ -1,0 +1,74 @@
+{
+  "id": "cartyard",
+  "zone": "town",
+  "at": {
+    "x": 3,
+    "y": 25
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "shed",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 8,
+            "h": 4
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 5,
+            "y": 0
+          },
+          "between": [
+            "shed"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_hal",
+          "kind": "bed",
+          "room": "shed",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "owner": "hal",
+          "activity": "sleep"
+        },
+        {
+          "id": "cart_hal",
+          "kind": "cart",
+          "room": "shed",
+          "at": {
+            "x": 7,
+            "y": 3
+          },
+          "owner": "hal",
+          "activity": "tend-cart"
+        },
+        {
+          "id": "table_hal",
+          "kind": "table",
+          "room": "shed",
+          "at": {
+            "x": 4,
+            "y": 4
+          },
+          "activity": "eat"
+        }
+      ],
+      "arrival": {
+        "x": 4,
+        "y": 2
+      }
+    }
+  ]
+}

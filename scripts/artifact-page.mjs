@@ -44,6 +44,10 @@ const page = `<title>Game World</title>
   canvas.place { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
   #places { grid-column: 1 / -1; }
   #legend { overflow-x: auto; }
+  #everyone { display: flex; flex-wrap: wrap; gap: 6px; }
+  button.name { min-height: 32px; min-width: 0; padding: 4px 8px; text-align: left; }
+  button.name[aria-pressed="true"] { outline: 2px solid var(--accent); }
+  #inspect { white-space: pre-wrap; min-height: 4.5em; padding: 8px; border: 1px solid var(--rule); border-radius: 4px; }
   canvas.legend { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
   h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 8px 0 4px; }
   button { font: inherit; min-height: 44px; min-width: 64px; background: var(--bg); color: var(--fg); border: 1px solid var(--rule); border-radius: 4px; }

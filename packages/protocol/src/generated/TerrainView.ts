@@ -5,4 +5,8 @@ import type { Surface } from "./Surface";
 /**
  * The living ground of one place, row-major; None for cells that neither wear nor grow.
  */
-export type TerrainView = { place: PlaceId, width: number, height: number, tiles: Array<Surface | null>, };
+export type TerrainView = { place: PlaceId, width: number, height: number, tiles: Array<Surface | null>, 
+/**
+ * Footfall and growth counters per tile, and the step cost (0 where impassable).
+ */
+wear: Array<number>, growth: Array<number>, cost: Array<number>, };

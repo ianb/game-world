@@ -1,5 +1,6 @@
 //! The authored data model. Mirrors `docs/design/world-layout.md`.
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
@@ -75,6 +76,9 @@ pub struct Zone {
     /// Made paths and roads: cheap to walk, so routes prefer them.
     #[serde(default)]
     pub paths: Vec<Rect>,
+    /// Things standing outdoors (a well, a privy, a bench), in zone coordinates.
+    #[serde(default)]
+    pub objects: Vec<ObjectSpec>,
     /// Where a debug warp lands.
     pub arrival: Pos,
 }
@@ -99,8 +103,10 @@ pub struct Opening {
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct ObjectSpec {
     pub id: String,
-    /// bed, counter, oven, table, chair, stove, shelf...
+    /// bed, counter, oven, table, chair, stove, shelf, privy, well, cart...
     pub kind: String,
+    /// The room, for a building object. Empty for an object placed in a zone.
+    #[serde(default)]
     pub room: String,
     pub at: Pos,
     #[serde(default)]
@@ -113,6 +119,9 @@ pub struct ObjectSpec {
     /// True for things you can stand on or walk through (rugs, doormats). Default blocks.
     #[serde(default)]
     pub walkable: bool,
+    /// Goods on it when the town starts, by name.
+    #[serde(default)]
+    pub stock: BTreeMap<String, u16>,
 }
 
 /// One floor of a building. Inline floors are composited into the zone grid at footprint
@@ -241,6 +250,9 @@ pub struct Villager {
     /// Baseline schedule. Character code may extend or override it.
     #[serde(default)]
     pub schedule: Vec<ScheduleEntry>,
+    /// Money to start with.
+    #[serde(default)]
+    pub coins: u32,
 }
 
 /// Everything loaded from the content directory.

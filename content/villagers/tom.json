@@ -3,10 +3,31 @@
   "name": "Tom",
   "home": "house",
   "bed": "bed_tom",
+  "coins": 30,
   "schedule": [
-    { "days": "daily", "at": "07:30", "object": "table_house", "activity": "eat" },
-    { "days": "daily", "at": "10:00", "object": "bar_tavern", "activity": "tend-bar" },
-    { "days": "daily", "at": "22:00", "object": "bar_tavern", "activity": "close-up" },
-    { "days": "daily", "at": "23:00", "object": "bed_tom", "activity": "sleep" }
+    {
+      "days": "daily",
+      "at": "07:30",
+      "object": "table_house",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "10:00",
+      "object": "bar_tavern",
+      "activity": "tend-bar"
+    },
+    {
+      "days": "daily",
+      "at": "22:00",
+      "object": "bar_tavern",
+      "activity": "close-up"
+    },
+    {
+      "days": "daily",
+      "at": "23:00",
+      "object": "bed_tom",
+      "activity": "sleep"
+    }
   ]
 }

@@ -102,6 +102,39 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
             Emitted::Cleared { x, y, tiles, .. } => {
                 let _ = writeln!(out, "  {t} clears {tiles} tiles around ({x}, {y})");
             }
+            Emitted::Paid {
+                from,
+                to,
+                amount,
+                what,
+                ..
+            } => {
+                let name = |p: &Option<VillagerId>| {
+                    p.map_or_else(
+                        || "outside".to_string(),
+                        |v| sim.state().villagers[v.index()].name.clone(),
+                    )
+                };
+                let _ = writeln!(
+                    out,
+                    "  {t} {} pays {} {amount} for {what}",
+                    name(from),
+                    name(to)
+                );
+            }
+            Emitted::Stocked {
+                object,
+                good,
+                delta,
+                now,
+                ..
+            } => {
+                let key = &sim.world().objects[object.index()].id;
+                let _ = writeln!(out, "  {t} {good} {delta:+} at {key} (now {now})");
+            }
+            Emitted::Need { need, level, .. } => {
+                let _ = writeln!(out, "  {t} {} ({level})", need.name());
+            }
             Emitted::Talked {
                 with,
                 topic,
@@ -140,6 +173,25 @@ pub fn place_changes<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[E
             );
             last = Some(place.0);
         }
+    }
+    out
+}
+
+/// Money and goods: every villager's coins and needs, then every stocked object.
+#[must_use]
+pub fn economy<C: CharacterSet>(sim: &Sim<C>) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "{}", sim.tick().calendar());
+    for v in &sim.state().villagers {
+        let n = &v.needs;
+        let _ = writeln!(
+            out,
+            "{:<8} {:>4} coins  hunger {:>3} thirst {:>3} sleep {:>3} bladder {:>3}",
+            v.name, v.coins, n.hunger, n.thirst, n.sleep, n.bladder
+        );
+    }
+    for s in crate::protocol::stock_views(sim) {
+        let _ = writeln!(out, "{:<18} {:<8} {}", s.key, s.good, s.count);
     }
     out
 }

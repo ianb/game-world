@@ -130,6 +130,11 @@ impl Sim {
         to_js(&self.inner.terrain().view(world, i))
     }
 
+    /// Goods on objects as `StockView[]`.
+    pub fn economy(&self) -> Result<JsValue, JsError> {
+        to_js(&sim::protocol::stock_views(&self.inner))
+    }
+
     #[must_use]
     pub fn where_is_everyone(&self) -> String {
         views::where_is_everyone(&self.inner)
