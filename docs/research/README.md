@@ -41,3 +41,8 @@ project's prose preferences; the notes were not.
 - `world-layout-research.md` (2026-10-23): world structure, map tooling,
   presentation and validation for interiors, exteriors and floors. Notes:
   `notes/layout_*.md`. Feeds `../design/world-layout.md`.
+- `engine-deep-dive.md` (2026-10-23): renderer and engine choice for the
+  discrete-event sim (JS renderers, headless Unity/Godot/Defold/GameMaker,
+  Rust and compiled stacks, sim/viewer seam, the agent's feedback loop).
+  Notes: `notes/engine2_*.md`. Recommends raw Canvas 2D with a Node render
+  path, PixiJS as the fallback, and a one-week gating experiment.

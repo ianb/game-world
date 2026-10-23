@@ -178,3 +178,32 @@ Notes referenced: `layout-games` = layout_world_structure_in_shipped_games.md,
   Keeper or Moonlighter scene structure; any GDC talk comparing scene swap
   with seamless interiors. These are gaps in the world rather than blocked
   pages. (layout-games, layout-present)
+
+## Engine deep-dive track (added 2026-10-23)
+
+Notes referenced: `e2-js` = engine2_js_renderers.md, `e2-editor` =
+engine2_editor_engines_headless.md, `e2-rust` = engine2_rust_and_compiled_stacks.md,
+`e2-arch` = engine2_sim_viewer_architecture_and_devloop.md.
+
+- [ ] Whether the new `unity license` CLI can activate a Personal license
+  headlessly (docs only show the Hub-minted `.ulf` path). (e2-editor)
+- [ ] gdUnit4 GDScript CLI flag page (404); exact Godot editor and export
+  template sizes (GitHub API blocked). (e2-editor)
+- [ ] melonJS 20.0.0 release notes (404); node-canvas 4.0 RC notes. (e2-js)
+- [ ] Official confirmation that `roundPixels` is an Application option in
+  PixiJS 8.22 (accepted locally without error). Whether Pixi's canvas
+  backend present step can be made to blit to the root canvas in Node; the
+  smoke script is `notes/engine2_pixi_node_smoke.mjs`. (e2-js)
+- [ ] Excalibur `snapToPixel` under that name; any 2026 stable release. (e2-js)
+- [ ] A 2026 measurement of a small 2D Bevy wasm build size; absolute Bevy
+  compile times. (e2-rust)
+- [ ] Any 2026 per-language coding-agent benchmark split (Rust vs TypeScript)
+  for current models; the 2025 figures are the latest found. (e2-rust)
+- [ ] OpenFrontIO worker protocol details (core moved to `packages/`, GitHub
+  API unavailable). (e2-arch)
+- [ ] Interpolation behaviour in RimWorld, Oxygen Not Included and Prison
+  Architect; Dinkum's engine; independent web load-time benchmarks per
+  engine. (e2-arch)
+- [ ] Measured 60 fps numbers for a town-scale Canvas 2D renderer from an
+  external source; the report's gating experiment is designed to produce
+  this number locally. (e2-js)

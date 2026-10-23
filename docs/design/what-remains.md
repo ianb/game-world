@@ -24,17 +24,21 @@ revisited.
   No farming, no inventory, no money.
 - Who the player is in the town (see section 7).
 
-## 2. Stack (sim decided; renderer open)
+## 2. Stack (sim decided; renderer open, recommendation on the table)
 
-Simulation design agreed. Renderer still open; PixiJS is a maybe, and raw
-Canvas 2D at integer scale is a candidate for pixel art.
+Simulation design agreed. Renderer still open. The engine deep dive
+(`../research/engine-deep-dive.md`) recommends raw Canvas 2D behind a
+`RenderBackend` interface, with a Node implementation over `@napi-rs/canvas`
+so the same drawing code produces pixel-exact snapshots without a browser,
+gated by a one-week experiment with five measurable criteria, and PixiJS v8
+as the named fallback. Unity, Godot, Defold, GameMaker, Phaser 4, Excalibur,
+Bevy and a Rust core are ruled out there with reasons. Ian's call.
 
 - Simulation: a dependency-free TypeScript package, integer ticks, one
   seeded RNG passed explicitly, no wall clock or DOM, per-tick state hash,
   input log as save and replay. Tests in Node with vitest.
-- Renderer: PixiJS v8 behind a snapshot interface, or Excalibur pinned to
-  0.32.x. Default: PixiJS, because the renderer is thin and the project owns
-  its map format anyway. Decide in the first renderer week.
+- Renderer: see above. Whatever is chosen sits behind the same interface
+  and consumes the sim's event stream; the sim never learns which.
 - Package layout: `sim` (world, places, NPCs, time, pathfinding), `content`
   (buildings, villagers, schedules, lines, as typed data), `tools` (views,
   validators, playtest harness), `web` (renderer and UI). pnpm workspace.

@@ -46,6 +46,11 @@ Research phase. Nothing is decided about the stack yet. There is no code.
   research on how games structure interiors, exteriors and floors, map tooling
   and text formats, procedural layout, presentation, and validation. Includes a
   check of the layout proposal against the evidence.
+- [docs/research/engine-deep-dive.md](docs/research/engine-deep-dive.md):
+  the renderer and engine question in depth: JS renderers, Unity, Godot,
+  Defold and GameMaker run headless, Rust cores and wasm splits, the
+  sim/viewer seam and the agent's feedback loop. Recommends Canvas 2D
+  verified in Node, gated by a one-week experiment, with PixiJS as fallback.
 - [docs/research/blocked-sources.md](docs/research/blocked-sources.md):
   sources the research could not read, as a checklist to revisit.
 - [docs/research/notes/](docs/research/notes/): the raw notes behind the
@@ -57,4 +62,5 @@ Research phase. Nothing is decided about the stack yet. There is no code.
 See [docs/design/what-remains.md](docs/design/what-remains.md). The first
 code slice (repo setup, discrete-event time with a calendar, places,
 buildings, validators, views, then villagers on schedules) is unblocked.
-The renderer choice is still open and is needed before the first playable.
+The renderer choice is still open; the engine deep dive recommends Canvas 2D
+behind a backend interface with a gating experiment, and it is Ian's call.
