@@ -29,6 +29,26 @@ editor, text-first testing, deploy to the web.
   and designs still open on the way to a first Stardew-style town, tagged by
   when each is needed, with defaults.
 
+## Try it
+
+Locally, with Rust 1.97, Node 22 and pnpm 10 installed:
+
+```
+git clone https://github.com/ianb/game-world && cd game-world
+scripts/setup.sh                       # wasm target, just, cargo tools, pnpm install
+just build-wasm                        # the sim as wasm, plus the content bundle
+pnpm --filter @game-world/viewer dev   # then open the printed localhost URL
+```
+
+The page shows the clock, who is where, and each place as text, advancing
+at six game-minutes per second with pause and speed buttons. Without a
+browser: `cargo run -p tools -- day --seed 7` prints everyone's day, and
+`cargo run -p tools -- png --at 14:00` writes a picture to `target/town.png`.
+
+A hosted copy can be built with `node scripts/artifact-page.mjs target/artifact`
+after `pnpm --filter @game-world/viewer build`; it is the same page with the
+document skeleton stripped for hosts that add their own.
+
 ## Status
 
 Building. The Rust simulation core exists and runs the first town: a Cargo
