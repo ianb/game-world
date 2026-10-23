@@ -258,6 +258,27 @@ resume), a decision trace, a PNG renderer, and a third placeholder villager
 (PixiJS versus Phaser 4), relationships as a ledger, interruptions beyond
 conversations, dialogue content.
 
+## Known rough edges (from the 2026-10-23 review round)
+
+Deferred on purpose; fix when the code they touch is next changed.
+
+- The `activity` string doubles as the sim's state machine ("sleep", "talk",
+  "walking" are special). An enum for sim-owned states with a free-form
+  label for character-owned ones would make the special cases explicit.
+- `react` cannot tell which `Wait` elapsed; characters match on the current
+  activity. A tag on `Wait` is the fix once a character has two kinds.
+- Dispatch in `characters::Town` matches on villager id strings; a generated
+  enum would make a typo a compile error.
+- Route search runs a BFS from both ends per call. Fine at town scale; the
+  same-scale countryside will want cached distance fields per place.
+- `Streams.social` is reserved and unused. `HashParts.world` is the hash of
+  villagers, cooldowns, markers and character state.
+- `Rect` arithmetic is `u16` without overflow checks; the validator should
+  bound widths and heights.
+- CI uses `rustup show` to install the pinned toolchain and Node 20 action
+  versions; both still work and both will need bumping eventually.
+- `Cargo.toml` says MIT but there is no LICENSE file. Ian's call.
+
 ## Suggested order
 
 1. Repo setup (done): Cargo and pnpm workspaces, `just check`, CI.
