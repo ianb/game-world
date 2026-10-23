@@ -18,6 +18,10 @@ editor, text-first testing, deploy to the web.
   reasons, authored as structured data, with the validators and generated
   views that make layout testable from text.
 
+- [docs/design/what-remains.md](docs/design/what-remains.md): the decisions
+  and designs still open on the way to a first Stardew-style town, tagged by
+  when each is needed, with defaults.
+
 ## Status
 
 Research phase. Nothing is decided about the stack yet. There is no code.
@@ -50,7 +54,7 @@ Research phase. Nothing is decided about the stack yet. There is no code.
 
 ## Next
 
-Read the recommendations and open decisions at the end of the report and
-decide the first few: renderer, schedule authoring unit, and where the LLM
-boundary sits. Then the first milestone is a simulation core with text-only
-tests, before any rendering.
+See [docs/design/what-remains.md](docs/design/what-remains.md). The first
+code slice (repo setup, time, places, buildings, validators, views) needs
+only the time model and a yes on the stack. The first playable also needs
+the art style, player control, and the player's role in the town.
