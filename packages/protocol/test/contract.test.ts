@@ -27,8 +27,9 @@ describe("wasm sim against the native fixture", () => {
 
   it("emits the same day-0 events and ends on the same hash", () => {
     const sim = new LocalSim(wasm, fixture.seed, content);
-    sim.stepUntil(fixture.day * TICKS_PER_DAY);
-    const events = sim.stepUntil((fixture.day + 1) * TICKS_PER_DAY);
+    const start = fixture.day * TICKS_PER_DAY;
+    const events = sim.stepUntil(start).filter((e) => e.tick >= start);
+    events.push(...sim.stepUntil(start + TICKS_PER_DAY));
     expect(events.length).toBe(fixture.events.length);
     expect(events).toEqual(fixture.events);
     expect(sim.hash()).toBe(fixture.hash);

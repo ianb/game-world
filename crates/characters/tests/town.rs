@@ -93,8 +93,9 @@ fn day0_fixture_matches_native_run() {
     );
     let mut sim: Sim<Town> = Sim::new(fixture.seed, town());
     let start = Tick(fixture.day * TICKS_PER_DAY);
-    sim.step_until(start).unwrap();
-    let events = sim.step_until(start.plus(TICKS_PER_DAY)).unwrap();
+    let mut events = sim.step_until(start).unwrap();
+    events.retain(|e| e.tick() >= start);
+    events.extend(sim.step_until(start.plus(TICKS_PER_DAY)).unwrap());
     assert_eq!(
         events.len(),
         fixture.events.len(),

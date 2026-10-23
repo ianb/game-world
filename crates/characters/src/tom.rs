@@ -35,9 +35,15 @@ impl Tom {
 
         if weekday(ctx) == Weekday::Sun {
             // Day off: no bar. Fish from late morning, then home for a long evening.
+            let worked = self.days_since_day_off;
             self.days_since_day_off = 0;
             let (x, y) = *pick(rng, &FISHING_SPOTS);
             plan.drop_activity("tend-bar").drop_activity("close-up");
+            plan.at(
+                0,
+                1,
+                Command::Note(format!("Sunday off after {worked} days")),
+            );
             plan.at(10, 30, go_tile(ctx, "town", x, y, "fish"));
             plan.at(16, 0, crate::toolbox::go(ctx, "table_house", "rest"));
             return plan.build();
@@ -46,6 +52,11 @@ impl Tom {
 
         if self.mood <= -3 {
             plan.shift((10, 0), (11, 0));
+            plan.at(
+                0,
+                1,
+                Command::Note(format!("opening late, mood {}", self.mood)),
+            );
         }
         // Mid-evening check on the room.
         plan.at(19, 30, wait_minutes(30, "tend-bar"));
@@ -75,12 +86,21 @@ impl Tom {
                 // 20:00 on a working day: is anyone here?
                 let company = together(ctx, "tom", "mara") && activity_of(ctx, "mara") == "drink";
                 let delivered_today = mara.pastries_delivered > 0;
+                let before = self.mood;
                 self.mood = if company || delivered_today {
                     self.mood.saturating_add(2).min(5)
                 } else {
                     self.mood.saturating_sub(1).max(-5)
                 };
-                vec![wait_minutes(120, "tend-bar")]
+                let why = match (company, delivered_today) {
+                    (true, _) => "Mara is here drinking",
+                    (false, true) => "nobody here, but a pastry came by",
+                    (false, false) => "nobody came",
+                };
+                vec![
+                    Command::Note(format!("mood {before} -> {} ({why})", self.mood)),
+                    wait_minutes(120, "tend-bar"),
+                ]
             }
             _ => Vec::new(),
         }

@@ -2,6 +2,18 @@
   "day": 0,
   "events": [
     {
+      "kind": "Decided",
+      "text": "plan: 00:01 note: Tom seems low (mood -1); pastry at 17:30; 06:00 cook @ stove_house; 06:40 bake @ oven_bakery; 09:00 tend-shop @ counter_bakery; 13:00 eat @ table_house; 14:00 tend-shop @ counter_bakery; 17:30 bring-pastry @ bar_tavern; 19:00 drink @ table_tavern_1; 21:30 sleep @ bed_mara",
+      "tick": 0,
+      "who": 0
+    },
+    {
+      "kind": "Decided",
+      "text": "plan: 07:30 eat @ table_house; 10:00 tend-bar @ bar_tavern; 19:30 tend-bar for 30m; 22:00 close-up @ bar_tavern; 23:00 sleep @ bed_tom",
+      "tick": 0,
+      "who": 1
+    },
+    {
       "activity": "walking",
       "kind": "Activity",
       "tick": 21600,
@@ -1683,6 +1695,12 @@
       "who": 1
     },
     {
+      "kind": "Decided",
+      "text": "Waited -> note: mood -1 -> 1 (Mara is here drinking); tend-bar for 120m",
+      "tick": 72000,
+      "who": 1
+    },
+    {
       "activity": "tend-bar",
       "kind": "Activity",
       "tick": 72000,
@@ -2531,9 +2549,21 @@
       },
       "kind": "DayStarted",
       "tick": 86400
+    },
+    {
+      "kind": "Decided",
+      "text": "plan: 06:00 cook @ stove_house; 06:40 bake @ oven_bakery; 09:00 tend-shop @ counter_bakery; 13:00 eat @ table_house; 14:00 tend-shop @ counter_bakery; 19:00 drink @ table_tavern_1; 21:30 sleep @ bed_mara",
+      "tick": 86400,
+      "who": 0
+    },
+    {
+      "kind": "Decided",
+      "text": "plan: 07:30 eat @ table_house; 10:00 tend-bar @ bar_tavern; 19:30 tend-bar for 30m; 22:00 close-up @ bar_tavern; 23:00 sleep @ bed_tom",
+      "tick": 86400,
+      "who": 1
     }
   ],
-  "hash": "c9bb15c68ced83fc",
-  "protocol_version": 3,
+  "hash": "dc39bfd4c05769ae",
+  "protocol_version": 4,
   "seed": 1
 }

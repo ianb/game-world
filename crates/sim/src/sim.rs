@@ -54,6 +54,7 @@ pub struct Sim<C: CharacterSet> {
     world: World,
     nav: Nav,
     state: SimState<C>,
+    startup: Vec<Emitted>,
 }
 
 /// Content is hashed through JSON rather than postcard because the schedule target uses
@@ -109,9 +110,18 @@ impl<C: CharacterSet> Sim<C> {
             content,
             world,
             nav,
+            startup: Vec::new(),
         };
-        sim.plan_everyone();
+        let mut out = Vec::new();
+        sim.plan_everyone(&mut out);
+        sim.startup = out;
         sim
+    }
+
+    /// Decisions made while constructing the sim (the first day's plans). Returned by the
+    /// first `step_until` so no trace is lost.
+    fn take_startup(&mut self) -> Vec<Emitted> {
+        std::mem::take(&mut self.startup)
     }
 
     #[must_use]
@@ -172,7 +182,7 @@ impl<C: CharacterSet> Sim<C> {
                 target,
             });
         }
-        let mut out = Vec::new();
+        let mut out = self.take_startup();
         while let Some(scheduled) = self.state.queue.pop_due(target) {
             self.state.tick = scheduled.tick;
             self.handle(scheduled.event, &mut out);
@@ -193,7 +203,7 @@ impl<C: CharacterSet> Sim<C> {
                     tick,
                     calendar: tick.calendar(),
                 });
-                self.plan_everyone();
+                self.plan_everyone(out);
             }
             Event::Input(input) => self.handle_input(input, out),
             Event::WakeUp { who, generation } => {
@@ -248,13 +258,13 @@ impl<C: CharacterSet> Sim<C> {
 
     /// Asks every character for today's plan and schedules the wake-ups. Items already in
     /// the past (at sim start, or if the plan lists them) are dropped.
-    fn plan_everyone(&mut self) {
+    fn plan_everyone(&mut self, out: &mut Vec<Emitted>) {
         let now = self.state.tick;
         let day_start = now.day_start();
         let count = self.state.villagers.len();
         for i in 0..count {
             let who = VillagerId(u16::try_from(i).expect("few villagers"));
-            let planned = {
+            let (planned, text) = {
                 let ctx = Ctx {
                     tick: now,
                     calendar: now.calendar(),
@@ -263,10 +273,23 @@ impl<C: CharacterSet> Sim<C> {
                     nav: &self.nav,
                     villagers: &self.state.villagers,
                 };
-                self.state
-                    .characters
-                    .plan_day(who, &ctx, &mut self.state.rng.schedule)
+                let planned =
+                    self.state
+                        .characters
+                        .plan_day(who, &ctx, &mut self.state.rng.schedule);
+                let mut sorted = planned.clone();
+                sorted.sort_by_key(|p| p.at);
+                let items: Vec<String> = sorted
+                    .iter()
+                    .map(|p| format!("{} {}", p.at, p.command.summary(&ctx)))
+                    .collect();
+                (planned, format!("plan: {}", items.join("; ")))
             };
+            out.push(Emitted::Decided {
+                tick: now,
+                who,
+                text,
+            });
             let v = &mut self.state.villagers[i];
             v.plan.clear();
             v.plan_generation += 1;
@@ -285,7 +308,7 @@ impl<C: CharacterSet> Sim<C> {
     }
 
     fn react(&mut self, who: VillagerId, trigger: Trigger, out: &mut Vec<Emitted>) {
-        let commands = {
+        let (commands, text) = {
             let ctx = Ctx {
                 tick: self.state.tick,
                 calendar: self.state.tick.calendar(),
@@ -294,10 +317,23 @@ impl<C: CharacterSet> Sim<C> {
                 nav: &self.nav,
                 villagers: &self.state.villagers,
             };
-            self.state
-                .characters
-                .react(who, trigger, &ctx, &mut self.state.rng.idle)
+            let commands =
+                self.state
+                    .characters
+                    .react(who, trigger, &ctx, &mut self.state.rng.idle);
+            let text = (!commands.is_empty()).then(|| {
+                let items: Vec<String> = commands.iter().map(|c| c.summary(&ctx)).collect();
+                format!("{trigger:?} -> {}", items.join("; "))
+            });
+            (commands, text)
         };
+        if let Some(text) = text {
+            out.push(Emitted::Decided {
+                tick: self.state.tick,
+                who,
+                text,
+            });
+        }
         for cmd in commands {
             self.run_command(who, cmd, out);
         }
@@ -323,6 +359,7 @@ impl<C: CharacterSet> Sim<C> {
                     .schedule(tick.plus(ticks), Event::Waited { who, generation });
             }
             Command::GoTo { target, activity } => self.go_to(who, &target, activity, out),
+            Command::Note(_) => {}
         }
     }
 
@@ -587,6 +624,7 @@ impl<C: CharacterSet> Sim<C> {
             world,
             nav,
             state,
+            startup: Vec::new(),
         })
     }
 }

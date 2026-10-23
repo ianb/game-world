@@ -20,6 +20,14 @@ impl Mara {
         let mut plan = Plan::baseline(me, ctx);
         if tom.mood < 0 {
             plan.at(17, 30, go(ctx, "bar_tavern", "bring-pastry"));
+            plan.at(
+                0,
+                1,
+                Command::Note(format!(
+                    "Tom seems low (mood {}); pastry at 17:30",
+                    tom.mood
+                )),
+            );
         }
         plan.build()
     }

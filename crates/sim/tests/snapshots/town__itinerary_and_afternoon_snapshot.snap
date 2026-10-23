@@ -50,6 +50,7 @@ house/upstairs (9x8) arrival (4, 2)
   7 #########
 
 Mara
+  00:00 [plan: 06:00 cook @ stove_house; 06:40 bake @ oven_bakery; 09:00 tend-shop @ counter_bakery; 13:00 eat @ table_house; 14:00 tend-shop @ counter_bakery; 19:00 drink @ table_tavern_1; 21:30 sleep @ bed_mara]
   06:00 leaves for cook, eta 06:01
   06:01 cook
   06:40 leaves for bake, eta 06:45
@@ -64,11 +65,13 @@ Mara
   19:06 drink
   21:30 leaves for sleep, eta 21:37
   21:37 sleep
+  00:00 [plan: 06:00 cook @ stove_house; 06:40 bake @ oven_bakery; 09:00 tend-shop @ counter_bakery; 13:00 eat @ table_house; 14:00 tend-shop @ counter_bakery; 19:00 drink @ table_tavern_1; 21:30 sleep @ bed_mara]
   06:00 enters house/upstairs at (2, 3)
   06:00 enters town at (9, 8)
   21:36 enters house/upstairs at (1, 1)
 
 Tom
+  00:00 [plan: 07:30 eat @ table_house; 10:00 tend-bar @ bar_tavern; 22:00 close-up @ bar_tavern; 23:00 sleep @ bed_tom]
   07:30 leaves for eat, eta 07:33
   07:32 eat
   10:00 leaves for tend-bar, eta 10:06
@@ -76,6 +79,7 @@ Tom
   22:00 close-up
   23:00 leaves for sleep, eta 23:08
   23:08 sleep
+  00:00 [plan: 07:30 eat @ table_house; 10:00 tend-bar @ bar_tavern; 22:00 close-up @ bar_tavern; 23:00 sleep @ bed_tom]
   07:30 enters house/upstairs at (6, 5)
   07:31 enters town at (9, 8)
   23:07 enters house/upstairs at (1, 1)

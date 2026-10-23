@@ -85,6 +85,48 @@ pub enum Command {
     Wait { ticks: u32, activity: String },
     /// Stop moving and do nothing until the next planned item.
     Idle,
+    /// Does nothing to the world; emits a `Decided` line so a reader can see why the
+    /// character chose what it chose. Character code should say its reasons.
+    Note(String),
+}
+
+impl Command {
+    /// One-line summary for traces.
+    #[must_use]
+    pub fn summary(&self, ctx: &Ctx<'_>) -> String {
+        match self {
+            Command::GoTo { target, activity } => format!("{activity} @ {}", target.summary(ctx)),
+            Command::Wait { ticks, activity } => format!("{activity} for {}m", ticks / 60),
+            Command::Idle => "idle".to_string(),
+            Command::Note(text) => format!("note: {text}"),
+        }
+    }
+}
+
+impl Target {
+    #[must_use]
+    pub fn summary(&self, ctx: &Ctx<'_>) -> String {
+        match self {
+            Target::Object(o) => ctx
+                .world
+                .objects
+                .get(o.index())
+                .map_or_else(|| format!("object#{}", o.0), |x| x.id.clone()),
+            Target::Place(p) => ctx
+                .world
+                .places
+                .get(p.index())
+                .map_or_else(|| format!("place#{}", p.0), |x| x.id.clone()),
+            Target::Tile { place, pos } => {
+                let name = ctx
+                    .world
+                    .places
+                    .get(place.index())
+                    .map_or_else(|| format!("place#{}", place.0), |x| x.id.clone());
+                format!("{name} ({}, {})", pos.x, pos.y)
+            }
+        }
+    }
 }
 
 /// A command scheduled for a time of day.

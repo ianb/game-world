@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 3;
+pub const PROTOCOL_VERSION: u32 = 4;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -54,6 +54,12 @@ pub enum Emitted {
         who: VillagerId,
         reason: String,
     },
+    /// A character's brain made a choice: the day plan, a reaction, or a note it left.
+    Decided {
+        tick: Tick,
+        who: VillagerId,
+        text: String,
+    },
 }
 
 impl Emitted {
@@ -66,7 +72,8 @@ impl Emitted {
             | Emitted::Moved { tick, .. }
             | Emitted::Departed { tick, .. }
             | Emitted::Activity { tick, .. }
-            | Emitted::Stuck { tick, .. } => *tick,
+            | Emitted::Stuck { tick, .. }
+            | Emitted::Decided { tick, .. } => *tick,
         }
     }
 
@@ -76,7 +83,8 @@ impl Emitted {
             Emitted::Moved { who, .. }
             | Emitted::Departed { who, .. }
             | Emitted::Activity { who, .. }
-            | Emitted::Stuck { who, .. } => Some(*who),
+            | Emitted::Stuck { who, .. }
+            | Emitted::Decided { who, .. } => Some(*who),
             _ => None,
         }
     }

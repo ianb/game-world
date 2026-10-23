@@ -148,8 +148,8 @@ fn main() -> ExitCode {
         } => {
             let mut sim: Sim<Town> = Sim::new(seed, content);
             let start = Tick(day * TICKS_PER_DAY);
-            sim.step_until(start).unwrap();
-            let mut events = Vec::new();
+            let mut events = sim.step_until(start).unwrap();
+            events.retain(|e| e.tick() >= start);
             let mut hours: Vec<u32> = snapshots;
             hours.sort_unstable();
             for h in hours {
@@ -179,8 +179,9 @@ fn main() -> ExitCode {
         Command::Events { seed, day } => {
             let mut sim: Sim<Town> = Sim::new(seed, content);
             let start = Tick(day * TICKS_PER_DAY);
-            sim.step_until(start).unwrap();
-            let events = sim.step_until(start.plus(TICKS_PER_DAY)).unwrap();
+            let mut events = sim.step_until(start).unwrap();
+            events.retain(|e| e.tick() >= start);
+            events.extend(sim.step_until(start.plus(TICKS_PER_DAY)).unwrap());
             let fixture = serde_json::json!({
                 "seed": seed,
                 "day": day,

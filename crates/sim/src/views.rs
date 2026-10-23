@@ -79,6 +79,9 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
             Emitted::Stuck { reason, .. } => {
                 let _ = writeln!(out, "  {t} STUCK: {reason}");
             }
+            Emitted::Decided { text, .. } => {
+                let _ = writeln!(out, "  {t} [{text}]");
+            }
             _ => {}
         }
     }

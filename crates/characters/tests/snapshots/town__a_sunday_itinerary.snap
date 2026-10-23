@@ -17,20 +17,28 @@ Mara
   19:03 drink
   21:30 leaves for sleep, eta 21:37
   21:37 sleep
+  00:00 [plan: 06:00 cook @ stove_house; 06:40 bake @ oven_bakery; 09:00 tend-shop @ counter_bakery; 13:00 eat @ table_house; 14:00 tend-shop @ counter_bakery; 19:00 drink @ table_tavern_1; 21:30 sleep @ bed_mara]
 Tom
   07:30 leaves for eat, eta 07:33
   07:32 eat
   10:30 leaves for fish, eta 10:36
   10:36 fish
+  10:36 [Arrived -> fish for 40m]
   10:36 fish
+  11:16 [Waited -> fish for 40m]
   11:16 fish
+  11:56 [Waited -> fish for 70m]
   11:56 fish
+  13:06 [Waited -> fish for 70m]
   13:06 fish
+  14:16 [Waited -> fish for 55m]
   14:16 fish
+  15:11 [Waited -> fish for 70m]
   15:11 fish
   16:00 leaves for rest, eta 16:05
   16:05 rest
   23:00 leaves for sleep, eta 23:03
   23:02 sleep
+  00:00 [plan: 07:30 eat @ table_house; 10:00 tend-bar @ bar_tavern; 19:30 tend-bar for 30m; 22:00 close-up @ bar_tavern; 23:00 sleep @ bed_tom]
 Mara { batches_baked: 7, pastries_delivered: 1 }
 Tom { mood: 5, days_since_day_off: 1, fish_caught: 1 }
