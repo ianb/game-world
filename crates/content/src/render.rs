@@ -3,8 +3,9 @@ use crate::compile::{Cell, World};
 use crate::model::Pos;
 use std::fmt::Write as _;
 
-/// Legend: `.` ground, `^` blocked, `#` wall, `,` floor, `+` opening, `>` door tile,
-/// lowercase letter = object (first letter of its kind), overlay glyphs win.
+/// Legend: `·` ground, `░` path, `♣` blocked, `█` wall, space = floor, `▫` opening, `▪` door
+/// tile, lowercase letter = object (first letter of its kind). Overlay glyphs win: uppercase
+/// letters are villagers, `∙` and `▒` are trodden ground.
 #[must_use]
 pub fn render_place(world: &World, place: usize, overlay: &[(Pos, char)]) -> String {
     let p = &world.places[place];
@@ -108,6 +109,7 @@ pub fn list_doors(world: &World) -> String {
 pub fn cell_name(c: Cell) -> &'static str {
     match c {
         Cell::Ground => "ground",
+        Cell::Path => "path",
         Cell::Blocked => "blocked",
         Cell::Wall => "wall",
         Cell::Floor => "floor",

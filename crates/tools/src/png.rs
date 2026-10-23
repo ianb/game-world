@@ -11,6 +11,7 @@ const TILE: u32 = 8;
 fn cell_colour(c: Cell) -> Rgb<u8> {
     match c {
         Cell::Ground => Rgb([96, 140, 72]),
+        Cell::Path => Rgb([176, 150, 96]),
         Cell::Blocked => Rgb([40, 70, 110]),
         Cell::Wall => Rgb([70, 60, 55]),
         Cell::Floor => Rgb([190, 160, 120]),
@@ -35,11 +36,13 @@ fn outline(img: &mut RgbImage, x: u32, y: u32, w: u32, h: u32, colour: Rgb<u8>) 
     fill(img, x + w - 1, y, 1, h, colour);
 }
 
+/// `wear(x, y)` is the footfall level of a tile (0 untouched, 1 track, 2 worn path).
 #[must_use]
 pub fn render_place(
     world: &World,
     place: usize,
     villagers: &[(usize, content::Pos, usize)],
+    wear: &dyn Fn(u16, u16) -> u8,
 ) -> RgbImage {
     let p = &world.places[place];
     let mut img = RgbImage::new(u32::from(p.width) * TILE, u32::from(p.height) * TILE);
@@ -51,7 +54,11 @@ pub fn render_place(
                 u32::from(y) * TILE,
                 TILE,
                 TILE,
-                cell_colour(p.cell(x, y)),
+                match (p.cell(x, y), wear(x, y)) {
+                    (Cell::Ground, 1) => Rgb([136, 150, 84]),
+                    (Cell::Ground, 2) => Rgb([168, 150, 96]),
+                    (cell, _) => cell_colour(cell),
+                },
             );
         }
     }
@@ -114,7 +121,7 @@ pub fn render_town(sim: &Sim<Town>) -> RgbImage {
         .map(|(i, v)| (v.place.index(), v.pos, i))
         .collect();
     let images: Vec<RgbImage> = (0..world.places.len())
-        .map(|i| render_place(world, i, &villagers))
+        .map(|i| render_place(world, i, &villagers, &|x, y| sim.wear_level(i, x, y)))
         .collect();
     let gap = TILE;
     let width = images.iter().map(RgbImage::width).max().unwrap_or(1);

@@ -1,4 +1,5 @@
 //! `sim-tools`: validators, text views, record and replay. The agent's eyes.
+mod paint;
 mod png;
 use characters::Town;
 use clap::{Parser, Subcommand};
@@ -19,6 +20,9 @@ struct Cli {
     /// Content directory.
     #[arg(long, default_value = "content")]
     content: PathBuf,
+    /// Colour the map views even when not writing to a terminal.
+    #[arg(long)]
+    color: bool,
     #[command(subcommand)]
     command: Command,
 }
@@ -94,6 +98,8 @@ enum Command {
 #[allow(clippy::too_many_lines)]
 fn main() -> ExitCode {
     let cli = Cli::parse();
+    let colour = paint::wanted(cli.color);
+    let show = |text: String| if colour { paint::paint(&text) } else { text };
     let content = match load_dir(&cli.content) {
         Ok(c) => c,
         Err(e) => {
@@ -142,7 +148,7 @@ fn main() -> ExitCode {
                 if place.as_ref().is_some_and(|want| want != &p.id) {
                     continue;
                 }
-                print!("{}", render_place(&world, i, &[]));
+                print!("{}", show(render_place(&world, i, &[])));
                 println!("{}\n", list_objects(&world, i));
             }
             ExitCode::SUCCESS
@@ -167,7 +173,7 @@ fn main() -> ExitCode {
                 events.extend(sim.step_until(start.at_time(h.min(23), 0)).unwrap());
                 print!("{}", views::where_is_everyone(&sim));
                 for i in 0..sim.world().places.len() {
-                    print!("{}", views::render_place_now(&sim, i));
+                    print!("{}", show(views::render_place_now(&sim, i)));
                 }
                 println!();
             }
@@ -230,7 +236,7 @@ fn main() -> ExitCode {
                 .unwrap();
             print!("{}", views::where_is_everyone(&sim));
             for i in 0..sim.world().places.len() {
-                print!("{}", views::render_place_now(&sim, i));
+                print!("{}", show(views::render_place_now(&sim, i)));
             }
             ExitCode::SUCCESS
         }
@@ -289,7 +295,7 @@ fn main() -> ExitCode {
                     .into_iter()
                     .map(|p| (p, '*'))
                     .collect();
-                print!("{}", render_place(&world, leg.place, &overlay));
+                print!("{}", show(render_place(&world, leg.place, &overlay)));
             }
             ExitCode::SUCCESS
         }

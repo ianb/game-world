@@ -52,7 +52,7 @@ describe("wasm sim against the native fixture", () => {
     const mara = sim.villagers().find((v) => v.key === "mara")!;
     expect(mara.activity).toBe("tend-shop");
     expect(sim.clock().time).toStrictEqual({ hour: 9, minute: 30, second: 0 });
-    expect(sim.renderPlace("house/upstairs")).toContain("#########");
+    expect(sim.renderPlace("house/upstairs")).toContain("█████████");
   });
 
   it("applies inputs from players, actors and the system, and rejects bad ones", () => {

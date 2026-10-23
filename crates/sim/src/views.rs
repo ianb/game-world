@@ -34,20 +34,35 @@ pub fn where_is_everyone<C: CharacterSet>(sim: &Sim<C>) -> String {
 }
 
 /// A place with villagers drawn as the first letter of their names (uppercase).
+/// Glyphs for trodden ground: a track, then a worn path (a cowpath).
+pub const TRACK_GLYPH: char = '∙';
+pub const COWPATH_GLYPH: char = '▒';
+
 #[must_use]
 pub fn render_place_now<C: CharacterSet>(sim: &Sim<C>, place: usize) -> String {
-    let overlay: Vec<(Pos, char)> = sim
-        .state()
-        .villagers
-        .iter()
-        .filter(|v| v.place.index() == place)
-        .map(|v| {
-            (
-                v.pos,
-                v.name.chars().next().unwrap_or('?').to_ascii_uppercase(),
-            )
-        })
-        .collect();
+    let p = &sim.world().places[place];
+    let mut overlay: Vec<(Pos, char)> = Vec::new();
+    for y in 0..p.height {
+        for x in 0..p.width {
+            match sim.wear_level(place, x, y) {
+                2 => overlay.push((Pos { x, y }, COWPATH_GLYPH)),
+                1 => overlay.push((Pos { x, y }, TRACK_GLYPH)),
+                _ => {}
+            }
+        }
+    }
+    overlay.extend(
+        sim.state()
+            .villagers
+            .iter()
+            .filter(|v| v.place.index() == place)
+            .map(|v| {
+                (
+                    v.pos,
+                    v.name.chars().next().unwrap_or('?').to_ascii_uppercase(),
+                )
+            }),
+    );
     content::render_place(sim.world(), place, &overlay)
 }
 

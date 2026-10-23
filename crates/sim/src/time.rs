@@ -188,8 +188,14 @@ impl TimeOfDay {
 }
 
 impl fmt::Display for TimeOfDay {
+    /// Twelve-hour clock: `6:05am`, `12:00pm`, `11:30pm`.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:02}:{:02}", self.hour, self.minute)
+        let suffix = if self.hour < 12 { "am" } else { "pm" };
+        let hour = match self.hour % 12 {
+            0 => 12,
+            h => h,
+        };
+        write!(f, "{hour}:{:02}{suffix}", self.minute)
     }
 }
 
@@ -251,7 +257,7 @@ mod tests {
         assert_eq!(c.day_of_season, 1);
         assert_eq!(c.weekday, Weekday::Mon);
         assert_eq!(c.time, TimeOfDay::new(0, 0, 0));
-        assert_eq!(c.to_string(), "Y1 Spring 1 (Mon) 00:00");
+        assert_eq!(c.to_string(), "Y1 Spring 1 (Mon) 12:00am");
     }
 
     #[test]
@@ -282,7 +288,9 @@ mod tests {
     #[test]
     fn at_time_and_time_of_day_round_trip() {
         let t = Tick(3 * TICKS_PER_DAY).at_time(7, 15);
-        assert_eq!(t.calendar().time.to_string(), "07:15");
+        assert_eq!(t.calendar().time.to_string(), "7:15am");
+        assert_eq!(TimeOfDay::new(12, 0, 0).to_string(), "12:00pm");
+        assert_eq!(TimeOfDay::new(23, 30, 0).to_string(), "11:30pm");
         assert_eq!(t.day_index(), 3);
         assert_eq!(t.next_day_start(), Tick(4 * TICKS_PER_DAY));
         for s in [0, 1, 59, 60, 3599, 3600, 86_399] {

@@ -43,7 +43,7 @@ pnpm --filter @game-world/viewer dev   # then open the printed localhost URL
 The page shows the clock, who is where, and each place as text, advancing
 at six game-minutes per second with pause and speed buttons. Without a
 browser: `cargo run -p tools -- day --seed 7` prints everyone's day, and
-`cargo run -p tools -- png --at 14:00` writes a picture to `target/town.png`.
+`cargo run -p tools -- png --at 2pm` writes a picture to `target/town.png`.
 
 A hosted copy can be built with `node scripts/artifact-page.mjs target/artifact`
 after `pnpm --filter @game-world/viewer build`; it is the same page with the

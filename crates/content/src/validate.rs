@@ -395,13 +395,31 @@ fn check_doors(world: &World, r: &mut Report) {
     }
 }
 
-/// Parses "HH:MM" into seconds of day.
+/// Parses a time of day into seconds: `7:15am`, `7:15 PM`, `12:00am` (midnight), or the
+/// 24-hour `19:15`.
 #[must_use]
 pub fn parse_time(text: &str) -> Option<u32> {
-    let (hours, minutes) = text.split_once(':')?;
+    let t = text.trim().to_ascii_lowercase();
+    let (digits, suffix) = if let Some(d) = t.strip_suffix("am") {
+        (d.trim(), Some(false))
+    } else if let Some(d) = t.strip_suffix("pm") {
+        (d.trim(), Some(true))
+    } else {
+        (t.as_str(), None)
+    };
+    let (hours, minutes) = digits.split_once(':')?;
     let hours: u32 = hours.parse().ok()?;
     let minutes: u32 = minutes.parse().ok()?;
-    (hours < 24 && minutes < 60).then_some(hours * 3600 + minutes * 60)
+    let hours = match suffix {
+        None => (hours < 24).then_some(hours)?,
+        Some(pm) => {
+            if !(1..=12).contains(&hours) {
+                return None;
+            }
+            (hours % 12) + if pm { 12 } else { 0 }
+        }
+    };
+    (minutes < 60).then_some(hours * 3600 + minutes * 60)
 }
 
 /// Parses "HH:MM-HH:MM" into (open, close) in seconds of day.
@@ -654,7 +672,10 @@ fn check_villagers(content: &Content, world: &World, r: &mut Report) {
         for (i, e) in v.schedule.iter().enumerate() {
             let es = format!("{subj}: schedule[{i}]");
             if parse_time(&e.at).is_none() {
-                r.error(&es, format!("at {:?} is not HH:MM", e.at));
+                r.error(
+                    &es,
+                    format!("at {:?} is not a time like 7:15am or 19:15", e.at),
+                );
             }
             match (&e.target.object, &e.target.place) {
                 (Some(o), None) => {

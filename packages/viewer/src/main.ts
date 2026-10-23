@@ -43,16 +43,77 @@ sim.stepUntil(gameTick);
 let drawnTick = -1;
 let drawnPaused = !paused;
 
+// CSS class per map glyph, matching the legend in crates/content/src/render.rs.
+function glyphClass(ch: string): string | null {
+  switch (ch) {
+    case "·": return "g-ground";
+    case "░": return "g-path";
+    case "∙": return "g-track";
+    case "▒": return "g-cowpath";
+    case "♣": return "g-blocked";
+    case "█": return "g-wall";
+    case "▫":
+    case "▪": return "g-door";
+    default:
+      if (ch >= "a" && ch <= "z") return "g-object";
+      if (ch >= "A" && ch <= "Z") return "g-villager";
+      return null;
+  }
+}
+
+/** Fills a <pre> with the rendered place, one span per coloured glyph. */
+function paint(pre: HTMLPreElement, text: string): void {
+  const frag = document.createDocumentFragment();
+  const lines = text.split("\n");
+  lines.forEach((line, i) => {
+    if (i < 2 || line.length < 4) {
+      frag.append(line, "\n");
+      return;
+    }
+    frag.append(line.slice(0, 4));
+    let run = "";
+    let runClass: string | null = null;
+    const flush = (): void => {
+      if (!run) return;
+      if (runClass) {
+        const span = document.createElement("span");
+        span.className = runClass;
+        span.textContent = run;
+        frag.append(span);
+      } else {
+        frag.append(run);
+      }
+      run = "";
+    };
+    for (const ch of line.slice(4)) {
+      const cls = glyphClass(ch);
+      if (cls !== runClass) {
+        flush();
+        runClass = cls;
+      }
+      run += ch;
+    }
+    flush();
+    frag.append("\n");
+  });
+  pre.replaceChildren(frag);
+}
+
+function twelveHour(hour: number, minute: number): string {
+  const h = hour % 12 === 0 ? 12 : hour % 12;
+  return `${h}:${String(minute).padStart(2, "0")}${hour < 12 ? "am" : "pm"}`;
+}
+
 function draw(): void {
   if (sim.tick === drawnTick && paused === drawnPaused) return;
   drawnTick = sim.tick;
   drawnPaused = paused;
   const clock = sim.clock();
   const cal = clock.calendar;
-  clockEl.textContent = `Y${cal.year} ${cal.season} ${cal.day_of_season} (${cal.weekday}) ${String(clock.time.hour).padStart(2, "0")}:${String(clock.time.minute).padStart(2, "0")}`;
+  clockEl.textContent = `Y${cal.year} ${cal.season} ${cal.day_of_season} (${cal.weekday}) ${twelveHour(clock.time.hour, clock.time.minute)}`;
   speedEl.textContent = paused ? "paused" : `${SPEEDS[speedIndex]} game-min/s`;
   everyoneEl.textContent = sim.whereIsEveryone();
-  for (const [id, pre] of pres) pre.textContent = sim.renderPlace(id);
+  for (const [id, pre] of pres) paint(pre, sim.renderPlace(id));
 }
 
 // Ticks of catch-up allowed per frame: a hidden tab resumes from where it left off.

@@ -435,6 +435,14 @@
         "id": {
           "type": "string"
         },
+        "paths": {
+          "description": "Made paths and roads: cheap to walk, so routes prefer them.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Rect"
+          }
+        },
         "width": {
           "type": "integer",
           "format": "uint16",

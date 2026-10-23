@@ -69,6 +69,9 @@ pub struct Zone {
     /// Impassable terrain (water, trees, cliffs).
     #[serde(default)]
     pub blocked: Vec<Rect>,
+    /// Made paths and roads: cheap to walk, so routes prefer them.
+    #[serde(default)]
+    pub paths: Vec<Rect>,
     /// Where a debug warp lands.
     pub arrival: Pos,
 }

@@ -9,8 +9,10 @@ use std::collections::BTreeMap;
 #[cfg_attr(feature = "schema", derive(ts_rs::TS))]
 #[cfg_attr(feature = "schema", ts(export))]
 pub enum Cell {
-    /// Outdoor ground.
+    /// Outdoor ground: walkable but slow, so routes prefer paths.
     Ground,
+    /// A made path or road.
+    Path,
     /// Impassable terrain.
     Blocked,
     Wall,
@@ -29,20 +31,32 @@ impl Cell {
     pub fn walkable(self) -> bool {
         matches!(
             self,
-            Cell::Ground | Cell::Floor | Cell::Opening | Cell::Door
+            Cell::Ground | Cell::Path | Cell::Floor | Cell::Opening | Cell::Door
         )
     }
 
+    /// Route cost of stepping onto this cell, before wear. Impassable cells return 0 and
+    /// must be filtered by `walkable` first.
+    #[must_use]
+    pub fn base_cost(self) -> u32 {
+        match self {
+            Cell::Ground => 4,
+            Cell::Path | Cell::Floor | Cell::Opening | Cell::Door => 1,
+            Cell::Blocked | Cell::Wall | Cell::Void => 0,
+        }
+    }
+
+    /// One character per cell for text views.
     #[must_use]
     pub fn glyph(self) -> char {
         match self {
-            Cell::Ground => '.',
-            Cell::Blocked => '^',
-            Cell::Wall => '#',
-            Cell::Floor => ',',
-            Cell::Opening => '+',
-            Cell::Door => '>',
-            Cell::Void => ' ',
+            Cell::Ground => '·',
+            Cell::Path => '░',
+            Cell::Blocked => '♣',
+            Cell::Wall => '█',
+            Cell::Floor | Cell::Void => ' ',
+            Cell::Opening => '▫',
+            Cell::Door => '▪',
         }
     }
 }
@@ -215,6 +229,9 @@ pub fn compile(content: &Content) -> World {
             arrival: z.arrival,
             passable: Vec::new(),
         };
+        for r in &z.paths {
+            fill(&mut place, *r, Cell::Path);
+        }
         for r in &z.blocked {
             fill(&mut place, *r, Cell::Blocked);
         }

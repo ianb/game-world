@@ -3,58 +3,66 @@ source: crates/characters/tests/town.rs
 expression: out
 ---
 Mara
-  06:00 leaves for cook, eta 06:01
-  06:01 cook
-  06:40 leaves for bake, eta 06:45
-  06:45 bake
-  09:00 leaves for tend-shop, eta 09:01
-  09:01 tend-shop
-  12:05 [passing Pip -> greet Pip]
-  12:05 greets Pip
-  12:05 talk
-  12:10 tend-shop
-  12:30 [passing Pip -> greet Pip]
-  12:30 greets Pip
-  13:00 leaves for eat, eta 13:03
-  13:03 eat
-  14:00 leaves for wander, eta 14:03
-  14:03 wander
-  14:12 [passing Pip -> greet Pip]
-  14:12 greets Pip
-  17:50 [passing Pip -> greet Pip]
-  17:50 greets Pip
-  19:00 leaves for drink, eta 19:03
-  19:03 drink
-  21:30 leaves for sleep, eta 21:37
-  21:35 [passing Tom -> greet Tom]
-  21:35 greets Tom
-  21:37 sleep
-  00:00 [plan: 06:00 cook @ stove_house; 06:40 bake @ oven_bakery; 09:00 tend-shop @ counter_bakery; 13:00 eat @ table_house; 14:00 tend-shop @ counter_bakery; 19:00 drink @ table_tavern_1; 21:30 sleep @ bed_mara]
+  6:00am leaves for cook, eta 6:01am
+  6:01am cook
+  6:40am leaves for bake, eta 6:45am
+  6:45am bake
+  9:00am leaves for tend-shop, eta 9:01am
+  9:01am tend-shop
+  12:05pm [passing Pip -> greet Pip]
+  12:05pm greets Pip
+  12:05pm talk
+  12:10pm tend-shop
+  12:30pm [passing Pip -> greet Pip]
+  12:30pm greets Pip
+  1:00pm leaves for eat, eta 1:03pm
+  1:03pm eat
+  2:00pm leaves for wander, eta 2:03pm
+  2:00pm [passing Pip -> greet Pip]
+  2:00pm greets Pip
+  2:03pm wander
+  2:36pm [passing Pip -> greet Pip]
+  2:36pm greets Pip
+  3:00pm [passing Pip -> greet Pip]
+  3:00pm greets Pip
+  3:27pm [passing Pip -> greet Pip]
+  3:27pm greets Pip
+  4:02pm [passing Tom -> greet Tom]
+  4:02pm greets Tom
+  4:26pm [passing Pip -> greet Pip]
+  4:26pm greets Pip
+  5:09pm [passing Pip -> greet Pip]
+  5:09pm greets Pip
+  7:00pm leaves for drink, eta 7:03pm
+  7:03pm drink
+  9:30pm leaves for sleep, eta 9:38pm
+  9:36pm [passing Tom -> greet Tom]
+  9:36pm greets Tom
+  9:38pm sleep
+  12:00am [plan: 6:00am cook @ stove_house; 6:40am bake @ oven_bakery; 9:00am tend-shop @ counter_bakery; 1:00pm eat @ table_house; 2:00pm tend-shop @ counter_bakery; 7:00pm drink @ table_tavern_1; 9:30pm sleep @ bed_mara]
 Tom
-  07:30 leaves for eat, eta 07:32
-  07:32 eat
-  10:30 leaves for fish, eta 10:36
-  10:36 fish
-  10:36 [arrived -> fish for 40m]
-  11:16 [waited -> fish for 40m]
-  11:33 [passing Pip -> greet Pip]
-  11:33 greets Pip
-  11:56 [waited -> fish for 70m]
-  13:06 [waited -> fish for 55m]
-  14:01 [waited -> fish for 55m]
-  14:56 [waited -> fish for 70m]
-  15:00 [passing Pip -> greet Pip]
-  15:00 greets Pip
-  16:00 leaves for rest, eta 16:05
-  16:05 rest
-  18:01 [passing Pip -> greet Pip]
-  18:01 greets Pip
-  20:30 [passing Pip -> greet Pip]
-  20:30 greets Pip
-  21:35 [passing Mara -> greet Mara]
-  21:35 greets Mara
-  23:00 leaves for sleep, eta 23:02
-  23:02 sleep
-  00:00 [plan: 07:30 eat @ table_house; 10:00 tend-bar @ bar_tavern; 19:30 tend-bar for 30m; 22:00 close-up @ bar_tavern; 23:00 sleep @ bed_tom]
+  7:30am leaves for eat, eta 7:32am
+  7:32am eat
+  10:30am leaves for fish, eta 10:36am
+  10:36am fish
+  10:36am [arrived -> fish for 70m]
+  11:46am [waited -> fish for 40m]
+  12:26pm [waited -> fish for 40m]
+  1:06pm [waited -> fish for 70m]
+  2:16pm [waited -> fish for 70m]
+  3:26pm [waited -> fish for 55m]
+  4:00pm leaves for rest, eta 4:05pm
+  4:02pm [passing Mara -> greet Mara]
+  4:02pm greets Mara
+  4:05pm rest
+  6:04pm [passing Pip -> greet Pip]
+  6:04pm greets Pip
+  8:30pm [passing Pip -> greet Pip]
+  8:30pm greets Pip
+  9:36pm [passing Mara -> greet Mara]
+  9:36pm greets Mara
+  11:00pm leaves for sleep, eta 11:02pm
+  11:02pm sleep
+  12:00am [plan: 7:30am eat @ table_house; 10:00am tend-bar @ bar_tavern; 7:30pm tend-bar for 30m; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
 Mara { batches_baked: 7, pastries_delivered: 1, fish_stories_heard: 0 }
-Tom { mood: 5, days_since_day_off: 1, fish_caught: 2 }
+Tom { mood: 5, days_since_day_off: 1, fish_caught: 3 }

@@ -37,6 +37,9 @@ pub struct SimState<C> {
     /// Last proximity trigger per (kind, pair with smaller id first), for the cooldown.
     /// Kind 0 is an encounter, 1 is passing.
     pub met: BTreeMap<(u8, u16, u16), Tick>,
+    /// Footfall on ground tiles, by (place, x, y). Trodden ground gets cheaper to route
+    /// over, so villagers wear cowpaths; it fades a little each day.
+    pub wear: BTreeMap<(u16, u16, u16), u16>,
     pub day_rollovers: u32,
     pub markers: Vec<(Tick, String)>,
     /// Character private state.
@@ -77,6 +80,14 @@ pub fn content_hash(content: &Content) -> u64 {
     let bytes = serde_json::to_vec(content).expect("content is always serializable");
     xxhash_rust::xxh3::xxh3_64(&bytes)
 }
+
+/// Footfall at which ground starts to read as a track, and as a path.
+pub const WEAR_TRACK: u16 = 24;
+pub const WEAR_PATH: u16 = 80;
+/// Footfall never counts above this.
+pub const WEAR_MAX: u16 = 255;
+/// Footfall lost per day of disuse.
+pub const WEAR_FADE_PER_DAY: u16 = 2;
 
 /// Asleep or mid-conversation: no proximity triggers to or about them.
 fn unavailable(v: &VillagerState) -> bool {
@@ -126,6 +137,7 @@ impl<C: CharacterSet> Sim<C> {
                 next_input_seq: 1,
                 villagers,
                 met: BTreeMap::new(),
+                wear: BTreeMap::new(),
                 day_rollovers: 0,
                 markers: Vec::new(),
                 characters,
@@ -221,6 +233,7 @@ impl<C: CharacterSet> Sim<C> {
         match event {
             Event::DayRollover => {
                 self.state.day_rollovers += 1;
+                self.fade_wear();
                 self.state
                     .queue
                     .schedule(tick.plus(TICKS_PER_DAY), Event::DayRollover);
@@ -687,12 +700,14 @@ impl<C: CharacterSet> Sim<C> {
                     .map(|(x, y)| Pos { x, y })
                     .collect();
                 if v.place.index() == obj.place {
-                    let dist = nav::bfs_distances(
+                    let base = nav::base_cost(&self.world);
+                    let dist = nav::cost_distances(
                         &self.world,
                         Spot {
                             place: obj.place,
                             pos: v.pos,
                         },
+                        &base,
                     );
                     candidates
                         .iter()
@@ -733,6 +748,48 @@ impl<C: CharacterSet> Sim<C> {
         }
     }
 
+    /// Footfall on a tile, for views: 0 untouched, 1 a track, 2 a worn path.
+    #[must_use]
+    pub fn wear_level(&self, place: usize, x: u16, y: u16) -> u8 {
+        let key = (u16::try_from(place).expect("few places"), x, y);
+        match self.state.wear.get(&key).copied().unwrap_or(0) {
+            w if w >= WEAR_PATH => 2,
+            w if w >= WEAR_TRACK => 1,
+            _ => 0,
+        }
+    }
+
+    /// Step cost for routing: the cell's base cost, with trodden ground cheaper.
+    fn step_cost(&self, place: usize, pos: Pos) -> Option<u32> {
+        if !self.world.passable(place, pos.x, pos.y) {
+            return None;
+        }
+        let base = self.world.places[place].cell(pos.x, pos.y).base_cost();
+        if base <= 1 {
+            return Some(base);
+        }
+        Some(match self.wear_level(place, pos.x, pos.y) {
+            2 => 1,
+            1 => 2,
+            _ => base,
+        })
+    }
+
+    fn tread(&mut self, place: PlaceId, pos: Pos) {
+        if self.world.places[place.index()].cell(pos.x, pos.y) != content::Cell::Ground {
+            return;
+        }
+        let w = self.state.wear.entry((place.0, pos.x, pos.y)).or_insert(0);
+        *w = w.saturating_add(1).min(WEAR_MAX);
+    }
+
+    fn fade_wear(&mut self) {
+        for w in self.state.wear.values_mut() {
+            *w = w.saturating_sub(WEAR_FADE_PER_DAY);
+        }
+        self.state.wear.retain(|_, w| *w > 0);
+    }
+
     fn stuck(&mut self, who: VillagerId, reason: String, out: &mut Vec<Emitted>) {
         let tick = self.state.tick;
         self.interrupt(who);
@@ -765,9 +822,14 @@ impl<C: CharacterSet> Sim<C> {
             self.arrive(who, &activity, out);
             return;
         }
-        let route = self
-            .nav
-            .route_filtered(&self.world, here, dest, |d| self.door_allowed(who, d));
+        let cost = |place: usize, pos: Pos| self.step_cost(place, pos);
+        let route = self.nav.route_filtered(
+            &self.world,
+            here,
+            dest,
+            |d| self.door_allowed(who, d),
+            &cost,
+        );
         let Some(route) = route else {
             let reason = format!(
                 "no route to {} ({}, {})",
@@ -790,7 +852,8 @@ impl<C: CharacterSet> Sim<C> {
             })
             .collect();
         let first = legs.remove(0);
-        let Some(path) = nav::grid_path(&self.world, first.place.index(), here.pos, first.to)
+        let Some(path) =
+            nav::grid_path_cost(&self.world, first.place.index(), here.pos, first.to, &cost)
         else {
             self.stuck(who, "no path inside the place".into(), out);
             return;
@@ -835,13 +898,15 @@ impl<C: CharacterSet> Sim<C> {
             let next = m.path.remove(0);
             let v = &mut self.state.villagers[who.index()];
             v.pos = next;
+            let place = v.place;
             out.push(Emitted::Moved {
                 tick,
                 who,
-                place: v.place,
+                place,
                 x: next.x,
                 y: next.y,
             });
+            self.tread(place, next);
             stepped = true;
         }
         if m.path.is_empty() {
@@ -877,7 +942,10 @@ impl<C: CharacterSet> Sim<C> {
             }
             let next = m.legs.remove(0);
             let from = self.state.villagers[who.index()].pos;
-            let Some(path) = nav::grid_path(&self.world, next.place.index(), from, next.to) else {
+            let cost = |place: usize, pos: Pos| self.step_cost(place, pos);
+            let Some(path) =
+                nav::grid_path_cost(&self.world, next.place.index(), from, next.to, &cost)
+            else {
                 self.stuck(who, "no path inside the place".into(), out);
                 return;
             };

@@ -2,85 +2,85 @@
 source: crates/sim/tests/town.rs
 expression: out
 ---
-Y1 Spring 1 (Mon) 14:00
-Mara     town             (13, 7)  walking      since 14:00 -> tend-shop
-Pip      town             (20,20)  roam         since 12:32
-Tom      town             ( 6,15)  tend-bar     since 10:06
+Y1 Spring 1 (Mon) 2:00pm
+Mara     town             (13, 7)  walking      since 2:00pm -> tend-shop
+Pip      town             (20,20)  roam         since 12:32pm
+Tom      town             ( 6,15)  tend-bar     since 10:07am
 
 town (40x30) arrival (20, 20)
     0123456789012345678901234567890123456789
-  0 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  1 ^......................................^
-  2 ^......................................^
-  3 ^......................................^
-  4 ^...#############.##############.......^
-  5 ^...#s,,,,#,,,,,#.#,,,,,,s#o,,,#.......^
-  6 ^...#,,,,,+,,t,,#.#,c,,,,,#,,,,#.......^
-  7 ^...#,,,,,#,,M,,#.#,,,,,,,+,,,,#.......^
-  8 ^...#,,,,>#,,,,,#.#,,,,,,,#,,,,#.......^
-  9 ^...#########+###.#,,,,,,,#,,,,#.......^
- 10 ^.................####+#########.......^
- 11 ^......................................^
- 12 ^......................................^
- 13 ^......................................^
- 14 ^...############.......................^
- 15 ^...#cT,,,,,,,,#.......................^
- 16 ^...#,,,t,,,t,,#.......................^
- 17 ^...#,,,,,,,,,,#.......................^
- 18 ^...#,,,,,,,,,,#.......................^
- 19 ^...#,,,,,,,t,,#.......................^
- 20 ^...#,,,,,,,,,,#....P.........^^^^^^...^
- 21 ^...#####+######..............^^^^^^...^
- 22 ^.............................^^^^^^...^
- 23 ^.............................^^^^^^...^
- 24 ^.............................^^^^^^...^
- 25 ^......................................^
- 26 ^......................................^
- 27 ^......................................^
- 28 ^......................................^
- 29 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  0 ♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣
+  1 ♣······································♣
+  2 ♣······································♣
+  3 ♣······································♣
+  4 ♣···█████████████·██████████████·······♣
+  5 ♣···█s    █     █·█      s█o   █·······♣
+  6 ♣···█     ▫  t  █·█ c     █    █·······♣
+  7 ♣···█     █  M  █·█       ▫    █·······♣
+  8 ♣···█    ▪█     █·█       █    █·······♣
+  9 ♣···█████████▫███·█       █    █·······♣
+ 10 ♣············░····████▫█████████·······♣
+ 11 ♣·······░░░░░░░░░░░░░░░░░░░░░░░░·······♣
+ 12 ♣···················░··················♣
+ 13 ♣···················░··················♣
+ 14 ♣···████████████····░··················♣
+ 15 ♣···█cT        █····░··················♣
+ 16 ♣···█   t   t  █····░··················♣
+ 17 ♣···█          █····░··················♣
+ 18 ♣···█          █····░··················♣
+ 19 ♣···█       t  █·░░░░░░░···············♣
+ 20 ♣···█          █·░░░P░░░······♣♣♣♣♣♣···♣
+ 21 ♣···█████▫██████·░░░░░░░······♣♣♣♣♣♣···♣
+ 22 ♣········░░░░░░░░░············♣♣♣♣♣♣···♣
+ 23 ♣·····························♣♣♣♣♣♣···♣
+ 24 ♣·····························♣♣♣♣♣♣···♣
+ 25 ♣······································♣
+ 26 ♣······································♣
+ 27 ♣······································♣
+ 28 ♣······································♣
+ 29 ♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣♣
 house/upstairs (9x8) arrival (4, 2)
     012345678
-  0 #########
-  1 #>,,,,,,#
-  2 #,,,,,,,#
-  3 ##+###+##
-  4 #b,,#,,b#
-  5 #,,,#,,,#
-  6 #,,,#b,,#
-  7 #########
+  0 █████████
+  1 █▪      █
+  2 █       █
+  3 ██▫███▫██
+  4 █b  █  b█
+  5 █   █   █
+  6 █   █b  █
+  7 █████████
 
 Mara
-  00:00 [plan: 06:00 cook @ stove_house; 06:40 bake @ oven_bakery; 09:00 tend-shop @ counter_bakery; 13:00 eat @ table_house; 14:00 tend-shop @ counter_bakery; 19:00 drink @ table_tavern_1; 21:30 sleep @ bed_mara]
-  06:00 leaves for cook, eta 06:01
-  06:01 cook
-  06:40 leaves for bake, eta 06:45
-  06:45 bake
-  09:00 leaves for tend-shop, eta 09:01
-  09:01 tend-shop
-  13:00 leaves for eat, eta 13:03
-  13:03 eat
-  14:00 leaves for tend-shop, eta 14:03
-  14:03 tend-shop
-  19:00 leaves for drink, eta 19:06
-  19:06 drink
-  21:30 leaves for sleep, eta 21:37
-  21:37 sleep
-  00:00 [plan: 06:00 cook @ stove_house; 06:40 bake @ oven_bakery; 09:00 tend-shop @ counter_bakery; 13:00 eat @ table_house; 14:00 tend-shop @ counter_bakery; 19:00 drink @ table_tavern_1; 21:30 sleep @ bed_mara]
-  06:00 enters house/upstairs at (2, 3)
-  06:00 enters town at (9, 8)
-  21:36 enters house/upstairs at (1, 1)
+  12:00am [plan: 6:00am cook @ stove_house; 6:40am bake @ oven_bakery; 9:00am tend-shop @ counter_bakery; 1:00pm eat @ table_house; 2:00pm tend-shop @ counter_bakery; 7:00pm drink @ table_tavern_1; 9:30pm sleep @ bed_mara]
+  6:00am leaves for cook, eta 6:01am
+  6:01am cook
+  6:40am leaves for bake, eta 6:45am
+  6:45am bake
+  9:00am leaves for tend-shop, eta 9:01am
+  9:01am tend-shop
+  1:00pm leaves for eat, eta 1:03pm
+  1:03pm eat
+  2:00pm leaves for tend-shop, eta 2:03pm
+  2:03pm tend-shop
+  7:00pm leaves for drink, eta 7:06pm
+  7:06pm drink
+  9:30pm leaves for sleep, eta 9:38pm
+  9:38pm sleep
+  12:00am [plan: 6:00am cook @ stove_house; 6:40am bake @ oven_bakery; 9:00am tend-shop @ counter_bakery; 1:00pm eat @ table_house; 2:00pm tend-shop @ counter_bakery; 7:00pm drink @ table_tavern_1; 9:30pm sleep @ bed_mara]
+  6:00am enters house/upstairs at (2, 3)
+  6:00am enters town at (9, 8)
+  9:37pm enters house/upstairs at (1, 1)
 
 Tom
-  00:00 [plan: 07:30 eat @ table_house; 10:00 tend-bar @ bar_tavern; 22:00 close-up @ bar_tavern; 23:00 sleep @ bed_tom]
-  07:30 leaves for eat, eta 07:32
-  07:32 eat
-  10:00 leaves for tend-bar, eta 10:06
-  10:06 tend-bar
-  22:00 close-up
-  23:00 leaves for sleep, eta 23:08
-  23:08 sleep
-  00:00 [plan: 07:30 eat @ table_house; 10:00 tend-bar @ bar_tavern; 22:00 close-up @ bar_tavern; 23:00 sleep @ bed_tom]
-  07:30 enters house/upstairs at (6, 5)
-  07:31 enters town at (9, 8)
-  23:07 enters house/upstairs at (1, 1)
+  12:00am [plan: 7:30am eat @ table_house; 10:00am tend-bar @ bar_tavern; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
+  7:30am leaves for eat, eta 7:32am
+  7:32am eat
+  10:00am leaves for tend-bar, eta 10:07am
+  10:07am tend-bar
+  10:00pm close-up
+  11:00pm leaves for sleep, eta 11:10pm
+  11:10pm sleep
+  12:00am [plan: 7:30am eat @ table_house; 10:00am tend-bar @ bar_tavern; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
+  7:30am enters house/upstairs at (6, 5)
+  7:31am enters town at (9, 8)
+  11:08pm enters house/upstairs at (1, 1)

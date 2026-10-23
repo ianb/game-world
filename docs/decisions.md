@@ -440,3 +440,35 @@ Rough edges to fix as characters multiply:
 - `react` cannot tell which `Wait` elapsed when a character has several
   kinds; a tag on `Wait` (or matching on the current activity, as Tom does)
   is needed once that happens.
+
+## 2026-10-23: Tile costs and cowpaths, 12-hour time, richer text views
+
+Ian: "We should probably have a concept of score for traveling on tiles.
+That makes paths the correct thing to traverse on, when available, much
+like for people. (Should lead to cowpaths too!) I prefer 12 hour time. You
+could use more full unicode and colors to make this better, it's not that
+easy to parse visually."
+
+Decided:
+
+- Every walkable cell has an integer step cost. Ground is 4, a laid path
+  (`Cell::Path`, authored as `paths` rects on a zone) and every indoor cell
+  is 1, door crossings are 0. Routing is Dijkstra between door ends and A*
+  within a place, both over cost rather than step count, so a villager takes
+  the road when it is there and cuts across grass only when that is cheaper.
+- Footfall wears the ground. Each step onto a Ground tile adds one to that
+  tile's wear; at 24 it is a track (cost 2), at 80 a worn path (cost 1), and
+  it loses 2 a day. Wear lives in `SimState.wear` and is in the hash, so
+  cowpaths are deterministic and replay. A path villagers choose makes
+  itself cheaper, which is how a cowpath forms.
+- Time is shown as 12-hour everywhere (`7:15am`, `11:30pm`). Content may
+  write times either way (`7:15am`, `19:15`).
+- Text views use box and shade glyphs (`·` ground, `░` path, `∙` track,
+  `▒` worn path, `♣` blocked, `█` wall, `▫` opening, `▪` door) and colour:
+  ANSI in the tools when stdout is a terminal (or `--color`), CSS spans by
+  glyph in the viewer. Plain text is still the source of truth; colour is
+  added at the edge, so snapshots and the scene dump stay plain.
+
+Implications: the protocol version is 7 (`Cell` gained `Path`). Costs
+are integers because the sim has no floats. Wear thresholds are constants
+in `crates/sim/src/sim.rs`; tuning them changes every golden hash.

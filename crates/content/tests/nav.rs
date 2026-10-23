@@ -89,7 +89,11 @@ fn door_filter_can_close_the_stairs() {
     let nav = Nav::build(&world);
     let up = Spot::new(world.place_index["house/upstairs"], 4, 2);
     let down = Spot::new(world.place_index["town"], 7, 7);
-    assert!(nav.route_filtered(&world, up, down, |_| false).is_none());
+    let base = nav::base_cost(&world);
+    assert!(
+        nav.route_filtered(&world, up, down, |_| false, &base)
+            .is_none()
+    );
 }
 
 #[test]
@@ -113,4 +117,28 @@ fn travel_matrix_snapshot() {
     let world = compile::compile(&town());
     let nav = Nav::build(&world);
     insta::assert_snapshot!(nav::travel_matrix(&world, &nav));
+}
+
+#[test]
+fn routes_prefer_the_road_over_grass() {
+    let world = compile::compile(&town());
+    let nav = Nav::build(&world);
+    let townp = world.place_index["town"];
+    // From the house door stub to the tavern door stub: the road is 4x cheaper than grass,
+    // so the route follows the street, the lane and the plaza round the tavern instead of
+    // cutting across the green.
+    let route = nav
+        .route(&world, Spot::new(townp, 13, 11), Spot::new(townp, 9, 22))
+        .unwrap();
+    let path = nav::grid_path(&world, townp, Pos { x: 13, y: 11 }, Pos { x: 9, y: 22 }).unwrap();
+    let on_road = path
+        .iter()
+        .filter(|p| world.places[townp].cell(p.x, p.y) == content::Cell::Path)
+        .count();
+    assert!(
+        on_road >= path.len() - 2,
+        "{on_road} of {} tiles on the road; cost {}",
+        path.len(),
+        route.cost
+    );
 }
