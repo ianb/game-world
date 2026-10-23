@@ -2,7 +2,7 @@
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import * as wasm from "@game-world/sim-wasm";
 import { LocalSim, TICKS_PER_MINUTE, at, type Sim } from "@game-world/protocol";
-import { PlaceCanvas, Tileset } from "./render";
+import { PlaceCanvas, Tileset, legend } from "./render";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const clockEl = $("clock");
@@ -48,6 +48,24 @@ for (const place of world.places) {
   pres.set(place.key, pre);
   canvases.push(canvas);
 }
+// What the ground can look like, so cowpaths and overgrowth are recognisable when they
+// appear. Grass wears to a track and a cowpath where villagers walk; untrodden grass goes
+// tall and then to brush; a laid path goes weedy and then overgrown.
+const legendEl = $("legend");
+legendEl.append(
+  legend(tileset, [
+    ["grass", "grass"],
+    ["track", "track"],
+    ["cowpath", "cowpath"],
+    ["path", "road"],
+    ["weedy_path", "weedy"],
+    ["overgrown_path", "overgrown"],
+    ["tall_grass", "tall grass"],
+    ["brush", "brush"],
+    ["water", "water"],
+  ]),
+);
+
 function fitCanvases(): void {
   const width = placesEl.clientWidth || window.innerWidth;
   for (const c of canvases) c.fit(width - 8);
@@ -177,6 +195,11 @@ $("faster").addEventListener("click", () => {
 });
 $("slower").addEventListener("click", () => {
   speedIndex = Math.max(speedIndex - 1, 0);
+  drawnTick = -1;
+});
+$("day").addEventListener("click", () => {
+  window.__advance(1);
+  paused = false;
   drawnTick = -1;
 });
 $("text").addEventListener("click", () => {

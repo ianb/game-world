@@ -212,3 +212,33 @@ export class PlaceCanvas {
     }
   }
 }
+
+/** A strip of named tiles, for a legend: each tile at 2x with its label underneath. */
+export function legend(tiles: Tileset, entries: [name: string, label: string][]): HTMLCanvasElement {
+  const s = tiles.size;
+  const cellW = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = entries.length * cellW;
+  canvas.height = s * 2 + 14;
+  canvas.className = "legend";
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute("aria-label", `legend: ${entries.map(([, l]) => l).join(", ")}`);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return canvas;
+  ctx.imageSmoothingEnabled = false;
+  ctx.font = "10px ui-monospace, monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  entries.forEach(([name, label], i) => {
+    const x = i * cellW + (cellW - s * 2) / 2;
+    // Grass behind, so shaped features sit on their background like they do on the map.
+    const t = tiles.atlas.tiles["grass"];
+    if (t) ctx.drawImage(tiles.image, t.col * s, t.row * s, s, s, x, 0, s * 2, s * 2);
+    const full = tiles.has(`${name}_full`) ? `${name}_full` : name;
+    const f = tiles.atlas.tiles[full];
+    if (f) ctx.drawImage(tiles.image, f.col * s, f.row * s, s, s, x, 0, s * 2, s * 2);
+    ctx.fillStyle = "currentColor";
+    ctx.fillText(label, i * cellW + cellW / 2, s * 2 + 2);
+  });
+  return canvas;
+}

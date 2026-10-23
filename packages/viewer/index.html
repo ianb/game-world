@@ -12,6 +12,8 @@
       pre { margin: 0; white-space: pre; overflow-x: auto; }
       canvas.place { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
       #places { grid-column: 1 / -1; }
+      #legend { overflow-x: auto; }
+      canvas.legend { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
       h2 { font-size: 14px; margin: 8px 0 4px; color: #aaa; }
       button { font: inherit; min-height: 44px; min-width: 64px; }
       .g-ground { color: #5f9a4a; }
@@ -35,10 +37,12 @@
       <button id="pause">pause</button>
       <button id="faster">faster</button>
       <button id="slower">slower</button>
+      <button id="day">+1 day</button>
       <button id="text">text</button>
     </header>
     <main>
       <pre id="everyone"></pre>
+      <div id="legend"></div>
       <div id="places"></div>
     </main>
     <script type="module" src="/src/main.ts"></script>

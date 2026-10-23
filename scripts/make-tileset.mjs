@@ -108,8 +108,10 @@ const AUTO = {
   path: { draw: tiles.path, rim: null },
   weedy_path: { draw: tiles.weedy_path, rim: null },
   overgrown_path: { draw: tiles.overgrown_path, rim: null },
-  track: { draw: (t) => { pathBase(t); t.speckle(hex(grass[0]), 30); t.speckle(hex(grass[2]), 10); }, rim: null },
-  cowpath: { draw: (t) => { pathBase(t); t.speckle(hex(grass[0]), 10); }, rim: null },
+  // Worn ground reads as trodden grass, not laid road: a track is grass with bare patches,
+  // a cowpath is dark packed earth with grass creeping in from the sides.
+  track: { draw: (t) => { grassBase(t); for (let k = 0; k < 7; k++) t.blob(2 + Math.floor(rnd() * 12), 2 + Math.floor(rnd() * 12), 1, hex("#8a7448")); t.speckle(hex("#7a6640"), 10); }, rim: null },
+  cowpath: { draw: (t) => { t.fill(hex("#86703f")); t.speckle(hex("#9a8350"), 18); t.speckle(hex("#6f5c34"), 14); t.speckle(hex(grass[0]), 12); t.blades(hex(grass[1]), 4, 2); }, rim: hex("#6f5c34") },
   tall_grass: { draw: tiles.tall_grass, rim: null },
   brush: { draw: tiles.brush, rim: hex("#2f5a2a") },
 };
