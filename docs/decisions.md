@@ -342,3 +342,37 @@ Decided as the shape (the LLM itself is still "later, maybe"):
   in-sim (fast, deterministic) or external (slow, model-backed) without the
   sim knowing which, which is how "mostly scripts, LLM for high-plot
   moments" gets implemented.
+
+## 2026-10-23: Characters are code first; data is the baseline
+
+Ian: a lot of ad hoc and eclectic code will be needed. Every character may
+have hundreds of lines custom to that character rather than being entirely
+data-driven. There is no reason not to give rich code to each character, or
+a big toolbox that can be put together in ways for the characters. Might
+this be hard with Rust?
+
+Decided:
+
+- A character is a Rust module implementing a `Brain` trait, with as much
+  bespoke code as it needs. The schedule data format from the research is
+  the baseline a character's code extends or overrides, not the whole model.
+- Character code is written against a toolbox: read-only queries through a
+  context (`&Ctx`: where am I, who is nearby, time, what I know, relationship
+  bucket) and actions as queued commands (go to, wait, say, schedule a
+  wake-up, start an exchange). Character code never mutates world state
+  directly. This is what keeps the borrow checker quiet, keeps replay
+  deterministic, and keeps the toolbox the single place behaviours are
+  implemented.
+- The workspace gains a `characters` crate (one module per villager plus the
+  shared toolbox) beside `content` (places, buildings, baseline schedules as
+  data). The toolbox is a first-class deliverable that grows from what
+  character code wants to say.
+- Escape hatch, only if the week-two spike shows real friction: an embedded
+  scripting language inside the sim (Rhai, pure Rust, wasm-capable; or Lua
+  via mlua). Either keeps character logic inside the deterministic core.
+  External actors are not the place for ordinary character logic, because
+  tests and replay would then depend on logged responses instead of code.
+
+Check: in week two, write two characters this way (one mostly data, one
+mostly code with eclectic behaviour) and judge the friction before writing
+twelve.

@@ -107,7 +107,11 @@ Specified in `world-layout.md`. Still to pin down:
 
 ## 6. Villager model (now for schedules, soon for the rest)
 
-From the research and the sparse-attributes decision.
+From the research and the sparse-attributes decision. Revised 2026-10-23:
+characters are code first (a Rust module per villager behind a `Brain`
+trait, written against a command-emitting toolbox); the schedule format
+below is the baseline that code extends. A `characters` crate joins the
+workspace. See decisions.md.
 
 - Identity: id, name, home place, bed, workplace, a short description, and
   only the attributes that character uses.
