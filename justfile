@@ -61,6 +61,11 @@ ts: build-wasm
 
 # Serve the built viewer and drive it with headless Chromium; prints the scene dump.
 viewer-smoke: ts
-    (cd packages/viewer && pnpm exec vite preview --port 4173 --strictPort > /dev/null 2>&1 &) ; sleep 3; \
-        CHROMIUM_PATH="${CHROMIUM_PATH:-/opt/pw-browsers/chromium}" node scripts/viewer-smoke.mjs http://localhost:4173/ ; \
-        status=$?; pkill -f "vite preview" > /dev/null 2>&1 || true; exit $status
+    #!/usr/bin/env bash
+    set -u
+    (cd packages/viewer && pnpm exec vite preview --port 4173 --strictPort > /dev/null 2>&1) &
+    sleep 3
+    node scripts/viewer-smoke.mjs http://localhost:4173/
+    status=$?
+    pkill -f "vite preview --port 4173" > /dev/null 2>&1 || true
+    exit $status
