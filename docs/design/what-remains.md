@@ -32,7 +32,13 @@ Simulation design agreed. Renderer still open. The engine deep dive
 so the same drawing code produces pixel-exact snapshots without a browser,
 gated by a one-week experiment with five measurable criteria, and PixiJS v8
 as the named fallback. Unity, Godot, Defold, GameMaker, Phaser 4, Excalibur,
-Bevy and a Rust core are ruled out there with reasons. Ian's call.
+Bevy and a Rust core are ruled out there with reasons. Ian pushed back on
+Canvas 2D as odd; the report's weighting is contested (it optimizes the
+second-tier feedback channel and under-counts later lighting and effects
+work). Current lean: PixiJS v8 behind the same seam, Playwright for pixels,
+text scene dump as the primary check. Not decided; depends on what the
+earlier hesitation about PixiJS was about (renderer-only versus full
+engine would point at Phaser 4 or Godot instead).
 
 - Simulation: a dependency-free TypeScript package, integer ticks, one
   seeded RNG passed explicitly, no wall clock or DOM, per-tick state hash,
