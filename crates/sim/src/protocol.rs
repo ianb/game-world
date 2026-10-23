@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 10;
+pub const PROTOCOL_VERSION: u32 = 11;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -125,6 +125,41 @@ pub struct NeedsView {
     pub thirst: u8,
     pub sleep: u8,
     pub bladder: u8,
+}
+
+/// The numbers behind the needs, so a viewer can explain a value without hardcoding
+/// the sim's constants.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct RulesView {
+    /// Needs run from 0 (met) to this.
+    pub need_max: u8,
+    /// A need at this level asks the character to act; at `need_urgent` it keeps asking.
+    pub need_pressing: u8,
+    pub need_urgent: u8,
+    /// Base rise per hour awake, before the hourly roll of 0 to 5 less 2.
+    pub hunger_per_hour: u8,
+    pub thirst_per_hour: u8,
+    pub sleep_per_hour: u8,
+    pub bladder_per_hour: u8,
+    /// Sleep repaid per hour asleep; the other needs rise at half speed asleep.
+    pub sleep_recovery_per_hour: u8,
+}
+
+#[must_use]
+pub fn rules_view() -> RulesView {
+    use crate::needs;
+    RulesView {
+        need_max: 100,
+        need_pressing: needs::PRESSING,
+        need_urgent: needs::URGENT,
+        hunger_per_hour: needs::RATE_HUNGER,
+        thirst_per_hour: needs::RATE_THIRST,
+        sleep_per_hour: needs::RATE_SLEEP,
+        bladder_per_hour: needs::RATE_BLADDER,
+        sleep_recovery_per_hour: needs::SLEEP_RECOVERY,
+    }
 }
 
 /// Goods on one object.

@@ -72,10 +72,26 @@ let hover: Focus | null = null;
 let pinned: Focus | null = null;
 const inspectEl = $("inspect");
 
-function describeNeeds(v: VillagerView): string {
+const rules = sim.rules();
+
+/** One need as a bar: name, ten blocks, the value, and what the sim makes of it. */
+function needBar(name: string, value: number, perHour: number): string {
+  const filled = Math.round((value / rules.need_max) * 10);
+  const bar = "▮".repeat(filled) + "▯".repeat(10 - filled);
+  const word = value >= rules.need_urgent ? "urgent" : value >= rules.need_pressing ? "pressing" : value >= 40 ? "some" : "fine";
+  return `${name.padEnd(8)} ${bar} ${String(value).padStart(3)} ${word.padEnd(8)} +${perHour}/h`;
+}
+
+function describeNeeds(v: VillagerView): string[] {
   const n = v.needs;
-  const word = (x: number): string => (x >= 90 ? "urgent" : x >= 70 ? "pressing" : x >= 40 ? "some" : "fine");
-  return `hunger ${n.hunger} (${word(n.hunger)}), thirst ${n.thirst} (${word(n.thirst)}), sleep ${n.sleep} (${word(n.sleep)}), bladder ${n.bladder} (${word(n.bladder)})`;
+  return [
+    needBar("hunger", n.hunger, rules.hunger_per_hour),
+    needBar("thirst", n.thirst, rules.thirst_per_hour),
+    needBar("sleep", n.sleep, rules.sleep_per_hour),
+    needBar("bladder", n.bladder, rules.bladder_per_hour),
+    `scale 0 to ${rules.need_max}; acts at ${rules.need_pressing}, urgent at ${rules.need_urgent}`,
+    `+/h is per hour awake, roughly; asleep, sleep repays ${rules.sleep_recovery_per_hour}/h`,
+  ];
 }
 
 function sinceText(tick: number): string {
@@ -90,7 +106,7 @@ function describeVillager(v: VillagerView, stock: StockView[]): string[] {
     `${v.activity}${v.heading_for ? ` (heading for ${v.heading_for})` : ""} since ${sinceText(v.since)}`,
     `at ${place?.key ?? "?"} (${v.pos.x}, ${v.pos.y})`,
     `${v.coins} coins`,
-    describeNeeds(v),
+    ...describeNeeds(v),
   ];
   void stock;
   return lines;
@@ -149,22 +165,35 @@ function highlightFor(placeId: number, villagers: VillagerView[]): { x: number; 
 }
 
 /** The who-is-where list as buttons, one per villager, so a name can be clicked. */
+/** One row per villager, made once and updated in place so nothing jumps: a name button,
+ * then the activity and the place in fixed columns. */
+const rows = new Map<string, { button: HTMLButtonElement; activity: HTMLSpanElement; place: HTMLSpanElement }>();
 function listEveryone(villagers: VillagerView[]): void {
-  const frag = document.createDocumentFragment();
   for (const v of villagers) {
-    const b = document.createElement("button");
-    b.className = "name";
-    b.type = "button";
-    const place = world.places.find((p) => p.id === v.place);
-    b.textContent = `${v.name}: ${v.activity}${v.heading_for ? ` → ${v.heading_for}` : ""} at ${place?.key ?? "?"}`;
-    if (pinned?.kind === "villager" && pinned.key === v.key) b.setAttribute("aria-pressed", "true");
-    b.addEventListener("click", () => {
-      pinned = pinned?.kind === "villager" && pinned.key === v.key ? null : { kind: "villager", key: v.key };
-      drawnTick = -1;
-    });
-    frag.append(b);
+    let row = rows.get(v.key);
+    if (!row) {
+      const button = document.createElement("button");
+      button.className = "name";
+      button.type = "button";
+      button.textContent = v.name;
+      button.addEventListener("click", () => {
+        pinned = pinned?.kind === "villager" && pinned.key === v.key ? null : { kind: "villager", key: v.key };
+        drawnTick = -1;
+      });
+      const activity = document.createElement("span");
+      const place = document.createElement("span");
+      place.className = "muted";
+      everyoneEl.append(button, activity, place);
+      row = { button, activity, place };
+      rows.set(v.key, row);
+    }
+    const placeName = world.places.find((p) => p.id === v.place)?.key ?? "?";
+    const activity = `${v.activity}${v.heading_for ? ` → ${v.heading_for}` : ""}`;
+    if (row.activity.textContent !== activity) row.activity.textContent = activity;
+    if (row.place.textContent !== placeName) row.place.textContent = placeName;
+    const pressed = pinned?.kind === "villager" && pinned.key === v.key ? "true" : "false";
+    if (row.button.getAttribute("aria-pressed") !== pressed) row.button.setAttribute("aria-pressed", pressed);
   }
-  everyoneEl.replaceChildren(frag);
 }
 // What the ground can look like, so cowpaths and overgrowth are recognisable when they
 // appear. Grass wears to a track and a cowpath where villagers walk; untrodden grass goes

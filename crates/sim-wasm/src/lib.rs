@@ -154,4 +154,9 @@ impl Sim {
     pub fn clock(&self) -> Result<JsValue, JsError> {
         to_js(&sim::protocol::clock_view(&self.inner))
     }
+
+    /// The constants behind the needs, as a `RulesView`.
+    pub fn rules(&self) -> Result<JsValue, JsError> {
+        to_js(&sim::protocol::rules_view())
+    }
 }
