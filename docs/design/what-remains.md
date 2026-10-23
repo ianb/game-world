@@ -169,6 +169,12 @@ in the Left 4 Dead intensity shape. Decision needed only on whether any of
 it is in the first playable. Default: none; the first playable is schedules,
 movement and talk.
 
+## 9b. Live multiuser (later, direction set)
+
+Decided as a direction: inputs in, effects out, viewer behind a `Sim`
+interface that can be local wasm or a network connection; N avatars; time
+belongs to the world. See `multiplayer.md`. No work scheduled.
+
 ## 10. LLM boundary (revised)
 
 Zero runtime calls in the first playable, but dialogue may be LLM-driven

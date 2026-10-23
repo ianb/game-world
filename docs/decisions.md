@@ -286,3 +286,31 @@ Implications for the build order in `design/what-remains.md`: steps 1 to 4
 views, villagers on schedules) move to Rust. The text views and playtest
 harness are Rust binaries. The content format is serde-backed (RON or JSON
 with schemas) rather than TypeScript literals.
+
+## 2026-10-23: Live multiuser eventually; inputs in, effects out
+
+Ian: eventually live multiuser is wanted. That adds to the benefit of
+client/server, with player inputs feeding into the simulation and effects
+coming out.
+
+Status: direction, not scheduled. It costs almost nothing to honour now
+because the sim is already a deterministic core that consumes an input log
+and emits typed events. What it fixes in place from the start:
+
+- Inputs are the only way anything affects the sim, and every input carries
+  a player id and is stamped with the tick the server (or the local loop)
+  assigns. No viewer-side shortcuts into state.
+- The viewer talks to a `Sim` interface (step, apply input, events out,
+  snapshot, hash) that can be backed by local wasm or by a network
+  connection. The viewer never learns which.
+- The sim supports N avatars, not one. The observer-player decision already
+  made the avatar optional; this makes it plural.
+- Time is a property of the world, not of a player. Pause and fast-forward
+  are single-player conveniences; a shared town runs at wall-clock pace on
+  the server.
+- Snapshot and load are the late-joiner mechanism, so they stay first-class
+  rather than a save-game afterthought.
+- Events are the wire format as well as the viewer format, so they stay
+  small, integer-only and serializable.
+
+See `design/multiplayer.md` for the shape and the choice to make later.

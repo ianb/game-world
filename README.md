@@ -18,6 +18,9 @@ editor, text-first testing, deploy to the web.
   reasons, authored as structured data, with the validators and generated
   views that make layout testable from text.
 
+- [docs/design/multiplayer.md](docs/design/multiplayer.md): the shape live
+  multiuser would take on the current architecture, and the one interface
+  invariant to keep now so it stays possible.
 - [docs/design/what-remains.md](docs/design/what-remains.md): the decisions
   and designs still open on the way to a first Stardew-style town, tagged by
   when each is needed, with defaults.
