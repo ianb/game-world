@@ -36,7 +36,7 @@ build-wasm:
     wasm-bindgen --target nodejs --out-dir packages/sim-wasm/pkg-node target/wasm32-unknown-unknown/release/sim_wasm.wasm
     echo '{ "type": "commonjs" }' > packages/sim-wasm/pkg-node/package.json
     cargo run -q -p tools -- bundle > target/content-bundle.json
-    cp target/content-bundle.json packages/viewer/public/content.json
+    mkdir -p packages/viewer/public && cp target/content-bundle.json packages/viewer/public/content.json
 
 # Build the wasm, run a week in Node, and compare the hash with the native golden snapshot.
 wasm-smoke: build-wasm
