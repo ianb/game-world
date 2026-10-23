@@ -24,6 +24,7 @@ proptest = "1"
 rstest = "0.28"
 clap = { version = "4", features = ["derive"] }
 comfy-table = "8"
+image = { version = "0.25", default-features = false, features = ["png"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -1,4 +1,5 @@
 //! `sim-tools`: validators, text views, record and replay. The agent's eyes.
+mod png;
 use characters::Town;
 use clap::{Parser, Subcommand};
 use content::{
@@ -45,6 +46,18 @@ enum Command {
     },
     /// Travel times between every place's arrival tile.
     TravelMatrix,
+    /// Write a PNG of every place at a given day and time, villagers drawn in.
+    Png {
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        #[arg(long, default_value_t = 0)]
+        day: u32,
+        /// "HH:MM"
+        #[arg(long, default_value = "12:00")]
+        at: String,
+        #[arg(long, default_value = "target/town.png")]
+        out: PathBuf,
+    },
     /// Where everyone is at a given day and time, with the places drawn.
     Where {
         #[arg(long, default_value_t = 1)]
@@ -176,6 +189,23 @@ fn main() -> ExitCode {
                 "events": events,
             });
             println!("{}", serde_json::to_string_pretty(&fixture).unwrap());
+            ExitCode::SUCCESS
+        }
+        Command::Png { seed, day, at, out } => {
+            let Some(secs) = content::validate::parse_time(&at) else {
+                eprintln!("--at must be HH:MM");
+                return ExitCode::from(1);
+            };
+            let mut sim: Sim<Town> = Sim::new(seed, content);
+            sim.step_until(Tick(day * TICKS_PER_DAY).plus(secs))
+                .unwrap();
+            let img = png::render_town(&sim);
+            if let Err(e) = img.save(&out) {
+                eprintln!("could not write {}: {e}", out.display());
+                return ExitCode::from(1);
+            }
+            println!("wrote {} ({}x{})", out.display(), img.width(), img.height());
+            print!("{}", views::where_is_everyone(&sim));
             ExitCode::SUCCESS
         }
         Command::Where { seed, day, at } => {
