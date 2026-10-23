@@ -185,3 +185,63 @@ Implications:
   item.
 - The travel-time matrix and itinerary tools still measure the walking
   cost; they tune density and speed rather than decide the model.
+
+## 2026-10-23: First-town decisions
+
+Ian, answering the list in `design/what-remains.md`:
+
+**Time.** A calendar, of course. Deterministic ticks. Probably a scheduler
+with events scheduled for the future; time could be by the second, but the
+simulation does not revisit every entity every second.
+
+Implications:
+
+- The simulation core is a discrete-event scheduler: a priority queue of
+  future events keyed by tick, with a sequence number as tie-breaker so
+  ordering is deterministic. Entities schedule their own next wake-up
+  (arrive at the next tile, finish eating, shop opens) rather than being
+  polled. Player input enters as an event at a tick.
+- Tick resolution is one game-second. Nothing runs per tick unless an event
+  is due. The renderer interpolates movement between tile-arrival events.
+- Calendar from the start: date, weekday, season, year. Schedules key on
+  all of them, most-specific wins.
+- "Simulate everyone on real tiles" stands, but by events, not by polling.
+  Scaling tricks (skip or coarsen events in unobserved places) slot in as
+  event policies later.
+
+**Player.** Mostly a newcomer observer. It might end up like The Sims, an
+omniscient observer.
+
+Implications:
+
+- The camera and the player avatar are separate things from the first
+  renderer build. The camera can follow the avatar, a villager, or a place.
+- The avatar is optional in the sim: the world runs without one. "Talk" and
+  other player verbs attach to the avatar when present.
+- Legibility tools (where is everyone, what are they doing) matter more
+  than under a pure avatar model and should be in the first playable as
+  views, even before they have UI.
+
+**Scope.** 8 to 12 villagers, 8 to 10 buildings, one outdoor zone. Fine.
+
+**Player control.** Both keyboard walking and click-to-walk.
+
+**Art.** Pixel art to start. That selects the pixel-native pipeline (A) in
+the asset research for generated art, and placeholder pixel packs before
+that.
+
+**NPC action and decisions.** Developing action and villager decision-making
+(needs, utility, interruptions, drama) come later. First playable is
+schedules and movement.
+
+**Stack.** The underlying simulation design is agreed. The renderer is not:
+PixiJS is a maybe. Renderer choice stays open until the renderer step, with
+raw Canvas 2D at integer scale added to the candidates since pixel art
+needs little from a library.
+
+**Dialogue.** Comes later, and might be LLM-driven from the start rather
+than a rule database. When it comes, the research constraints apply: the
+engine owns state, the model returns text plus a closed set of flags,
+grounded in the fact bag, with a per-scene budget.
+
+**Headless testing.** Lots of options; no decision needed.

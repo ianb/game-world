@@ -1,7 +1,9 @@
 # What remains to decide and design
 
 Written 2026-10-23, for a first target of a simple Stardew-style town at an
-easy scale. Each item has a tag:
+easy scale. Ian answered most of the "Ian" items the same day; see the
+"First-town decisions" entry in `../decisions.md`. Statuses below are
+updated to match. Each item has a tag:
 
 - **now**: blocks the first code slice (the layout and simulation core).
 - **soon**: blocks the first playable (a town you can walk around in a
@@ -12,7 +14,7 @@ Where there is a sensible default I state it. Items marked **Ian** are the
 ones only the author can call; the rest can proceed on the default and be
 revisited.
 
-## 1. Scope of the first town (soon, Ian)
+## 1. Scope of the first town (decided)
 
 - How many villagers and buildings. Default: 8 to 12 villagers, 8 to 10
   buildings (homes, a shop, a tavern, a workplace or two, a chapel or hall),
@@ -22,9 +24,10 @@ revisited.
   No farming, no inventory, no money.
 - Who the player is in the town (see section 7).
 
-## 2. Stack (now)
+## 2. Stack (sim decided; renderer open)
 
-Already recommended by the research; needs a yes.
+Simulation design agreed. Renderer still open; PixiJS is a maybe, and raw
+Canvas 2D at integer scale is a candidate for pixel art.
 
 - Simulation: a dependency-free TypeScript package, integer ticks, one
   seeded RNG passed explicitly, no wall clock or DOM, per-tick state hash,
@@ -39,9 +42,12 @@ Already recommended by the research; needs a yes.
   needs one. Keep `sim` free of browser APIs so a Durable Object can run it
   later.
 
-## 3. Time model (now, Ian)
+## 3. Time model (decided: discrete-event scheduler)
 
-The one decision that touches every schedule and every test.
+Decided: a calendar from the start; deterministic ticks at one game-second;
+a discrete-event scheduler (priority queue of future events, sequence-number
+tie-break) so entities wake on their own events instead of being polled.
+The defaults below for clock speed and day span still stand.
 
 - Tick length. Default: one tick is one game-second, with 60 ticks per
   game-minute; schedules are written in minutes, movement in ticks.
@@ -62,9 +68,7 @@ The one decision that touches every schedule and every test.
 - Grid movement, 4-connected for NPCs (Stardew), 8-connected or free for the
   player. Default: tile-to-tile for both, with the player able to change
   direction mid-tile visually.
-- Player control (soon, Ian): direct keyboard walking, click-to-walk with
-  pathfinding, or both. Default: both; click-to-walk is what makes a
-  unified-scale town bearable.
+- Player control (decided): both keyboard walking and click-to-walk.
 - Doors: walk into the door tile. Locked doors show a message.
 
 ## 5. Layout content (now)
@@ -102,7 +106,7 @@ From the research and the sparse-attributes decision.
 - Memory and gossip (later): the tagged world event log plus bounded
   impressions. Not in the first playable.
 
-## 7. The player's place in the town (soon, Ian)
+## 7. The player's place in the town (decided: newcomer observer, possibly omniscient)
 
 The vision says the point is the living world, and the research says
 players need something to do in it. Options:
@@ -114,11 +118,11 @@ players need something to do in it. Options:
 - Catalyst with limited means to nudge (deliver messages, introduce
   people, carry gossip), the soap-opera participant.
 
-This decides what verbs the player has and what the first storylets are
-about. Default if no call is made: newcomer resident, with a small errand
-list that gives reasons to visit every building in the first day.
+Decided: mostly a newcomer observer, possibly ending up Sims-like
+(omniscient). So the camera is separate from the avatar, the avatar is
+optional in the sim, and legibility views come early.
 
-## 8. Dialogue (soon)
+## 8. Dialogue (later; possibly LLM from the start)
 
 - Barks and state-keyed lines: a rule database over a fact bag (place,
   time, activity, weather later, relationship bucket, recent events), most
@@ -128,10 +132,11 @@ list that gives reasons to visit every building in the first day.
 - Voice: Ian writes or approves lines; the agent drafts into the schema.
   Carry over the prose rule from the intra-game repo: game text is the
   author's voice.
-- Minimum for the first playable: each villager has a greeting per activity
-  and a couple of state-keyed variants.
+- Decided: dialogue comes after the first playable, and may be LLM-driven
+  from the start rather than a rule database, under the research
+  constraints (engine owns state, closed flag set, grounded, budgeted).
 
-## 9. Drama between villagers (later, Ian decides when)
+## 9. Drama between villagers (later, decided)
 
 Authored, role-agnostic exchanges (ask out, confide, snub, make up) that
 cast eligible pairs, with volition from a short rule list and outcomes that
@@ -140,9 +145,10 @@ in the Left 4 Dead intensity shape. Decision needed only on whether any of
 it is in the first playable. Default: none; the first playable is schedules,
 movement and talk.
 
-## 10. LLM boundary (decided enough)
+## 10. LLM boundary (revised)
 
-Zero runtime calls in the first playable. Authoring-time generation into
+Zero runtime calls in the first playable, but dialogue may be LLM-driven
+when it arrives. Authoring-time generation into
 schemas with validators and a human voice read. Revisit when authored
 scenes exist.
 
@@ -159,7 +165,7 @@ scenes exist.
 - Browser checks (soon): a few Playwright screenshots gated on a WebGL
   context assertion.
 
-## 12. Art (soon, Ian)
+## 12. Art (decided: pixel art to start)
 
 From the asset research.
 
@@ -208,6 +214,5 @@ From the asset research.
 7. Then art generation experiments, relationships, interruptions, and the
    first drama exchange, in whatever order the playable suggests.
 
-Steps 1 to 4 are text-only and need no decisions beyond the time model and
-the stack yes. Step 5 needs the art style and player control. Step 6 needs
-the player's role.
+Steps 1 to 4 are text-only and are unblocked. Step 5 needs the renderer
+choice. Step 6 (talk) is deferred and may be LLM-driven.

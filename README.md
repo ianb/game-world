@@ -55,6 +55,6 @@ Research phase. Nothing is decided about the stack yet. There is no code.
 ## Next
 
 See [docs/design/what-remains.md](docs/design/what-remains.md). The first
-code slice (repo setup, time, places, buildings, validators, views) needs
-only the time model and a yes on the stack. The first playable also needs
-the art style, player control, and the player's role in the town.
+code slice (repo setup, discrete-event time with a calendar, places,
+buildings, validators, views, then villagers on schedules) is unblocked.
+The renderer choice is still open and is needed before the first playable.

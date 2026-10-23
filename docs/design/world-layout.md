@@ -48,10 +48,11 @@ Proposal: an authored graph.
 What was dropped from the first draft: the claim that off-screen NPCs can
 move at the place level only. Stardew updates every NPC in every location
 every tick, and no 2D town game that teleports NPCs on a travel-time estimate
-was found. At a few dozen NPCs and places, simulate everyone on real tiles.
-Scaling tricks (teleport along the route after the travel time, or skipping
-ticks in places with no observer) are a later addition; the place graph and
-travel-time matrix leave room for them.
+was found. At a few dozen NPCs and places, simulate everyone on real tiles,
+driven by a discrete-event scheduler (each villager wakes on its own next
+event, such as arriving at the next tile) rather than polled every tick.
+Scaling tricks (coarsening events in places with no observer) are a later
+event policy; the place graph and travel-time matrix leave room for them.
 
 ## Unified versus detached interiors (decided: inline by default)
 
