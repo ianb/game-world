@@ -7,11 +7,13 @@
 pub mod compile;
 pub mod load;
 pub mod model;
+pub mod nav;
 pub mod render;
 pub mod validate;
 
 pub use compile::{Cell, CompiledDoor, CompiledObject, Place, PlaceKind, World};
 pub use load::{LoadError, load_dir, load_str};
 pub use model::*;
+pub use nav::{Leg, Nav, Route, Spot, WALK_TICKS_PER_TILE};
 pub use render::{list_doors, list_objects, render_place};
 pub use validate::{ContentError, validate};

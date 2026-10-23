@@ -1,6 +1,8 @@
 //! `sim-tools`: validators, text views, record and replay. The agent's eyes.
 use clap::{Parser, Subcommand};
-use content::{compile, list_doors, list_objects, load_dir, render_place, validate};
+use content::{
+    Nav, Pos, Spot, compile, list_doors, list_objects, load_dir, nav, render_place, validate,
+};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -28,8 +30,20 @@ enum Command {
     },
     /// List every door record.
     Doors,
+    /// Travel times between every place's arrival tile.
+    TravelMatrix,
+    /// Route between two tiles, printed as legs and drawn on the places it crosses.
+    Route {
+        from_place: String,
+        from_x: u16,
+        from_y: u16,
+        to_place: String,
+        to_x: u16,
+        to_y: u16,
+    },
 }
 
+#[allow(clippy::too_many_lines)]
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let content = match load_dir(&cli.content) {
@@ -77,6 +91,65 @@ fn main() -> ExitCode {
         Command::Doors => {
             let world = compile::compile(&content);
             println!("{}", list_doors(&world));
+            ExitCode::SUCCESS
+        }
+        Command::TravelMatrix => {
+            let world = compile::compile(&content);
+            let nav = Nav::build(&world);
+            print!("{}", nav::travel_matrix(&world, &nav));
+            ExitCode::SUCCESS
+        }
+        Command::Route {
+            from_place,
+            from_x,
+            from_y,
+            to_place,
+            to_x,
+            to_y,
+        } => {
+            let world = compile::compile(&content);
+            let nav = Nav::build(&world);
+            let (Some(&fp), Some(&tp)) = (
+                world.place_index.get(&from_place),
+                world.place_index.get(&to_place),
+            ) else {
+                eprintln!("unknown place");
+                return ExitCode::from(1);
+            };
+            let from = Spot::new(fp, from_x, from_y);
+            let to = Spot::new(tp, to_x, to_y);
+            let Some(route) = nav.route(&world, from, to) else {
+                println!("unreachable");
+                return ExitCode::from(1);
+            };
+            println!(
+                "{} tiles, {} ticks ({}m{:02})",
+                route.tiles,
+                route.ticks(),
+                route.ticks() / 60,
+                route.ticks() % 60
+            );
+            for leg in &route.legs {
+                let door = leg
+                    .door
+                    .map(|d| format!(" then door {}", world.doors[d].id))
+                    .unwrap_or_default();
+                println!(
+                    "  {}: ({}, {}) -> ({}, {}) {} tiles{door}",
+                    world.places[leg.place].id,
+                    leg.from.x,
+                    leg.from.y,
+                    leg.to.x,
+                    leg.to.y,
+                    leg.tiles
+                );
+                let overlay: Vec<(Pos, char)> = nav::grid_path(&world, leg.place, leg.from, leg.to)
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|p| (p, '*'))
+                    .collect();
+                print!("{}", render_place(&world, leg.place, &overlay));
+            }
             ExitCode::SUCCESS
         }
     }
