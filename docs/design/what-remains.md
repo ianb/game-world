@@ -238,6 +238,19 @@ From the asset research.
 - Tests and typecheck before every commit; the playtest harness before
   every content commit.
 
+## Progress (2026-10-23)
+
+Done in Rust: repo setup, time and calendar, event scheduler, RNG streams,
+snapshots and hashes, content model with loader, compiler and validators,
+the first town (house with detached upstairs, bakery, tavern, square),
+pathfinding with the travel-time matrix, villagers on baseline schedules
+with movement through doors, the `CharacterSet` interface with `Ctx` and
+commands, text views, `sim-tools` (validate, render, doors, travel-matrix,
+route, day, bundle), and the `sim-wasm` facade with a Node smoke test that
+matches the native weekly hash. Not yet: ts-rs type generation, the
+TypeScript protocol package, vitest contract tests, the viewer, and the
+two-character code-first spike in `crates/characters`.
+
 ## Suggested order
 
 1. Repo setup: pnpm workspace, `sim` and `tools` packages, vitest,

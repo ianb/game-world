@@ -1,0 +1,27 @@
+// Runs the wasm build of the sim in Node: a week of town life, then checks the hash against
+// the native golden. Usage: node packages/sim-wasm/smoke.mjs <content.json> <golden-hash>
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const wasm = require("./pkg-node/sim_wasm.js");
+
+const [contentPath, golden] = process.argv.slice(2);
+const content = readFileSync(contentPath, "utf8");
+const TICKS_PER_DAY = 86_400;
+
+console.log(`protocol v${wasm.protocol_version()}`);
+const sim = new wasm.Sim(2026, 0, content);
+sim.apply_input({ tick: 3 * TICKS_PER_DAY + 12 * 3600, source: { Player: 0 }, kind: { Marker: "midweek" } });
+const events = sim.step_until(3 * TICKS_PER_DAY + 14 * 3600);
+console.log(`${events.length} events by day 4 14:00; last: ${JSON.stringify(events.at(-1))}`);
+console.log(sim.where_is_everyone());
+console.log(sim.render_place("house/upstairs"));
+sim.step_until(7 * TICKS_PER_DAY);
+const hash = sim.hash();
+console.log(`hash after a week: ${hash} (parts ${sim.hash_parts().join(" ")})`);
+if (golden && hash !== golden) {
+  console.error(`MISMATCH: native golden is ${golden}`);
+  process.exit(1);
+}
+console.log("ok");

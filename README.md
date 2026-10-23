@@ -28,7 +28,17 @@ editor, text-first testing, deploy to the web.
 
 ## Status
 
-Research phase. Nothing is decided about the stack yet. There is no code.
+Building. The Rust simulation core exists and runs the first town: a Cargo
+workspace (`content`, `sim`, `characters`, `tools`, `sim-wasm`), a
+discrete-event scheduler with a calendar, seeded RNG streams, snapshots and
+per-subsystem hashes, content as JSON compiled to tile grids with
+validators, hierarchical pathfinding, villagers on baseline schedules, text
+views, and a wasm facade whose Node smoke test matches the native hash.
+`just check` runs it all; `cargo run -p tools -- day` shows a day in the
+town. Next: the TypeScript protocol package and viewer (see
+[docs/design/what-remains.md](docs/design/what-remains.md)), and the
+week-two character spike (two villagers written as code against the
+toolbox).
 
 ## What is here
 

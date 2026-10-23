@@ -33,3 +33,9 @@ build-wasm:
     cargo build -p sim-wasm --release --target wasm32-unknown-unknown
     wasm-bindgen --target bundler --out-dir packages/sim-wasm/pkg target/wasm32-unknown-unknown/release/sim_wasm.wasm
     wasm-bindgen --target nodejs --out-dir packages/sim-wasm/pkg-node target/wasm32-unknown-unknown/release/sim_wasm.wasm
+
+# Build the wasm, run a week in Node, and compare the hash with the native golden snapshot.
+wasm-smoke: build-wasm
+    cargo run -q -p tools -- bundle > target/content-bundle.json
+    node packages/sim-wasm/smoke.mjs target/content-bundle.json \
+        "$(grep -v '^---' crates/sim/tests/snapshots/town__golden_hash_after_a_week.snap | grep -v '^$' | grep -v '^source' | grep -v '^expression' | tail -1)"

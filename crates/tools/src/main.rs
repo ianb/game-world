@@ -32,6 +32,8 @@ enum Command {
     },
     /// List every door record.
     Doors,
+    /// Print the whole content directory as one JSON document (what the wasm facade takes).
+    Bundle,
     /// Travel times between every place's arrival tile.
     TravelMatrix,
     /// Run the town for a day with the baseline characters and print every villager's
@@ -133,6 +135,13 @@ fn main() -> ExitCode {
                 print!("{}", views::place_changes(&sim, who, &events));
             }
             println!("hash {}", sim.hash().hex());
+            ExitCode::SUCCESS
+        }
+        Command::Bundle => {
+            println!(
+                "{}",
+                serde_json::to_string(&content).expect("content serializes")
+            );
             ExitCode::SUCCESS
         }
         Command::TravelMatrix => {

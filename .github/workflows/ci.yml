@@ -24,3 +24,7 @@ jobs:
       - run: cargo test --workspace --all-features --doc
       - run: cargo insta test --workspace --all-features --unreferenced=reject
       - run: just wasm-check
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: just wasm-smoke
