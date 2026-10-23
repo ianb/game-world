@@ -9,6 +9,7 @@ publish.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 schemars = { workspace = true, optional = true }
+ts-rs = { workspace = true, optional = true }
 thiserror.workspace = true
 pathfinding.workspace = true
 
@@ -16,7 +17,7 @@ pathfinding.workspace = true
 insta.workspace = true
 
 [features]
-schema = ["dep:schemars"]
+schema = ["dep:schemars", "dep:ts-rs"]
 
 [lints]
 workspace = true

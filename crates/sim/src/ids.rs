@@ -9,6 +9,8 @@ macro_rules! id {
             Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize,
         )]
         #[serde(transparent)]
+        #[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+        #[cfg_attr(feature = "schema", ts(export, type = "number"))]
         pub struct $name(pub u16);
 
         impl $name {

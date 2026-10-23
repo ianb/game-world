@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 /// Who caused an input. Players and external actors (a villager brain backed by a model, a
 /// drama director) go through the same door with different permissions.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
 pub enum Source {
     System,
     Player(u16),
@@ -14,6 +16,8 @@ pub enum Source {
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
 pub enum InputKind {
     /// Does nothing. Useful for tests and as a heartbeat in replays.
     Noop,
@@ -24,6 +28,8 @@ pub enum InputKind {
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
 pub struct Input {
     pub tick: Tick,
     pub source: Source,

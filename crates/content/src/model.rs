@@ -3,11 +3,14 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
+#[cfg(feature = "schema")]
+use ts_rs::TS;
 
 /// `[x, y, width, height]` in tiles. For a room, the interior floor tiles; walls are derived
 /// around it.
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
+#[cfg_attr(feature = "schema", ts(export))]
 pub struct Rect {
     pub x: u16,
     pub y: u16,
@@ -49,7 +52,8 @@ impl Rect {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
+#[cfg_attr(feature = "schema", ts(export))]
 pub struct Pos {
     pub x: u16,
     pub y: u16,

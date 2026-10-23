@@ -15,6 +15,8 @@ pub const DAYS_PER_YEAR: u32 = DAYS_PER_SEASON * SEASONS_PER_YEAR;
     Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Default, Serialize, Deserialize,
 )]
 #[serde(transparent)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export, type = "number"))]
 pub struct Tick(pub u32);
 
 impl Tick {
@@ -72,6 +74,8 @@ impl fmt::Display for Tick {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
 pub enum Season {
     Spring,
     Summer,
@@ -99,6 +103,8 @@ impl Season {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
 pub enum Weekday {
     Mon,
     Tue,
@@ -141,6 +147,8 @@ impl Weekday {
 
 /// Wall-clock time within a day.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
 pub struct TimeOfDay {
     pub hour: u8,
     pub minute: u8,
@@ -187,6 +195,8 @@ impl fmt::Display for TimeOfDay {
 
 /// Everything a schedule might key on, derived from one tick.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
 pub struct Calendar {
     /// Days since the start, from 0.
     pub day_index: u32,

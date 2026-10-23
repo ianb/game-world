@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>game-world</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { margin: 0; background: #111; color: #ddd; font: 14px/1.25 ui-monospace, monospace; }
+      header { padding: 8px 12px; background: #222; display: flex; gap: 16px; align-items: baseline; }
+      main { padding: 12px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+      pre { margin: 0; white-space: pre; }
+      button { font: inherit; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong id="clock">loading…</strong>
+      <span id="speed"></span>
+      <button id="pause">pause</button>
+      <button id="faster">faster</button>
+      <button id="slower">slower</button>
+    </header>
+    <main>
+      <pre id="everyone"></pre>
+      <div id="places"></div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "@game-world/sim-wasm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "wasm-bindgen output of crates/sim-wasm. Built by `just build-wasm`; pkg/ and pkg-node/ are not committed.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "node": "./pkg-node/sim_wasm.js",
+      "default": "./pkg/sim_wasm.js"
+    },
+    "./node": "./pkg-node/sim_wasm.js",
+    "./bundler": "./pkg/sim_wasm.js"
+  }
+}

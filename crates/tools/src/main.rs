@@ -34,8 +34,26 @@ enum Command {
     Doors,
     /// Print the whole content directory as one JSON document (what the wasm facade takes).
     Bundle,
+    /// Run one day from a seed and print the emitted events as JSON, plus the hash. The
+    /// committed fixture under fixtures/ is made with this and checked by Rust and vitest.
+    Events {
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        #[arg(long, default_value_t = 0)]
+        day: u32,
+    },
     /// Travel times between every place's arrival tile.
     TravelMatrix,
+    /// Where everyone is at a given day and time, with the places drawn.
+    Where {
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        #[arg(long, default_value_t = 0)]
+        day: u32,
+        /// "HH:MM"
+        #[arg(long, default_value = "12:00")]
+        at: String,
+    },
     /// Run the town for a day with the baseline characters and print every villager's
     /// itinerary, plus where everyone is at the given hours.
     Day {
@@ -142,6 +160,35 @@ fn main() -> ExitCode {
                 "{}",
                 serde_json::to_string(&content).expect("content serializes")
             );
+            ExitCode::SUCCESS
+        }
+        Command::Events { seed, day } => {
+            let mut sim: Sim<DataCharacters> = Sim::new(seed, content);
+            let start = Tick(day * TICKS_PER_DAY);
+            sim.step_until(start).unwrap();
+            let events = sim.step_until(start.plus(TICKS_PER_DAY)).unwrap();
+            let fixture = serde_json::json!({
+                "seed": seed,
+                "day": day,
+                "protocol_version": sim::protocol::PROTOCOL_VERSION,
+                "hash": sim.hash().hex(),
+                "events": events,
+            });
+            println!("{}", serde_json::to_string_pretty(&fixture).unwrap());
+            ExitCode::SUCCESS
+        }
+        Command::Where { seed, day, at } => {
+            let Some(secs) = content::validate::parse_time(&at) else {
+                eprintln!("--at must be HH:MM");
+                return ExitCode::from(1);
+            };
+            let mut sim: Sim<DataCharacters> = Sim::new(seed, content);
+            sim.step_until(Tick(day * TICKS_PER_DAY).plus(secs))
+                .unwrap();
+            print!("{}", views::where_is_everyone(&sim));
+            for i in 0..sim.world().places.len() {
+                print!("{}", views::render_place_now(&sim, i));
+            }
             ExitCode::SUCCESS
         }
         Command::TravelMatrix => {

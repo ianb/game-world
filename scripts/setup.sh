@@ -12,4 +12,5 @@ if ! command -v cargo-insta >/dev/null; then cargo install --locked cargo-insta;
 if ! command -v wasm-bindgen >/dev/null || ! wasm-bindgen --version | grep -q '0.2.129'; then
   cargo install --locked wasm-bindgen-cli --version 0.2.129
 fi
+pnpm install --frozen-lockfile
 echo "setup complete"

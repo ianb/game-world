@@ -1,9 +1,10 @@
-target/
-node_modules/
-dist/
-packages/sim-wasm/pkg/
-packages/sim-wasm/pkg-node/
-.DS_Store
 *.log
+.DS_Store
 .env
 .env.*
+dist/
+node_modules/
+packages/sim-wasm/pkg-node/
+packages/sim-wasm/pkg/
+packages/viewer/public/content.json
+target/

@@ -99,11 +99,6 @@ impl Sim {
     }
 
     #[must_use]
-    pub fn calendar(&self) -> String {
-        self.inner.tick().calendar().to_string()
-    }
-
-    #[must_use]
     pub fn place_ids(&self) -> Vec<String> {
         self.inner
             .world()
@@ -127,13 +122,18 @@ impl Sim {
         views::where_is_everyone(&self.inner)
     }
 
-    /// The compiled world (places, objects, doors, roofs) as a JS object, for the viewer.
+    /// The compiled world (places, objects, doors, roofs) as a `WorldView`.
     pub fn world(&self) -> Result<JsValue, JsError> {
-        to_js(self.inner.world())
+        to_js(&sim::protocol::world_view(&self.inner))
     }
 
-    /// Current villager states as a JS array.
+    /// Current villagers as `VillagerView[]`.
     pub fn villagers(&self) -> Result<JsValue, JsError> {
-        to_js(&self.inner.state().villagers)
+        to_js(&sim::protocol::villager_views(&self.inner))
+    }
+
+    /// The clock as a `ClockView`.
+    pub fn clock(&self) -> Result<JsValue, JsError> {
+        to_js(&sim::protocol::clock_view(&self.inner))
     }
 }
