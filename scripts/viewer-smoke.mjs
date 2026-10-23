@@ -31,4 +31,5 @@ console.log(`second: ${second.clock} tick ${second.tick}`);
 console.log(second.everyone);
 if (errors.length) { console.error("page errors:", errors); process.exit(1); }
 if (second.tick <= first.tick) { console.error("sim did not advance"); process.exit(1); }
+if (!second.canvases || second.canvases !== second.places.length) { console.error(`expected ${second.places.length} canvases, got ${second.canvases}`); process.exit(1); }
 console.log("ok");

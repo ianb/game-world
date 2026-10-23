@@ -15,6 +15,7 @@ pub enum Cell {
     Path,
     /// Impassable terrain.
     Blocked,
+    Water,
     Wall,
     /// Interior floor.
     Floor,
@@ -42,7 +43,7 @@ impl Cell {
         match self {
             Cell::Ground => 4,
             Cell::Path | Cell::Floor | Cell::Opening | Cell::Door => 1,
-            Cell::Blocked | Cell::Wall | Cell::Void => 0,
+            Cell::Blocked | Cell::Water | Cell::Wall | Cell::Void => 0,
         }
     }
 
@@ -53,6 +54,7 @@ impl Cell {
             Cell::Ground => '·',
             Cell::Path => '░',
             Cell::Blocked => '♣',
+            Cell::Water => '≈',
             Cell::Wall => '█',
             Cell::Floor | Cell::Void => ' ',
             Cell::Opening => '▫',
@@ -234,6 +236,9 @@ pub fn compile(content: &Content) -> World {
         }
         for r in &z.blocked {
             fill(&mut place, *r, Cell::Blocked);
+        }
+        for r in &z.water {
+            fill(&mut place, *r, Cell::Water);
         }
         add_place(&mut world, place);
     }

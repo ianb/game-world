@@ -1,7 +1,8 @@
-// A text viewer: the sim advancing in the browser, as the same views the tools print.
-// The renderer comes later and consumes the same `Sim` interface.
+// The viewer: the sim advancing in the browser, drawn as tiles, with the text views the
+// tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import * as wasm from "@game-world/sim-wasm";
 import { LocalSim, TICKS_PER_MINUTE, at, type Sim } from "@game-world/protocol";
+import { PlaceCanvas, Tileset } from "./render";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const clockEl = $("clock");
@@ -23,16 +24,36 @@ try {
   throw e;
 }
 
+let tileset: Tileset;
+try {
+  tileset = await Tileset.load(document.baseURI);
+} catch (e) {
+  clockEl.textContent = `failed to load tiles: ${String(e)}`;
+  throw e;
+}
+
+const world = sim.world();
 const pres = new Map<string, HTMLPreElement>();
-for (const id of sim.placeIds()) {
+const canvases: PlaceCanvas[] = [];
+let showText = false;
+for (const place of world.places) {
   const section = document.createElement("section");
   const h = document.createElement("h2");
-  h.textContent = id;
+  h.textContent = place.key;
+  const canvas = new PlaceCanvas(tileset, place, world.objects);
   const pre = document.createElement("pre");
-  section.append(h, pre);
+  pre.hidden = !showText;
+  section.append(h, canvas.canvas, pre);
   placesEl.appendChild(section);
-  pres.set(id, pre);
+  pres.set(place.key, pre);
+  canvases.push(canvas);
 }
+function fitCanvases(): void {
+  const width = placesEl.clientWidth || window.innerWidth;
+  for (const c of canvases) c.fit(width - 8);
+}
+fitCanvases();
+window.addEventListener("resize", fitCanvases);
 
 // Game-minutes per real second. 6 means a day takes four real minutes.
 const SPEEDS = [1, 2, 6, 12, 30, 60, 120, 240];
@@ -116,7 +137,9 @@ function draw(): void {
   clockEl.textContent = `Y${cal.year} ${cal.season} ${cal.day_of_season} (${cal.weekday}) ${twelveHour(clock.time.hour, clock.time.minute)}`;
   speedEl.textContent = paused ? "paused" : `${SPEEDS[speedIndex]} game-min/s`;
   everyoneEl.textContent = sim.whereIsEveryone();
-  for (const [id, pre] of pres) paint(pre, sim.renderPlace(id));
+  const villagers = sim.villagers();
+  for (const c of canvases) c.draw(sim, villagers);
+  if (showText) for (const [id, pre] of pres) paint(pre, sim.renderPlace(id));
 }
 
 // Ticks of catch-up allowed per frame: a hidden tab resumes from where it left off.
@@ -156,14 +179,26 @@ $("slower").addEventListener("click", () => {
   speedIndex = Math.max(speedIndex - 1, 0);
   drawnTick = -1;
 });
+$("text").addEventListener("click", () => {
+  showText = !showText;
+  for (const pre of pres.values()) pre.hidden = !showText;
+  drawnTick = -1;
+});
 
 // For Playwright and the agent: a structured dump of what is on screen.
 declare global {
   interface Window {
-    __scene: () => { tick: number; clock: string; everyone: string; hash: string };
+    __scene: () => { tick: number; clock: string; everyone: string; hash: string; places: string[]; canvases: number };
   }
 }
-window.__scene = () => ({ tick: sim.tick, clock: clockEl.textContent ?? "", everyone: sim.whereIsEveryone(), hash: sim.hash() });
+window.__scene = () => ({
+  tick: sim.tick,
+  clock: clockEl.textContent ?? "",
+  everyone: sim.whereIsEveryone(),
+  hash: sim.hash(),
+  places: sim.placeIds().map((id) => sim.renderPlace(id)),
+  canvases: canvases.filter((c) => c.canvas.width > 0).length,
+});
 
 draw();
 requestAnimationFrame(frame);

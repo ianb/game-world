@@ -35,6 +35,10 @@ wasm-check:
     fi
 
 # Build the wasm package for the viewer (bundler) and for vitest (nodejs).
+# Redraws the placeholder tileset into packages/viewer/public (deterministic; commit it).
+tileset:
+    node scripts/make-tileset.mjs
+
 build-wasm:
     cargo build -p sim-wasm --release --target wasm32-unknown-unknown
     wasm-bindgen --target bundler --out-dir packages/sim-wasm/pkg target/wasm32-unknown-unknown/release/sim_wasm.wasm

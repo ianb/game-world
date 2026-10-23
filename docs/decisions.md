@@ -506,3 +506,33 @@ and would want a sparse form for a very large outdoors. Pip's random
 roaming tramples the green into a patchwork; a wandering routine that
 prefers paths would change the look, and is a character decision, not a
 terrain one.
+
+## 2026-10-23: Real tiles in the viewer, placeholder art first
+
+Ian: "Also, we need to make some real tiles and stuff, not just text
+characters."
+
+Decided:
+
+- The viewer draws each place on a canvas from the sim's views: cells and
+  surfaces as 16 px tiles, objects and villagers as sprites, names as
+  labels. Canvas 2D at native size with integer CSS upscaling and
+  `image-rendering: pixelated`; no renderer library yet. This is the
+  renderer spike the design doc deferred, done small; whether PixiJS is
+  needed later is decided when lighting, roofs or many sprites ask for it.
+- The art is a placeholder tileset drawn procedurally by
+  `scripts/make-tileset.mjs` into `packages/viewer/public/tiles.png` with
+  an atlas in `tiles.json`. Both are committed. The atlas names (`grass`,
+  `tall_grass`, `cowpath`, `obj_bed`, `villager_0`, ...) are the contract
+  with the art pipeline: generated art replaces the PNG and keeps the names.
+- Zones gained `water` rects (`Cell::Water`, glyph `≈`), impassable like
+  `blocked` but drawn as water. The pond is water; `blocked` draws as trees.
+- The text views stay the source of truth. The browser smoke checks a
+  canvas exists per place and reads the text scene through
+  `window.__scene()`; nothing asserts on pixels.
+
+Implications: protocol 9 (`Cell` gained `Water`, and the version was not
+bumped for the terrain change, so this bump covers both). Each frame redraws
+every tile of every place; fine at this size, and a dirty-tile cache is the
+first optimisation when it is not. Villager sprites snap to tiles; the view
+has `next_tile` for interpolation when walking should look smooth.

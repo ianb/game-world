@@ -1,0 +1,110 @@
+{
+  "tile": 16,
+  "columns": 8,
+  "tiles": {
+    "grass": {
+      "col": 0,
+      "row": 0
+    },
+    "tall_grass": {
+      "col": 1,
+      "row": 0
+    },
+    "brush": {
+      "col": 2,
+      "row": 0
+    },
+    "track": {
+      "col": 3,
+      "row": 0
+    },
+    "cowpath": {
+      "col": 4,
+      "row": 0
+    },
+    "path": {
+      "col": 5,
+      "row": 0
+    },
+    "weedy_path": {
+      "col": 6,
+      "row": 0
+    },
+    "overgrown_path": {
+      "col": 7,
+      "row": 0
+    },
+    "tree": {
+      "col": 0,
+      "row": 1
+    },
+    "water": {
+      "col": 1,
+      "row": 1
+    },
+    "wall": {
+      "col": 2,
+      "row": 1
+    },
+    "floor": {
+      "col": 3,
+      "row": 1
+    },
+    "opening": {
+      "col": 4,
+      "row": 1
+    },
+    "door": {
+      "col": 5,
+      "row": 1
+    },
+    "void": {
+      "col": 6,
+      "row": 1
+    },
+    "obj_bed": {
+      "col": 7,
+      "row": 1
+    },
+    "obj_table": {
+      "col": 0,
+      "row": 2
+    },
+    "obj_counter": {
+      "col": 1,
+      "row": 2
+    },
+    "obj_oven": {
+      "col": 2,
+      "row": 2
+    },
+    "obj_stove": {
+      "col": 3,
+      "row": 2
+    },
+    "obj_shelf": {
+      "col": 4,
+      "row": 2
+    },
+    "obj_generic": {
+      "col": 5,
+      "row": 2
+    },
+    "villager_0": {
+      "col": 6,
+      "row": 2
+    },
+    "villager_1": {
+      "col": 7,
+      "row": 2
+    },
+    "villager_2": {
+      "col": 0,
+      "row": 3
+    },
+    "villager_3": {
+      "col": 1,
+      "row": 3
+    }
+  }
+}

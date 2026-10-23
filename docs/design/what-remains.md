@@ -254,9 +254,11 @@ committed fixture, a Vite text viewer with a Playwright smoke, and the
 two-character code-first spike (Mara and Tom in `crates/characters`), whose
 verdict is in decisions.md. Also: interactions (encounters, passing, greetings, conversations with
 resume), a decision trace, a PNG renderer, and a third placeholder villager
-(see `interactions.md`). Not yet: Ian's cast and town, the renderer spike
-(PixiJS versus Phaser 4), relationships as a ledger, interruptions beyond
-conversations, dialogue content.
+(see `interactions.md`), terrain costs with cowpaths and regrowth, and a
+tile renderer with placeholder art (`packages/viewer/src/render.ts`). Not
+yet: Ian's cast and town, a renderer library if one turns out to be needed
+(the canvas renderer is plain Canvas 2D), relationships as a ledger,
+interruptions beyond conversations, dialogue content.
 
 ## Known rough edges (from the 2026-10-23 review round)
 
@@ -293,5 +295,6 @@ Deferred on purpose; fix when the code they touch is next changed.
 7. Then art generation experiments, relationships, interruptions, and the
    first drama exchange, in whatever order the playable suggests.
 
-Steps 1 to 4 are text-only and are unblocked. Step 5 needs the renderer
-choice. Step 6 (talk) is deferred and may be LLM-driven.
+Steps 1 to 4 are text-only and are unblocked. Step 5 has started: tiles
+and sprites draw from the views; roof hiding, the player and click-to-walk
+remain. Step 6 (talk) is deferred and may be LLM-driven.

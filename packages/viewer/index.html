@@ -10,6 +10,7 @@
       header { padding: 8px 12px; background: #222; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
       main { padding: 12px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); }
       pre { margin: 0; white-space: pre; overflow-x: auto; }
+      canvas.place { display: block; image-rendering: pixelated; image-rendering: crisp-edges; max-width: 100%; }
       h2 { font-size: 14px; margin: 8px 0 4px; color: #aaa; }
       button { font: inherit; min-height: 44px; min-width: 64px; }
       .g-ground { color: #5f9a4a; }
@@ -33,6 +34,7 @@
       <button id="pause">pause</button>
       <button id="faster">faster</button>
       <button id="slower">slower</button>
+      <button id="text">text</button>
     </header>
     <main>
       <pre id="everyone"></pre>

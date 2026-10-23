@@ -3,7 +3,7 @@ use crate::compile::{Cell, World};
 use crate::model::Pos;
 use std::fmt::Write as _;
 
-/// Legend: `·` ground, `░` path, `♣` blocked, `█` wall, space = floor, `▫` opening, `▪` door
+/// Legend: `·` ground, `░` path, `♣` blocked, `≈` water, `█` wall, space = floor, `▫` opening, `▪` door
 /// tile, lowercase letter = object (first letter of its kind). Overlay glyphs win: uppercase
 /// letters are villagers; `∙` track, `▒` cowpath, `"` tall grass, `┈` weedy path and `♠`
 /// brush or an overgrown path are the living ground (see `sim::terrain::Surface`).
@@ -112,6 +112,7 @@ pub fn cell_name(c: Cell) -> &'static str {
         Cell::Ground => "ground",
         Cell::Path => "path",
         Cell::Blocked => "blocked",
+        Cell::Water => "water",
         Cell::Wall => "wall",
         Cell::Floor => "floor",
         Cell::Opening => "opening",

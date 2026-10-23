@@ -15,7 +15,7 @@ if (!script || !body) throw new Error("unexpected dist/index.html shape");
 const page = `<title>Game World</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-  /* Layout: a sticky clock bar, then the town's text views in a wrapping grid. */
+  /* Layout: a sticky clock bar, then the town's places as tile maps in a wrapping grid. */
   :root {
     --bg: #f4f2ec; --fg: #1d1b16; --muted: #6b6659; --bar: #e6e2d6; --rule: #cfc9b8; --accent: #8a5a2b;
     --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -41,6 +41,7 @@ const page = `<title>Game World</title>
   }
   main > * { min-width: 0; }
   pre { margin: 0; white-space: pre; overflow-x: auto; }
+  canvas.place { display: block; image-rendering: pixelated; image-rendering: crisp-edges; max-width: 100%; }
   h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 8px 0 4px; }
   button { font: inherit; min-height: 44px; min-width: 64px; background: var(--bg); color: var(--fg); border: 1px solid var(--rule); border-radius: 4px; }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -54,5 +55,5 @@ ${body.trim()}
 `;
 writeFileSync(join(out, "index.html"), page);
 for (const f of readdirSync(join(dist, "assets"))) cpSync(join(dist, "assets", f), join(out, "assets", f));
-cpSync(join(dist, "content.json"), join(out, "content.json"));
+for (const f of ["content.json", "tiles.png", "tiles.json"]) cpSync(join(dist, f), join(out, f));
 console.log(`wrote ${out}/index.html and ${readdirSync(join(out, "assets")).length} assets`);

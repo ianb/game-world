@@ -162,7 +162,7 @@ fn check_buildings(content: &Content, r: &mut Report) {
                         ),
                     );
                 }
-                for z in &zone.blocked {
+                for z in zone.blocked.iter().chain(&zone.water) {
                     if z.overlaps(&rect) {
                         r.error(
                             subj(&format!("floor {}", f.id)),

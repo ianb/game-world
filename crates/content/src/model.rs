@@ -66,9 +66,12 @@ pub struct Zone {
     pub id: String,
     pub width: u16,
     pub height: u16,
-    /// Impassable terrain (water, trees, cliffs).
+    /// Impassable terrain (trees, rock, cliffs).
     #[serde(default)]
     pub blocked: Vec<Rect>,
+    /// Water: impassable, drawn as water.
+    #[serde(default)]
+    pub water: Vec<Rect>,
     /// Made paths and roads: cheap to walk, so routes prefer them.
     #[serde(default)]
     pub paths: Vec<Rect>,

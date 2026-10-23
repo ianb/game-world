@@ -8,12 +8,12 @@ fn style(ch: char) -> Option<&'static str> {
     Some(match ch {
         '·' => "\x1b[32m",                           // grass: green
         '"' => "\x1b[32;1m",                         // tall grass: bold green
-        '♠' => "\x1b[32;2m",                         // brush, overgrown path: dim green
+        '♠' | '♣' => "\x1b[32;2m",                   // brush, overgrown path, trees: dim green
         '┈' => "\x1b[33;2m",                         // weedy path: dim yellow
         '░' => "\x1b[33m",                           // path: yellow
         '∙' => "\x1b[93m",                           // track: bright yellow
         '▒' => "\x1b[93;1m",                         // worn path: bold bright yellow
-        '♣' => "\x1b[34m",                           // blocked: blue
+        '≈' => "\x1b[34m",                           // water: blue
         '█' => "\x1b[90m",                           // wall: grey
         '▫' | '▪' => "\x1b[37;1m",                   // openings and doors: bold white
         c if c.is_ascii_lowercase() => "\x1b[35m",   // objects: magenta

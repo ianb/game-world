@@ -13,7 +13,8 @@ fn cell_colour(c: Cell) -> Rgb<u8> {
     match c {
         Cell::Ground => Rgb([96, 140, 72]),
         Cell::Path => Rgb([176, 150, 96]),
-        Cell::Blocked => Rgb([40, 70, 110]),
+        Cell::Blocked => Rgb([46, 84, 44]),
+        Cell::Water => Rgb([40, 70, 110]),
         Cell::Wall => Rgb([70, 60, 55]),
         Cell::Floor => Rgb([190, 160, 120]),
         Cell::Opening => Rgb([220, 200, 150]),

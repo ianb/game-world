@@ -419,7 +419,7 @@
           "$ref": "#/$defs/Pos"
         },
         "blocked": {
-          "description": "Impassable terrain (water, trees, cliffs).",
+          "description": "Impassable terrain (trees, rock, cliffs).",
           "type": "array",
           "default": [],
           "items": {
@@ -437,6 +437,14 @@
         },
         "paths": {
           "description": "Made paths and roads: cheap to walk, so routes prefer them.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Rect"
+          }
+        },
+        "water": {
+          "description": "Water: impassable, drawn as water.",
           "type": "array",
           "default": [],
           "items": {
