@@ -17,6 +17,7 @@ lint:
 test:
     cargo nextest run --workspace --all-features
     cargo test --workspace --all-features --doc
+    cargo insta test --workspace --all-features --check --unreferenced=reject
 
 # Review and accept insta snapshots locally; CI never writes them.
 snap:
