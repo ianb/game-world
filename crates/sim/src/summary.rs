@@ -12,6 +12,8 @@ use crate::time::{TICKS_PER_DAY, TICKS_PER_MINUTE, Tick};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
+mod talk;
+
 /// How many previous days decide what is routine.
 const LOOKBACK: usize = 7;
 /// Seen on this many of them: routine.
@@ -71,6 +73,8 @@ pub struct Summarizer {
     seen: Vec<BTreeSet<String>>,
     /// A readable phrase per habit key, for "did not happen" lines.
     habits: BTreeMap<String, (Option<VillagerId>, String)>,
+    /// Conversations in progress.
+    talks: BTreeMap<u32, talk::Talk>,
 }
 
 fn time(tick: Tick) -> String {
@@ -106,6 +110,7 @@ impl Summarizer {
             days: Vec::new(),
             seen: Vec::new(),
             habits: BTreeMap::new(),
+            talks: BTreeMap::new(),
         }
     }
 
@@ -162,6 +167,10 @@ impl Summarizer {
                 let entry = self.day(tick).cleared.entry(who.0).or_insert((tick, 0));
                 entry.1 += u32::from(*tiles);
             }
+            Emitted::ConversationStarted { .. }
+            | Emitted::Beat { .. }
+            | Emitted::TookUp { .. }
+            | Emitted::ConversationEnded { .. } => self.conversation(e),
             other => self.incident(other),
         }
         self.advance_to(tick);

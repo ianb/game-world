@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 12;
+pub const PROTOCOL_VERSION: u32 = 13;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -127,6 +127,145 @@ pub enum Emitted {
         need: Need,
         level: u8,
     },
+    /// `who` started a conversation with `with` in `frame`.
+    ConversationStarted {
+        tick: Tick,
+        convo: u32,
+        who: VillagerId,
+        with: VillagerId,
+        place: PlaceId,
+        frame: Frame,
+        topic: String,
+        cause: Cause,
+    },
+    /// One turn. `meant` is what the speaker's program chose, `did` what came out.
+    /// `breach` is true when `did` steps outside the frame.
+    Beat {
+        tick: Tick,
+        convo: u32,
+        who: VillagerId,
+        frame: Frame,
+        stance: Stance,
+        meant: Act,
+        did: Act,
+        breach: bool,
+    },
+    /// How `who` took `speaker`'s turn. `meant` and `did` are repeated from the beat for
+    /// readers of the log; the hearer only ever saw `did`.
+    TookUp {
+        tick: Tick,
+        convo: u32,
+        who: VillagerId,
+        speaker: VillagerId,
+        meant: MoveKind,
+        did: MoveKind,
+        taken_as: MoveKind,
+        warmth: i8,
+        attribution: Attribution,
+        overheard: bool,
+    },
+    FrameChanged {
+        tick: Tick,
+        convo: u32,
+        who: VillagerId,
+        from: Frame,
+        to: Frame,
+    },
+    /// How it went for each: the most intense moment and the last, from -3 to 3.
+    ConversationEnded {
+        tick: Tick,
+        convo: u32,
+        who: VillagerId,
+        with: VillagerId,
+        frame: Frame,
+        my_peak: i8,
+        my_end: i8,
+        their_peak: i8,
+        their_end: i8,
+        ended_by: Option<VillagerId>,
+    },
+}
+
+/// The kind of exchange two people have settled on. Shared conventions: which moves make
+/// sense, what they mean, and which frames you can bid into from here.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum Frame {
+    Greeting,
+    Transaction,
+    SmallTalk,
+    Confiding,
+}
+
+/// Something a person does in a conversation. Some kinds only ever come out of a misfire or
+/// a reading (`Jab`, `Awkward`, `Rebuff`, `Pry`): nobody means to do them.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum MoveKind {
+    Ask,
+    Tell,
+    Agree,
+    Joke,
+    Tease,
+    Compliment,
+    Complain,
+    Request,
+    Offer,
+    Thank,
+    Sympathise,
+    Disclose,
+    Decline,
+    Invite,
+    Leave,
+    Jab,
+    Awkward,
+    Rebuff,
+    Pry,
+}
+
+/// An answer to a bid to change frame.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum BidAnswer {
+    /// Engage: the frame shifts.
+    Toward,
+    /// Deflect; `account` is whether they gave a reason.
+    Away { account: bool },
+    /// Rebuff.
+    Against,
+}
+
+/// One turn's content: a move, a bid for another frame, or an answer to a bid.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum Act {
+    Move { kind: MoveKind, subject: String },
+    Bid { frame: Frame, subject: String },
+    Answer { answer: BidAnswer },
+}
+
+/// How someone comes into a turn (Goffman's footing).
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum Stance {
+    Open,
+    Guarded,
+    Anxious,
+    Cold,
+}
+
+/// Whether a hearer put a move down to the speaker's character or to circumstances.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum Attribution {
+    Character,
+    Situation,
 }
 
 /// What a summary line is about.
@@ -337,7 +476,12 @@ impl Emitted {
             | Emitted::Cleared { tick, .. }
             | Emitted::Paid { tick, .. }
             | Emitted::Stocked { tick, .. }
-            | Emitted::Need { tick, .. } => *tick,
+            | Emitted::Need { tick, .. }
+            | Emitted::ConversationStarted { tick, .. }
+            | Emitted::Beat { tick, .. }
+            | Emitted::TookUp { tick, .. }
+            | Emitted::FrameChanged { tick, .. }
+            | Emitted::ConversationEnded { tick, .. } => *tick,
         }
     }
 
@@ -355,7 +499,12 @@ impl Emitted {
             | Emitted::Cleared { who, .. }
             | Emitted::Paid { who, .. }
             | Emitted::Stocked { who, .. }
-            | Emitted::Need { who, .. } => Some(*who),
+            | Emitted::Need { who, .. }
+            | Emitted::ConversationStarted { who, .. }
+            | Emitted::Beat { who, .. }
+            | Emitted::TookUp { who, .. }
+            | Emitted::FrameChanged { who, .. }
+            | Emitted::ConversationEnded { who, .. } => Some(*who),
             _ => None,
         }
     }
@@ -532,6 +681,122 @@ pub fn villager_views<C: CharacterSet>(sim: &Sim<C>) -> Vec<VillagerView> {
             cause: v.cause.clone(),
         })
         .collect()
+}
+
+/// How a villager sees someone, read from their memory.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct RegardView {
+    pub with: VillagerId,
+    pub familiarity: u16,
+    pub feeling: i8,
+    pub last_seemed: i8,
+}
+
+/// A remembered conversation.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct EpisodeView {
+    pub tick: Tick,
+    pub with: VillagerId,
+    pub frame: Frame,
+    pub peak: i8,
+    pub end: i8,
+    pub they_seemed: i8,
+    pub notes: Vec<String>,
+}
+
+/// Something said to them or overheard, as they took it.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct HeardView {
+    pub tick: Tick,
+    pub from: VillagerId,
+    pub kind: MoveKind,
+    pub subject: String,
+    pub overheard: bool,
+}
+
+/// A villager's inner side, for the inspector: settled tendencies, how they are now, how
+/// they see the people they have talked to, and what they recently remember.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct MindView {
+    pub who: VillagerId,
+    pub sociable: i8,
+    pub warmth: i8,
+    pub skill: u8,
+    pub rejection_sensitivity: u8,
+    pub charity: i8,
+    pub mood: i8,
+    pub worry: Option<String>,
+    pub regard: Vec<RegardView>,
+    /// Most recent last.
+    pub episodes: Vec<EpisodeView>,
+    pub heard: Vec<HeardView>,
+}
+
+/// How many recent episodes and heard things a `MindView` carries.
+const MIND_RECENT: usize = 8;
+
+/// `None` for a villager with no program of their own.
+#[must_use]
+pub fn mind_view<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Option<MindView> {
+    let ctx = sim.ctx();
+    let mind = sim.state().characters.interlocutor_ref(who, &ctx)?;
+    let p = mind.persona();
+    let memory = mind.memory();
+    let regard = (0..sim.state().villagers.len())
+        .map(|i| VillagerId(u16::try_from(i).expect("few villagers")))
+        .filter(|&o| o != who)
+        .filter_map(|o| {
+            let r = memory.regard(o);
+            (r.familiarity > 0).then_some(RegardView {
+                with: o,
+                familiarity: r.familiarity,
+                feeling: r.feeling,
+                last_seemed: r.last_seemed,
+            })
+        })
+        .collect();
+    let recent = |n: usize| n.saturating_sub(MIND_RECENT);
+    Some(MindView {
+        who,
+        sociable: p.sociable,
+        warmth: p.warmth,
+        skill: p.skill,
+        rejection_sensitivity: p.rejection_sensitivity,
+        charity: p.charity,
+        mood: mind.mood(&ctx, who),
+        worry: mind.worry(&ctx, who),
+        regard,
+        episodes: memory.episodes[recent(memory.episodes.len())..]
+            .iter()
+            .map(|e| EpisodeView {
+                tick: e.tick,
+                with: e.with,
+                frame: e.frame,
+                peak: e.peak,
+                end: e.end,
+                they_seemed: e.they_seemed,
+                notes: e.notes.clone(),
+            })
+            .collect(),
+        heard: memory.heard[recent(memory.heard.len())..]
+            .iter()
+            .map(|h| HeardView {
+                tick: h.tick,
+                from: h.from,
+                kind: h.kind,
+                subject: h.subject.clone(),
+                overheard: h.overheard,
+            })
+            .collect(),
+    })
 }
 
 /// Every good on every object, in object order.

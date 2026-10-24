@@ -8,10 +8,11 @@ use crate::hash::{HashParts, hash_of};
 use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::input::{Input, InputKind, Source};
 use crate::needs::{Need, Needs};
-use crate::protocol::{Cause, Emitted, PlanItem};
+use crate::protocol::{Cause, Emitted, Frame, PlanItem};
 use crate::queue::EventQueue;
 use crate::rng::Streams;
 use crate::snapshot::{self, SnapshotError};
+use crate::social::Conversation;
 use crate::terrain::{Surface, Terrain};
 use crate::time::{TICKS_PER_DAY, TICKS_PER_HOUR, TICKS_PER_MINUTE, Tick};
 use crate::villager::{Crossing, Errand, Interlude, Movement, PlannedLeg, VillagerState};
@@ -22,6 +23,8 @@ use thiserror::Error;
 
 /// Nested reactions (a greeting answered by a greeting answered by...) stop here.
 const MAX_REACT_DEPTH: u8 = 4;
+
+mod conversation;
 
 /// Everything that determines the future. Serializable in full; hashed by subsystem.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -43,6 +46,9 @@ pub struct SimState<C> {
     /// Goods on objects, by object index then good name. Sloppy by design: no weights,
     /// no capacities, just counts where somebody cares.
     pub stock: BTreeMap<u16, BTreeMap<String, u16>>,
+    /// Conversations in progress, by id.
+    pub conversations: BTreeMap<u32, Conversation>,
+    pub next_conversation: u32,
     /// Wear and growth on every outdoor tile: cowpaths form where villagers walk, grass
     /// and weeds grow where they do not.
     pub terrain: Terrain,
@@ -156,6 +162,8 @@ impl<C: CharacterSet> Sim<C> {
                 villagers,
                 met: BTreeMap::new(),
                 stock: starting_stock(&content, &world),
+                conversations: BTreeMap::new(),
+                next_conversation: 0,
                 terrain: Terrain::new(&world),
                 day_rollovers: 0,
                 markers: Vec::new(),
@@ -322,6 +330,7 @@ impl<C: CharacterSet> Sim<C> {
             }
             Event::ObjectFree { .. } => {}
             Event::Woke { who } => self.woke(who, out),
+            Event::Beat { convo } => self.beat(convo, out),
             Event::Body { who } => self.body_hour(who, out),
         }
     }
@@ -664,9 +673,10 @@ impl<C: CharacterSet> Sim<C> {
             }
             Command::Talk {
                 with,
+                frame,
                 topic,
                 minutes,
-            } => self.talk(who, with, topic, minutes, out),
+            } => self.talk(who, with, frame, topic, minutes, out),
         }
     }
 
@@ -677,6 +687,7 @@ impl<C: CharacterSet> Sim<C> {
         &mut self,
         who: VillagerId,
         with: VillagerId,
+        frame: Frame,
         topic: String,
         minutes: u32,
         out: &mut Vec<Emitted>,
@@ -711,15 +722,8 @@ impl<C: CharacterSet> Sim<C> {
             });
             return;
         }
-        let end = tick.plus(minutes * TICKS_PER_MINUTE);
-        out.push(Emitted::Talked {
-            tick,
-            who,
-            with,
-            topic: topic.clone(),
-            minutes,
-            cause: self.cause.clone(),
-        });
+        let end = tick.plus(minutes.max(2) * TICKS_PER_MINUTE);
+        self.open_conversation(who, with, frame, &topic, end, out);
         let started_by = Cause::Reaction {
             trigger: format!("{} started talking", self.state.villagers[who.index()].name),
         };
@@ -1077,6 +1081,13 @@ impl<C: CharacterSet> Sim<C> {
                     m.then.clone(),
                 ),
             },
+            // Called away mid-conversation: the talk ends (the conversation sees they have
+            // stopped) and they come back to what they were doing before it.
+            None if v.activity == "talk" => {
+                v.talk_until = None;
+                let before = v.resume.take().unwrap_or_else(|| "idle".into());
+                (v.place, v.pos, before)
+            }
             None => (v.place, v.pos, v.activity.clone()),
         };
         let back_wait = v
@@ -1364,6 +1375,8 @@ impl<C: CharacterSet> Sim<C> {
                 &s.met,
                 &s.terrain,
                 &s.stock,
+                &s.conversations,
+                s.next_conversation,
                 s.day_rollovers,
                 &s.markers,
                 &s.characters,

@@ -48,10 +48,11 @@ describe("wasm sim against the native fixture", () => {
     const walking = sim.villagers().find((v) => v.key === "mara")!;
     expect(walking.heading_for).toBe("tend-shop");
     expect(walking.next_tile).not.toBeNull();
-    sim.stepUntil(at(0, 9, 30));
+    // Between her counter talks with Hal and Nell and Pip's noon visit.
+    sim.stepUntil(at(0, 11, 30));
     const mara = sim.villagers().find((v) => v.key === "mara")!;
     expect(mara.activity).toBe("tend-shop");
-    expect(sim.clock().time).toStrictEqual({ hour: 9, minute: 30, second: 0 });
+    expect(sim.clock().time).toStrictEqual({ hour: 11, minute: 30, second: 0 });
     expect(sim.renderPlace("house/upstairs")).toContain("█████████");
   });
 

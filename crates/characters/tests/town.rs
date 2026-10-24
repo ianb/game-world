@@ -21,7 +21,7 @@ fn at(day: u32, hour: u32, minute: u32) -> Tick {
 }
 
 #[test]
-fn tom_fishes_on_sunday_and_mara_brings_a_pastry_when_he_is_low() {
+fn tom_fishes_on_sunday_and_mara_bakes() {
     let mut sim: Sim<Town> = Sim::new(7, town());
     // Monday evening: nobody keeps Tom company at 20:00 (Mara drinks at 19:06 and is there),
     // so his mood depends on whether she is in the hall. Run to Sunday and look.
@@ -43,15 +43,35 @@ fn tom_fishes_on_sunday_and_mara_brings_a_pastry_when_he_is_low() {
 }
 
 #[test]
-fn pastry_delivery_happens_only_when_tom_is_grumpy() {
-    // Tom starts at mood -1, so day 0 includes a pastry run; after company his mood rises.
+fn mara_brings_a_pastry_only_after_tom_seemed_low() {
+    // She knows Tom only from talking to him: no pastry before they have talked, and each
+    // pastry run follows a conversation in which he seemed low to her.
     let mut sim: Sim<Town> = Sim::new(7, town());
-    let events = sim.step_until(at(1, 0, 0)).unwrap();
-    let delivered = events
+    let mut events = sim.step_until(at(1, 0, 0)).unwrap();
+    // Days with a pastry run (the activity restarts after the talk at the bar).
+    let ran = |events: &[Emitted]| {
+        events
+            .iter()
+            .filter(
+                |e| matches!(e, Emitted::Activity { activity, .. } if activity == "bring-pastry"),
+            )
+            .map(|e| e.tick().day_index())
+            .collect::<std::collections::BTreeSet<_>>()
+            .len()
+    };
+    assert_eq!(ran(&events), 0, "no pastry on the first day");
+    events.extend(sim.step_until(at(28, 0, 0)).unwrap());
+    let runs = ran(&events);
+    assert!(runs >= 1, "Tom seemed low at least once in four weeks");
+    let reasons = events
         .iter()
-        .any(|e| matches!(e, Emitted::Activity { activity, .. } if activity == "bring-pastry"));
-    assert!(delivered, "{}", views::where_is_everyone(&sim));
-    assert_eq!(sim.state().characters.mara.pastries_delivered, 1);
+        .filter(|e| matches!(e, Emitted::Noted { text, .. } if text.starts_with("Tom seemed low")))
+        .count();
+    assert_eq!(runs, reasons, "every run had its reason noted");
+    assert_eq!(
+        usize::from(sim.state().characters.mara.pastries_delivered),
+        runs
+    );
 }
 
 #[test]
@@ -134,40 +154,56 @@ fn golden_hash_after_a_week_matches_the_wasm_smoke() {
     insta::assert_snapshot!(sim.hash().hex());
 }
 
+/// Conversations of the day: (opener key, topic).
+fn conversations<'a>(sim: &'a Sim<Town>, events: &'a [Emitted]) -> Vec<(&'a str, &'a str)> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            Emitted::ConversationStarted { who, topic, .. } => Some((
+                sim.state().villagers[who.index()].id.as_str(),
+                topic.as_str(),
+            )),
+            _ => None,
+        })
+        .collect()
+}
+
 #[test]
 fn villagers_greet_talk_and_remember() {
     let mut sim: Sim<Town> = Sim::new(7, town());
     let events = sim.step_until(at(1, 0, 0)).unwrap();
-    let talks: Vec<(&str, u32)> = events
+    let talks = conversations(&sim, &events);
+    assert!(
+        talks.contains(&("pip", "a bun")),
+        "Pip asks Mara for a bun at noon: {talks:?}"
+    );
+    assert!(
+        talks.contains(&("mara", "ale")),
+        "Mara buys a drink from Tom: {talks:?}"
+    );
+    assert!(
+        talks.contains(&("nell", "bread")),
+        "Nell buys bread from Mara: {talks:?}"
+    );
+    let greetings = events
         .iter()
-        .filter_map(|e| match e {
-            Emitted::Talked { topic, minutes, .. } => Some((topic.as_str(), *minutes)),
-            _ => None,
-        })
-        .collect();
-    assert!(
-        talks.contains(&("sweets", 5)),
-        "Pip pesters Mara at noon: {talks:?}"
-    );
-    assert!(
-        talks.contains(&("the day", 10)),
-        "Mara and Tom talk at the tavern: {talks:?}"
-    );
-    assert!(
-        talks
-            .iter()
-            .filter(|(t, m)| *t == "greeting" && *m == 0)
-            .count()
-            >= 4,
-        "greetings in passing: {talks:?}"
-    );
+        .filter(|e| matches!(e, Emitted::Talked { minutes: 0, .. }))
+        .count();
+    assert!(greetings >= 4, "greetings in passing: {greetings}");
     let c = &sim.state().characters;
     assert_eq!(c.pip.buns, 1, "{:?}", c.pip);
-    assert!(c.tom.mood > -1, "company cheered Tom up: {:?}", c.tom);
+    // Each side keeps its own episode of every conversation it had.
+    let mara = sim.ctx().villager_id("mara").unwrap();
+    assert!(c.tom.mind.regard(mara).familiarity >= 1, "{:?}", c.tom.mind);
+    assert!(c.pip.mind.regard(mara).familiarity >= 1, "{:?}", c.pip.mind);
     // Nobody is left stuck in "talk": conversations resume the previous activity.
     for v in &sim.state().villagers {
         assert_ne!(v.activity, "talk", "{}", views::where_is_everyone(&sim));
     }
+    assert!(
+        sim.state().conversations.is_empty(),
+        "every conversation ended"
+    );
     assert!(events.iter().all(|e| !matches!(e, Emitted::Stuck { .. })));
 }
 
@@ -179,10 +215,11 @@ fn a_conversation_defers_a_wait_instead_of_cancelling_it() {
     sim.step_until(at(0, 12, 0)).unwrap();
     let events = sim.step_until(at(0, 13, 30)).unwrap();
     let pip = sim.ctx().villager_id("pip").unwrap();
-    let talked = events.iter().any(
-        |e| matches!(e, Emitted::Talked { who, topic, .. } if *who == pip && topic == "sweets"),
+    assert!(
+        conversations(&sim, &events).contains(&("pip", "a bun")),
+        "{}",
+        views::itinerary(&sim, pip, &events)
     );
-    assert!(talked, "{}", views::itinerary(&sim, pip, &events));
     let roam_departures_after = events
         .iter()
         .filter(|e| matches!(e, Emitted::Departed { who, activity, tick, .. } if *who == pip && activity == "roam" && *tick > at(0, 12, 30)))

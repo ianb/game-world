@@ -1,7 +1,7 @@
 // The viewer: the sim advancing in the browser, drawn as tiles, with the text views the
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import * as wasm from "@game-world/sim-wasm";
-import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type DaySummary, type Sim, type StockView, type SummaryItem, type VillagerView } from "@game-world/protocol";
+import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type DaySummary, type MindView, type Sim, type StockView, type SummaryItem, type VillagerView } from "@game-world/protocol";
 import { PlaceCanvas, Tileset, legend } from "./render";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -110,6 +110,34 @@ function sinceText(tick: number): string {
   return twelveHour(Math.floor(t / 60), Math.floor(t % 60));
 }
 
+const signed = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
+/** "SmallTalk" as "small talk". */
+const words = (name: string): string => name.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+
+/** Persona, mood, how they see the people they have talked to, and recent memory. */
+function describeMind(m: MindView, villagers: VillagerView[]): string[] {
+  const name = (id: number): string => villagers[id]?.name ?? "?";
+  const lines = [
+    "",
+    `sociable ${signed(m.sociable)}, warmth ${signed(m.warmth)}, charity ${signed(m.charity)}`,
+    `skill ${m.skill}/10, rejection sensitivity ${m.rejection_sensitivity}/10`,
+    `mood ${signed(m.mood)}${m.worry ? `; on their mind: ${m.worry}` : ""}`,
+  ];
+  for (const r of m.regard) {
+    lines.push(`sees ${name(r.with)}: ${r.familiarity} talks, feeling ${signed(r.feeling)}, seemed ${signed(r.last_seemed)} last time`);
+  }
+  if (m.episodes.length) lines.push("recent talks:");
+  for (const e of m.episodes) {
+    const notes = e.notes.length ? ` (${e.notes.join("; ")})` : "";
+    lines.push(`  ${sinceText(e.tick)} ${name(e.with)}, ${words(e.frame)}: peak ${signed(e.peak)}, end ${signed(e.end)}${notes}`);
+  }
+  if (m.heard.length) lines.push("heard:");
+  for (const h of m.heard) {
+    lines.push(`  ${sinceText(h.tick)} ${name(h.from)}${h.overheard ? " (overheard)" : ""}: ${words(h.kind)} "${h.subject}"`);
+  }
+  return lines;
+}
+
 function describeVillager(v: VillagerView, stock: StockView[]): string[] {
   const place = world.places.find((p) => p.id === v.place);
   const lines = [
@@ -120,6 +148,8 @@ function describeVillager(v: VillagerView, stock: StockView[]): string[] {
     `${v.coins} coins`,
     ...describeNeeds(v),
   ];
+  const mind = sim.mind(v.key);
+  if (mind) lines.push(...describeMind(mind, sim.villagers()));
   void stock;
   return lines;
 }

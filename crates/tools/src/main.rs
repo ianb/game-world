@@ -110,6 +110,19 @@ enum Command {
         snapshots: Vec<u32>,
     },
     /// Route between two tiles, printed as legs and drawn on the places it crosses.
+    /// Every conversation of one day, turn by turn.
+    Talks {
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        #[arg(long, default_value_t = 0)]
+        day: u32,
+        /// How many days from `day`.
+        #[arg(long, default_value_t = 1)]
+        days: u32,
+        /// Only conversations involving this villager id.
+        #[arg(long)]
+        who: Option<String>,
+    },
     Route {
         from_place: String,
         from_x: u16,
@@ -209,6 +222,48 @@ fn main() -> ExitCode {
                 print!("{}", views::place_changes(&sim, who, &events));
             }
             println!("hash {}", sim.hash().hex());
+            ExitCode::SUCCESS
+        }
+        Command::Talks {
+            seed,
+            day,
+            days,
+            who,
+        } => {
+            let mut sim: Sim<Town> = Sim::new(seed, content);
+            let start = Tick(day * TICKS_PER_DAY);
+            let mut events = sim.step_until(start).unwrap();
+            events.retain(|e| e.tick() >= start);
+            events.extend(sim.step_until(start.plus(days * TICKS_PER_DAY)).unwrap());
+            if let Some(id) = who {
+                let Some(v) = sim.state().villagers.iter().position(|v| v.id == id) else {
+                    eprintln!("no villager {id}");
+                    return ExitCode::from(1);
+                };
+                let v = sim::ids::VillagerId(u16::try_from(v).unwrap());
+                let mine: std::collections::BTreeSet<u32> = events
+                    .iter()
+                    .filter_map(|e| match e {
+                        sim::protocol::Emitted::ConversationEnded { convo, who, .. }
+                            if *who == v =>
+                        {
+                            Some(*convo)
+                        }
+                        _ => None,
+                    })
+                    .collect();
+                events.retain(|e| match e {
+                    sim::protocol::Emitted::ConversationStarted { convo, .. }
+                    | sim::protocol::Emitted::Beat { convo, .. }
+                    | sim::protocol::Emitted::TookUp { convo, .. }
+                    | sim::protocol::Emitted::FrameChanged { convo, .. }
+                    | sim::protocol::Emitted::ConversationEnded { convo, .. } => {
+                        mine.contains(convo)
+                    }
+                    _ => false,
+                });
+            }
+            print!("{}", views::transcripts(&sim, &events));
             ExitCode::SUCCESS
         }
         Command::Bundle => {

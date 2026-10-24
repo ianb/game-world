@@ -4,6 +4,7 @@ use rand_pcg::Pcg32;
 use sim::brain::{Command, Ctx, Party, Planned, Target, Trigger};
 use sim::ids::{ObjectId, VillagerId};
 use sim::needs::Need;
+use sim::protocol::Frame;
 use sim::time::{TICKS_PER_MINUTE, TimeOfDay, Weekday};
 
 /// A day's intentions, built up and handed back to the sim.
@@ -217,6 +218,29 @@ pub fn buy_ale(ctx: &Ctx<'_>, me: &str) -> Option<Vec<Command>> {
         stock(ctx, "barrel_tavern", "ale", -1),
         pay(ctx, me, "tom", ALE_PRICE, "ale"),
     ])
+}
+
+/// How long a word at the counter is booked for; it can end sooner.
+pub const COUNTER_MINUTES: u32 = 15;
+
+/// A conversation at the counter with whoever keeps it, if they are here, still and free.
+/// `None` when there is nobody to talk to, so the caller can carry on alone.
+#[must_use]
+pub fn counter_talk(ctx: &Ctx<'_>, me: &str, keeper: &str, topic: &str) -> Option<Command> {
+    if me == keeper {
+        return None;
+    }
+    let k = villager(ctx, keeper);
+    let (mine, theirs) = (ctx.villager(villager(ctx, me)), ctx.villager(k));
+    let free = theirs.place == mine.place
+        && theirs.moving.is_none()
+        && !matches!(theirs.activity.as_str(), "talk" | "sleep");
+    free.then(|| Command::Talk {
+        with: k,
+        frame: Frame::Transaction,
+        topic: topic.into(),
+        minutes: COUNTER_MINUTES,
+    })
 }
 
 /// Hunger at which anyone eats something before going to sleep.

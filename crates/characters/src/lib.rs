@@ -1,8 +1,9 @@
 //! One module per villager, plus the shared toolbox. Character code reads through `Ctx`
 //! and writes by returning commands; it never mutates world state directly. Each villager
 //! is its own struct whose fields are that villager's sparse attributes, and the `Town`
-//! holds them as named fields so one villager's code can read another's and the compiler
-//! checks it.
+//! holds them as named fields. A villager knows another only through what they perceive
+//! (the town through `Ctx`) and what they remember of talking to them; no character code
+//! reads another character's struct.
 #![deny(clippy::float_arithmetic)]
 
 pub mod hal;
@@ -21,6 +22,7 @@ use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{CharacterSet, Command, Ctx, Planned, Trigger, baseline_plan};
 use sim::ids::VillagerId;
+use sim::social::Interlocutor;
 
 /// Every character in the town, by name. Adding a villager adds a field here and an arm in
 /// each match below.
@@ -35,7 +37,7 @@ pub struct Town {
 
 impl CharacterSet for Town {
     /// Bump when any character struct changes shape.
-    const LAYOUT_VERSION: u32 = 4;
+    const LAYOUT_VERSION: u32 = 5;
     const BEHAVIOR: u64 = behavior::BEHAVIOR;
 
     fn new(_content: &content::Content, _world: &content::World) -> Self {
@@ -49,19 +51,12 @@ impl CharacterSet for Town {
     }
 
     fn plan_day(&mut self, who: VillagerId, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
-        let Town {
-            mara,
-            tom,
-            pip,
-            nell,
-            hal,
-        } = self;
         match ctx.villager(who).id.as_str() {
-            "mara" => mara.plan_day(ctx, rng, tom),
-            "tom" => tom.plan_day(ctx, rng),
-            "pip" => pip.plan_day(ctx, rng),
-            "nell" => nell.plan_day(ctx, rng),
-            "hal" => hal.plan_day(ctx, rng),
+            "mara" => self.mara.plan_day(ctx, rng),
+            "tom" => self.tom.plan_day(ctx, rng),
+            "pip" => self.pip.plan_day(ctx, rng),
+            "nell" => self.nell.plan_day(ctx, rng),
+            "hal" => self.hal.plan_day(ctx, rng),
             _ => baseline_plan(who, ctx),
         }
     }
@@ -73,24 +68,39 @@ impl CharacterSet for Town {
         ctx: &Ctx<'_>,
         rng: &mut Pcg32,
     ) -> Vec<Command> {
-        let Town {
-            mara,
-            tom,
-            pip,
-            nell,
-            hal,
-        } = self;
         let id = ctx.villager(who).id.as_str();
         // Each character answers what is theirs; anything they pass on (`None`) gets the
         // behaviour every villager shares.
         let own = match id {
-            "mara" => mara.react(trigger.clone(), ctx, tom),
-            "tom" => tom.react(trigger.clone(), ctx, rng, mara),
-            "pip" => pip.react(trigger.clone(), ctx, rng, mara),
-            "nell" => nell.react(&trigger, ctx),
-            "hal" => hal.react(&trigger, ctx),
+            "mara" => self.mara.react(&trigger, ctx),
+            "tom" => self.tom.react(trigger.clone(), ctx, rng),
+            "pip" => self.pip.react(trigger.clone(), ctx, rng),
+            "nell" => self.nell.react(&trigger, ctx),
+            "hal" => self.hal.react(&trigger, ctx, rng),
             _ => None,
         };
         own.unwrap_or_else(|| toolbox::human(&trigger, ctx, id))
+    }
+
+    fn interlocutor(&mut self, who: VillagerId, ctx: &Ctx<'_>) -> Option<&mut dyn Interlocutor> {
+        Some(match ctx.villager(who).id.as_str() {
+            "mara" => &mut self.mara,
+            "tom" => &mut self.tom,
+            "pip" => &mut self.pip,
+            "nell" => &mut self.nell,
+            "hal" => &mut self.hal,
+            _ => return None,
+        })
+    }
+
+    fn interlocutor_ref(&self, who: VillagerId, ctx: &Ctx<'_>) -> Option<&dyn Interlocutor> {
+        Some(match ctx.villager(who).id.as_str() {
+            "mara" => &self.mara,
+            "tom" => &self.tom,
+            "pip" => &self.pip,
+            "nell" => &self.nell,
+            "hal" => &self.hal,
+            _ => return None,
+        })
     }
 }

@@ -9,8 +9,14 @@ import type { TerrainView } from "./generated/TerrainView";
 import type { StockView } from "./generated/StockView";
 import type { RulesView } from "./generated/RulesView";
 import type { DaySummary } from "./generated/DaySummary";
+import type { MindView } from "./generated/MindView";
 
-export type { Emitted, Input, VillagerView, WorldView, ClockView, TerrainView, StockView, RulesView, DaySummary };
+export type { Emitted, Input, VillagerView, WorldView, ClockView, TerrainView, StockView, RulesView, DaySummary, MindView };
+export type { RegardView } from "./generated/RegardView";
+export type { EpisodeView } from "./generated/EpisodeView";
+export type { HeardView } from "./generated/HeardView";
+export type { Frame } from "./generated/Frame";
+export type { MoveKind } from "./generated/MoveKind";
 export type { SummaryItem } from "./generated/SummaryItem";
 export type { SummaryKind } from "./generated/SummaryKind";
 export type { Cause } from "./generated/Cause";
@@ -36,7 +42,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 12;
+export const PROTOCOL_VERSION = 13;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;
@@ -68,6 +74,7 @@ export interface WasmSim {
   clock(): unknown;
   rules(): unknown;
   summaries(): unknown;
+  mind(key: string): unknown;
   frontier(): number;
   rewind(tick: number): void;
   back_to_now(): void;
@@ -110,6 +117,9 @@ export interface Sim {
   rules(): RulesView;
   /** What happened on each finished day, deviations from routine first. */
   summaries(): DaySummary[];
+  /** A villager's persona, mood, view of others and recent memory; null for one with no
+   * program of their own. Throws for an unknown key. */
+  mind(key: string): MindView | null;
   /** The furthest tick ever reached. */
   readonly frontier: number;
   /** Replays the past up to `tick`; inputs are refused until `backToNow`. */
@@ -215,6 +225,9 @@ export class LocalSim implements Sim {
   }
   summaries(): DaySummary[] {
     return this.guard(() => this.inner.summaries() as DaySummary[]);
+  }
+  mind(key: string): MindView | null {
+    return this.guard(() => (this.inner.mind(key) as MindView | undefined) ?? null);
   }
   get frontier(): number {
     return this.guard(() => this.inner.frontier());

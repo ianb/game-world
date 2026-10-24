@@ -1,12 +1,16 @@
 //! Hal, the carter. Twice a week he goes out along the road, buys flour and ale from the
 //! world beyond the town, and sells them on to the bakery and the tavern. Supplies enter
-//! and money leaves through him.
+//! and money leaves through him. He is touchy: quick to hear a refusal as a rebuff and to
+//! blame the person for it, and when money is short it is on his mind.
 use crate::toolbox::{
-    Plan, activity_of, buy_ale, go, go_tile, pay, stock, villager, wait_minutes, weekday,
+    Plan, activity_of, buy_ale, counter_talk, go, go_tile, pay, pick, stock, villager,
+    wait_minutes, weekday,
 };
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
+use sim::ids::VillagerId;
+use sim::social::{Interlocutor, Memory, Persona};
 use sim::time::Weekday;
 
 /// The east end of the street, where the road leaves the town.
@@ -24,6 +28,7 @@ pub struct Hal {
     pub trips: u16,
     pub carrying_flour: i32,
     pub carrying_ale: i32,
+    pub mind: Memory,
 }
 
 impl Hal {
@@ -45,7 +50,12 @@ impl Hal {
         plan.build()
     }
 
-    pub fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>) -> Option<Vec<Command>> {
+    pub fn react(
+        &mut self,
+        trigger: &Trigger,
+        ctx: &Ctx<'_>,
+        rng: &mut Pcg32,
+    ) -> Option<Vec<Command>> {
         let me = ctx.villager_id("hal").expect("hal exists");
         Some(match trigger {
             // At the edge of town: buy a load and be gone a while.
@@ -67,7 +77,8 @@ impl Hal {
                 self.trips += 1;
                 vec![
                     pay(ctx, "hal", "outside", cost, what),
-                    wait_minutes(90, "to-market"),
+                    // The market keeps him longer some days.
+                    wait_minutes(*pick(rng, &[90u32, 120, 150]), "to-market"),
                 ]
             }
             Trigger::Waited if activity_of(ctx, "hal") == "to-market" => {
@@ -81,7 +92,8 @@ impl Hal {
                 vec![
                     stock(ctx, "pantry_bakery", "flour", flour),
                     pay(ctx, "mara", "hal", price, "flour"),
-                    go(ctx, "barrel_tavern", "deliver-ale"),
+                    counter_talk(ctx, "hal", "mara", "the flour")
+                        .unwrap_or_else(|| go(ctx, "barrel_tavern", "deliver-ale")),
                 ]
             }
             Trigger::Arrived if activity_of(ctx, "hal") == "deliver-ale" => {
@@ -92,8 +104,16 @@ impl Hal {
                 vec![
                     stock(ctx, "barrel_tavern", "ale", ale),
                     pay(ctx, "tom", "hal", price, "ale"),
-                    go(ctx, "cart_hal", "tend-cart"),
+                    counter_talk(ctx, "hal", "tom", "the ale")
+                        .unwrap_or_else(|| go(ctx, "cart_hal", "tend-cart")),
                 ]
+            }
+            // Deliveries go on once the talk at the counter is done.
+            Trigger::TalkEnded { topic, .. } if topic == "the flour" => {
+                vec![go(ctx, "barrel_tavern", "deliver-ale")]
+            }
+            Trigger::TalkEnded { topic, .. } if topic == "the ale" => {
+                vec![go(ctx, "cart_hal", "tend-cart")]
             }
             // Lunch at the tavern is paid for when Tom is behind the bar.
             Trigger::Arrived
@@ -101,15 +121,43 @@ impl Hal {
                     && ctx.villager(me).place == ctx.villager(villager(ctx, "tom")).place
                     && activity_of(ctx, "tom") == "tend-bar" =>
             {
-                vec![pay(ctx, "hal", "tom", LUNCH_PRICE, "lunch")]
+                let mut cmds = vec![pay(ctx, "hal", "tom", LUNCH_PRICE, "lunch")];
+                cmds.extend(counter_talk(ctx, "hal", "tom", "lunch"));
+                cmds
             }
             Trigger::Arrived if activity_of(ctx, "hal") == "drink" => {
-                buy_ale(ctx, "hal").unwrap_or_else(|| vec![Command::Note("barrel's dry".into())])
+                let mut cmds = buy_ale(ctx, "hal")
+                    .unwrap_or_else(|| vec![Command::Note("barrel's dry".into())]);
+                cmds.extend(counter_talk(ctx, "hal", "tom", "ale"));
+                cmds
             }
             Trigger::Passing { other } if activity_of(ctx, "hal") != "sleep" => {
                 vec![Command::Greet { with: *other }]
             }
             _ => return None,
         })
+    }
+}
+
+impl Interlocutor for Hal {
+    fn persona(&self) -> Persona {
+        Persona {
+            sociable: 0,
+            warmth: 0,
+            skill: 5,
+            rejection_sensitivity: 8,
+            charity: -2,
+        }
+    }
+    fn memory(&self) -> &Memory {
+        &self.mind
+    }
+    fn memory_mut(&mut self) -> &mut Memory {
+        &mut self.mind
+    }
+
+    /// Money is on his mind whenever he could not pay for two full loads.
+    fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<String> {
+        (ctx.coins(me) < 2 * LOAD_COST).then(|| "money".into())
     }
 }

@@ -3,24 +3,22 @@ source: crates/characters/tests/town.rs
 expression: out
 ---
 Mara
-  2:07am needs the privy (76)
-  4:07am needs the privy (90)
-  5:07am needs the privy (95)
+  4:07am needs the privy (70)
   6:00am leaves for cook, eta 6:01am
-  6:00am needs the privy (95)
-  6:00am [needs the privy (95) -> relieve for 4m @ privy_tavern then back]
+  6:00am needs the privy (75)
+  6:00am [needs the privy (75) -> relieve for 4m @ privy_tavern then back]
   6:00am leaves for relieve, eta 6:03am
   6:00am hungry (89)
   6:00am [hungry (89) -> note: hungry; it can wait for a meal]
   6:03am relieve
   6:07am hungry (98)
   6:07am [hungry (98) -> note: starving; eating now; bread -1 at shelf_bakery; eat for 10m @ shelf_bakery then back]
-  6:07am bread -1 at shelf_bakery (now 2)
+  6:07am bread -1 at shelf_bakery (now 3)
   6:07am leaves for eat, eta 6:10am
   6:10am eat
   6:20am leaves for cook, eta 6:25am
   6:25am cook
-  6:35am bread -2 at shelf_bakery (now 0)
+  6:35am bread -3 at shelf_bakery (now 0)
   6:40am leaves for bake, eta 6:45am
   6:45am bake
   6:45am [arrived -> flour -2 at pantry_bakery; bread +6 at shelf_bakery]
@@ -36,6 +34,9 @@ Mara
   10:14am tend-shop
   10:34am [passing Nell -> greet Nell]
   10:34am greets Nell
+  10:34am talk
+  10:43am done talking with Nell (transaction, peak +1, end +1)
+  10:43am tend-shop
   11:14am [passing Nell -> greet Nell]
   11:14am greets Nell
   12:02pm [passing Pip -> greet Pip]
@@ -44,19 +45,18 @@ Mara
   12:07pm needs the privy (96)
   12:07pm [needs the privy (96) -> relieve for 4m @ privy_tavern then back]
   12:07pm leaves for relieve, eta 12:09pm
+  12:07pm done talking with Pip (transaction, peak +0, end +0)
   12:09pm relieve
-  12:13pm leaves for talk, eta 12:15pm
-  12:15pm talk
+  12:13pm leaves for tend-shop, eta 12:15pm
+  12:15pm tend-shop
+  12:29pm [passing Pip -> greet Pip]
+  12:29pm greets Pip
   1:00pm leaves for eat, eta 1:03pm
   1:03pm eat
   2:00pm leaves for wander, eta 2:03pm
   2:03pm wander
-  2:42pm [passing Pip -> greet Pip]
-  2:42pm greets Pip
-  4:01pm [passing Tom -> greet Tom]
-  4:01pm greets Tom
-  6:02pm [passing Pip -> greet Pip]
-  6:02pm greets Pip
+  4:02pm [passing Tom -> greet Tom]
+  4:02pm greets Tom
   6:07pm needs the privy (82)
   6:07pm [needs the privy (82) -> relieve for 4m @ privy_tavern then back]
   6:07pm leaves for relieve, eta 6:08pm
@@ -65,18 +65,17 @@ Mara
   6:13pm wander
   7:00pm leaves for drink, eta 7:03pm
   7:03pm drink
-  7:03pm [arrived -> ale -1 at barrel_tavern; Mara pays Tom 3 for ale]
-  7:03pm ale -1 at barrel_tavern (now 7)
+  7:03pm [arrived -> ale -1 at barrel_tavern; Mara pays Tom 3 for ale; transaction with Tom about ale for 15m]
+  7:03pm ale -1 at barrel_tavern (now 9)
   7:03pm Mara pays Tom 3 for ale
+  7:03pm starts transaction with Tom about ale
+  7:03pm talk
   7:07pm sleepy (75)
   7:07pm [sleepy (75) -> note: yawning]
+  7:12pm done talking with Tom (transaction, peak +1, end +1)
+  7:12pm drink
   8:34pm [passing Tom -> greet Tom]
   8:34pm greets Tom
-  8:35pm [encounter Tom -> note: Tom looks fine; talk with Tom about fishing for 10m]
-  8:35pm talks with Tom about fishing (10m)
-  8:35pm talk
-  8:45pm drink
-  8:45pm [finished fishing with Tom -> note: heard about the fish (1 total)]
   9:30pm leaves for sleep, eta 9:38pm
   9:36pm [passing Tom -> greet Tom]
   9:36pm greets Tom
@@ -97,41 +96,37 @@ Tom
   10:33am [passing Pip -> greet Pip]
   10:33am greets Pip
   10:35am fish
-  10:35am [arrived -> fish for 40m]
-  11:15am [waited -> fish for 40m]
+  10:35am [arrived -> fish for 70m]
   11:28am thirsty (74)
   11:28am [thirsty (74) -> drink-water for 3m @ well_square then back]
-  11:28am leaves for drink-water, eta 11:29am
+  11:28am leaves for drink-water, eta 11:30am
   11:29am [passing Nell -> greet Nell]
   11:29am greets Nell
-  11:29am drink-water
-  11:32am leaves for fish, eta 11:34am
-  11:34am fish
-  12:02pm [waited -> fish for 40m]
+  11:30am drink-water
+  11:33am leaves for fish, eta 11:35am
+  11:35am fish
+  11:52am [waited -> fish for 70m]
   12:28pm needs the privy (73)
   12:28pm [needs the privy (73) -> relieve for 4m @ privy_tavern then back]
-  12:28pm leaves for relieve, eta 12:30pm
+  12:28pm leaves for relieve, eta 12:31pm
   12:29pm [passing Nell -> greet Nell]
   12:29pm greets Nell
-  12:30pm relieve
-  12:34pm leaves for fish, eta 12:37pm
-  12:35pm [passing Pip -> greet Pip]
-  12:35pm greets Pip
-  12:37pm fish
-  12:52pm [waited -> fish for 55m]
-  1:47pm [waited -> fish for 40m]
-  2:05pm [passing Pip -> greet Pip]
-  2:05pm greets Pip
-  2:27pm [waited -> fish for 40m]
-  3:07pm [waited -> fish for 70m]
+  12:31pm relieve
+  12:35pm leaves for fish, eta 12:38pm
+  12:36pm [passing Pip -> greet Pip]
+  12:36pm greets Pip
+  12:38pm fish
+  1:12pm [waited -> fish for 70m]
+  2:22pm [waited -> fish for 70m]
+  3:32pm [waited -> fish for 55m]
   4:00pm leaves for rest, eta 4:05pm
-  4:01pm [passing Mara -> greet Mara]
-  4:01pm greets Mara
+  4:02pm [passing Mara -> greet Mara]
+  4:02pm greets Mara
   4:05pm rest
   5:28pm hungry (73)
   5:28pm [hungry (73) -> note: hungry; it can wait for a meal]
-  6:05pm [passing Pip -> greet Pip]
-  6:05pm greets Pip
+  6:04pm [passing Pip -> greet Pip]
+  6:04pm greets Pip
   6:28pm needs the privy (76)
   6:28pm [needs the privy (76) -> relieve for 4m @ privy_tavern then back]
   6:28pm leaves for relieve, eta 6:29pm
@@ -140,6 +135,9 @@ Tom
   6:29pm relieve
   6:33pm leaves for rest, eta 6:35pm
   6:35pm rest
+  7:03pm talk
+  7:12pm done talking with Mara (transaction, peak +1, end +1)
+  7:12pm rest
   7:28pm thirsty (73)
   7:28pm [thirsty (73) -> drink-water for 3m @ well_square then back]
   7:28pm leaves for drink-water, eta 7:30pm
@@ -159,15 +157,12 @@ Tom
   8:34pm [passing Mara -> greet Mara]
   8:34pm greets Mara
   8:35pm eat
-  8:35pm talk
-  8:35pm [Mara talked about fishing -> note: glad of the company (mood 5)]
-  8:45pm eat
   8:45pm leaves for rest, eta 8:52pm
   8:52pm rest
   9:36pm [passing Mara -> greet Mara]
   9:36pm greets Mara
   11:00pm leaves for sleep, eta 11:02pm
   11:02pm sleep
-  12:00am [plan: 7:30am eat @ table_house; *8:30am note: the yard needs weeding (47 tiles); *8:31am weeding @ town (9, 23); 10:00am tend-bar @ bar_tavern; *7:30pm tend-bar for 30m; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
-Mara { batches_baked: 7, pastries_delivered: 1, fish_stories_heard: 1 }
-Tom { mood: 5, days_since_day_off: 1, fish_caught: 1, weeded_today: 0, hunger_breaks: 4, bar_bread_day: 5 }
+  12:00am [plan: 7:30am eat @ table_house; *8:30am note: the yard needs weeding (53 tiles); *8:31am weeding @ town (10, 23); 10:00am tend-bar @ bar_tavern; *7:30pm tend-bar for 30m; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
+Mara { batches_baked: 7, pastries_delivered: 0, fish_story_at: None, mind: Memory { episodes: [Episode { tick: Tick(35130), with: VillagerId(0), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(38070), with: VillagerId(2), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(43370), with: VillagerId(3), frame: Transaction, peak: 0, end: 0, they_seemed: 0, notes: [] }, Episode { tick: Tick(68760), with: VillagerId(4), frame: Transaction, peak: 0, end: 0, they_seemed: 0, notes: [] }, Episode { tick: Tick(124470), with: VillagerId(2), frame: Transaction, peak: 1, end: 0, they_seemed: 1, notes: ["took decline as agree", "was turned away", "was turned away"] }, Episode { tick: Tick(129770), with: VillagerId(3), frame: Transaction, peak: 0, end: 0, they_seemed: 0, notes: [] }, Episode { tick: Tick(155160), with: VillagerId(4), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(210870), with: VillagerId(2), frame: SmallTalk, peak: 1, end: 0, they_seemed: 2, notes: [] }, Episode { tick: Tick(216170), with: VillagerId(3), frame: SmallTalk, peak: 1, end: 1, they_seemed: 3, notes: ["was told about a frog"] }, Episode { tick: Tick(241560), with: VillagerId(4), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(294330), with: VillagerId(0), frame: SmallTalk, peak: 1, end: 0, they_seemed: 1, notes: [] }, Episode { tick: Tick(297270), with: VillagerId(2), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(302570), with: VillagerId(3), frame: Transaction, peak: 0, end: 0, they_seemed: 0, notes: [] }, Episode { tick: Tick(327960), with: VillagerId(4), frame: Transaction, peak: 0, end: 0, they_seemed: 0, notes: [] }, Episode { tick: Tick(383670), with: VillagerId(2), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(388970), with: VillagerId(3), frame: SmallTalk, peak: 1, end: 1, they_seemed: 3, notes: ["was told about a frog"] }, Episode { tick: Tick(414360), with: VillagerId(4), frame: SmallTalk, peak: 1, end: 0, they_seemed: 1, notes: [] }, Episode { tick: Tick(470070), with: VillagerId(2), frame: SmallTalk, peak: -2, end: 0, they_seemed: -1, notes: [] }, Episode { tick: Tick(475370), with: VillagerId(3), frame: SmallTalk, peak: 1, end: 1, they_seemed: 3, notes: [] }, Episode { tick: Tick(500590), with: VillagerId(4), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(556470), with: VillagerId(2), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(561770), with: VillagerId(3), frame: Transaction, peak: 0, end: 0, they_seemed: 0, notes: [] }, Episode { tick: Tick(586990), with: VillagerId(4), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }], heard: [Heard { tick: Tick(155340), from: VillagerId(4), kind: Offer, subject: "ale", overheard: false }, Heard { tick: Tick(211890), from: VillagerId(2), kind: Tell, subject: "the day", overheard: false }, Heard { tick: Tick(217190), from: VillagerId(3), kind: Disclose, subject: "a frog", overheard: false }, Heard { tick: Tick(241740), from: VillagerId(4), kind: Offer, subject: "ale", overheard: false }, Heard { tick: Tick(295110), from: VillagerId(0), kind: Tell, subject: "the road", overheard: false }, Heard { tick: Tick(295350), from: VillagerId(0), kind: Tell, subject: "the road", overheard: false }, Heard { tick: Tick(389990), from: VillagerId(3), kind: Disclose, subject: "a frog", overheard: false }, Heard { tick: Tick(414540), from: VillagerId(4), kind: Offer, subject: "ale", overheard: false }, Heard { tick: Tick(415500), from: VillagerId(4), kind: Tell, subject: "the day", overheard: false }, Heard { tick: Tick(471090), from: VillagerId(2), kind: Tell, subject: "the day", overheard: false }, Heard { tick: Tick(500770), from: VillagerId(4), kind: Offer, subject: "ale", overheard: false }, Heard { tick: Tick(587170), from: VillagerId(4), kind: Offer, subject: "ale", overheard: false }] } }
+Tom { mood: 5, days_since_day_off: 1, fish_caught: 0, fish_told: 0, weeded_today: 0, hunger_breaks: 4, bar_bread_day: 5, pastry_day: 4294967295, mind: Memory { episodes: [Episode { tick: Tick(68760), with: VillagerId(1), frame: Transaction, peak: 0, end: 0, they_seemed: 0, notes: [] }, Episode { tick: Tick(155160), with: VillagerId(1), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(217940), with: VillagerId(0), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(241560), with: VillagerId(1), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(296010), with: VillagerId(0), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(304340), with: VillagerId(0), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(327960), with: VillagerId(1), frame: Transaction, peak: 0, end: 0, they_seemed: 0, notes: [] }, Episode { tick: Tick(390740), with: VillagerId(0), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(414360), with: VillagerId(1), frame: SmallTalk, peak: -1, end: 1, they_seemed: 1, notes: [] }, Episode { tick: Tick(477140), with: VillagerId(0), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(500590), with: VillagerId(1), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }, Episode { tick: Tick(586990), with: VillagerId(1), frame: Transaction, peak: 1, end: 1, they_seemed: 0, notes: [] }], heard: [Heard { tick: Tick(415140), from: VillagerId(1), kind: Complain, subject: "the day", overheard: false }, Heard { tick: Tick(415380), from: VillagerId(1), kind: Tell, subject: "the day", overheard: false }] } }

@@ -16,6 +16,7 @@ pub mod queue;
 pub mod rng;
 pub mod sim;
 pub mod snapshot;
+pub mod social;
 pub mod summary;
 pub mod terrain;
 pub mod time;

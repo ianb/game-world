@@ -1,16 +1,27 @@
 //! Pip, a placeholder kid: roams the square all day, greets everyone who passes, and
-//! turns up at the bakery at noon to pester Mara for a bun. Eclectic by design, to exercise
-//! wandering, greetings and conversations.
-use crate::mara::Mara;
-use crate::toolbox::{Plan, activity_of, go_tile, pick, stock, stock_of, wait_minutes};
+//! turns up at the bakery at noon to ask Mara for a bun. Eclectic by design, to exercise
+//! wandering, greetings and conversations. In talk he ignores the frame: he tells anyone
+//! anything, wherever they are, and never minds when others do the same.
+use crate::toolbox::{
+    Plan, activity_of, counter_talk, go_tile, pick, stock, stock_of, wait_minutes,
+};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
+use sim::protocol::{Act, Frame, MoveKind};
+use sim::social::{Interlocutor, Memory, Persona, Situation, default_next_act, mv, roll};
+use sim::time::Tick;
+
+/// Things a child might say to anyone.
+const NEWS: [&str; 4] = ["a frog", "a loose tooth", "a secret den", "a dead mouse"];
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Pip {
     pub buns: u16,
     pub greetings_today: u16,
+    /// When he last asked for a bun.
+    pub asked_at: Option<Tick>,
+    pub mind: Memory,
 }
 
 impl Pip {
@@ -25,9 +36,7 @@ impl Pip {
         trigger: Trigger,
         ctx: &Ctx<'_>,
         rng: &mut Pcg32,
-        mara: &Mara,
     ) -> Option<Vec<Command>> {
-        let me = ctx.villager_id("pip").expect("pip exists");
         Some(match trigger {
             // Roaming: pick a random ground tile, walk there, pause, repeat.
             Trigger::Arrived if activity_of(ctx, "pip") == "roam" => {
@@ -42,23 +51,24 @@ impl Pip {
             }
             // At the bakery: ask for a bun.
             Trigger::Arrived if activity_of(ctx, "pip") == "pester" => {
-                match ctx.villager_id("mara") {
-                    Some(m) if ctx.villager(m).place == ctx.villager(me).place => {
-                        vec![Command::Talk {
-                            with: m,
-                            topic: "sweets".into(),
-                            minutes: 5,
-                        }]
+                match counter_talk(ctx, "pip", "mara", "a bun") {
+                    Some(talk) => {
+                        self.asked_at = Some(ctx.tick);
+                        vec![talk]
                     }
-                    _ => vec![Command::Note("nobody at the bakery to pester".into())],
+                    None => vec![Command::Note("nobody at the bakery to ask".into())],
                 }
             }
-            Trigger::TalkEnded { other, topic } if topic == "sweets" => {
-                // A bun off the shelf, free, if there is one and Mara has baked today.
-                if Some(other) == ctx.villager_id("mara")
-                    && mara.batches_baked > 0
-                    && stock_of(ctx, "shelf_bakery", "bread") > 0
-                {
+            // He takes a bun if he understood Mara to offer one.
+            Trigger::TalkEnded { other, topic } if topic == "a bun" => {
+                let asked = self.asked_at.unwrap_or_default();
+                let offered = self.mind.heard.iter().any(|h| {
+                    h.from == other
+                        && h.subject == "a bun"
+                        && h.kind == MoveKind::Offer
+                        && h.tick >= asked
+                });
+                if offered && stock_of(ctx, "shelf_bakery", "bread") > 0 {
                     self.buns += 1;
                     vec![
                         stock(ctx, "shelf_bakery", "bread", -1),
@@ -88,5 +98,38 @@ impl Pip {
             }
             _ => return None,
         })
+    }
+}
+
+impl Interlocutor for Pip {
+    fn persona(&self) -> Persona {
+        Persona {
+            sociable: 3,
+            warmth: 2,
+            skill: 2,
+            rejection_sensitivity: 1,
+            charity: 2,
+        }
+    }
+    fn memory(&self) -> &Memory {
+        &self.mind
+    }
+    fn memory_mut(&mut self) -> &mut Memory {
+        &mut self.mind
+    }
+
+    /// Once the business is done, a quarter of the time he tells whatever is on his mind,
+    /// whatever the frame.
+    fn next_act(&mut self, s: &Situation<'_>, rng: &mut Pcg32) -> Act {
+        if s.turn >= 1 && s.turn < 4 && s.frame != Frame::Confiding && roll(rng) < 25 {
+            return mv(MoveKind::Disclose, pick(rng, &NEWS));
+        }
+        default_next_act(self, s, rng)
+    }
+
+    /// He never sanctions anyone; he joins in.
+    fn out_of_frame(&mut self, s: &Situation<'_>, did: &Act, rng: &mut Pcg32) -> Act {
+        let _ = (s, did);
+        mv(MoveKind::Tell, pick(rng, &NEWS))
     }
 }

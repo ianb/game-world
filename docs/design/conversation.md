@@ -1,7 +1,8 @@
 # Conversations and interiority: proposal
 
-2026-10-24. Not built yet. Direction from Ian over several messages (see the
-decision log); background in `docs/research/conversation-frames.md` and
+2026-10-24. The first spike is built (see "Status" at the end). Direction
+from Ian over several messages (see the decision log); background in
+`docs/research/conversation-frames.md` and
 `docs/research/interiority-psychology.md`.
 
 ## Principles
@@ -197,3 +198,33 @@ and `take_up`, the gossip's `next_move`, everyone's `out_of_frame`.
 - How many beats in a conversation, and does length matter to uptake?
 - Frame and move names are engineering vocabulary. Anything a player reads
   from them later needs Ian's voice.
+
+## Status
+
+The first spike is in. Where things are:
+
+- `crates/sim/src/social.rs`: persona, memory, regard, the `Interlocutor`
+  trait and its research defaults.
+- `crates/sim/src/sim/conversation.rs`: conversations as beats, bystanders,
+  frame changes, episodes.
+- `crates/characters/src/*.rs`: one placeholder program per villager.
+- `crates/sim/src/summary/talk.rs`: the summary line for a conversation.
+- `cargo run -p tools -- talks --seed 2 --day 36 --who mara` prints
+  transcripts; the viewer's inspector shows a villager's mind.
+
+Found while tuning:
+
+- Doubling bad episodes by value made one mildly bad chat read as cold.
+  Bad episodes now carry double weight in the mean instead, and the mean is
+  rounded.
+- Counting a counter's scripted thanks toward how someone seemed hid every
+  low mood. Only unscripted moves count now.
+- Without a gap before retelling, a worried villager confided in everyone
+  every day. Now it is a week per person, and only with people they like.
+- Transactions misread as prying were noise; scripted moves are now read
+  worse a quarter as often.
+
+Not done yet: catching up, favour, courting and quarrel frames; the
+self-concept as a belief; anyone but Mara having a worry often enough to
+confide it; summaries that say why a misreading happened.
+

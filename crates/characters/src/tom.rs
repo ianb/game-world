@@ -1,8 +1,9 @@
 //! Tom, who keeps the tavern. The eclectic one: a mood only he tracks, Sundays off at the
 //! pond, late openings when he is low, and an evening check on whether anyone came.
 //! Starving, he eats the bar's bread; otherwise his body behaves like anyone's
-//! (`toolbox::human`).
-use crate::mara::Mara;
+//! (`toolbox::human`). In talk he is blunt and teases his regulars, not always well; his
+//! mood colours everything, and each conversation moves it a little. A new fish is the
+//! first thing he mentions.
 use crate::toolbox::{
     MEAL_WINDOW_MINUTES, Plan, activity_of, eat_something, errand, go_tile, meal_soon, object, pay,
     pick, stock, stock_of, together, wait_minutes, weekday,
@@ -11,7 +12,12 @@ use content::{Pos, Rect};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
+use sim::ids::VillagerId;
 use sim::needs::{Need, URGENT};
+use sim::protocol::{Act, Frame, MoveKind};
+use sim::social::{
+    Episode, Interlocutor, Memory, Persona, Situation, default_next_act, mv, needs_mood,
+};
 use sim::time::Weekday;
 
 /// Fishing spots on the pond's west bank, in building-free ground.
@@ -40,12 +46,17 @@ pub struct Tom {
     pub mood: i8,
     pub days_since_day_off: u8,
     pub fish_caught: u16,
+    /// Fish he has told someone about.
+    pub fish_told: u16,
     /// Patches cleared so far this morning.
     pub weeded_today: u8,
     /// Times hunger sent him behind the bar for bread.
     pub hunger_breaks: u16,
     /// The day he last bought bread for the bar, so he buys once a day at most.
     pub bar_bread_day: u32,
+    /// The day Mara last brought him a pastry.
+    pub pastry_day: u32,
+    pub mind: Memory,
 }
 
 impl Default for Tom {
@@ -54,9 +65,12 @@ impl Default for Tom {
             mood: -1,
             days_since_day_off: 0,
             fish_caught: 0,
+            fish_told: 0,
             weeded_today: 0,
             hunger_breaks: 0,
             bar_bread_day: u32::MAX,
+            pastry_day: u32::MAX,
+            mind: Memory::default(),
         }
     }
 }
@@ -162,7 +176,6 @@ impl Tom {
         trigger: Trigger,
         ctx: &Ctx<'_>,
         rng: &mut Pcg32,
-        mara: &Mara,
     ) -> Option<Vec<Command>> {
         Some(match trigger {
             Trigger::Arrived if activity_of(ctx, "tom") == "weeding" => {
@@ -204,7 +217,7 @@ impl Tom {
             Trigger::Waited => {
                 // 20:00 on a working day: is anyone here?
                 let company = together(ctx, "tom", "mara") && activity_of(ctx, "mara") == "drink";
-                let delivered_today = mara.pastries_delivered > 0;
+                let delivered_today = self.pastry_day == ctx.calendar.day_index;
                 let before = self.mood;
                 self.mood = if company || delivered_today {
                     self.mood.saturating_add(2).min(5)
@@ -222,14 +235,9 @@ impl Tom {
                     self.mood
                 ))]
             }
-            // A real conversation cheers him up a little. Greetings need no reply: the sim
-            // fires Passing to both parties, so he greets on his own trigger.
-            Trigger::TalkedTo { topic, .. } if topic != "greeting" => {
-                self.mood = self.mood.saturating_add(1).min(5);
-                vec![Command::Note(format!(
-                    "glad of the company (mood {})",
-                    self.mood
-                ))]
+            Trigger::TalkEnded { topic, .. } if topic == "a pastry" => {
+                self.pastry_day = ctx.calendar.day_index;
+                vec![Command::Note("a pastry from Mara".into())]
             }
             // Starving behind the bar, he eats the bar's bread. Anything else about needs is
             // the human default.
@@ -257,5 +265,54 @@ impl Tom {
             }
             _ => return None,
         })
+    }
+}
+
+impl Interlocutor for Tom {
+    fn persona(&self) -> Persona {
+        Persona {
+            sociable: 1,
+            warmth: 0,
+            skill: 4,
+            rejection_sensitivity: 4,
+            charity: -1,
+        }
+    }
+    fn memory(&self) -> &Memory {
+        &self.mind
+    }
+    fn memory_mut(&mut self) -> &mut Memory {
+        &mut self.mind
+    }
+
+    fn mood(&self, ctx: &Ctx<'_>, me: VillagerId) -> i8 {
+        (needs_mood(ctx, me) + self.mood / 2).clamp(-3, 3)
+    }
+
+    fn worry(&self, _ctx: &Ctx<'_>, _me: VillagerId) -> Option<String> {
+        (self.mood <= -3).then(|| "the empty bar".into())
+    }
+
+    fn next_act(&mut self, s: &Situation<'_>, rng: &mut Pcg32) -> Act {
+        let fish = self.fish_caught > self.fish_told;
+        match s.frame {
+            Frame::SmallTalk if fish => {
+                self.fish_told = self.fish_caught;
+                mv(MoveKind::Tell, "the fish")
+            }
+            // Past the business, a new fish is worth keeping someone for.
+            Frame::Transaction if fish && s.turn >= 1 && !s.i_bid(Frame::SmallTalk) => Act::Bid {
+                frame: Frame::SmallTalk,
+                subject: "the fish".into(),
+            },
+            _ => default_next_act(self, s, rng),
+        }
+    }
+
+    /// Each conversation moves his mood by how it went for him.
+    fn remember(&mut self, e: Episode) {
+        let felt = e.peak + e.end;
+        self.mood = (self.mood + felt.signum()).clamp(-5, 5);
+        self.mind.remember(e);
     }
 }

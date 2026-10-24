@@ -1,7 +1,7 @@
 //! Text views of a running sim: the agent's eyes on the town.
 use crate::brain::CharacterSet;
 use crate::ids::VillagerId;
-use crate::protocol::Emitted;
+use crate::protocol::{Act, Attribution, BidAnswer, Emitted};
 use crate::sim::Sim;
 use content::Pos;
 use std::fmt::Write as _;
@@ -144,6 +144,11 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
             Emitted::Need { need, level, .. } => {
                 let _ = writeln!(out, "  {t} {} ({level})", need.name());
             }
+            Emitted::ConversationStarted { .. } | Emitted::ConversationEnded { .. } => {
+                if let Some(line) = conversation_line(sim, e) {
+                    let _ = writeln!(out, "  {t} {line}");
+                }
+            }
             Emitted::Talked {
                 with,
                 topic,
@@ -161,6 +166,32 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
         }
     }
     out
+}
+
+/// An itinerary line for the start or end of a conversation.
+fn conversation_line<C: CharacterSet>(sim: &Sim<C>, e: &Emitted) -> Option<String> {
+    let name = |v: &VillagerId| sim.state().villagers[v.index()].name.clone();
+    match e {
+        Emitted::ConversationStarted {
+            with, frame, topic, ..
+        } => Some(format!(
+            "starts {} with {} about {topic}",
+            frame.name(),
+            name(with)
+        )),
+        Emitted::ConversationEnded {
+            with,
+            frame,
+            my_peak,
+            my_end,
+            ..
+        } => Some(format!(
+            "done talking with {} ({}, peak {my_peak:+}, end {my_end:+})",
+            name(with),
+            frame.name()
+        )),
+        _ => None,
+    }
 }
 
 /// Place changes for one villager (door crossings), from an event list.
@@ -225,4 +256,139 @@ fn plan_lines(
             .collect();
         let _ = writeln!(out, "  {t} [dropped from schedule: {}]", gone.join("; "));
     }
+}
+
+/// An act as a transcript line.
+#[must_use]
+pub fn describe_act(act: &Act) -> String {
+    match act {
+        Act::Move { kind, subject } if subject.is_empty() => kind.name().to_string(),
+        Act::Move { kind, subject } => format!("{} \"{subject}\"", kind.name()),
+        Act::Bid { frame, subject } => format!("bids for {} about \"{subject}\"", frame.name()),
+        Act::Answer { answer } => match answer {
+            BidAnswer::Toward => "turns toward it".into(),
+            BidAnswer::Away { account: true } => "turns away, with a reason".into(),
+            BidAnswer::Away { account: false } => "turns away".into(),
+            BidAnswer::Against => "turns against it".into(),
+        },
+    }
+}
+
+/// Every conversation in `events`, turn by turn: what each speaker meant and did, and how
+/// each listener took it. Lines are grouped by conversation in the order they started.
+#[must_use]
+pub fn transcripts<C: CharacterSet>(sim: &Sim<C>, events: &[Emitted]) -> String {
+    let mut order: Vec<u32> = Vec::new();
+    let mut lines: std::collections::BTreeMap<u32, String> = std::collections::BTreeMap::new();
+    for e in events {
+        if let Emitted::ConversationStarted { convo, .. } = e {
+            order.push(*convo);
+        }
+        if let Some((convo, line)) = transcript_line(sim, e) {
+            let l = lines.entry(convo).or_default();
+            l.push_str(&line);
+            l.push('\n');
+        }
+    }
+    let mut out = String::new();
+    for id in order {
+        if let Some(l) = lines.remove(&id) {
+            out.push_str(&l);
+            out.push('\n');
+        }
+    }
+    out
+}
+
+/// One transcript line and the conversation it belongs to.
+fn transcript_line<C: CharacterSet>(sim: &Sim<C>, e: &Emitted) -> Option<(u32, String)> {
+    let name = |v: VillagerId| sim.state().villagers[v.index()].name.clone();
+    let t = e.tick().calendar().time;
+    Some(match e {
+        Emitted::ConversationStarted {
+            convo,
+            who,
+            with,
+            place,
+            frame,
+            topic,
+            ..
+        } => {
+            let cal = e.tick().calendar();
+            let place = &sim.world().places[place.index()].id;
+            let (a, b) = (name(*who), name(*with));
+            let frame = frame.name();
+            let day = cal.day_index;
+            let weekday = cal.weekday;
+            let head = format!("day {day} {weekday:?} {t} {a} and {b} ({place}): {frame}");
+            (*convo, format!("{head} about \"{topic}\""))
+        }
+        Emitted::Beat {
+            convo,
+            who,
+            stance,
+            meant,
+            did,
+            breach,
+            ..
+        } => {
+            let mut line = format!("  {t} {:<5} {}", name(*who), describe_act(did));
+            if meant != did {
+                let _ = write!(line, "  (meant: {})", describe_act(meant));
+            }
+            if *breach {
+                line.push_str("  [out of frame]");
+            }
+            let _ = write!(line, "  <{stance:?}>");
+            (*convo, line)
+        }
+        Emitted::TookUp {
+            convo,
+            who,
+            did,
+            taken_as,
+            warmth,
+            attribution,
+            overheard,
+            ..
+        } => {
+            let verb = if *overheard { "overhears" } else { "takes it" };
+            let reading = if taken_as == did {
+                String::new()
+            } else {
+                format!(" as {}", taken_as.name())
+            };
+            let blame = match (*warmth < 0, attribution) {
+                (true, Attribution::Character) => ", puts it down to them",
+                (true, Attribution::Situation) => ", puts it down to the moment",
+                _ => "",
+            };
+            let who = name(*who);
+            (
+                *convo,
+                format!("          {who} {verb}{reading} ({warmth:+}{blame})"),
+            )
+        }
+        Emitted::FrameChanged {
+            convo, from, to, ..
+        } => (*convo, format!("  {t} -- {} to {}", from.name(), to.name())),
+        Emitted::ConversationEnded {
+            convo,
+            who,
+            my_peak,
+            my_end,
+            ended_by,
+            ..
+        } => {
+            let by = ended_by
+                .map(|v| format!(", {} left", name(v)))
+                .unwrap_or_default();
+            let who = name(*who);
+            (
+                *convo,
+                format!("  {t} {who} done: peak {my_peak:+}, end {my_end:+}{by}"),
+            )
+        }
+        _ => return None,
+    })
 }

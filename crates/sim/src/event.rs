@@ -26,6 +26,8 @@ pub enum Event {
     Body { who: VillagerId },
     /// `who` just stopped sleeping: needs that got pressing overnight ask now.
     Woke { who: VillagerId },
+    /// The next turn of a conversation.
+    Beat { convo: u32 },
     /// A player or external actor input, applied at its tick in `(tick, seq)` order.
     Input(Input),
 }

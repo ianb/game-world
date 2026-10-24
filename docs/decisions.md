@@ -829,3 +829,43 @@ more.
 Implications: findings with mixed later support (self-discrepancy's
 emotion mapping) are defaults to override, not rules. Still direction only;
 nothing built.
+
+## 2026-10-24: First conversation spike
+
+Ian: "I think some randomness gives an opportunity for misinterpretation
+(with per-character biased). So… are you ready to experiment with these
+characters?"
+
+Decided and built:
+
+- Conversations are records in `SimState.conversations`, advanced one beat
+  every two minutes. Each beat records the speaker's stance, what they meant
+  and what came out; each listener's uptake records what they took it as,
+  how warm it felt and whether they blamed the person or the moment.
+- Misreading is a biased roll in the shared `take_up` default: rejection
+  sensitivity, mood, a poor view of the speaker and a curt answer push it
+  worse; charity and a good view push it better. A frame's scripted moves
+  (the request and offer at a counter) are rarely misread. Misfires come
+  from skill and footing in `perform`.
+- Every villager has a placeholder program (`impl Interlocutor` in their
+  module) for Ian to rewrite: Mara friendly and discreet, Tom blunt with his
+  mood moved by each talk, Pip ignoring frames, Nell anxious with anyone
+  unfamiliar, Hal quick to hear a rebuff.
+- Perception only: no character reads another's struct. Mara decides on the
+  pastry from how Tom seemed when they last talked, learns about his fish
+  when he tells her, and Pip takes a bun only if he understood Mara to offer
+  one.
+- Purchases, deliveries and lunch open a transaction at the counter when the
+  keeper is there and free. An accepted bid extends the talk by 12 minutes.
+- `talks` prints transcripts; day summaries get one line per conversation
+  with anything beyond its business; the inspector shows each villager's
+  persona, mood, worry, view of others and recent memory.
+
+Implications: the bakery-counter scene in `docs/design/conversation.md`
+turns up with different people. On seed 2, day 36, Mara bids to confide
+about money to Tom at the tavern with Nell there, Tom turns away with a
+reason, Mara takes it as a rebuff, and Nell overhears "money". Hal never has
+money trouble in this economy (he ends weeks richer, and Mara poorer), so
+the original casting does not occur. The numbers (misread and misfire rates,
+the 7-day retelling gap, feeling thresholds) were tuned by reading six weeks
+of transcripts on ten seeds, not by any score.

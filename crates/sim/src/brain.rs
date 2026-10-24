@@ -2,6 +2,8 @@
 //! reads the world through `Ctx`, and writes by returning commands. The sim applies them.
 use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::needs::{Need, Needs};
+use crate::protocol::Frame;
+use crate::social::Interlocutor;
 use crate::terrain::Terrain;
 use crate::time::{Calendar, Tick, TimeOfDay};
 use crate::villager::VillagerState;
@@ -186,6 +188,7 @@ pub enum Command {
     /// `TalkEnded` trigger. Ignored if either is already talking.
     Talk {
         with: VillagerId,
+        frame: Frame,
         topic: String,
         minutes: u32,
     },
@@ -235,11 +238,13 @@ impl Command {
             Command::Greet { with } => format!("greet {}", ctx.villager(*with).name),
             Command::Talk {
                 with,
+                frame,
                 topic,
                 minutes,
             } => {
                 format!(
-                    "talk with {} about {topic} for {minutes}m",
+                    "{} with {} about {topic} for {minutes}m",
+                    frame.name(),
                     ctx.villager(*with).name
                 )
             }
@@ -379,6 +384,19 @@ pub trait CharacterSet: Clone + Debug + Serialize + DeserializeOwned {
     /// Called at the start of every day (and once at sim start) for each villager.
     /// Returns the day's intentions in any order; the sim sorts them by time.
     fn plan_day(&mut self, who: VillagerId, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned>;
+
+    /// The conversation partner behind a villager: their persona, memory and social
+    /// program. `None` means the shared defaults with no memory.
+    fn interlocutor(&mut self, who: VillagerId, ctx: &Ctx<'_>) -> Option<&mut dyn Interlocutor> {
+        let _ = (who, ctx);
+        None
+    }
+
+    /// The same, read-only, for views.
+    fn interlocutor_ref(&self, who: VillagerId, ctx: &Ctx<'_>) -> Option<&dyn Interlocutor> {
+        let _ = (who, ctx);
+        None
+    }
 
     /// Called when something finished. Return commands to run now, or none to stay put
     /// until the next planned item.
