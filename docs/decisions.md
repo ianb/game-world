@@ -810,3 +810,22 @@ placeholder personal programs for two or three villagers, judged by whether
 the summaries can tell the bakery-counter scene in that document. Prom Week
 and Versu both found authoring the hard part; inherited defaults with small
 personal overrides are how this repo keeps it manageable.
+
+## 2026-10-24: Ground interiority in psychology research too
+
+Ian: "Psych research is also appropriate."
+
+Decided: the defaults behind each character's inner program come from named
+psychology findings, written up in `docs/research/interiority-psychology.md`
+and mapped in `docs/design/conversation.md`. Personality is modelled as
+if-then behavioural signatures (Mischel and Shoda's CAPS), which supports
+writing a program per character; traits are parameters to shared defaults.
+Self-concept is a belief that can be wrong; views of others are built by
+attribution; "what they think of me" defaults to one's own self-view;
+feelings come from appraisal; warmth comes from disclosure answered with
+perceived responsiveness; memory keeps peaks and endings and weighs the bad
+more.
+
+Implications: findings with mixed later support (self-discrepancy's
+emotion mapping) are defaults to override, not rules. Still direction only;
+nothing built.

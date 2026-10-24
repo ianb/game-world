@@ -54,3 +54,7 @@ project's prose preferences; the notes were not.
   models, speech acts, politeness, bids for connection, misfires and
   breaching, plus Versu and Prom Week, as background for how villagers'
   conversations should work.
+- `interiority-psychology.md` (2026-10-24): personality as if-then
+  signatures, self-concept, attribution and metaperception, rejection
+  sensitivity, appraisal and mood, how intimacy forms, and how memory
+  weighs episodes, as background for villagers' inner lives.

@@ -1,7 +1,8 @@
 # Conversations and interiority: proposal
 
 2026-10-24. Not built yet. Direction from Ian over several messages (see the
-decision log); background in `docs/research/conversation-frames.md`.
+decision log); background in `docs/research/conversation-frames.md` and
+`docs/research/interiority-psychology.md`.
 
 ## Principles
 
@@ -104,6 +105,38 @@ Each character implements `out_of_frame` as a standard part of their
 program, even if it only adjusts the default: who laughs it off, who is
 scandalised, who plays along.
 
+## The inner model, grounded in psychology
+
+What each villager carries, and the research behind the defaults:
+
+- **Personality is the program.** Per-character code is a set of if-then
+  signatures (Mischel and Shoda): "if someone I'm not easy with starts small
+  talk, I get anxious". Traits like introversion are parameters to the
+  shared defaults, not the personality itself. Moment-to-moment stance
+  varies around the person's centre, drawn from their own stream (Fleeson).
+- **Self-concept:** a few central beliefs ("I'm reliable"), hoped-for and
+  feared selves, and the gaps between them. A failed hope saddens, a failed
+  duty agitates (Higgins, as a default). Self-views can be wrong and resist
+  correction (Swann). Being turned away lowers felt standing (Leary).
+- **Views of others:** impressions built by attribution. The default
+  explains others' behaviour by character and one's own by circumstance
+  (fundamental attribution error, actor-observer asymmetry). "What do they
+  think of me?" defaults to one's own self-view, nudged by what the other
+  actually did (Kenny and DePaulo).
+- **Sensitivities:** rejection sensitivity and attachment style as
+  parameters that change how bids are made and answers are read (Downey and
+  Feldman; Hazan and Shaver).
+- **Feelings:** appraisal of what happened against the person's goals,
+  standards and attitudes (OCC, Lazarus), coloured by mood (Forgas), and
+  partly caught from the room (contagion).
+- **Warmth:** made by disclosure answered with responsiveness, as the
+  discloser perceives it (Reis and Shaver), deepening gradually and needing
+  to be matched (Altman and Taylor; Aron). Familiarity also grows just from
+  crossing paths (Festinger et al.; Zajonc).
+- **Memory:** an episode is kept by its peak and its end, and bad weighs
+  more than good (Kahneman; Baumeister), unless the person's program
+  forgives.
+
 ## What a character's program provides
 
 Each has a shared default in the toolbox, the way `toolbox::human` answers
@@ -111,14 +144,14 @@ needs today:
 
 | Hook | Question it answers |
 |---|---|
-| `stance` | How do I come into this, given who it is, where, who's watching, my mood? |
-| `propose` | What frame do I open with, if any? |
-| `answer_bid` | Toward, away (with or without an account), or against? |
-| `next_move` | What do I mean to do next? |
-| `perform` | How well does it come out? |
-| `take_up` | What do I take their move as, and how does it make me feel? |
-| `out_of_frame` | What do I do when they step outside? |
-| `remember`, `recall` | What do I keep from this, and what do I make of them now? |
+| `stance` | How do I come into this, given who it is, where, who's watching, my mood? Default: warmth and dominance complement the other's (interpersonal circumplex), varied around my centre. |
+| `propose` | What frame do I open with, if any? Default: the setting's frame, deeper only with history (social penetration). |
+| `answer_bid` | Toward, away (with or without an account), or against? Default: toward when it matches how close we are and my mood allows. |
+| `next_move` | What do I mean to do next? Default: in-frame moves serving my current goal; match a disclosure. |
+| `perform` | How well does it come out? Default: skill plus a roll; teasing and flirting are the hardest to land. |
+| `take_up` | What do I take their move as, and how does it make me feel? Default: attribution to character, appraisal against my goals and standards, coloured by mood and rejection sensitivity. |
+| `out_of_frame` | What do I do when they step outside? Default: make sense, repair, sanction (Garfinkel). |
+| `remember`, `recall` | What do I keep from this, and what do I make of them now? Default: peak and end, bad weighted more. |
 
 A typical character writes three or four of these: the shy one's `stance`
 and `take_up`, the gossip's `next_move`, everyone's `out_of_frame`.
@@ -156,8 +189,9 @@ and `take_up`, the gossip's `next_move`, everyone's `out_of_frame`.
 
 ## Open questions
 
-- Should characters be able to be wrong about themselves (self-concept as
-  belief), or is self-concept accurate?
+- Should characters be able to be wrong about themselves? The research says
+  people routinely are, and that their beliefs about how others see them
+  mostly mirror their self-view. Leaning: yes, self-concept is a belief.
 - Norms: shared only, or can each character judge breaches by their own
   standards? Leaning: frames shared, judgement personal.
 - How many beats in a conversation, and does length matter to uptake?
