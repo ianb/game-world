@@ -772,3 +772,41 @@ bought bread at 70) and narrows "Tom keeps his schedule unless he is
 starving" to Tom's bar. New shared behaviour goes in `toolbox::human`;
 a character opts out of a piece by handling that trigger itself. No
 character struct changed shape, so the layout version stays.
+
+## 2026-10-24: Interiority as per-character programs; conversations as negotiated frames
+
+Ian, over several messages: "I want something a little more thought out
+than just like a bunch of scores of warmth and such... a self-concept and
+concept of others as a model. And that we will typically write a program
+for each character that represents this interiority." "Maybe what we need
+is things like, how warm is a conversation, not what is the warmth between
+two people." "There might be a bit of negotiation in a conversation... The
+negotiation establishes what can occur. (Outside of socially inappropriate
+behavior, which exists but is an exception)... there can still be
+intention and actual received behavior... it's just landing wrong." "You
+could probably base the set on some research... out of frame is possible
+and might require another handler. If we have a player people love to
+experiment with breaking convention, so it's worth making that a typical
+thing you implement in a character."
+
+Decided (direction; not built yet):
+
+- No relationship scores. Conversations are recorded with observable parts;
+  each participant reads them through their own program and keeps episodes;
+  feelings about a person are read from memory by that person's program.
+- Conversations run in shared, negotiated frames drawn from research
+  (`docs/research/conversation-frames.md`): greeting, transaction, small
+  talk, catching up, favour, confiding, courting, quarrel. Shifting frame
+  is a bid answered toward, away or against.
+- Each move records intent, performance and each hearer's uptake.
+- Breaking frame is its own event, and every character implements an
+  `out_of_frame` handler on top of a shared default.
+- Characters know each other only through perception; direct reads of
+  another character's private state are removed.
+
+Implications: the full proposal is `docs/design/conversation.md`. The first
+spike is four frames, about ten moves, shared defaults for every hook, and
+placeholder personal programs for two or three villagers, judged by whether
+the summaries can tell the bakery-counter scene in that document. Prom Week
+and Versu both found authoring the hard part; inherited defaults with small
+personal overrides are how this repo keeps it manageable.

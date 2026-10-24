@@ -50,3 +50,7 @@ project's prose preferences; the notes were not.
   keep the Rust/TypeScript boundary tight, and reach web and mobile. Notes:
   `notes/stack3_*.md`. Ends with a concrete workspace, crate versions, CI
   checklist, and a first week of work.
+- `conversation-frames.md` (2026-10-24): frames, scripts, relational
+  models, speech acts, politeness, bids for connection, misfires and
+  breaching, plus Versu and Prom Week, as background for how villagers'
+  conversations should work.
