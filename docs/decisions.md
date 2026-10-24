@@ -746,3 +746,29 @@ Implications: snapshot 6, character layout 4. `meal_soon` in the toolbox is
 there for any other character who should hold out for a meal. With Tom
 buying less bread, money shifts toward Mara; on seed 1 Hal now runs out by
 the fourth week, which the summaries flag.
+
+## 2026-10-24: Holding out for meals is human, not Tom's
+
+Ian, on Tom's hunger rule: "Probably this is a general human trait, that
+all characters should inherit."
+
+Decided:
+
+- The rule moves to the toolbox as the default for everyone
+  (`toolbox::hunger`): below 90, keep to the schedule; at 90 or more, wait
+  for a meal under way or due within the hour, else eat now (a loaf from
+  the bakery if they can pay, else the larder at home). Anyone arriving at
+  bed with hunger of 80 or more eats from their own larder first.
+- Characters inherit it. A character's `react` now returns `None` for
+  triggers it does not handle, and the town's dispatch hands those to
+  `toolbox::human`, which answers needs and the bedtime check. Characters
+  override only what is theirs: Tom, starving behind the bar, eats the
+  bar's bread, and checks his hunger while closing up so he can eat there.
+- The larder is the table in the villager's home building, found from
+  content rather than named in each character.
+
+Implications: this supersedes the toolbox default in "Bodies" (which
+bought bread at 70) and narrows "Tom keeps his schedule unless he is
+starving" to Tom's bar. New shared behaviour goes in `toolbox::human`;
+a character opts out of a piece by handling that trigger itself. No
+character struct changed shape, so the layout version stays.

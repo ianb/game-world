@@ -403,45 +403,43 @@ fn summaries_report_deviations_and_settle_into_routine() {
 }
 
 #[test]
-fn tom_keeps_his_schedule_when_hungry_and_eats_when_starving() {
+fn everyone_keeps_their_schedule_when_hungry_and_eats_when_starving() {
     let mut sim: Sim<Town> = Sim::new(1, town());
     let events = sim.step_until(at(14, 0, 0)).unwrap();
-    let tom = sim.ctx().villager_id("tom").unwrap();
-    // Every hunger reaction below urgent leaves the schedule alone.
-    let decided: Vec<&str> = events
-        .iter()
-        .filter_map(|e| match e {
-            Emitted::Decided { who, text, .. } if *who == tom && text.starts_with("hungry (") => {
-                Some(text.as_str())
+    for v in 0..sim.state().villagers.len() {
+        let who = sim::ids::VillagerId(u16::try_from(v).unwrap());
+        let name = sim.state().villagers[v].name.clone();
+        // Every hunger reaction below urgent leaves the schedule alone; every urgent one
+        // gets an answer.
+        for e in &events {
+            let Emitted::Decided { who: w, text, .. } = e else {
+                continue;
+            };
+            if *w != who || !text.starts_with("hungry (") {
+                continue;
             }
-            _ => None,
-        })
-        .collect();
-    assert!(!decided.is_empty(), "Tom never got hungry while awake");
-    for text in &decided {
-        let level: u8 = text["hungry (".len()..]
-            .split(')')
-            .next()
-            .and_then(|n| n.parse().ok())
-            .unwrap();
-        if level < sim::needs::URGENT {
-            assert!(text.contains("it can wait"), "{text}");
-        } else {
-            assert!(
-                text.contains("starving"),
-                "urgent hunger got no answer: {text}"
-            );
+            let level: u8 = text["hungry (".len()..]
+                .split(')')
+                .next()
+                .and_then(|n| n.parse().ok())
+                .unwrap();
+            if level < sim::needs::URGENT {
+                assert!(text.contains("it can wait"), "{name}: {text}");
+            } else {
+                assert!(text.contains("starving"), "{name}: {text}");
+            }
+        }
+        // And everyone eats every day.
+        for day in 0..14 {
+            let ate = events.iter().any(|e| {
+                matches!(e, Emitted::Activity { who: w, activity, tick, .. }
+                    if *w == who && activity == "eat" && tick.0 / sim::time::TICKS_PER_DAY == day)
+            });
+            assert!(ate, "{name} did not eat on day {day}");
         }
     }
-    // He did break his schedule to eat at least once, and he eats every day.
+    // Tom's own twist: starving behind the bar, he eats the bar's bread.
     assert!(sim.state().characters.tom.hunger_breaks > 0);
-    for day in 0..14 {
-        let ate = events.iter().any(|e| {
-            matches!(e, Emitted::Activity { who, activity, tick, .. }
-                if *who == tom && activity == "eat" && tick.0 / sim::time::TICKS_PER_DAY == day)
-        });
-        assert!(ate, "Tom did not eat on day {day}");
-    }
 }
 
 #[test]

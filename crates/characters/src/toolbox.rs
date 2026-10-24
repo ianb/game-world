@@ -1,7 +1,7 @@
 //! What character code is written against. Grows from what characters want to say.
 use rand::RngExt;
 use rand_pcg::Pcg32;
-use sim::brain::{Command, Ctx, Party, Planned, Target};
+use sim::brain::{Command, Ctx, Party, Planned, Target, Trigger};
 use sim::ids::{ObjectId, VillagerId};
 use sim::needs::Need;
 use sim::time::{TICKS_PER_MINUTE, TimeOfDay, Weekday};
@@ -219,11 +219,67 @@ pub fn buy_ale(ctx: &Ctx<'_>, me: &str) -> Option<Vec<Command>> {
     ])
 }
 
-/// The baseline answer to a pressing need, for any villager: the privy, the well, a loaf
-/// from the bakery (or the larder at home when urgent and broke), and a yawn for sleep,
-/// which the schedule handles. Characters call this unless they have something better.
+/// Hunger at which anyone eats something before going to sleep.
+pub const BEDTIME_HUNGER: u8 = 80;
+/// A meal due within this many minutes is worth waiting for, even starving.
+pub const MEAL_WINDOW_MINUTES: u32 = 60;
+
+/// The table in the villager's home, which stands in for the larder.
 #[must_use]
-pub fn satisfy(ctx: &Ctx<'_>, me: &str, need: Need, level: u8, home_table: &str) -> Vec<Command> {
+pub fn home_table(ctx: &Ctx<'_>, me: &str) -> Option<ObjectId> {
+    let home = &ctx.content.villagers.iter().find(|v| v.id == me)?.home;
+    ctx.world
+        .objects
+        .iter()
+        .position(|o| o.kind == "table" && &o.building == home)
+        .map(|i| ObjectId(u16::try_from(i).expect("few objects")))
+}
+
+/// Eats something now: a loaf from the bakery if they can pay, else the larder at home.
+/// `home_first` turns that round, for a snack at bedtime when the shop is shut.
+#[must_use]
+pub fn eat_something(ctx: &Ctx<'_>, me: &str, home_first: bool) -> Vec<Command> {
+    let larder = || {
+        home_table(ctx, me).map(|t| {
+            vec![
+                Command::Note("something from the larder".into()),
+                errand(t, "eat", 15),
+            ]
+        })
+    };
+    let bakery = || {
+        buy_bread(ctx, me).map(|mut cmds| {
+            cmds.push(errand(object(ctx, "shelf_bakery"), "eat", 10));
+            cmds
+        })
+    };
+    let food = if home_first {
+        larder().or_else(bakery)
+    } else {
+        bakery().or_else(larder)
+    };
+    food.unwrap_or_else(|| vec![Command::Note("nothing to eat anywhere".into())])
+}
+
+/// The human default for hunger: keep to the schedule while merely hungry; when starving,
+/// wait for a meal that is under way or due within the hour, else eat something now.
+#[must_use]
+pub fn hunger(ctx: &Ctx<'_>, me: &str, level: u8) -> Vec<Command> {
+    if level < sim::needs::URGENT {
+        return vec![Command::Note("hungry; it can wait for a meal".into())];
+    }
+    if meal_soon(ctx, me, MEAL_WINDOW_MINUTES) {
+        return vec![Command::Note("starving, but a meal is coming".into())];
+    }
+    let mut cmds = vec![Command::Note("starving; eating now".into())];
+    cmds.extend(eat_something(ctx, me, false));
+    cmds
+}
+
+/// The baseline answer to a pressing need: the privy, the well, hunger as `hunger` says,
+/// and a yawn for sleep, which the schedule handles.
+#[must_use]
+pub fn satisfy(ctx: &Ctx<'_>, me: &str, need: Need, level: u8) -> Vec<Command> {
     let id = villager(ctx, me);
     match need {
         Need::Bladder => match ctx.nearest_object(id, "privy") {
@@ -234,24 +290,31 @@ pub fn satisfy(ctx: &Ctx<'_>, me: &str, need: Need, level: u8, home_table: &str)
             Some(well) => vec![errand(well, "drink-water", 3)],
             None => vec![Command::Note("nowhere to drink".into())],
         },
-        Need::Hunger => {
-            if let Some(mut cmds) = buy_bread(ctx, me) {
-                cmds.push(errand(object(ctx, "shelf_bakery"), "eat", 10));
-                cmds
-            } else if level >= sim::needs::URGENT {
-                vec![
-                    Command::Note("nothing to buy; something from the larder".into()),
-                    errand(object(ctx, home_table), "eat", 15),
-                ]
-            } else {
-                vec![Command::Note("hungry; the next meal will do".into())]
-            }
-        }
+        Need::Hunger => hunger(ctx, me, level),
         Need::Sleep => vec![Command::Note(if level >= sim::needs::URGENT {
             "nodding off".into()
         } else {
             "yawning".into()
         })],
+    }
+}
+
+/// What every villager does unless their own code says otherwise: answer needs, and not
+/// go to sleep starving. Character code returns `None` for a trigger to land here.
+#[must_use]
+pub fn human(trigger: &Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
+    match trigger {
+        Trigger::Need { need, level } => satisfy(ctx, me, *need, *level),
+        Trigger::Arrived if activity_of(ctx, me) == "sleep" => {
+            let hunger = ctx.needs(villager(ctx, me)).hunger;
+            if hunger < BEDTIME_HUNGER {
+                return Vec::new();
+            }
+            let mut cmds = vec![Command::Note(format!("too hungry to sleep ({hunger})"))];
+            cmds.extend(eat_something(ctx, me, true));
+            cmds
+        }
+        _ => Vec::new(),
     }
 }
 

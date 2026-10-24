@@ -2,7 +2,7 @@
 //! world beyond the town, and sells them on to the bakery and the tavern. Supplies enter
 //! and money leaves through him.
 use crate::toolbox::{
-    Plan, activity_of, buy_ale, go, go_tile, pay, satisfy, stock, villager, wait_minutes, weekday,
+    Plan, activity_of, buy_ale, go, go_tile, pay, stock, villager, wait_minutes, weekday,
 };
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
@@ -45,9 +45,9 @@ impl Hal {
         plan.build()
     }
 
-    pub fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>) -> Vec<Command> {
+    pub fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>) -> Option<Vec<Command>> {
         let me = ctx.villager_id("hal").expect("hal exists");
-        match trigger {
+        Some(match trigger {
             // At the edge of town: buy a load and be gone a while.
             Trigger::Arrived if activity_of(ctx, "hal") == "to-market" => {
                 // A full load, a half load when short, or home empty when broke.
@@ -57,10 +57,10 @@ impl Hal {
                 } else if coins >= LOAD_COST / 2 {
                     (LOAD_COST / 2, 2, "a half load at market")
                 } else {
-                    return vec![
+                    return Some(vec![
                         Command::Note("can't afford a load; back empty".into()),
                         go(ctx, "cart_hal", "tend-cart"),
-                    ];
+                    ]);
                 };
                 self.carrying_flour = FLOUR_PER_TRIP / share;
                 self.carrying_ale = ALE_PER_TRIP / share;
@@ -106,11 +106,10 @@ impl Hal {
             Trigger::Arrived if activity_of(ctx, "hal") == "drink" => {
                 buy_ale(ctx, "hal").unwrap_or_else(|| vec![Command::Note("barrel's dry".into())])
             }
-            Trigger::Need { need, level } => satisfy(ctx, "hal", *need, *level, "table_hal"),
             Trigger::Passing { other } if activity_of(ctx, "hal") != "sleep" => {
                 vec![Command::Greet { with: *other }]
             }
-            _ => Vec::new(),
-        }
+            _ => return None,
+        })
     }
 }

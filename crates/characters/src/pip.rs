@@ -2,7 +2,7 @@
 //! turns up at the bakery at noon to pester Mara for a bun. Eclectic by design, to exercise
 //! wandering, greetings and conversations.
 use crate::mara::Mara;
-use crate::toolbox::{Plan, activity_of, go_tile, pick, satisfy, stock, stock_of, wait_minutes};
+use crate::toolbox::{Plan, activity_of, go_tile, pick, stock, stock_of, wait_minutes};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
@@ -26,9 +26,9 @@ impl Pip {
         ctx: &Ctx<'_>,
         rng: &mut Pcg32,
         mara: &Mara,
-    ) -> Vec<Command> {
+    ) -> Option<Vec<Command>> {
         let me = ctx.villager_id("pip").expect("pip exists");
-        match trigger {
+        Some(match trigger {
             // Roaming: pick a random ground tile, walk there, pause, repeat.
             Trigger::Arrived if activity_of(ctx, "pip") == "roam" => {
                 vec![wait_minutes(*pick(rng, &[3u32, 5, 8]), "roam")]
@@ -68,7 +68,6 @@ impl Pip {
                     vec![Command::Note("no bun today".into())]
                 }
             }
-            Trigger::Need { need, level } => satisfy(ctx, "pip", need, level, "table_house"),
             // An unroutable roam target: shrug and try somewhere else.
             Trigger::Stuck => {
                 let town = ctx.place_id("town").expect("town exists");
@@ -87,7 +86,7 @@ impl Pip {
                 self.greetings_today += 1;
                 vec![Command::Greet { with: other }]
             }
-            _ => Vec::new(),
-        }
+            _ => return None,
+        })
     }
 }

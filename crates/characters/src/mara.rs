@@ -2,7 +2,7 @@
 //! what she bakes, and when Tom is in a bad mood she brings him a pastry before her
 //! evening drink.
 use crate::tom::Tom;
-use crate::toolbox::{Plan, buy_ale, go, satisfy, stock, stock_of};
+use crate::toolbox::{Plan, buy_ale, go, stock, stock_of};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
@@ -45,10 +45,10 @@ impl Mara {
         plan.build()
     }
 
-    pub fn react(&mut self, trigger: Trigger, ctx: &Ctx<'_>, tom: &Tom) -> Vec<Command> {
+    pub fn react(&mut self, trigger: Trigger, ctx: &Ctx<'_>, tom: &Tom) -> Option<Vec<Command>> {
         let me = ctx.villager_id("mara").expect("mara exists");
         let tom_id = ctx.villager_id("tom");
-        match trigger {
+        Some(match trigger {
             Trigger::Arrived => match ctx.villager(me).activity.as_str() {
                 // Two measures of flour make six loaves. No flour, no bread.
                 "bake" => {
@@ -71,9 +71,8 @@ impl Mara {
                 "drink" => {
                     buy_ale(ctx, "mara").unwrap_or_else(|| vec![Command::Note("no ale".into())])
                 }
-                _ => Vec::new(),
+                _ => return None,
             },
-            Trigger::Need { need, level } => satisfy(ctx, "mara", need, level, "table_house"),
             // Settling in at the tavern with Tom behind the bar: a proper chat.
             Trigger::Encounter { other }
                 if Some(other) == tom_id && ctx.villager(me).activity == "drink" =>
@@ -108,7 +107,7 @@ impl Mara {
             {
                 vec![Command::Greet { with: other }]
             }
-            _ => Vec::new(),
-        }
+            _ => return None,
+        })
     }
 }

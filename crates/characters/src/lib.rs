@@ -80,13 +80,17 @@ impl CharacterSet for Town {
             nell,
             hal,
         } = self;
-        match ctx.villager(who).id.as_str() {
-            "mara" => mara.react(trigger, ctx, tom),
-            "tom" => tom.react(trigger, ctx, rng, mara),
-            "pip" => pip.react(trigger, ctx, rng, mara),
+        let id = ctx.villager(who).id.as_str();
+        // Each character answers what is theirs; anything they pass on (`None`) gets the
+        // behaviour every villager shares.
+        let own = match id {
+            "mara" => mara.react(trigger.clone(), ctx, tom),
+            "tom" => tom.react(trigger.clone(), ctx, rng, mara),
+            "pip" => pip.react(trigger.clone(), ctx, rng, mara),
             "nell" => nell.react(&trigger, ctx),
             "hal" => hal.react(&trigger, ctx),
-            _ => Vec::new(),
-        }
+            _ => None,
+        };
+        own.unwrap_or_else(|| toolbox::human(&trigger, ctx, id))
     }
 }

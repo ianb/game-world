@@ -5364,7 +5364,7 @@
     },
     {
       "kind": "Decided",
-      "text": "hungry (71) -> bread -1 at shelf_bakery; eat for 10m @ shelf_bakery then back",
+      "text": "hungry (71) -> note: hungry; it can wait for a meal",
       "tick": 36420,
       "who": 1
     },
@@ -5374,34 +5374,8 @@
           "trigger": "hungry (71)"
         }
       },
-      "delta": -1,
-      "good": "bread",
-      "kind": "Stocked",
-      "now": 5,
-      "object": 7,
-      "tick": 36420,
-      "who": 1
-    },
-    {
-      "activity": "walking",
-      "cause": {
-        "Reaction": {
-          "trigger": "hungry (71)"
-        }
-      },
-      "kind": "Activity",
-      "tick": 36420,
-      "who": 1
-    },
-    {
-      "activity": "eat",
-      "cause": {
-        "Reaction": {
-          "trigger": "hungry (71)"
-        }
-      },
-      "eta": 36460,
-      "kind": "Departed",
+      "kind": "Noted",
+      "text": "hungry; it can wait for a meal",
       "tick": 36420,
       "who": 1
     },
@@ -5417,14 +5391,6 @@
       "kind": "Moved",
       "place": 0,
       "tick": 36430,
-      "who": 1,
-      "x": 21,
-      "y": 5
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 36430,
       "who": 4,
       "x": 9,
       "y": 16
@@ -5433,14 +5399,6 @@
       "kind": "Moved",
       "place": 0,
       "tick": 36440,
-      "who": 1,
-      "x": 22,
-      "y": 5
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 36440,
       "who": 4,
       "x": 9,
       "y": 15
@@ -5449,36 +5407,9 @@
       "kind": "Moved",
       "place": 0,
       "tick": 36450,
-      "who": 1,
-      "x": 23,
-      "y": 5
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 36450,
       "who": 4,
       "x": 8,
       "y": 15
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 36460,
-      "who": 1,
-      "x": 24,
-      "y": 5
-    },
-    {
-      "activity": "eat",
-      "cause": {
-        "Reaction": {
-          "trigger": "hungry (71)"
-        }
-      },
-      "kind": "Activity",
-      "tick": 36460,
-      "who": 1
     },
     {
       "kind": "Moved",
@@ -5533,7 +5464,7 @@
       "delta": -1,
       "good": "bread",
       "kind": "Stocked",
-      "now": 4,
+      "now": 5,
       "object": 7,
       "tick": 36470,
       "who": 4
@@ -5551,60 +5482,6 @@
       "object": 20,
       "tick": 36470,
       "who": 4
-    },
-    {
-      "activity": "walking",
-      "cause": "Return",
-      "kind": "Activity",
-      "tick": 37060,
-      "who": 1
-    },
-    {
-      "activity": "tend-shop",
-      "cause": "Return",
-      "eta": 37100,
-      "kind": "Departed",
-      "tick": 37060,
-      "who": 1
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 37070,
-      "who": 1,
-      "x": 24,
-      "y": 6
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 37080,
-      "who": 1,
-      "x": 23,
-      "y": 6
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 37090,
-      "who": 1,
-      "x": 22,
-      "y": 6
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 37100,
-      "who": 1,
-      "x": 21,
-      "y": 6
-    },
-    {
-      "activity": "tend-shop",
-      "cause": "Schedule",
-      "kind": "Activity",
-      "tick": 37100,
-      "who": 1
     },
     {
       "activity": "walking",
@@ -5897,7 +5774,7 @@
       "delta": -1,
       "good": "bread",
       "kind": "Stocked",
-      "now": 3,
+      "now": 4,
       "object": 7,
       "tick": 38070,
       "who": 2
@@ -6195,7 +6072,7 @@
     },
     {
       "kind": "Decided",
-      "text": "hungry (77) -> note: hungry; the next meal will do",
+      "text": "hungry (77) -> note: hungry; it can wait for a meal",
       "tick": 40860,
       "who": 3
     },
@@ -6206,7 +6083,7 @@
         }
       },
       "kind": "Noted",
-      "text": "hungry; the next meal will do",
+      "text": "hungry; it can wait for a meal",
       "tick": 40860,
       "who": 3
     },
@@ -7111,7 +6988,7 @@
       "delta": -1,
       "good": "bread",
       "kind": "Stocked",
-      "now": 2,
+      "now": 3,
       "object": 7,
       "tick": 43670,
       "who": 3
@@ -10619,7 +10496,7 @@
     },
     {
       "kind": "Decided",
-      "text": "hungry (92) -> note: nothing to buy; something from the larder; eat for 15m @ table_house then back",
+      "text": "hungry (92) -> note: starving; eating now; note: something from the larder; eat for 15m @ table_house then back",
       "tick": 48060,
       "who": 3
     },
@@ -10630,7 +10507,18 @@
         }
       },
       "kind": "Noted",
-      "text": "nothing to buy; something from the larder",
+      "text": "starving; eating now",
+      "tick": 48060,
+      "who": 3
+    },
+    {
+      "cause": {
+        "Reaction": {
+          "trigger": "hungry (92)"
+        }
+      },
+      "kind": "Noted",
+      "text": "something from the larder",
       "tick": 48060,
       "who": 3
     },
@@ -20372,6 +20260,42 @@
     },
     {
       "kind": "Need",
+      "level": 73,
+      "need": "Thirst",
+      "tick": 65220,
+      "who": 1
+    },
+    {
+      "kind": "Decided",
+      "text": "thirsty (73) -> drink-water for 3m @ well_square then back",
+      "tick": 65220,
+      "who": 1
+    },
+    {
+      "activity": "walking",
+      "cause": {
+        "Reaction": {
+          "trigger": "thirsty (73)"
+        }
+      },
+      "kind": "Activity",
+      "tick": 65220,
+      "who": 1
+    },
+    {
+      "activity": "drink-water",
+      "cause": {
+        "Reaction": {
+          "trigger": "thirsty (73)"
+        }
+      },
+      "eta": 65500,
+      "kind": "Departed",
+      "tick": 65220,
+      "who": 1
+    },
+    {
+      "kind": "Need",
       "level": 75,
       "need": "Bladder",
       "tick": 65220,
@@ -20380,29 +20304,6 @@
     {
       "kind": "Decided",
       "text": "needs the privy (75) -> relieve for 4m @ privy_tavern then back",
-      "tick": 65220,
-      "who": 1
-    },
-    {
-      "activity": "walking",
-      "cause": {
-        "Reaction": {
-          "trigger": "needs the privy (75)"
-        }
-      },
-      "kind": "Activity",
-      "tick": 65220,
-      "who": 1
-    },
-    {
-      "activity": "relieve",
-      "cause": {
-        "Reaction": {
-          "trigger": "needs the privy (75)"
-        }
-      },
-      "eta": 65460,
-      "kind": "Departed",
       "tick": 65220,
       "who": 1
     },
@@ -20617,34 +20518,66 @@
       "place": 0,
       "tick": 65440,
       "who": 1,
-      "x": 17,
-      "y": 18
+      "x": 18,
+      "y": 19
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 65450,
       "who": 1,
-      "x": 17,
-      "y": 17
+      "x": 19,
+      "y": 19
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 65460,
       "who": 1,
-      "x": 17,
+      "x": 20,
+      "y": 19
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 65470,
+      "who": 1,
+      "x": 20,
+      "y": 18
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 65480,
+      "who": 1,
+      "x": 20,
+      "y": 17
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 65490,
+      "who": 1,
+      "x": 20,
       "y": 16
     },
     {
-      "activity": "relieve",
+      "kind": "Moved",
+      "place": 0,
+      "tick": 65500,
+      "who": 1,
+      "x": 21,
+      "y": 16
+    },
+    {
+      "activity": "drink-water",
       "cause": {
         "Reaction": {
-          "trigger": "needs the privy (75)"
+          "trigger": "thirsty (73)"
         }
       },
       "kind": "Activity",
-      "tick": 65460,
+      "tick": 65500,
       "who": 1
     },
     {
@@ -20673,217 +20606,156 @@
     },
     {
       "activity": "walking",
-      "cause": "Return",
+      "cause": {
+        "Reaction": {
+          "trigger": "needs the privy (75)"
+        }
+      },
       "kind": "Activity",
-      "tick": 65700,
+      "tick": 65680,
       "who": 1
     },
     {
-      "activity": "bring-pastry",
-      "cause": "Return",
-      "eta": 65940,
+      "activity": "relieve",
+      "cause": {
+        "Reaction": {
+          "trigger": "needs the privy (75)"
+        }
+      },
+      "eta": 65720,
       "kind": "Departed",
-      "tick": 65700,
+      "tick": 65680,
       "who": 1
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 65690,
+      "who": 1,
+      "x": 20,
+      "y": 16
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 65700,
+      "who": 1,
+      "x": 20,
+      "y": 15
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 65710,
       "who": 1,
-      "x": 17,
-      "y": 17
+      "x": 19,
+      "y": 15
     },
     {
       "kind": "Moved",
       "place": 0,
       "tick": 65720,
       "who": 1,
-      "x": 17,
-      "y": 18
+      "x": 18,
+      "y": 15
+    },
+    {
+      "activity": "relieve",
+      "cause": {
+        "Reaction": {
+          "trigger": "needs the privy (75)"
+        }
+      },
+      "kind": "Activity",
+      "tick": 65720,
+      "who": 1
+    },
+    {
+      "activity": "walking",
+      "cause": "Return",
+      "kind": "Activity",
+      "tick": 65960,
+      "who": 1
+    },
+    {
+      "activity": "bring-pastry",
+      "cause": "Return",
+      "eta": 66260,
+      "kind": "Departed",
+      "tick": 65960,
+      "who": 1
     },
     {
       "kind": "Moved",
       "place": 0,
-      "tick": 65730,
+      "tick": 65970,
       "who": 1,
-      "x": 17,
-      "y": 19
+      "x": 19,
+      "y": 15
     },
     {
       "kind": "Moved",
       "place": 0,
-      "tick": 65740,
+      "tick": 65980,
       "who": 1,
-      "x": 17,
-      "y": 20
+      "x": 20,
+      "y": 15
     },
     {
       "kind": "Moved",
       "place": 0,
-      "tick": 65750,
+      "tick": 65990,
       "who": 1,
-      "x": 17,
-      "y": 21
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65760,
-      "who": 1,
-      "x": 17,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65770,
-      "who": 1,
-      "x": 16,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65780,
-      "who": 1,
-      "x": 15,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65790,
-      "who": 1,
-      "x": 14,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65800,
-      "who": 1,
-      "x": 13,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65810,
-      "who": 1,
-      "x": 12,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65820,
-      "who": 1,
-      "x": 11,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65830,
-      "who": 1,
-      "x": 10,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65840,
-      "who": 1,
-      "x": 9,
-      "y": 22
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65850,
-      "who": 1,
-      "x": 9,
-      "y": 21
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65860,
-      "who": 1,
-      "x": 9,
-      "y": 20
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65870,
-      "who": 1,
-      "x": 9,
-      "y": 19
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65880,
-      "who": 1,
-      "x": 9,
-      "y": 18
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65890,
-      "who": 1,
-      "x": 9,
-      "y": 17
-    },
-    {
-      "kind": "Moved",
-      "place": 0,
-      "tick": 65900,
-      "who": 1,
-      "x": 9,
+      "x": 20,
       "y": 16
     },
     {
       "kind": "Moved",
       "place": 0,
-      "tick": 65910,
+      "tick": 66000,
       "who": 1,
-      "x": 9,
-      "y": 15
+      "x": 20,
+      "y": 17
     },
     {
       "kind": "Moved",
       "place": 0,
-      "tick": 65920,
+      "tick": 66010,
       "who": 1,
-      "x": 8,
-      "y": 15
+      "x": 20,
+      "y": 18
     },
     {
       "kind": "Moved",
       "place": 0,
-      "tick": 65930,
+      "tick": 66020,
       "who": 1,
-      "x": 7,
-      "y": 15
+      "x": 20,
+      "y": 19
     },
     {
       "kind": "Moved",
       "place": 0,
-      "tick": 65940,
+      "tick": 66030,
       "who": 1,
-      "x": 6,
-      "y": 15
+      "x": 19,
+      "y": 19
     },
     {
-      "activity": "bring-pastry",
-      "cause": "Plan",
-      "kind": "Activity",
-      "tick": 65940,
-      "who": 1
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66040,
+      "who": 1,
+      "x": 18,
+      "y": 19
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66050,
+      "who": 1,
+      "x": 17,
+      "y": 19
     },
     {
       "kind": "Need",
@@ -20924,10 +20796,26 @@
     {
       "kind": "Moved",
       "place": 0,
+      "tick": 66060,
+      "who": 1,
+      "x": 17,
+      "y": 20
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
       "tick": 66070,
       "who": 3,
       "x": 13,
       "y": 8
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66070,
+      "who": 1,
+      "x": 17,
+      "y": 21
     },
     {
       "kind": "Moved",
@@ -20940,10 +20828,26 @@
     {
       "kind": "Moved",
       "place": 0,
+      "tick": 66080,
+      "who": 1,
+      "x": 17,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
       "tick": 66090,
       "who": 3,
       "x": 13,
       "y": 10
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66090,
+      "who": 1,
+      "x": 16,
+      "y": 22
     },
     {
       "kind": "Moved",
@@ -20956,10 +20860,26 @@
     {
       "kind": "Moved",
       "place": 0,
+      "tick": 66100,
+      "who": 1,
+      "x": 15,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
       "tick": 66110,
       "who": 3,
       "x": 14,
       "y": 11
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66110,
+      "who": 1,
+      "x": 14,
+      "y": 22
     },
     {
       "kind": "Moved",
@@ -20972,10 +20892,26 @@
     {
       "kind": "Moved",
       "place": 0,
+      "tick": 66120,
+      "who": 1,
+      "x": 13,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
       "tick": 66130,
       "who": 3,
       "x": 16,
       "y": 11
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66130,
+      "who": 1,
+      "x": 12,
+      "y": 22
     },
     {
       "kind": "Moved",
@@ -20988,6 +20924,14 @@
     {
       "kind": "Moved",
       "place": 0,
+      "tick": 66140,
+      "who": 1,
+      "x": 11,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
       "tick": 66150,
       "who": 3,
       "x": 17,
@@ -20996,10 +20940,26 @@
     {
       "kind": "Moved",
       "place": 0,
+      "tick": 66150,
+      "who": 1,
+      "x": 10,
+      "y": 22
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
       "tick": 66160,
       "who": 3,
       "x": 17,
       "y": 13
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66160,
+      "who": 1,
+      "x": 9,
+      "y": 22
     },
     {
       "kind": "Moved",
@@ -21019,6 +20979,93 @@
       "kind": "Activity",
       "tick": 66170,
       "who": 3
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66170,
+      "who": 1,
+      "x": 9,
+      "y": 21
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66180,
+      "who": 1,
+      "x": 9,
+      "y": 20
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66190,
+      "who": 1,
+      "x": 9,
+      "y": 19
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66200,
+      "who": 1,
+      "x": 9,
+      "y": 18
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66210,
+      "who": 1,
+      "x": 9,
+      "y": 17
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66220,
+      "who": 1,
+      "x": 9,
+      "y": 16
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66230,
+      "who": 1,
+      "x": 9,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66240,
+      "who": 1,
+      "x": 8,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66250,
+      "who": 1,
+      "x": 7,
+      "y": 15
+    },
+    {
+      "kind": "Moved",
+      "place": 0,
+      "tick": 66260,
+      "who": 1,
+      "x": 6,
+      "y": 15
+    },
+    {
+      "activity": "bring-pastry",
+      "cause": "Plan",
+      "kind": "Activity",
+      "tick": 66260,
+      "who": 1
     },
     {
       "activity": "walking",
@@ -25229,7 +25276,7 @@
             "second": 0
           },
           "schedule": false,
-          "text": "bread -2 at shelf_bakery"
+          "text": "bread -3 at shelf_bakery"
         },
         {
           "activity": "bake",
@@ -25501,7 +25548,7 @@
       "who": 4
     }
   ],
-  "hash": "0a0ed2ed8f6e9093",
+  "hash": "673578e984524eba",
   "protocol_version": 12,
   "seed": 1
 }

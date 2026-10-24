@@ -1,10 +1,11 @@
 //! Tom, who keeps the tavern. The eclectic one: a mood only he tracks, Sundays off at the
 //! pond, late openings when he is low, and an evening check on whether anyone came.
-//! He keeps to his schedule when hungry and breaks it only when starving.
+//! Starving, he eats the bar's bread; otherwise his body behaves like anyone's
+//! (`toolbox::human`).
 use crate::mara::Mara;
 use crate::toolbox::{
-    Plan, activity_of, buy_bread, errand, go_tile, meal_soon, object, pay, pick, satisfy, stock,
-    stock_of, together, wait_minutes, weekday,
+    MEAL_WINDOW_MINUTES, Plan, activity_of, eat_something, errand, go_tile, meal_soon, object, pay,
+    pick, stock, stock_of, together, wait_minutes, weekday,
 };
 use content::{Pos, Rect};
 use rand_pcg::Pcg32;
@@ -27,8 +28,9 @@ const YARD: Rect = Rect {
 /// How many patches he will clear in one morning before opening.
 const WEEDING_PATCHES: u8 = 4;
 const WEEDING_RADIUS: u16 = 2;
-/// Hunger at which he will not go to bed without eating.
-const BEDTIME_HUNGER: u8 = 80;
+/// Hunger at which he will not go to bed without eating; he checks while closing up,
+/// so he can eat at the bar.
+const BEDTIME_HUNGER: u8 = crate::toolbox::BEDTIME_HUNGER;
 /// A loaf a day for the bar.
 pub const BAR_BREAD_PRICE: u32 = 2;
 
@@ -40,7 +42,7 @@ pub struct Tom {
     pub fish_caught: u16,
     /// Patches cleared so far this morning.
     pub weeded_today: u8,
-    /// Times hunger got the better of his schedule.
+    /// Times hunger sent him behind the bar for bread.
     pub hunger_breaks: u16,
     /// The day he last bought bread for the bar, so he buys once a day at most.
     pub bar_bread_day: u32,
@@ -60,50 +62,28 @@ impl Default for Tom {
 }
 
 impl Tom {
-    /// Tom keeps to his schedule when he is merely hungry. Starving, with no meal coming
-    /// within the hour, he eats: bread from the bar, else a loaf from the bakery, else the
-    /// larder at home.
-    fn hungry(&mut self, level: u8, ctx: &Ctx<'_>) -> Vec<Command> {
-        if level < URGENT {
-            return vec![Command::Note("hungry; it can wait for a meal".into())];
-        }
-        if meal_soon(ctx, "tom", 60) {
-            return vec![Command::Note("starving, but a meal is coming".into())];
-        }
-        self.hunger_breaks += 1;
-        Tom::eat_something(ctx)
-    }
-
-    /// Bread from the bar, else a loaf from the bakery, else the larder at home.
-    fn eat_something(ctx: &Ctx<'_>) -> Vec<Command> {
-        if stock_of(ctx, "bar_tavern", "bread") > 0 {
-            return vec![
-                Command::Note("starving; bread from behind the bar".into()),
-                stock(ctx, "bar_tavern", "bread", -1),
-                errand(object(ctx, "bar_tavern"), "eat", 10),
-            ];
-        }
-        if let Some(mut cmds) = buy_bread(ctx, "tom") {
-            cmds.insert(0, Command::Note("starving; off to the bakery".into()));
-            cmds.push(errand(object(ctx, "shelf_bakery"), "eat", 10));
-            return cmds;
-        }
+    /// Bread from behind the bar, eaten at the bar.
+    fn bar_meal(ctx: &Ctx<'_>) -> Vec<Command> {
         vec![
-            Command::Note("starving; whatever is in the larder".into()),
-            errand(object(ctx, "table_house"), "eat", 15),
+            Command::Note("starving; bread from behind the bar".into()),
+            stock(ctx, "bar_tavern", "bread", -1),
+            errand(object(ctx, "bar_tavern"), "eat", 10),
         ]
     }
 
     /// Closing up hungry: he eats something before bed rather than wake up starving.
-    fn closing_up(&mut self, ctx: &Ctx<'_>) -> Vec<Command> {
+    fn closing_up(ctx: &Ctx<'_>) -> Vec<Command> {
         let me = ctx.villager_id("tom").expect("tom exists");
         let hunger = ctx.needs(me).hunger;
         if hunger < BEDTIME_HUNGER {
             return Vec::new();
         }
-        self.hunger_breaks += 1;
         let mut cmds = vec![Command::Note(format!("too hungry to sleep ({hunger})"))];
-        cmds.extend(Tom::eat_something(ctx));
+        if stock_of(ctx, "bar_tavern", "bread") > 0 {
+            cmds.extend(Tom::bar_meal(ctx));
+        } else {
+            cmds.extend(eat_something(ctx, "tom", true));
+        }
         cmds
     }
 
@@ -183,8 +163,8 @@ impl Tom {
         ctx: &Ctx<'_>,
         rng: &mut Pcg32,
         mara: &Mara,
-    ) -> Vec<Command> {
-        match trigger {
+    ) -> Option<Vec<Command>> {
+        Some(match trigger {
             Trigger::Arrived if activity_of(ctx, "tom") == "weeding" => {
                 vec![
                     Command::Clear {
@@ -251,12 +231,19 @@ impl Tom {
                     self.mood
                 ))]
             }
+            // Starving behind the bar, he eats the bar's bread. Anything else about needs is
+            // the human default.
             Trigger::Need {
                 need: Need::Hunger,
                 level,
-            } => self.hungry(level, ctx),
-            Trigger::Need { need, level } => satisfy(ctx, "tom", need, level, "table_house"),
-            Trigger::Arrived if activity_of(ctx, "tom") == "close-up" => self.closing_up(ctx),
+            } if level >= URGENT
+                && !meal_soon(ctx, "tom", MEAL_WINDOW_MINUTES)
+                && stock_of(ctx, "bar_tavern", "bread") > 0 =>
+            {
+                self.hunger_breaks += 1;
+                Tom::bar_meal(ctx)
+            }
+            Trigger::Arrived if activity_of(ctx, "tom") == "close-up" => Tom::closing_up(ctx),
             // Opening the bar: top up its bread if it is low and the bakery has some.
             Trigger::Arrived
                 if activity_of(ctx, "tom") == "tend-bar"
@@ -268,7 +255,7 @@ impl Tom {
             Trigger::Passing { other } if activity_of(ctx, "tom") != "sleep" => {
                 vec![Command::Greet { with: other }]
             }
-            _ => Vec::new(),
-        }
+            _ => return None,
+        })
     }
 }
