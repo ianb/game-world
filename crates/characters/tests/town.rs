@@ -401,3 +401,75 @@ fn summaries_report_deviations_and_settle_into_routine() {
     // Causes travel with the lines.
     assert!(sunday.news.iter().any(|i| i.cause.is_some()));
 }
+
+#[test]
+fn tom_keeps_his_schedule_when_hungry_and_eats_when_starving() {
+    let mut sim: Sim<Town> = Sim::new(1, town());
+    let events = sim.step_until(at(14, 0, 0)).unwrap();
+    let tom = sim.ctx().villager_id("tom").unwrap();
+    // Every hunger reaction below urgent leaves the schedule alone.
+    let decided: Vec<&str> = events
+        .iter()
+        .filter_map(|e| match e {
+            Emitted::Decided { who, text, .. } if *who == tom && text.starts_with("hungry (") => {
+                Some(text.as_str())
+            }
+            _ => None,
+        })
+        .collect();
+    assert!(!decided.is_empty(), "Tom never got hungry while awake");
+    for text in &decided {
+        let level: u8 = text["hungry (".len()..]
+            .split(')')
+            .next()
+            .and_then(|n| n.parse().ok())
+            .unwrap();
+        if level < sim::needs::URGENT {
+            assert!(text.contains("it can wait"), "{text}");
+        } else {
+            assert!(
+                text.contains("starving"),
+                "urgent hunger got no answer: {text}"
+            );
+        }
+    }
+    // He did break his schedule to eat at least once, and he eats every day.
+    assert!(sim.state().characters.tom.hunger_breaks > 0);
+    for day in 0..14 {
+        let ate = events.iter().any(|e| {
+            matches!(e, Emitted::Activity { who, activity, tick, .. }
+                if *who == tom && activity == "eat" && tick.0 / sim::time::TICKS_PER_DAY == day)
+        });
+        assert!(ate, "Tom did not eat on day {day}");
+    }
+}
+
+#[test]
+fn errands_queue_rather_than_replace_each_other() {
+    // Waking with several pressing needs, each gets its errand in turn.
+    let mut sim: Sim<Town> = Sim::new(1, town());
+    let events = sim.step_until(at(1, 9, 0)).unwrap();
+    let tom = sim.ctx().villager_id("tom").unwrap();
+    let morning: Vec<&str> = events
+        .iter()
+        .filter_map(|e| match e {
+            Emitted::Activity {
+                who,
+                activity,
+                tick,
+                ..
+            } if *who == tom && *tick >= at(1, 7, 30) && activity != "walking" => {
+                Some(activity.as_str())
+            }
+            _ => None,
+        })
+        .collect();
+    let relieve = morning.iter().position(|a| *a == "relieve");
+    let water = morning.iter().position(|a| *a == "drink-water");
+    let eat = morning.iter().position(|a| *a == "eat");
+    assert!(
+        relieve.is_some() && water.is_some() && eat.is_some(),
+        "{morning:?}"
+    );
+    assert!(relieve < water && water < eat, "{morning:?}");
+}

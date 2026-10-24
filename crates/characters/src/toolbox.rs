@@ -254,3 +254,24 @@ pub fn satisfy(ctx: &Ctx<'_>, me: &str, need: Need, level: u8, home_table: &str)
         })],
     }
 }
+
+/// Whether `me` is eating, walking to eat, or has a meal in the plan within `minutes`.
+#[must_use]
+pub fn meal_soon(ctx: &Ctx<'_>, me: &str, minutes: u32) -> bool {
+    let v = ctx.villager(villager(ctx, me));
+    // Eating, walking to eat, or on an errand that will go back to eating.
+    if v.activity == "eat"
+        || v.moving.as_ref().is_some_and(|m| m.then == "eat")
+        || v.interlude.as_ref().is_some_and(|i| {
+            i.back_activity == "eat" || i.queued.iter().any(|e| e.activity == "eat")
+        })
+    {
+        return true;
+    }
+    let until = ctx.tick.plus(minutes * TICKS_PER_MINUTE);
+    v.plan.range(ctx.tick..=until).any(|(_, cmds)| {
+        cmds.iter().any(|(_, c)| {
+            matches!(c, Command::GoTo { activity, .. } | Command::Wait { activity, .. } | Command::Interlude { activity, .. } if activity == "eat")
+        })
+    })
+}

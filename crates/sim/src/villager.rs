@@ -1,5 +1,6 @@
 //! Per-villager simulation state: where they are, where they are going, what they are doing.
 use crate::brain::Command;
+use crate::brain::Target;
 use crate::ids::PlaceId;
 use crate::needs::Needs;
 use crate::protocol::Cause;
@@ -87,4 +88,16 @@ pub struct Interlude {
     /// Ticks left on a `Wait` that the errand interrupted, re-armed on return.
     pub back_wait: Option<u32>,
     pub back_cause: Cause,
+    /// Further errands asked for while this one was under way, done in order before
+    /// going back.
+    pub queued: Vec<Errand>,
+}
+
+/// An errand waiting its turn.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Errand {
+    pub target: Target,
+    pub activity: String,
+    pub minutes: u32,
+    pub cause: Cause,
 }

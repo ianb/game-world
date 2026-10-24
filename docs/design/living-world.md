@@ -144,7 +144,8 @@ left a stale return point that a later errand walked back to. It also
 shows behaviour that is wrong rather than broken:
 
 - People wake up urgently needing the privy, because needs only ask the
-  character hourly and not on waking.
+  character hourly and not on waking. (Fixed 2026-10-24: waking asks.)
 - Tom has no supper in his schedule and is often urgently hungry at night.
+  (2026-10-24: he now eats when starving, and before bed when very hungry.)
 - Tom runs out of money every week or two: his bar's margin does not cover
   his buying. That is a story as much as a bug, and the summaries flag it.

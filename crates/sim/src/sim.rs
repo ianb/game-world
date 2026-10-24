@@ -7,14 +7,14 @@ use crate::event::Event;
 use crate::hash::{HashParts, hash_of};
 use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::input::{Input, InputKind, Source};
-use crate::needs::Needs;
+use crate::needs::{Need, Needs};
 use crate::protocol::{Cause, Emitted, PlanItem};
 use crate::queue::EventQueue;
 use crate::rng::Streams;
 use crate::snapshot::{self, SnapshotError};
 use crate::terrain::{Surface, Terrain};
 use crate::time::{TICKS_PER_DAY, TICKS_PER_HOUR, TICKS_PER_MINUTE, Tick};
-use crate::villager::{Crossing, Interlude, Movement, PlannedLeg, VillagerState};
+use crate::villager::{Crossing, Errand, Interlude, Movement, PlannedLeg, VillagerState};
 use content::{Content, Nav, Pos, Spot, WALK_TICKS_PER_TILE, World, nav};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -289,9 +289,10 @@ impl<C: CharacterSet> Sim<C> {
                 if v.generation != generation {
                     return;
                 }
-                // A conversation defers the wait until it ends.
+                // A conversation defers the wait until it ends. One ending this very tick
+                // has not been wrapped up yet; re-queueing puts this wait after it.
                 if let Some(end) = v.talk_until
-                    && end > tick
+                    && end >= tick
                 {
                     v.wait_until = Some(end);
                     self.state
@@ -300,17 +301,11 @@ impl<C: CharacterSet> Sim<C> {
                     return;
                 }
                 v.wait_until = None;
-                if let Some(back) = v.interlude.take()
-                    && v.activity == back.activity
+                if v.interlude
+                    .as_ref()
+                    .is_some_and(|i| i.activity == v.activity)
                 {
-                    let target = Target::Tile {
-                        place: back.back_place,
-                        pos: back.back_pos,
-                    };
-                    v.resume_wait = back.back_wait;
-                    v.resume_cause = Some(back.back_cause);
-                    v.cause = Cause::Return;
-                    self.go_to_with(who, &target, back.back_activity, true, out);
+                    self.errand_done(who, out);
                     return;
                 }
                 self.react(who, Trigger::Waited, out);
@@ -326,26 +321,52 @@ impl<C: CharacterSet> Sim<C> {
                 self.react(who, Trigger::TalkEnded { other, topic }, out);
             }
             Event::ObjectFree { .. } => {}
-            Event::Body { who } => {
-                self.state
-                    .queue
-                    .schedule(tick.plus(TICKS_PER_HOUR), Event::Body { who });
-                let asleep = self.state.villagers[who.index()].activity == "sleep";
-                let crossed = self.state.villagers[who.index()]
-                    .needs
-                    .hour(asleep, &mut self.state.rng.villagers[who.index()].body);
-                for need in crossed {
-                    let level = self.state.villagers[who.index()].needs.get(need);
-                    out.push(Emitted::Need {
-                        tick,
-                        who,
-                        need,
-                        level,
-                    });
-                    if !asleep {
-                        self.react(who, Trigger::Need { need, level }, out);
-                    }
-                }
+            Event::Woke { who } => self.woke(who, out),
+            Event::Body { who } => self.body_hour(who, out),
+        }
+    }
+
+    /// Needs do not ask while asleep, so anything that got pressing overnight asks on
+    /// waking rather than waiting for the next hourly tick.
+    fn woke(&mut self, who: VillagerId, out: &mut Vec<Emitted>) {
+        let tick = self.state.tick;
+        if self.state.villagers[who.index()].activity == "sleep" {
+            return;
+        }
+        for need in [Need::Bladder, Need::Thirst, Need::Hunger] {
+            let level = self.state.villagers[who.index()].needs.get(need);
+            if level >= crate::needs::PRESSING {
+                out.push(Emitted::Need {
+                    tick,
+                    who,
+                    need,
+                    level,
+                });
+                self.react(who, Trigger::Need { need, level }, out);
+            }
+        }
+    }
+
+    /// An hour of a body: needs rise, sleep repays, thresholds crossed ask the character.
+    fn body_hour(&mut self, who: VillagerId, out: &mut Vec<Emitted>) {
+        let tick = self.state.tick;
+        self.state
+            .queue
+            .schedule(tick.plus(TICKS_PER_HOUR), Event::Body { who });
+        let asleep = self.state.villagers[who.index()].activity == "sleep";
+        let crossed = self.state.villagers[who.index()]
+            .needs
+            .hour(asleep, &mut self.state.rng.villagers[who.index()].body);
+        for need in crossed {
+            let level = self.state.villagers[who.index()].needs.get(need);
+            out.push(Emitted::Need {
+                tick,
+                who,
+                need,
+                level,
+            });
+            if !asleep {
+                self.react(who, Trigger::Need { need, level }, out);
             }
         }
     }
@@ -831,9 +852,13 @@ impl<C: CharacterSet> Sim<C> {
         let tick = self.state.tick;
         let v = &mut self.state.villagers[who.index()];
         if v.activity != activity {
+            let woke = v.activity == "sleep";
             v.activity = activity.to_string();
             v.since = tick;
             v.needs.on_activity(activity);
+            if woke {
+                self.state.queue.schedule(tick, Event::Woke { who });
+            }
         }
         out.push(Emitted::Activity {
             tick,
@@ -1029,38 +1054,74 @@ impl<C: CharacterSet> Sim<C> {
     ) {
         let v = &mut self.state.villagers[who.index()];
         if let Some(i) = &mut v.interlude {
-            i.activity.clone_from(&activity);
-            i.minutes = minutes;
-        } else {
-            // Where to come back to: the current spot and what was going on, or
-            // the destination and purpose if mid-journey.
-            let (back_place, back_pos, back_activity) = match &v.moving {
-                Some(m) => match m.legs.last() {
-                    Some(l) => (l.place, l.to, m.then.clone()),
-                    None => (
-                        v.place,
-                        m.path.last().copied().unwrap_or(v.pos),
-                        m.then.clone(),
-                    ),
-                },
-                None => (v.place, v.pos, v.activity.clone()),
-            };
-            let back_wait = v
-                .wait_until
-                .filter(|end| end.0 > self.state.tick.0)
-                .map(|end| end.0 - self.state.tick.0);
-            v.interlude = Some(Interlude {
-                activity: activity.clone(),
-                minutes,
-                back_place,
-                back_pos,
-                back_activity,
-                back_wait,
-                back_cause: v.cause.clone(),
-            });
+            // Already on an errand: this one waits its turn, unless it is the same thing.
+            let same = i.activity == activity || i.queued.iter().any(|e| e.activity == activity);
+            if !same {
+                i.queued.push(Errand {
+                    target: target.clone(),
+                    activity,
+                    minutes,
+                    cause: self.cause.clone(),
+                });
+            }
+            return;
         }
+        // Where to come back to: the current spot and what was going on, or
+        // the destination and purpose if mid-journey.
+        let (back_place, back_pos, back_activity) = match &v.moving {
+            Some(m) => match m.legs.last() {
+                Some(l) => (l.place, l.to, m.then.clone()),
+                None => (
+                    v.place,
+                    m.path.last().copied().unwrap_or(v.pos),
+                    m.then.clone(),
+                ),
+            },
+            None => (v.place, v.pos, v.activity.clone()),
+        };
+        let back_wait = v
+            .wait_until
+            .filter(|end| end.0 > self.state.tick.0)
+            .map(|end| end.0 - self.state.tick.0);
+        v.interlude = Some(Interlude {
+            activity: activity.clone(),
+            minutes,
+            back_place,
+            back_pos,
+            back_activity,
+            back_wait,
+            back_cause: v.cause.clone(),
+            queued: Vec::new(),
+        });
         self.state.villagers[who.index()].cause = self.cause.clone();
         self.go_to(who, target, activity, out);
+    }
+
+    /// An errand's time is up: on to the next queued errand, or back where they were.
+    fn errand_done(&mut self, who: VillagerId, out: &mut Vec<Emitted>) {
+        let v = &mut self.state.villagers[who.index()];
+        let Some(i) = v.interlude.as_mut() else {
+            return;
+        };
+        if !i.queued.is_empty() {
+            let next = i.queued.remove(0);
+            i.activity.clone_from(&next.activity);
+            i.minutes = next.minutes;
+            v.cause = next.cause;
+            self.go_to(who, &next.target, next.activity, out);
+            return;
+        }
+        let Some(back) = v.interlude.take() else {
+            return;
+        };
+        let target = Target::Tile {
+            place: back.back_place,
+            pos: back.back_pos,
+        };
+        v.resume_wait = back.back_wait;
+        v.resume_cause = Some(back.back_cause);
+        v.cause = Cause::Return;
+        self.go_to_with(who, &target, back.back_activity, true, out);
     }
 
     fn stuck(&mut self, who: VillagerId, reason: String, out: &mut Vec<Emitted>) {

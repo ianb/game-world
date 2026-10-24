@@ -1,13 +1,16 @@
 //! Tom, who keeps the tavern. The eclectic one: a mood only he tracks, Sundays off at the
 //! pond, late openings when he is low, and an evening check on whether anyone came.
+//! He keeps to his schedule when hungry and breaks it only when starving.
 use crate::mara::Mara;
 use crate::toolbox::{
-    Plan, activity_of, go_tile, pay, pick, satisfy, stock, together, wait_minutes, weekday,
+    Plan, activity_of, buy_bread, errand, go_tile, meal_soon, object, pay, pick, satisfy, stock,
+    stock_of, together, wait_minutes, weekday,
 };
 use content::{Pos, Rect};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
+use sim::needs::{Need, URGENT};
 use sim::time::Weekday;
 
 /// Fishing spots on the pond's west bank, in building-free ground.
@@ -24,6 +27,8 @@ const YARD: Rect = Rect {
 /// How many patches he will clear in one morning before opening.
 const WEEDING_PATCHES: u8 = 4;
 const WEEDING_RADIUS: u16 = 2;
+/// Hunger at which he will not go to bed without eating.
+const BEDTIME_HUNGER: u8 = 80;
 /// A loaf a day for the bar.
 pub const BAR_BREAD_PRICE: u32 = 2;
 
@@ -35,6 +40,10 @@ pub struct Tom {
     pub fish_caught: u16,
     /// Patches cleared so far this morning.
     pub weeded_today: u8,
+    /// Times hunger got the better of his schedule.
+    pub hunger_breaks: u16,
+    /// The day he last bought bread for the bar, so he buys once a day at most.
+    pub bar_bread_day: u32,
 }
 
 impl Default for Tom {
@@ -44,11 +53,76 @@ impl Default for Tom {
             days_since_day_off: 0,
             fish_caught: 0,
             weeded_today: 0,
+            hunger_breaks: 0,
+            bar_bread_day: u32::MAX,
         }
     }
 }
 
 impl Tom {
+    /// Tom keeps to his schedule when he is merely hungry. Starving, with no meal coming
+    /// within the hour, he eats: bread from the bar, else a loaf from the bakery, else the
+    /// larder at home.
+    fn hungry(&mut self, level: u8, ctx: &Ctx<'_>) -> Vec<Command> {
+        if level < URGENT {
+            return vec![Command::Note("hungry; it can wait for a meal".into())];
+        }
+        if meal_soon(ctx, "tom", 60) {
+            return vec![Command::Note("starving, but a meal is coming".into())];
+        }
+        self.hunger_breaks += 1;
+        Tom::eat_something(ctx)
+    }
+
+    /// Bread from the bar, else a loaf from the bakery, else the larder at home.
+    fn eat_something(ctx: &Ctx<'_>) -> Vec<Command> {
+        if stock_of(ctx, "bar_tavern", "bread") > 0 {
+            return vec![
+                Command::Note("starving; bread from behind the bar".into()),
+                stock(ctx, "bar_tavern", "bread", -1),
+                errand(object(ctx, "bar_tavern"), "eat", 10),
+            ];
+        }
+        if let Some(mut cmds) = buy_bread(ctx, "tom") {
+            cmds.insert(0, Command::Note("starving; off to the bakery".into()));
+            cmds.push(errand(object(ctx, "shelf_bakery"), "eat", 10));
+            return cmds;
+        }
+        vec![
+            Command::Note("starving; whatever is in the larder".into()),
+            errand(object(ctx, "table_house"), "eat", 15),
+        ]
+    }
+
+    /// Closing up hungry: he eats something before bed rather than wake up starving.
+    fn closing_up(&mut self, ctx: &Ctx<'_>) -> Vec<Command> {
+        let me = ctx.villager_id("tom").expect("tom exists");
+        let hunger = ctx.needs(me).hunger;
+        if hunger < BEDTIME_HUNGER {
+            return Vec::new();
+        }
+        self.hunger_breaks += 1;
+        let mut cmds = vec![Command::Note(format!("too hungry to sleep ({hunger})"))];
+        cmds.extend(Tom::eat_something(ctx));
+        cmds
+    }
+
+    /// A loaf for the bar when it has fewer than two, if the bakery has one and he can pay.
+    fn stock_the_bar(ctx: &Ctx<'_>) -> Vec<Command> {
+        let me = ctx.villager_id("tom").expect("tom exists");
+        if stock_of(ctx, "bar_tavern", "bread") >= 2
+            || stock_of(ctx, "shelf_bakery", "bread") == 0
+            || ctx.coins(me) < BAR_BREAD_PRICE
+        {
+            return Vec::new();
+        }
+        vec![
+            pay(ctx, "tom", "mara", BAR_BREAD_PRICE, "bread for the bar"),
+            stock(ctx, "shelf_bakery", "bread", -1),
+            stock(ctx, "bar_tavern", "bread", 1),
+        ]
+    }
+
     pub fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
         let me = ctx.villager_id("tom").expect("tom exists");
         let mut plan = Plan::baseline(me, ctx);
@@ -98,13 +172,6 @@ impl Tom {
                 Command::Note(format!("opening late, mood {}", self.mood)),
             );
         }
-        // Bread for the bar's lunches, paid for at opening time; the loaves move with it.
-        plan.at(
-            10,
-            5,
-            pay(ctx, "tom", "mara", BAR_BREAD_PRICE, "bread for the bar"),
-        );
-        plan.at(10, 5, stock(ctx, "shelf_bakery", "bread", -1));
         // Mid-evening check on the room.
         plan.at(19, 30, wait_minutes(30, "tend-bar"));
         plan.build()
@@ -184,7 +251,20 @@ impl Tom {
                     self.mood
                 ))]
             }
+            Trigger::Need {
+                need: Need::Hunger,
+                level,
+            } => self.hungry(level, ctx),
             Trigger::Need { need, level } => satisfy(ctx, "tom", need, level, "table_house"),
+            Trigger::Arrived if activity_of(ctx, "tom") == "close-up" => self.closing_up(ctx),
+            // Opening the bar: top up its bread if it is low and the bakery has some.
+            Trigger::Arrived
+                if activity_of(ctx, "tom") == "tend-bar"
+                    && self.bar_bread_day != ctx.calendar.day_index =>
+            {
+                self.bar_bread_day = ctx.calendar.day_index;
+                Tom::stock_the_bar(ctx)
+            }
             Trigger::Passing { other } if activity_of(ctx, "tom") != "sleep" => {
                 vec![Command::Greet { with: other }]
             }

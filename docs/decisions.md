@@ -718,3 +718,31 @@ Implications: the size of the world is bounded by what the full sim can run
 at the speeds the viewer and the summaries need. The LLM plot layer, when
 it comes, works at one granularity. If the world outgrows full detail, that
 is a new conversation, not an existing plan to pick up.
+
+## 2026-10-24: Tom keeps his schedule unless he is starving
+
+Ian: "Would be great if Tom reacted to extreme hunger, while usually
+sticking to a schedule."
+
+Decided:
+
+- Tom has his own hunger rule instead of the toolbox default (which buys
+  bread as soon as hunger reaches 70). Below 90 he notes it and keeps to his
+  schedule. At 90 or more, unless a meal is already under way or planned
+  within the hour, he eats: bread kept behind the bar, else a loaf from the
+  bakery, else the larder at home. Closing up at 10pm with hunger of 80 or
+  more, he eats before bed rather than sleep through starving.
+- The bar keeps bread now. Opening the bar, Tom buys a loaf from the bakery
+  when the bar has fewer than two, instead of paying for one every day.
+- Needs are asked on waking: anything that got pressing overnight triggers
+  when the villager stops sleeping, not at the next hourly tick. This
+  applies to everyone.
+- Errands queue. Several needs at once (the privy, the well, food) are done
+  one after another before going back, instead of each replacing the last.
+  A wait that ends in the same minute as a conversation now waits for the
+  conversation to wrap up, which had been losing errands' return points.
+
+Implications: snapshot 6, character layout 4. `meal_soon` in the toolbox is
+there for any other character who should hold out for a meal. With Tom
+buying less bread, money shifts toward Mara; on seed 1 Hal now runs out by
+the fourth week, which the summaries flag.

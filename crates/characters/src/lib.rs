@@ -35,7 +35,7 @@ pub struct Town {
 
 impl CharacterSet for Town {
     /// Bump when any character struct changes shape.
-    const LAYOUT_VERSION: u32 = 3;
+    const LAYOUT_VERSION: u32 = 4;
     const BEHAVIOR: u64 = behavior::BEHAVIOR;
 
     fn new(_content: &content::Content, _world: &content::World) -> Self {
