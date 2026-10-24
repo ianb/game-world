@@ -4,6 +4,7 @@
 //! Numbers: ticks and ids are `u32`/`u16` so they cross as plain JS numbers. The seed is
 //! two `u32` halves to avoid `BigInt`. Hashes cross as hex strings.
 use characters::Town;
+use sim::history::History;
 use sim::input::Input;
 use sim::time::Tick;
 use sim::views;
@@ -26,7 +27,7 @@ fn to_js<T: serde::Serialize>(value: &T) -> Result<JsValue, JsError> {
 #[wasm_bindgen]
 #[derive(Debug)]
 pub struct Sim {
-    inner: sim::Sim<Town>,
+    history: History<Town>,
 }
 
 #[wasm_bindgen]
@@ -46,26 +47,26 @@ impl Sim {
         }
         let seed = (u64::from(seed_hi) << 32) | u64::from(seed_lo);
         Ok(Sim {
-            inner: sim::Sim::new(seed, content),
+            history: History::new(seed, content),
         })
     }
 
     pub fn restore(bytes: &[u8], content_json: &str) -> Result<Sim, JsError> {
         console_error_panic_hook::set_once();
         let content = content::load_str(content_json).map_err(|e| JsError::new(&e.to_string()))?;
-        let inner = sim::Sim::restore(bytes, content).map_err(|e| JsError::new(&e.to_string()))?;
-        Ok(Sim { inner })
+        let history = History::restore(bytes, content).map_err(|e| JsError::new(&e.to_string()))?;
+        Ok(Sim { history })
     }
 
     #[must_use]
     pub fn tick(&self) -> u32 {
-        self.inner.tick().0
+        self.history.sim().tick().0
     }
 
     /// Runs to `tick` and returns the emitted events as an array of tagged objects.
     pub fn step_until(&mut self, tick: u32) -> Result<JsValue, JsError> {
         let events = self
-            .inner
+            .history
             .step_until(Tick(tick))
             .map_err(|e| JsError::new(&e.to_string()))?;
         to_js(&events)
@@ -75,26 +76,26 @@ impl Sim {
     pub fn apply_input(&mut self, input: JsValue) -> Result<(), JsError> {
         let input: Input =
             serde_wasm_bindgen::from_value(input).map_err(|e| JsError::new(&e.to_string()))?;
-        self.inner
+        self.history
             .apply_input(input)
             .map_err(|e| JsError::new(&e.to_string()))
     }
 
     #[must_use]
     pub fn snapshot(&self) -> Vec<u8> {
-        self.inner.snapshot()
+        self.history.sim().snapshot()
     }
 
     /// Combined state hash as 16 hex characters.
     #[must_use]
     pub fn hash(&self) -> String {
-        self.inner.hash().hex()
+        self.history.sim().hash().hex()
     }
 
     /// Per-subsystem hashes: tick, rng, queue, world, inputs.
     #[must_use]
     pub fn hash_parts(&self) -> Vec<String> {
-        let h = self.inner.hash();
+        let h = self.history.sim().hash();
         [h.tick, h.rng, h.queue, h.world, h.inputs]
             .iter()
             .map(|p| format!("{p:016x}"))
@@ -103,7 +104,8 @@ impl Sim {
 
     #[must_use]
     pub fn place_ids(&self) -> Vec<String> {
-        self.inner
+        self.history
+            .sim()
             .world()
             .places
             .iter()
@@ -114,8 +116,8 @@ impl Sim {
     /// ASCII render of a place with villagers drawn in, or an empty string for an unknown id.
     #[must_use]
     pub fn render_place(&self, id: &str) -> String {
-        match self.inner.world().place_index.get(id) {
-            Some(&i) => views::render_place_now(&self.inner, i),
+        match self.history.sim().world().place_index.get(id) {
+            Some(&i) => views::render_place_now(self.history.sim(), i),
             None => String::new(),
         }
     }
@@ -123,40 +125,65 @@ impl Sim {
     /// The living ground of a place (surfaces row-major), or an error for an unknown id or
     /// an indoor place.
     pub fn terrain(&self, id: &str) -> Result<JsValue, JsError> {
-        let world = self.inner.world();
+        let world = self.history.sim().world();
         let Some(&i) = world.place_index.get(id) else {
             return Err(JsError::new("unknown place"));
         };
-        to_js(&self.inner.terrain().view(world, i))
+        to_js(&self.history.sim().terrain().view(world, i))
     }
 
     /// Goods on objects as `StockView[]`.
     pub fn economy(&self) -> Result<JsValue, JsError> {
-        to_js(&sim::protocol::stock_views(&self.inner))
+        to_js(&sim::protocol::stock_views(self.history.sim()))
     }
 
     #[must_use]
     pub fn where_is_everyone(&self) -> String {
-        views::where_is_everyone(&self.inner)
+        views::where_is_everyone(self.history.sim())
     }
 
     /// The compiled world (places, objects, doors, roofs) as a `WorldView`.
     pub fn world(&self) -> Result<JsValue, JsError> {
-        to_js(&sim::protocol::world_view(&self.inner))
+        to_js(&sim::protocol::world_view(self.history.sim()))
     }
 
     /// Current villagers as `VillagerView[]`.
     pub fn villagers(&self) -> Result<JsValue, JsError> {
-        to_js(&sim::protocol::villager_views(&self.inner))
+        to_js(&sim::protocol::villager_views(self.history.sim()))
     }
 
     /// The clock as a `ClockView`.
     pub fn clock(&self) -> Result<JsValue, JsError> {
-        to_js(&sim::protocol::clock_view(&self.inner))
+        to_js(&sim::protocol::clock_view(self.history.sim()))
     }
 
     /// The constants behind the needs, as a `RulesView`.
     pub fn rules(&self) -> Result<JsValue, JsError> {
         to_js(&sim::protocol::rules_view())
+    }
+
+    /// Summaries of every finished day, oldest first, as `DaySummary[]`.
+    pub fn summaries(&self) -> Result<JsValue, JsError> {
+        to_js(&self.history.summaries())
+    }
+
+    /// The furthest tick ever reached.
+    #[must_use]
+    pub fn frontier(&self) -> u32 {
+        self.history.frontier().0
+    }
+
+    /// Goes back to `tick` (at or before the frontier) by replaying from the nearest day
+    /// snapshot. Inputs are refused until `back_to_now`.
+    pub fn rewind(&mut self, tick: u32) -> Result<(), JsError> {
+        self.history
+            .rewind(Tick(tick))
+            .map_err(|e| JsError::new(&e.to_string()))
+    }
+
+    pub fn back_to_now(&mut self) -> Result<(), JsError> {
+        self.history
+            .back_to_now()
+            .map_err(|e| JsError::new(&e.to_string()))
     }
 }

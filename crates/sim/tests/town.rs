@@ -333,6 +333,7 @@ fn eta_matches_arrival() {
                 who,
                 activity,
                 tick,
+                ..
             } if activity != "walking" => {
                 if let Some(eta) = pending.remove(&who.0) {
                     assert_eq!(
@@ -392,7 +393,7 @@ fn planned_items_at_the_same_minute_both_run() {
     assert!(
         events
             .iter()
-            .any(|e| matches!(e, Emitted::Decided { text, .. } if text.contains("note: first")))
+            .any(|e| matches!(e, Emitted::Noted { text, .. } if text == "first"))
     );
 }
 

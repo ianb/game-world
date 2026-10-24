@@ -62,6 +62,21 @@ enum Command {
         #[arg(long, default_value = "target/town.png")]
         out: PathBuf,
     },
+    /// What happened each day: deviations from routine first. Summaries are derived from
+    /// the events, so re-running this after changing the summarizer re-reads the past.
+    Summary {
+        #[arg(long, default_value_t = 1)]
+        seed: u64,
+        /// How many days to run.
+        #[arg(long, default_value_t = 14)]
+        days: u32,
+        /// Only print from this day on.
+        #[arg(long, default_value_t = 0)]
+        from: u32,
+        /// List the routine lines too, not just a count.
+        #[arg(long)]
+        routine: bool,
+    },
     /// Money, needs and goods at a given day and time.
     Economy {
         #[arg(long, default_value_t = 1)]
@@ -234,6 +249,23 @@ fn main() -> ExitCode {
             }
             println!("wrote {} ({}x{})", out.display(), img.width(), img.height());
             print!("{}", views::where_is_everyone(&sim));
+            ExitCode::SUCCESS
+        }
+        Command::Summary {
+            seed,
+            days,
+            from,
+            routine,
+        } => {
+            let mut history: sim::history::History<Town> =
+                sim::history::History::new(seed, content);
+            // A little past the last day, so its last planned items settle.
+            history
+                .step_until(Tick(days * TICKS_PER_DAY + 2 * 3600 + 1))
+                .unwrap();
+            for day in history.summaries().iter().filter(|d| d.day >= from) {
+                print!("{}", sim::summary::render(day, routine));
+            }
             ExitCode::SUCCESS
         }
         Command::Economy { seed, day, at } => {

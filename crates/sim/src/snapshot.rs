@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use thiserror::Error;
 
 /// Bumped whenever the state layout changes. Old snapshots are refused, not migrated.
-pub const SNAPSHOT_VERSION: u32 = 4;
+pub const SNAPSHOT_VERSION: u32 = 5;
 
 #[derive(Serialize, Deserialize)]
 struct Envelope<S> {
@@ -14,6 +14,8 @@ struct Envelope<S> {
     /// The character set's own layout version, so a changed character struct is refused
     /// rather than decoded into the wrong fields.
     layout_version: u32,
+    /// The behavior fingerprint the state was produced under.
+    behavior: u64,
     state: S,
 }
 
@@ -25,22 +27,31 @@ pub enum SnapshotError {
     Protocol { found: u32 },
     #[error("snapshot character layout {found} not supported (want {want})")]
     Layout { found: u32, want: u32 },
+    #[error(
+        "snapshot was made by different behavior code ({found:016x}, this build is {want:016x})"
+    )]
+    Behavior { found: u64, want: u64 },
     #[error("snapshot bytes malformed: {0}")]
     Malformed(String),
 }
 
 #[must_use]
-pub fn encode<S: Serialize + Clone>(state: &S, layout_version: u32) -> Vec<u8> {
+pub fn encode<S: Serialize + Clone>(state: &S, layout_version: u32, behavior: u64) -> Vec<u8> {
     let env = Envelope {
         snapshot_version: SNAPSHOT_VERSION,
         protocol_version: PROTOCOL_VERSION,
         layout_version,
+        behavior,
         state: state.clone(),
     };
     postcard::to_allocvec(&env).expect("state is always serializable")
 }
 
-pub fn decode<S: DeserializeOwned>(bytes: &[u8], layout_version: u32) -> Result<S, SnapshotError> {
+pub fn decode<S: DeserializeOwned>(
+    bytes: &[u8],
+    layout_version: u32,
+    behavior: u64,
+) -> Result<S, SnapshotError> {
     // Read the two version varints first so a layout change reports a version error rather
     // than a malformed-bytes error.
     let (snapshot_version, rest): (u32, &[u8]) =
@@ -57,12 +68,20 @@ pub fn decode<S: DeserializeOwned>(bytes: &[u8], layout_version: u32) -> Result<
             found: protocol_version,
         });
     }
-    let (found_layout, _): (u32, &[u8]) =
+    let (found_layout, rest): (u32, &[u8]) =
         postcard::take_from_bytes(rest).map_err(|e| SnapshotError::Malformed(e.to_string()))?;
     if found_layout != layout_version {
         return Err(SnapshotError::Layout {
             found: found_layout,
             want: layout_version,
+        });
+    }
+    let (found_behavior, _): (u64, &[u8]) =
+        postcard::take_from_bytes(rest).map_err(|e| SnapshotError::Malformed(e.to_string()))?;
+    if found_behavior != behavior {
+        return Err(SnapshotError::Behavior {
+            found: found_behavior,
+            want: behavior,
         });
     }
     let (env, trailing): (Envelope<S>, &[u8]) =

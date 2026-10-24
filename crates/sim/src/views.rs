@@ -99,6 +99,15 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
             Emitted::Decided { text, .. } => {
                 let _ = writeln!(out, "  {t} [{text}]");
             }
+            Emitted::Planned { items, dropped, .. } => {
+                plan_lines(&mut out, &t.to_string(), items, dropped);
+            }
+            // Notes made inside a reaction are already in its `Decided` line.
+            Emitted::Noted { text, cause, .. }
+                if !matches!(cause, crate::protocol::Cause::Reaction { .. }) =>
+            {
+                let _ = writeln!(out, "  {t} note: {text}");
+            }
             Emitted::Cleared { x, y, tiles, .. } => {
                 let _ = writeln!(out, "  {t} clears {tiles} tiles around ({x}, {y})");
             }
@@ -194,4 +203,26 @@ pub fn economy<C: CharacterSet>(sim: &Sim<C>) -> String {
         let _ = writeln!(out, "{:<18} {:<8} {}", s.key, s.good, s.count);
     }
     out
+}
+
+/// The day-plan lines of an itinerary. `*` marks items the character added or changed;
+/// the rest are the schedule's.
+fn plan_lines(
+    out: &mut String,
+    t: &str,
+    items: &[crate::protocol::PlanItem],
+    dropped: &[crate::protocol::PlanItem],
+) {
+    let plan: Vec<String> = items
+        .iter()
+        .map(|i| format!("{}{} {}", if i.schedule { "" } else { "*" }, i.at, i.text))
+        .collect();
+    let _ = writeln!(out, "  {t} [plan: {}]", plan.join("; "));
+    if !dropped.is_empty() {
+        let gone: Vec<String> = dropped
+            .iter()
+            .map(|i| format!("{} {}", i.at, i.text))
+            .collect();
+        let _ = writeln!(out, "  {t} [dropped from schedule: {}]", gone.join("; "));
+    }
 }

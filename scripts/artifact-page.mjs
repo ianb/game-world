@@ -44,6 +44,15 @@ const page = `<title>Game World</title>
   canvas.place { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
   #places { grid-column: 1 / -1; }
   #legend { overflow-x: auto; }
+  #days { grid-column: 1 / -1; display: grid; gap: 6px; align-content: start; max-height: 45vh; overflow-y: auto; }
+  #days details { border: 1px solid var(--rule); border-radius: 4px; padding: 4px 8px; }
+  #days details details { border: none; padding: 0; margin-top: 4px; }
+  #days summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+  button.moment { display: grid; grid-template-columns: 6em 1fr; gap: 8px; width: 100%; min-height: 32px; text-align: left; background: none; color: inherit; border: none; border-radius: 4px; padding: 4px 6px; }
+  button.moment:hover { background: var(--bar); }
+  button.moment .when { color: var(--muted); text-align: right; }
+  #clock.past { color: var(--accent); }
+  .muted { color: var(--muted); }
   #everyone { display: grid; grid-template-columns: max-content max-content max-content; gap: 4px 12px; align-items: center; align-content: start; }
   #everyone .muted { color: var(--muted); }
   button.name { min-height: 32px; min-width: 0; padding: 4px 10px; text-align: left; }

@@ -667,3 +667,37 @@ Tom's mood; a character can still override `satisfy`. Rates are constants
 in `crates/sim/src/needs.rs`. The hourly body tick is the first thing in
 the sim that runs on a clock rather than on a schedule entry; it is one
 event per villager per hour, so cheap.
+
+## 2026-10-24: Summaries derived from events, with causes and replay
+
+Ian brought design notes from another session (now in
+`docs/design/living-world.md`): the next step is summaries, derived from
+the event series rather than logged, reporting deviations from routine,
+with causes on events because those cannot be added later, and with a way
+to go back and watch a flagged moment. Replay needs per-character RNG
+streams, behavior versioning alongside snapshots, and observe-only
+instrumentation.
+
+Decided:
+
+- Summaries are code over events (`summary.rs`), fed by a `History` that
+  lives outside the sim's state. Routine is decided by key frequency over
+  the previous week and the same weekday last week; habits that did not
+  happen are news. Summary text is flat tool output, not game text; if it
+  ever reaches a player it needs Ian's voice.
+- Events carry a `Cause`. Day plans are recorded with schedule items marked
+  and dropped schedule items listed, so "Tom changed the day: no tend-bar;
+  added fish" comes straight from the event.
+- `History` snapshots each day start; the viewer and the tools can rewind to
+  any summarised moment and step back to the frontier. Inputs are refused
+  while in the past.
+- RNG streams are per villager (mind, body) and seeded by villager id.
+- A build-time fingerprint of the behavior code goes in every snapshot, and
+  a snapshot from other code is refused.
+
+Implications: protocol 12, snapshot 5. Every golden hash changed because
+the streams changed. `Cause` is externally tagged because postcard cannot
+decode internally tagged enums and causes are in the snapshot. Chained
+causes (goal, plot) wait for goals and plots to exist. The fingerprint
+changes on any edit to those crates, comments included; that is the
+conservative choice.

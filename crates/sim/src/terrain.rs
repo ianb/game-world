@@ -266,9 +266,11 @@ impl Terrain {
         for y in 0..p.height {
             for x in 0..p.width {
                 let pos = Pos { x, y };
-                if self
-                    .surface(world, place, pos)
-                    .is_some_and(Surface::overgrown)
+                // A tile under a privy or a well grows, but nobody can stand there to clear it.
+                if world.passable(place, x, y)
+                    && self
+                        .surface(world, place, pos)
+                        .is_some_and(Surface::overgrown)
                 {
                     out.push(pos);
                 }

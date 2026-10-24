@@ -369,6 +369,10 @@ pub trait CharacterSet: Clone + Debug + Serialize + DeserializeOwned {
     /// Bump whenever any character struct changes shape, so old snapshots are refused.
     const LAYOUT_VERSION: u32;
 
+    /// Fingerprint of the code that decides behavior. A snapshot made under different
+    /// rules is refused, since continuing it would not replay what happened. Zero opts out.
+    const BEHAVIOR: u64 = 0;
+
     /// Initial private state, built from content.
     fn new(content: &Content, world: &World) -> Self;
 

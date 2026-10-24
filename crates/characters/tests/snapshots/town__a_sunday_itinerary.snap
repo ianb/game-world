@@ -3,177 +3,155 @@ source: crates/characters/tests/town.rs
 expression: out
 ---
 Mara
-  1:07am hungry (72)
-  3:07am needs the privy (96)
-  4:07am needs the privy (100)
-  5:07am needs the privy (100)
   6:00am leaves for cook, eta 6:01am
   6:01am cook
-  6:07am needs the privy (100)
-  6:07am [needs the privy (100) -> relieve for 4m @ privy_tavern then back]
+  6:07am hungry (98)
+  6:07am [hungry (98) -> note: nothing to buy; something from the larder; eat for 15m @ table_house then back]
+  6:07am leaves for eat, eta 6:08am
+  6:07am needs the privy (75)
+  6:07am [needs the privy (75) -> relieve for 4m @ privy_tavern then back]
   6:07am leaves for relieve, eta 6:10am
   6:10am relieve
   6:14am leaves for cook, eta 6:17am
   6:17am cook
-  6:35am bread -1 at shelf_bakery (now 0)
   6:40am leaves for bake, eta 6:45am
   6:45am bake
   6:45am [arrived -> flour -2 at pantry_bakery; bread +6 at shelf_bakery]
   6:45am flour -2 at pantry_bakery (now 8)
   6:45am bread +6 at shelf_bakery (now 6)
-  7:07am thirsty (76)
-  7:07am [thirsty (76) -> drink-water for 3m @ well_square then back]
-  7:07am leaves for drink-water, eta 7:10am
-  7:10am drink-water
-  7:13am leaves for bake, eta 7:16am
-  7:16am bake
-  8:07am hungry (96)
-  8:07am [hungry (96) -> bread -1 at shelf_bakery; eat for 10m @ shelf_bakery then back]
-  8:07am bread -1 at shelf_bakery (now 5)
-  8:07am leaves for eat, eta 8:07am
-  8:07am eat
-  8:17am leaves for bake, eta 8:18am
-  8:18am bake
+  7:07am hungry (100)
+  7:07am [hungry (100) -> bread -1 at shelf_bakery; eat for 10m @ shelf_bakery then back]
+  7:07am bread -1 at shelf_bakery (now 5)
+  7:07am leaves for eat, eta 7:07am
+  7:07am eat
+  7:17am leaves for bake, eta 7:18am
+  7:18am bake
   9:00am leaves for tend-shop, eta 9:01am
   9:01am tend-shop
   10:34am [passing Nell -> greet Nell]
   10:34am greets Nell
-  11:07am needs the privy (77)
-  11:07am [needs the privy (77) -> relieve for 4m @ privy_tavern then back]
-  11:07am leaves for relieve, eta 11:09am
+  11:07am thirsty (72)
+  11:07am [thirsty (72) -> drink-water for 3m @ well_square then back]
+  11:07am leaves for drink-water, eta 11:09am
   11:07am [passing Nell -> greet Nell]
   11:07am greets Nell
-  11:09am relieve
-  11:13am leaves for tend-shop, eta 11:15am
-  11:15am tend-shop
-  12:05pm [passing Pip -> greet Pip]
-  12:05pm greets Pip
-  12:05pm talk
-  12:10pm tend-shop
+  11:09am drink-water
+  11:12am leaves for tend-shop, eta 11:14am
+  11:14am tend-shop
+  12:04pm [passing Pip -> greet Pip]
+  12:04pm greets Pip
+  12:04pm talk
+  12:09pm tend-shop
   12:30pm [passing Pip -> greet Pip]
   12:30pm greets Pip
   1:00pm leaves for eat, eta 1:03pm
   1:03pm eat
+  1:07pm needs the privy (94)
+  1:07pm [needs the privy (94) -> relieve for 4m @ privy_tavern then back]
+  1:07pm leaves for relieve, eta 1:08pm
+  1:08pm relieve
+  1:12pm leaves for eat, eta 1:14pm
+  1:14pm eat
   2:00pm leaves for wander, eta 2:03pm
   2:03pm wander
-  2:30pm [passing Tom -> greet Tom]
-  2:30pm greets Tom
-  2:46pm [passing Pip -> greet Pip]
-  2:46pm greets Pip
-  3:13pm [passing Pip -> greet Pip]
-  3:13pm greets Pip
+  2:29pm [passing Tom -> greet Tom]
+  2:29pm greets Tom
   3:40pm [passing Pip -> greet Pip]
   3:40pm greets Pip
-  4:02pm [passing Tom -> greet Tom]
-  4:02pm greets Tom
-  5:07pm needs the privy (74)
-  5:07pm [needs the privy (74) -> relieve for 4m @ privy_tavern then back]
-  5:07pm leaves for relieve, eta 5:08pm
-  5:08pm relieve
-  5:12pm leaves for wander, eta 5:13pm
-  5:13pm wander
-  6:02pm [passing Pip -> greet Pip]
-  6:02pm greets Pip
-  6:07pm thirsty (70)
-  6:07pm [thirsty (70) -> drink-water for 3m @ well_square then back]
-  6:07pm leaves for drink-water, eta 6:07pm
-  6:07pm drink-water
-  6:10pm leaves for wander, eta 6:11pm
-  6:11pm wander
+  4:01pm [passing Tom -> greet Tom]
+  4:01pm greets Tom
+  6:01pm [passing Pip -> greet Pip]
+  6:01pm greets Pip
+  6:07pm needs the privy (70)
+  6:07pm [needs the privy (70) -> relieve for 4m @ privy_tavern then back]
+  6:07pm leaves for relieve, eta 6:08pm
+  6:08pm relieve
+  6:12pm leaves for wander, eta 6:13pm
+  6:13pm wander
   7:00pm leaves for drink, eta 7:03pm
-  7:01pm [passing Hal -> greet Hal]
-  7:01pm greets Hal
   7:03pm drink
   7:03pm [arrived -> ale -1 at barrel_tavern; Mara pays Tom 3 for ale]
-  7:03pm ale -1 at barrel_tavern (now 8)
+  7:03pm ale -1 at barrel_tavern (now 7)
   7:03pm Mara pays Tom 3 for ale
-  8:07pm sleepy (74)
-  8:07pm [sleepy (74) -> note: yawning]
-  9:07pm needs the privy (71)
-  9:07pm [needs the privy (71) -> relieve for 4m @ privy_tavern then back]
-  9:07pm leaves for relieve, eta 9:10pm
-  9:10pm relieve
-  9:14pm leaves for drink, eta 9:17pm
-  9:17pm drink
+  7:07pm sleepy (75)
+  7:07pm [sleepy (75) -> note: yawning]
   9:30pm leaves for sleep, eta 9:38pm
   9:36pm [passing Tom -> greet Tom]
   9:36pm greets Tom
   9:38pm sleep
-  12:00am [plan: 6:00am cook @ stove_house; 6:35am bread -2 at shelf_bakery; 6:40am bake @ oven_bakery; 9:00am tend-shop @ counter_bakery; 1:00pm eat @ table_house; 2:00pm tend-shop @ counter_bakery; 7:00pm drink @ table_tavern_1; 9:30pm sleep @ bed_mara]
+  12:00am [plan: 6:00am cook @ stove_house; 6:40am bake @ oven_bakery; 9:00am tend-shop @ counter_bakery; 1:00pm eat @ table_house; 2:00pm tend-shop @ counter_bakery; 7:00pm drink @ table_tavern_1; 9:30pm sleep @ bed_mara]
 Tom
-  2:28am hungry (91)
-  3:28am hungry (93)
-  4:28am hungry (95)
-  5:28am hungry (97)
-  6:28am hungry (100)
-  6:28am needs the privy (74)
-  7:28am hungry (100)
+  12:01am note: Sunday off after 6 days
   7:30am leaves for eat, eta 7:32am
   7:32am eat
-  8:28am needs the privy (93)
-  8:28am [needs the privy (93) -> relieve for 4m @ privy_tavern then back]
+  8:28am needs the privy (82)
+  8:28am [needs the privy (82) -> relieve for 4m @ privy_tavern then back]
   8:28am leaves for relieve, eta 8:30am
   8:30am relieve
   8:34am leaves for eat, eta 8:37am
   8:37am eat
-  10:30am leaves for fish, eta 10:36am
-  10:36am fish
-  10:36am [arrived -> fish for 55m]
-  11:31am [waited -> fish for 70m]
-  12:41pm [waited -> fish for 70m]
-  1:51pm [waited -> fish for 40m]
-  2:28pm needs the privy (72)
-  2:28pm [needs the privy (72) -> relieve for 4m @ privy_tavern then back]
-  2:28pm leaves for relieve, eta 2:31pm
-  2:30pm [passing Mara -> greet Mara]
-  2:30pm greets Mara
-  2:31pm relieve
-  2:35pm leaves for fish, eta 2:38pm
-  2:38pm fish
-  2:41pm [waited -> fish for 70m]
-  2:48pm [passing Pip -> greet Pip]
-  2:48pm greets Pip
-  3:11pm [passing Pip -> greet Pip]
-  3:11pm greets Pip
-  3:28pm thirsty (70)
-  3:28pm [thirsty (70) -> drink-water for 3m @ well_square then back]
-  3:28pm leaves for drink-water, eta 3:30pm
-  3:30pm drink-water
-  3:33pm leaves for fish, eta 3:35pm
-  3:35pm fish
-  3:58pm [waited -> fish for 70m]
+  10:30am leaves for fish, eta 10:35am
+  10:35am fish
+  10:35am [arrived -> fish for 40m]
+  11:15am [waited -> fish for 40m]
+  11:55am [waited -> fish for 40m]
+  12:35pm [waited -> fish for 55m]
+  1:30pm [waited -> fish for 40m]
+  2:10pm [waited -> fish for 40m]
+  2:28pm needs the privy (76)
+  2:28pm [needs the privy (76) -> relieve for 4m @ privy_tavern then back]
+  2:28pm leaves for relieve, eta 2:30pm
+  2:29pm [passing Mara -> greet Mara]
+  2:29pm greets Mara
+  2:30pm relieve
+  2:34pm leaves for fish, eta 2:37pm
+  2:37pm fish
+  3:00pm [waited -> fish for 70m]
+  3:28pm thirsty (74)
+  3:28pm [thirsty (74) -> drink-water for 3m @ well_square then back]
+  3:28pm leaves for drink-water, eta 3:29pm
+  3:29pm drink-water
+  3:32pm leaves for fish, eta 3:34pm
+  3:34pm fish
   4:00pm leaves for rest, eta 4:05pm
-  4:02pm [passing Mara -> greet Mara]
-  4:02pm greets Mara
+  4:01pm [passing Mara -> greet Mara]
+  4:01pm greets Mara
   4:05pm rest
-  6:05pm [passing Pip -> greet Pip]
-  6:05pm greets Pip
-  6:28pm hungry (74)
-  6:28pm [hungry (74) -> bread -1 at shelf_bakery; Tom pays Mara 2 for bread; eat for 10m @ shelf_bakery then back]
-  6:28pm bread -1 at shelf_bakery (now 2)
-  6:28pm Tom pays Mara 2 for bread
-  6:28pm leaves for eat, eta 6:31pm
+  6:04pm [passing Pip -> greet Pip]
+  6:04pm greets Pip
   6:28pm [passing Pip -> greet Pip]
   6:28pm greets Pip
-  6:31pm eat
-  6:41pm leaves for rest, eta 6:45pm
-  6:45pm rest
-  7:28pm needs the privy (70)
-  7:28pm [needs the privy (70) -> relieve for 4m @ privy_tavern then back]
-  7:28pm leaves for relieve, eta 7:29pm
-  7:28pm [passing Pip -> greet Pip]
-  7:28pm greets Pip
-  7:29pm relieve
-  7:33pm leaves for rest, eta 7:35pm
-  7:35pm rest
-  8:21pm [passing Pip -> greet Pip]
-  8:21pm greets Pip
-  8:28pm sleepy (74)
-  8:28pm [sleepy (74) -> note: yawning]
+  8:28pm hungry (77)
+  8:28pm [hungry (77) -> bread -1 at shelf_bakery; Tom pays Mara 2 for bread; eat for 10m @ shelf_bakery then back]
+  8:28pm bread -1 at shelf_bakery (now 2)
+  8:28pm Tom pays Mara 2 for bread
+  8:28pm leaves for eat, eta 8:31pm
+  8:28pm needs the privy (80)
+  8:28pm [needs the privy (80) -> relieve for 4m @ privy_tavern then back]
+  8:28pm leaves for relieve, eta 8:29pm
+  8:28pm [passing Pip -> greet Pip]
+  8:28pm greets Pip
+  8:29pm relieve
+  8:33pm leaves for rest, eta 8:35pm
+  8:35pm rest
+  9:28pm sleepy (75)
+  9:28pm [sleepy (75) -> note: yawning]
   9:36pm [passing Mara -> greet Mara]
   9:36pm greets Mara
+  10:28pm hungry (93)
+  10:28pm [hungry (93) -> bread -1 at shelf_bakery; Tom pays Mara 2 for bread; eat for 10m @ shelf_bakery then back]
+  10:28pm bread -1 at shelf_bakery (now 0)
+  10:28pm Tom pays Mara 2 for bread
+  10:28pm leaves for eat, eta 10:31pm
+  10:28pm thirsty (71)
+  10:28pm [thirsty (71) -> drink-water for 3m @ well_square then back]
+  10:28pm leaves for drink-water, eta 10:30pm
+  10:30pm drink-water
+  10:33pm leaves for rest, eta 10:36pm
+  10:36pm rest
   11:00pm leaves for sleep, eta 11:02pm
   11:02pm sleep
-  12:00am [plan: 7:30am eat @ table_house; 8:30am note: the yard needs weeding (43 tiles); 8:31am weeding @ town (9, 23); 10:00am tend-bar @ bar_tavern; 10:05am Tom pays Mara 2 for bread for the bar; 10:05am bread -1 at shelf_bakery; 7:30pm tend-bar for 30m; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
+  11:28pm hungry (95)
+  12:00am [plan: 7:30am eat @ table_house; *8:30am note: the yard needs weeding (41 tiles); *8:31am weeding @ town (10, 23); 10:00am tend-bar @ bar_tavern; *10:05am Tom pays Mara 2 for bread for the bar; *10:05am bread -1 at shelf_bakery; *7:30pm tend-bar for 30m; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
 Mara { batches_baked: 7, pastries_delivered: 1, fish_stories_heard: 0 }
-Tom { mood: 5, days_since_day_off: 1, fish_caught: 2, weeded_today: 0 }
+Tom { mood: 5, days_since_day_off: 1, fish_caught: 1, weeded_today: 0 }

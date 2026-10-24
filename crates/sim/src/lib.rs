@@ -7,6 +7,7 @@
 pub mod brain;
 pub mod event;
 pub mod hash;
+pub mod history;
 pub mod ids;
 pub mod input;
 pub mod needs;
@@ -15,6 +16,7 @@ pub mod queue;
 pub mod rng;
 pub mod sim;
 pub mod snapshot;
+pub mod summary;
 pub mod terrain;
 pub mod time;
 pub mod views;

@@ -2,6 +2,7 @@
 use crate::brain::Command;
 use crate::ids::PlaceId;
 use crate::needs::Needs;
+use crate::protocol::Cause;
 use crate::time::Tick;
 use content::Pos;
 use serde::{Deserialize, Serialize};
@@ -51,8 +52,9 @@ pub struct VillagerState {
     pub plan_generation: u32,
     pub activity: String,
     pub moving: Option<Movement>,
-    /// Today's remaining planned commands, by tick, in the order they were planned.
-    pub plan: BTreeMap<Tick, Vec<Command>>,
+    /// Today's remaining planned commands, by tick, in the order they were planned, each
+    /// with why it is in the plan.
+    pub plan: BTreeMap<Tick, Vec<(Cause, Command)>>,
     /// Tick of the last change of activity, for views.
     pub since: Tick,
     /// Activity to return to when a conversation ends.
@@ -68,6 +70,10 @@ pub struct VillagerState {
     pub interlude: Option<Interlude>,
     /// Ticks of an interrupted wait to re-arm once the walk back ends.
     pub resume_wait: Option<u32>,
+    /// Why the current intention (walk, wait, activity) was started.
+    pub cause: Cause,
+    /// The cause to restore when the walk back from an errand ends.
+    pub resume_cause: Option<Cause>,
 }
 
 /// An errand that returns the villager to where they were.
@@ -80,4 +86,5 @@ pub struct Interlude {
     pub back_activity: String,
     /// Ticks left on a `Wait` that the errand interrupted, re-armed on return.
     pub back_wait: Option<u32>,
+    pub back_cause: Cause,
 }

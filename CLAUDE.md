@@ -19,7 +19,8 @@ headless Chromium and prints the scene dump; `just wasm-smoke` runs a week
 in Node and compares the hash with the native golden.
 
 Text views are how you see the town: `cargo run -p tools -- day` for a day's
-itineraries, `render`, `route`, `travel-matrix`, `where`, `economy`. The viewer's
+itineraries, `summary` for what was unusual each day, `render`, `route`,
+`travel-matrix`, `where`, `economy`. The viewer's
 `window.__scene()` returns the same views from the browser. To see the
 tiles as drawn, build the viewer and run `node scripts/viewer-shot.mjs
 --days 20 --place town`, then read the PNG it writes.

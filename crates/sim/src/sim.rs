@@ -1,13 +1,14 @@
 //! The `Sim` handle: step, apply inputs, emit events, snapshot, hash.
 use crate::brain::{
-    CharacterSet, Command, Ctx, ENCOUNTER_COOLDOWN, ENCOUNTER_RANGE, Party, Target, Trigger,
+    CharacterSet, Command, Ctx, ENCOUNTER_COOLDOWN, ENCOUNTER_RANGE, Party, Planned, Target,
+    Trigger,
 };
 use crate::event::Event;
 use crate::hash::{HashParts, hash_of};
 use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::input::{Input, InputKind, Source};
 use crate::needs::Needs;
-use crate::protocol::Emitted;
+use crate::protocol::{Cause, Emitted, PlanItem};
 use crate::queue::EventQueue;
 use crate::rng::Streams;
 use crate::snapshot::{self, SnapshotError};
@@ -76,6 +77,8 @@ pub struct Sim<C: CharacterSet> {
     state: SimState<C>,
     /// Transient: current nesting of `react` calls.
     depth: u8,
+    /// Transient: why the commands now running are running. Set before every dispatch.
+    cause: Cause,
 }
 
 /// Content is hashed through JSON rather than postcard because the schedule target uses
@@ -121,14 +124,17 @@ impl<C: CharacterSet> Sim<C> {
                     needs: Needs::default(),
                     interlude: None,
                     resume_wait: None,
+                    cause: Cause::Sim,
+                    resume_cause: None,
                 }
             })
             .collect();
         let characters = C::new(&content, &world);
-        let mut rng = Streams::from_seed(seed);
+        let ids: Vec<&str> = content.villagers.iter().map(|v| v.id.as_str()).collect();
+        let mut rng = Streams::from_seed(seed, &ids);
         let mut villagers = villagers;
-        for v in &mut villagers {
-            v.needs = Needs::starting(&mut rng.body);
+        for (v, streams) in villagers.iter_mut().zip(&mut rng.villagers) {
+            v.needs = Needs::starting(&mut streams.body);
         }
         let mut queue = EventQueue::default();
         queue.schedule(Tick(TICKS_PER_DAY), Event::DayRollover);
@@ -160,6 +166,7 @@ impl<C: CharacterSet> Sim<C> {
             world,
             nav,
             depth: 0,
+            cause: Cause::Sim,
         };
         let mut out = Vec::new();
         sim.plan_everyone(&mut out);
@@ -266,9 +273,11 @@ impl<C: CharacterSet> Sim<C> {
                 let Some(cmds) = self.state.villagers[who.index()].plan.remove(&tick) else {
                     return;
                 };
-                for cmd in cmds {
+                for (cause, cmd) in cmds {
+                    self.cause = cause;
                     self.run_command(who, cmd, out);
                 }
+                self.cause = Cause::Sim;
             }
             Event::Arrive { who, generation } => {
                 if self.state.villagers[who.index()].generation == generation {
@@ -299,6 +308,8 @@ impl<C: CharacterSet> Sim<C> {
                         pos: back.back_pos,
                     };
                     v.resume_wait = back.back_wait;
+                    v.resume_cause = Some(back.back_cause);
+                    v.cause = Cause::Return;
                     self.go_to_with(who, &target, back.back_activity, true, out);
                     return;
                 }
@@ -322,7 +333,7 @@ impl<C: CharacterSet> Sim<C> {
                 let asleep = self.state.villagers[who.index()].activity == "sleep";
                 let crossed = self.state.villagers[who.index()]
                     .needs
-                    .hour(asleep, &mut self.state.rng.body);
+                    .hour(asleep, &mut self.state.rng.villagers[who.index()].body);
                 for need in crossed {
                     let level = self.state.villagers[who.index()].needs.get(need);
                     out.push(Emitted::Need {
@@ -362,6 +373,7 @@ impl<C: CharacterSet> Sim<C> {
                 }
                 self.interrupt(*who);
                 let v = &mut self.state.villagers[who.index()];
+                v.cause = Cause::Input { seq: input.seq };
                 v.place = *place;
                 v.pos = Pos { x: *x, y: *y };
                 let (vp, vx, vy) = (v.place, v.pos.x, v.pos.y);
@@ -397,7 +409,7 @@ impl<C: CharacterSet> Sim<C> {
         let count = self.state.villagers.len();
         for i in 0..count {
             let who = VillagerId(u16::try_from(i).expect("few villagers"));
-            let (planned, text) = {
+            let (planned, items, dropped) = {
                 let ctx = Ctx {
                     tick: now,
                     calendar: now.calendar(),
@@ -408,30 +420,59 @@ impl<C: CharacterSet> Sim<C> {
                     terrain: &self.state.terrain,
                     stock: &self.state.stock,
                 };
-                let planned =
-                    self.state
-                        .characters
-                        .plan_day(who, &ctx, &mut self.state.rng.schedule);
-                let mut sorted = planned.clone();
-                sorted.sort_by_key(|p| p.at);
-                let items: Vec<String> = sorted
-                    .iter()
-                    .map(|p| format!("{} {}", p.at, p.command.summary(&ctx)))
+                let baseline = crate::brain::baseline_plan(who, &ctx);
+                let mut planned = self.state.characters.plan_day(
+                    who,
+                    &ctx,
+                    &mut self.state.rng.villagers[who.index()].mind,
+                );
+                planned.sort_by_key(|p| p.at);
+                // An item is the schedule's when the content schedule has the same command at
+                // the same time; anything else is the character's own doing.
+                let planned: Vec<(Cause, Planned)> = planned
+                    .into_iter()
+                    .map(|p| {
+                        let cause = if baseline.contains(&p) {
+                            Cause::Schedule
+                        } else {
+                            Cause::Plan
+                        };
+                        (cause, p)
+                    })
                     .collect();
-                (planned, format!("plan: {}", items.join("; ")))
+                let view = |p: &Planned, schedule: bool| PlanItem {
+                    at: p.at,
+                    text: p.command.summary(&ctx),
+                    activity: match &p.command {
+                        Command::GoTo { activity, .. }
+                        | Command::Wait { activity, .. }
+                        | Command::Interlude { activity, .. } => Some(activity.clone()),
+                        _ => None,
+                    },
+                    schedule,
+                };
+                let items: Vec<PlanItem> = planned
+                    .iter()
+                    .map(|(c, p)| view(p, *c == Cause::Schedule))
+                    .collect();
+                let dropped: Vec<PlanItem> = baseline
+                    .iter()
+                    .filter(|b| !planned.iter().any(|(_, p)| p == *b))
+                    .map(|b| view(b, true))
+                    .collect();
+                (planned, items, dropped)
             };
-            out.push(Emitted::Decided {
+            out.push(Emitted::Planned {
                 tick: now,
                 who,
-                text,
+                items,
+                dropped,
             });
             let v = &mut self.state.villagers[i];
             v.plan.clear();
             v.plan_generation += 1;
             let generation = v.plan_generation;
-            let mut sorted = planned;
-            sorted.sort_by_key(|p| p.at);
-            for p in sorted {
+            for (cause, p) in planned {
                 let at = day_start.plus(p.at.seconds());
                 if at < now {
                     continue;
@@ -442,7 +483,7 @@ impl<C: CharacterSet> Sim<C> {
                         .queue
                         .schedule(at, Event::WakeUp { who, generation });
                 }
-                slot.push(p.command);
+                slot.push((cause, p.command));
             }
         }
     }
@@ -460,7 +501,7 @@ impl<C: CharacterSet> Sim<C> {
             return;
         }
         self.depth += 1;
-        let (commands, text) = {
+        let (commands, text, label) = {
             let ctx = Ctx {
                 tick: self.state.tick,
                 calendar: self.state.tick.calendar(),
@@ -472,15 +513,17 @@ impl<C: CharacterSet> Sim<C> {
                 stock: &self.state.stock,
             };
             let label = trigger.label(&ctx);
-            let commands =
-                self.state
-                    .characters
-                    .react(who, trigger, &ctx, &mut self.state.rng.idle);
+            let commands = self.state.characters.react(
+                who,
+                trigger,
+                &ctx,
+                &mut self.state.rng.villagers[who.index()].mind,
+            );
             let text = (!commands.is_empty()).then(|| {
                 let items: Vec<String> = commands.iter().map(|c| c.summary(&ctx)).collect();
                 format!("{label} -> {}", items.join("; "))
             });
-            (commands, text)
+            (commands, text, label)
         };
         if let Some(text) = text {
             out.push(Emitted::Decided {
@@ -489,10 +532,20 @@ impl<C: CharacterSet> Sim<C> {
                 text,
             });
         }
+        let outer = std::mem::replace(&mut self.cause, Cause::Reaction { trigger: label });
         for cmd in commands {
             self.run_command(who, cmd, out);
         }
+        self.cause = outer;
         self.depth -= 1;
+    }
+
+    /// Something new replaces an errand in progress: there is nothing to go back to.
+    fn drop_errand(&mut self, who: VillagerId) {
+        let v = &mut self.state.villagers[who.index()];
+        v.interlude = None;
+        v.resume_wait = None;
+        v.resume_cause = None;
     }
 
     /// Drops whatever `who` was doing: movement, waits and conversations become stale.
@@ -510,11 +563,15 @@ impl<C: CharacterSet> Sim<C> {
         match cmd {
             Command::Idle => {
                 self.interrupt(who);
+                self.drop_errand(who);
+                self.state.villagers[who.index()].cause = self.cause.clone();
                 self.set_activity(who, "idle", out);
             }
             Command::Wait { ticks, activity } => {
                 self.interrupt(who);
+                self.drop_errand(who);
                 let v = &mut self.state.villagers[who.index()];
+                v.cause = self.cause.clone();
                 let generation = v.generation;
                 v.wait_until = Some(tick.plus(ticks));
                 self.set_activity(who, &activity, out);
@@ -522,8 +579,17 @@ impl<C: CharacterSet> Sim<C> {
                     .queue
                     .schedule(tick.plus(ticks), Event::Waited { who, generation });
             }
-            Command::GoTo { target, activity } => self.go_to(who, &target, activity, out),
-            Command::Note(_) => {}
+            Command::GoTo { target, activity } => {
+                self.drop_errand(who);
+                self.state.villagers[who.index()].cause = self.cause.clone();
+                self.go_to(who, &target, activity, out);
+            }
+            Command::Note(text) => out.push(Emitted::Noted {
+                tick,
+                who,
+                text,
+                cause: self.cause.clone(),
+            }),
             Command::Pay {
                 from,
                 to,
@@ -551,6 +617,7 @@ impl<C: CharacterSet> Sim<C> {
                     x: at.x,
                     y: at.y,
                     tiles,
+                    cause: self.cause.clone(),
                 });
             }
             Command::Greet { with } => {
@@ -563,6 +630,7 @@ impl<C: CharacterSet> Sim<C> {
                     with,
                     topic: "greeting".into(),
                     minutes: 0,
+                    cause: self.cause.clone(),
                 });
                 self.react(
                     with,
@@ -629,12 +697,23 @@ impl<C: CharacterSet> Sim<C> {
             with,
             topic: topic.clone(),
             minutes,
+            cause: self.cause.clone(),
         });
+        let started_by = Cause::Reaction {
+            trigger: format!("{} started talking", self.state.villagers[who.index()].name),
+        };
         for (me, other) in [(who, with), (with, who)] {
             let v = &mut self.state.villagers[me.index()];
             v.resume = Some(v.activity.clone());
             v.talk_until = Some(end);
-            self.set_activity(me, "talk", out);
+            // The talk has its own cause; the villager's intention, and so what they go
+            // back to afterwards, keeps the cause it had.
+            let cause = if me == who {
+                self.cause.clone()
+            } else {
+                started_by.clone()
+            };
+            self.set_activity_because(me, "talk", cause, out);
             self.state.queue.schedule(
                 end,
                 Event::TalkEnd {
@@ -736,7 +815,19 @@ impl<C: CharacterSet> Sim<C> {
         }
     }
 
+    /// Starts an activity under the villager's current intention.
     fn set_activity(&mut self, who: VillagerId, activity: &str, out: &mut Vec<Emitted>) {
+        let cause = self.state.villagers[who.index()].cause.clone();
+        self.set_activity_because(who, activity, cause, out);
+    }
+
+    fn set_activity_because(
+        &mut self,
+        who: VillagerId,
+        activity: &str,
+        cause: Cause,
+        out: &mut Vec<Emitted>,
+    ) {
         let tick = self.state.tick;
         let v = &mut self.state.villagers[who.index()];
         if v.activity != activity {
@@ -748,6 +839,7 @@ impl<C: CharacterSet> Sim<C> {
             tick,
             who,
             activity: activity.to_string(),
+            cause,
         });
     }
 
@@ -878,6 +970,10 @@ impl<C: CharacterSet> Sim<C> {
             Party::Villager(v) => Some(v),
             Party::Outside => None,
         };
+        let payer_left = match from {
+            Party::Villager(v) => self.state.villagers[v.index()].coins,
+            Party::Outside => 0,
+        };
         out.push(Emitted::Paid {
             tick,
             who,
@@ -885,6 +981,8 @@ impl<C: CharacterSet> Sim<C> {
             to: party(to),
             amount,
             what,
+            payer_left,
+            cause: self.cause.clone(),
         });
     }
 
@@ -916,6 +1014,7 @@ impl<C: CharacterSet> Sim<C> {
             good: good.to_string(),
             delta,
             now: after,
+            cause: self.cause.clone(),
         });
     }
 
@@ -957,8 +1056,10 @@ impl<C: CharacterSet> Sim<C> {
                 back_pos,
                 back_activity,
                 back_wait,
+                back_cause: v.cause.clone(),
             });
         }
+        self.state.villagers[who.index()].cause = self.cause.clone();
         self.go_to(who, target, activity, out);
     }
 
@@ -966,7 +1067,13 @@ impl<C: CharacterSet> Sim<C> {
         let tick = self.state.tick;
         self.interrupt(who);
         self.set_activity(who, "idle", out);
-        out.push(Emitted::Stuck { tick, who, reason });
+        let cause = self.state.villagers[who.index()].cause.clone();
+        out.push(Emitted::Stuck {
+            tick,
+            who,
+            reason,
+            cause,
+        });
         self.react(who, Trigger::Stuck, out);
     }
 
@@ -1053,11 +1160,13 @@ impl<C: CharacterSet> Sim<C> {
             resuming,
         });
         self.set_activity(who, "walking", out);
+        let cause = self.state.villagers[who.index()].cause.clone();
         out.push(Emitted::Departed {
             tick,
             who,
             activity,
             eta,
+            cause,
         });
         self.state.queue.schedule(
             tick.plus(WALK_TICKS_PER_TILE),
@@ -1067,6 +1176,9 @@ impl<C: CharacterSet> Sim<C> {
 
     /// Reaching a destination: activity, the brain, encounters.
     fn arrive(&mut self, who: VillagerId, activity: &str, resuming: bool, out: &mut Vec<Emitted>) {
+        if resuming && let Some(cause) = self.state.villagers[who.index()].resume_cause.take() {
+            self.state.villagers[who.index()].cause = cause;
+        }
         self.set_activity(who, activity, out);
         if resuming {
             // Re-arm the wait the errand interrupted, with the time it had left.
@@ -1201,12 +1313,12 @@ impl<C: CharacterSet> Sim<C> {
 
     #[must_use]
     pub fn snapshot(&self) -> Vec<u8> {
-        snapshot::encode(&self.state, C::LAYOUT_VERSION)
+        snapshot::encode(&self.state, C::LAYOUT_VERSION, C::BEHAVIOR)
     }
 
     /// Restores a snapshot against the same content it was made from.
     pub fn restore(bytes: &[u8], content: Content) -> Result<Sim<C>, SimError> {
-        let state: SimState<C> = snapshot::decode(bytes, C::LAYOUT_VERSION)?;
+        let state: SimState<C> = snapshot::decode(bytes, C::LAYOUT_VERSION, C::BEHAVIOR)?;
         if state.content_hash != content_hash(&content) {
             return Err(SimError::ContentMismatch);
         }
@@ -1218,11 +1330,11 @@ impl<C: CharacterSet> Sim<C> {
             nav,
             state,
             depth: 0,
+            cause: Cause::Sim,
         })
     }
 }
 
-/// Where a villager begins: the access tile of its bed, else place 0's arrival.
 /// Goods declared on objects in content, keyed like the live stock map.
 fn starting_stock(content: &Content, world: &World) -> BTreeMap<u16, BTreeMap<String, u16>> {
     let specs = content
@@ -1242,6 +1354,7 @@ fn starting_stock(content: &Content, world: &World) -> BTreeMap<u16, BTreeMap<St
     stock
 }
 
+/// Where a villager begins: the access tile of its bed, else place 0's arrival.
 fn start_spot(world: &World, bed: &str) -> (PlaceId, Pos) {
     if let Some(obj) = world.objects.iter().find(|o| o.id == bed) {
         let access = content::validate::neighbours(obj.at.x, obj.at.y)

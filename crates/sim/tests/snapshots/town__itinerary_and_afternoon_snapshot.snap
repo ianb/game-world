@@ -62,21 +62,18 @@ Mara
   12:00am [plan: 6:00am cook @ stove_house; 6:40am bake @ oven_bakery; 9:00am tend-shop @ counter_bakery; 1:00pm eat @ table_house; 2:00pm tend-shop @ counter_bakery; 7:00pm drink @ table_tavern_1; 9:30pm sleep @ bed_mara]
   6:00am leaves for cook, eta 6:01am
   6:01am cook
-  6:07am thirsty (72)
   6:40am leaves for bake, eta 6:45am
   6:45am bake
-  7:07am needs the privy (70)
+  7:07am needs the privy (71)
+  8:07am thirsty (72)
   9:00am leaves for tend-shop, eta 9:01am
   9:01am tend-shop
-  9:07am hungry (75)
-  9:07am thirsty (100)
-  9:07am needs the privy (93)
-  10:07am thirsty (100)
+  9:07am needs the privy (98)
+  10:07am hungry (71)
+  10:07am thirsty (92)
   10:07am needs the privy (100)
-  11:07am hungry (93)
   11:07am thirsty (100)
   11:07am needs the privy (100)
-  12:07pm hungry (99)
   12:07pm thirsty (100)
   12:07pm needs the privy (100)
   1:00pm leaves for eat, eta 1:03pm
@@ -84,12 +81,13 @@ Mara
   1:07pm needs the privy (100)
   2:00pm leaves for tend-shop, eta 2:03pm
   2:03pm tend-shop
-  2:07pm thirsty (93)
+  2:07pm thirsty (92)
   2:07pm needs the privy (100)
-  3:07pm thirsty (100)
+  3:07pm thirsty (99)
   3:07pm needs the privy (100)
   4:07pm thirsty (100)
   4:07pm needs the privy (100)
+  4:07pm sleepy (72)
   5:07pm thirsty (100)
   5:07pm needs the privy (100)
   6:07pm thirsty (100)
@@ -97,9 +95,9 @@ Mara
   7:00pm leaves for drink, eta 7:06pm
   7:06pm drink
   7:07pm needs the privy (100)
+  7:07pm sleepy (94)
   8:07pm needs the privy (100)
   9:07pm needs the privy (100)
-  9:07pm sleepy (75)
   9:30pm leaves for sleep, eta 9:38pm
   9:38pm sleep
   10:07pm needs the privy (100)
@@ -111,18 +109,20 @@ Mara
 
 Tom
   12:00am [plan: 7:30am eat @ table_house; 10:00am tend-bar @ bar_tavern; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]
-  7:28am needs the privy (73)
+  6:28am needs the privy (75)
   7:30am leaves for eat, eta 7:32am
   7:32am eat
-  9:28am needs the privy (96)
+  8:28am needs the privy (95)
+  9:28am needs the privy (100)
   10:00am leaves for tend-bar, eta 10:07am
   10:07am tend-bar
   10:28am needs the privy (100)
+  11:28am thirsty (77)
   11:28am needs the privy (100)
-  12:28pm thirsty (76)
   12:28pm needs the privy (100)
+  1:28pm thirsty (95)
   1:28pm needs the privy (100)
-  2:28pm thirsty (93)
+  2:28pm thirsty (100)
   2:28pm needs the privy (100)
   3:28pm thirsty (100)
   3:28pm needs the privy (100)
@@ -130,24 +130,24 @@ Tom
   4:28pm needs the privy (100)
   5:28pm thirsty (100)
   5:28pm needs the privy (100)
-  6:28pm hungry (72)
+  6:28pm hungry (73)
   6:28pm thirsty (100)
   6:28pm needs the privy (100)
   7:28pm thirsty (100)
   7:28pm needs the privy (100)
   8:28pm thirsty (100)
   8:28pm needs the privy (100)
-  8:28pm sleepy (72)
-  9:28pm hungry (93)
+  9:28pm hungry (90)
   9:28pm thirsty (100)
   9:28pm needs the privy (100)
   10:00pm close-up
-  10:28pm hungry (97)
+  10:28pm hungry (94)
   10:28pm thirsty (100)
   10:28pm needs the privy (100)
+  10:28pm sleepy (76)
   11:00pm leaves for sleep, eta 11:10pm
   11:10pm sleep
-  11:28pm hungry (99)
+  11:28pm hungry (97)
   11:28pm thirsty (100)
   11:28pm needs the privy (100)
   12:00am [plan: 7:30am eat @ table_house; 10:00am tend-bar @ bar_tavern; 10:00pm close-up @ bar_tavern; 11:00pm sleep @ bed_tom]

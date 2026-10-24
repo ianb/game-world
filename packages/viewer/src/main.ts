@@ -1,7 +1,7 @@
 // The viewer: the sim advancing in the browser, drawn as tiles, with the text views the
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import * as wasm from "@game-world/sim-wasm";
-import { LocalSim, TICKS_PER_MINUTE, at, type Sim, type StockView, type VillagerView } from "@game-world/protocol";
+import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type DaySummary, type Sim, type StockView, type SummaryItem, type VillagerView } from "@game-world/protocol";
 import { PlaceCanvas, Tileset, legend } from "./render";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -94,6 +94,17 @@ function describeNeeds(v: VillagerView): string[] {
   ];
 }
 
+/** Why someone is doing something, in a few words. */
+function causeText(cause: Cause | null): string {
+  if (cause === null) return "";
+  if (cause === "Schedule") return "the schedule";
+  if (cause === "Plan") return "their own plan for the day";
+  if (cause === "Return") return "back from an errand";
+  if (cause === "Sim") return "the town's rules";
+  if ("Reaction" in cause) return `reacting to: ${cause.Reaction.trigger}`;
+  return `outside input #${cause.Input.seq}`;
+}
+
 function sinceText(tick: number): string {
   const t = (tick % (24 * 60 * TICKS_PER_MINUTE)) / TICKS_PER_MINUTE;
   return twelveHour(Math.floor(t / 60), Math.floor(t % 60));
@@ -104,6 +115,7 @@ function describeVillager(v: VillagerView, stock: StockView[]): string[] {
   const lines = [
     `${v.name}`,
     `${v.activity}${v.heading_for ? ` (heading for ${v.heading_for})` : ""} since ${sinceText(v.since)}`,
+    `because: ${causeText(v.cause)}`,
     `at ${place?.key ?? "?"} (${v.pos.x}, ${v.pos.y})`,
     `${v.coins} coins`,
     ...describeNeeds(v),
@@ -301,6 +313,11 @@ function draw(): void {
   const cal = clock.calendar;
   clockEl.textContent = `Y${cal.year} ${cal.season} ${cal.day_of_season} (${cal.weekday}) ${twelveHour(clock.time.hour, clock.time.minute)}`;
   speedEl.textContent = paused ? "paused" : `${SPEEDS[speedIndex]} game-min/s`;
+  const past = sim.tick < sim.frontier;
+  backEl.hidden = !past;
+  clockEl.classList.toggle("past", past);
+  if (past) clockEl.textContent += " (replaying the past)";
+  listDays();
   const villagers = sim.villagers();
   listEveryone(villagers);
   for (const c of canvases) c.draw(sim, villagers, highlightFor(c.id, villagers));
@@ -356,10 +373,86 @@ $("text").addEventListener("click", () => {
   drawnTick = -1;
 });
 
+// The days panel: one entry per finished day, news first. Clicking a line replays the town
+// to that moment (from the day's snapshot) and pins whoever it is about.
+const daysEl = $("days");
+const backEl = $("back") as HTMLButtonElement;
+let shownDays = -1;
+
+function dayTitle(d: DaySummary): string {
+  const c = d.calendar;
+  return `Y${c.year} ${c.season} ${c.day_of_season} (${c.weekday})`;
+}
+
+function itemButton(item: SummaryItem): HTMLButtonElement {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "moment";
+  const t = (item.tick % (24 * 60 * TICKS_PER_MINUTE)) / TICKS_PER_MINUTE;
+  const when = document.createElement("span");
+  when.className = "when";
+  when.textContent = twelveHour(Math.floor(t / 60), Math.floor(t % 60));
+  const what = document.createElement("span");
+  what.textContent = item.text;
+  b.append(when, what);
+  const why = causeText(item.cause);
+  b.title = why ? `because: ${why}. Click to replay this moment.` : "Click to replay this moment.";
+  b.addEventListener("click", () => goTo(item));
+  return b;
+}
+
+function goTo(item: SummaryItem): void {
+  sim.rewind(item.tick);
+  gameTick = item.tick;
+  paused = true;
+  if (item.who !== null) {
+    const v = sim.villagers().find((x) => x.id === item.who);
+    if (v) pinned = { kind: "villager", key: v.key };
+  }
+  drawnTick = -1;
+}
+
+function listDays(): void {
+  const days = sim.summaries();
+  if (days.length === shownDays) return;
+  shownDays = days.length;
+  const frag = document.createDocumentFragment();
+  if (days.length === 0) {
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "Summaries appear after the first day ends (try +1 day).";
+    frag.append(p);
+  }
+  // Most recent first; the latest is open.
+  [...days].reverse().forEach((d, i) => {
+    const details = document.createElement("details");
+    if (i === 0) details.open = true;
+    const summary = document.createElement("summary");
+    summary.textContent = `${dayTitle(d)}: ${d.news.length} unusual, ${d.routine.length} routine`;
+    details.append(summary);
+    for (const item of d.news) details.append(itemButton(item));
+    if (d.routine.length > 0) {
+      const more = document.createElement("details");
+      const label = document.createElement("summary");
+      label.textContent = `${d.routine.length} routine`;
+      more.append(label, ...d.routine.map(itemButton));
+      details.append(more);
+    }
+    frag.append(details);
+  });
+  daysEl.replaceChildren(frag);
+}
+
+backEl.addEventListener("click", () => {
+  sim.backToNow();
+  gameTick = sim.tick;
+  drawnTick = -1;
+});
+
 // For Playwright and the agent: a structured dump of what is on screen.
 declare global {
   interface Window {
-    __scene: () => { tick: number; clock: string; everyone: string; hash: string; places: string[]; canvases: number };
+    __scene: () => { tick: number; clock: string; everyone: string; hash: string; places: string[]; canvases: number; days: number };
     /** Runs the sim forward by whole days and redraws, for screenshots. */
     __advance: (days: number) => void;
   }
@@ -378,6 +471,7 @@ window.__scene = () => ({
   hash: sim.hash(),
   places: sim.placeIds().map((id) => sim.renderPlace(id)),
   canvases: canvases.filter((c) => c.canvas.width > 0).length,
+  days: sim.summaries().length,
 });
 
 draw();

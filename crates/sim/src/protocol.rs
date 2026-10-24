@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 11;
+pub const PROTOCOL_VERSION: u32 = 12;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -41,18 +41,36 @@ pub enum Emitted {
         who: VillagerId,
         activity: String,
         eta: Tick,
+        cause: Cause,
     },
     /// A villager started doing something where it stands.
     Activity {
         tick: Tick,
         who: VillagerId,
         activity: String,
+        cause: Cause,
     },
     /// A villager could not get where it wanted.
     Stuck {
         tick: Tick,
         who: VillagerId,
         reason: String,
+        cause: Cause,
+    },
+    /// The day's plan for `who`, made at midnight. `dropped` lists schedule items the
+    /// character's code left out.
+    Planned {
+        tick: Tick,
+        who: VillagerId,
+        items: Vec<PlanItem>,
+        dropped: Vec<PlanItem>,
+    },
+    /// A note character code left about its own reasons.
+    Noted {
+        tick: Tick,
+        who: VillagerId,
+        text: String,
+        cause: Cause,
     },
     /// A character's brain made a choice: the day plan, a reaction, or a note it left.
     Decided {
@@ -67,6 +85,7 @@ pub enum Emitted {
         with: VillagerId,
         topic: String,
         minutes: u32,
+        cause: Cause,
     },
     /// `who` cleared growth on `tiles` tiles around (x, y) in `place`.
     Cleared {
@@ -76,6 +95,7 @@ pub enum Emitted {
         x: u16,
         y: u16,
         tiles: u16,
+        cause: Cause,
     },
     /// Money moved. `from` or `to` is None for the world outside the town. `amount` is
     /// what actually moved, which is less than asked when the payer was short.
@@ -86,6 +106,9 @@ pub enum Emitted {
         to: Option<VillagerId>,
         amount: u32,
         what: String,
+        /// What the payer has left afterwards; 0 for the world outside.
+        payer_left: u32,
+        cause: Cause,
     },
     /// Goods on an object changed by `delta`; `now` is the count after.
     Stocked {
@@ -95,6 +118,7 @@ pub enum Emitted {
         good: String,
         delta: i32,
         now: u16,
+        cause: Cause,
     },
     /// A need of `who` got pressing or urgent.
     Need {
@@ -103,6 +127,98 @@ pub enum Emitted {
         need: Need,
         level: u8,
     },
+}
+
+/// What a summary line is about.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum SummaryKind {
+    /// Character code changed the day's plan from the schedule.
+    PlanChange,
+    /// A planned activity never started.
+    Skipped,
+    /// Something done that was not in the day's plan.
+    Unplanned,
+    /// A conversation.
+    Talk,
+    /// A villager's note about their own reasons.
+    Note,
+    /// Money in and out for one villager.
+    Money,
+    /// Goods ran out.
+    Shortage,
+    /// A need went urgent.
+    Need,
+    /// Errands of the body: privy, well, extra meals.
+    Body,
+    /// Couldn't get somewhere.
+    Stuck,
+    /// Something that usually happens did not.
+    Absent,
+    /// Everything else worth a count: greetings, weeding.
+    Other,
+}
+
+/// One line of a day summary, pointing at the moment it happened so it can be replayed.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct SummaryItem {
+    pub tick: Tick,
+    pub who: Option<VillagerId>,
+    pub kind: SummaryKind,
+    pub text: String,
+    pub cause: Option<Cause>,
+    /// On how many of the previous seven days the same thing happened.
+    pub seen_days: u8,
+}
+
+/// What happened on one day: deviations from routine first, routine after.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct DaySummary {
+    pub day: u32,
+    pub calendar: Calendar,
+    pub news: Vec<SummaryItem>,
+    pub routine: Vec<SummaryItem>,
+}
+
+/// Why something happened, carried on the events whose reason cannot be recovered later.
+#[derive(Clone, PartialEq, Eq, Debug, Default, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+// Externally tagged (serde's default): it is stored in the snapshot, and postcard cannot
+// decode internally tagged enums.
+pub enum Cause {
+    /// A day-plan item exactly as the content schedule wrote it.
+    Schedule,
+    /// A day-plan item that character code added or changed.
+    Plan,
+    /// Character code reacting to something; `trigger` names it ("waited", "hungry (72)").
+    Reaction { trigger: String },
+    /// The walk back from an errand.
+    Return,
+    /// An outside input, by sequence number.
+    Input { seq: u32 },
+    /// The sim's own rules: the start of the day, someone else starting a conversation.
+    #[default]
+    Sim,
+}
+
+/// One item of a day plan.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct PlanItem {
+    pub at: TimeOfDay,
+    /// The command, summarised.
+    pub text: String,
+    /// The activity it starts, if it starts one.
+    pub activity: Option<String>,
+    /// True when it came from the content schedule unchanged.
+    pub schedule: bool,
 }
 
 /// A bodily need.
@@ -214,6 +330,8 @@ impl Emitted {
             | Emitted::Departed { tick, .. }
             | Emitted::Activity { tick, .. }
             | Emitted::Stuck { tick, .. }
+            | Emitted::Planned { tick, .. }
+            | Emitted::Noted { tick, .. }
             | Emitted::Decided { tick, .. }
             | Emitted::Talked { tick, .. }
             | Emitted::Cleared { tick, .. }
@@ -230,6 +348,8 @@ impl Emitted {
             | Emitted::Departed { who, .. }
             | Emitted::Activity { who, .. }
             | Emitted::Stuck { who, .. }
+            | Emitted::Planned { who, .. }
+            | Emitted::Noted { who, .. }
             | Emitted::Decided { who, .. }
             | Emitted::Talked { who, .. }
             | Emitted::Cleared { who, .. }
@@ -259,6 +379,8 @@ pub struct VillagerView {
     pub next_tile: Option<Pos>,
     pub coins: u32,
     pub needs: NeedsView,
+    /// Why they are doing what they are doing.
+    pub cause: Cause,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -407,6 +529,7 @@ pub fn villager_views<C: CharacterSet>(sim: &Sim<C>) -> Vec<VillagerView> {
             next_tile: v.moving.as_ref().and_then(|m| m.path.first().copied()),
             coins: v.coins,
             needs: v.needs.view(),
+            cause: v.cause.clone(),
         })
         .collect()
 }

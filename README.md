@@ -44,12 +44,15 @@ The page shows the clock, who is where, and each place drawn in tiles,
 advancing at six game-minutes per second with pause, speed and `+1 day`
 buttons; the `text` button adds the text views underneath. Hover a tile to
 see what it is and its numbers, click to pin it, or click a name to follow
-that person: activity, coins and needs. The tiles are placeholders
+that person: activity, why, coins and needs. Under the legend, each
+finished day lists what was unusual; click a line to replay the town to
+that moment, and "back to now" to return. The tiles are placeholders
 drawn by `scripts/make-tileset.mjs` (`just tileset`); generated art replaces
 `packages/viewer/public/tiles.png` later, keeping the names in `tiles.json`.
 Without a browser: `cargo run -p tools -- day --seed 7` prints everyone's
-day, `economy --day 13` the money, needs and goods, and `png --at 2pm`
-writes a picture to `target/town.png`. After `pnpm --filter @game-world/viewer build`,
+day, `summary --days 14` what was unusual each day, `economy --day 13` the
+money, needs and goods, and `png --at 2pm` writes a picture to
+`target/town.png`. After `pnpm --filter @game-world/viewer build`,
 `node scripts/viewer-shot.mjs --days 20` screenshots the town's tiles as
 the browser draws them.
 

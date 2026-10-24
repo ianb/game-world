@@ -220,11 +220,19 @@ fn tom_weeds_the_yard_once_it_grows() {
         matches!(surface, Surface::Path | Surface::WeedyPath),
         "lane end is {surface:?}"
     );
-    // The far corner of the green is nobody's job and goes wild.
-    assert_eq!(
-        sim.surface(townp, content::Pos { x: 45, y: 2 }),
-        Some(Surface::TallGrass)
-    );
+    // The rest of the green is nobody's job and goes wild in patches. Where exactly depends
+    // on where Pip happens to roam, so count rather than name a tile.
+    let p = &sim.world().places[townp];
+    let wild = (0..p.height)
+        .flat_map(|y| (0..p.width).map(move |x| content::Pos { x, y }))
+        .filter(|&pos| {
+            matches!(
+                sim.surface(townp, pos),
+                Some(Surface::TallGrass | Surface::Brush)
+            )
+        })
+        .count();
+    assert!(wild > 100, "only {wild} wild tiles");
 }
 
 #[test]
@@ -315,4 +323,81 @@ fn bodies_send_people_to_the_privy_and_back() {
             v.needs
         );
     }
+}
+
+#[test]
+fn rewinding_replays_the_past_exactly() {
+    use sim::history::{History, HistoryError};
+    use sim::input::{Input, InputKind, Source};
+    let mut history: History<Town> = History::new(9, town());
+    history.step_until(at(3, 0, 0)).unwrap();
+    history
+        .apply_input(Input {
+            tick: at(4, 9, 0),
+            source: Source::Player(0),
+            kind: InputKind::Marker("later".into()),
+            seq: 0,
+        })
+        .unwrap();
+    history.step_until(at(6, 15, 0)).unwrap();
+    let hash_now = history.sim().hash();
+    let days = history.summaries().len();
+    assert_eq!(days, 6, "six full days summarised");
+
+    // Back to day 1 at noon: the sim is where it was then.
+    history.rewind(at(1, 12, 0)).unwrap();
+    assert!(history.in_past());
+    assert_eq!(history.sim().tick(), at(1, 12, 0));
+    let refused = history.apply_input(Input {
+        tick: at(1, 13, 0),
+        source: Source::Player(0),
+        kind: InputKind::Marker("fork".into()),
+        seq: 0,
+    });
+    assert!(matches!(refused, Err(HistoryError::InThePast { .. })));
+
+    // Forward again: same state, the input made after the snapshot replayed, and no day
+    // summarised twice.
+    history.back_to_now().unwrap();
+    assert!(!history.in_past());
+    assert_eq!(history.sim().hash(), hash_now);
+    assert_eq!(history.summaries().len(), days);
+    assert_eq!(history.sim().state().markers.len(), 1);
+}
+
+#[test]
+fn summaries_report_deviations_and_settle_into_routine() {
+    use sim::protocol::SummaryKind;
+    let mut history: sim::history::History<Town> = sim::history::History::new(1, town());
+    history.step_until(at(15, 2, 0)).unwrap();
+    let days = history.summaries();
+    // Tom's first Sunday is news: his code drops the bar for fishing.
+    let sunday = &days[6];
+    assert!(
+        sunday
+            .news
+            .iter()
+            .any(|i| i.kind == SummaryKind::PlanChange && i.text.starts_with("Tom changed the day")),
+        "{}",
+        sim::summary::render(sunday, true)
+    );
+    // His second Sunday is routine: the same change happened on the same weekday last week.
+    let next_sunday = &days[13];
+    assert!(
+        next_sunday
+            .routine
+            .iter()
+            .any(|i| i.kind == SummaryKind::PlanChange && i.text.starts_with("Tom changed the day")),
+        "{}",
+        sim::summary::render(next_sunday, true)
+    );
+    // After the first week, most of a day is routine.
+    let quiet = &days[10];
+    assert!(
+        quiet.routine.len() > quiet.news.len(),
+        "{}",
+        sim::summary::render(quiet, true)
+    );
+    // Causes travel with the lines.
+    assert!(sunday.news.iter().any(|i| i.cause.is_some()));
 }

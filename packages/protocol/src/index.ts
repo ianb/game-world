@@ -8,8 +8,12 @@ import type { ClockView } from "./generated/ClockView";
 import type { TerrainView } from "./generated/TerrainView";
 import type { StockView } from "./generated/StockView";
 import type { RulesView } from "./generated/RulesView";
+import type { DaySummary } from "./generated/DaySummary";
 
-export type { Emitted, Input, VillagerView, WorldView, ClockView, TerrainView, StockView, RulesView };
+export type { Emitted, Input, VillagerView, WorldView, ClockView, TerrainView, StockView, RulesView, DaySummary };
+export type { SummaryItem } from "./generated/SummaryItem";
+export type { SummaryKind } from "./generated/SummaryKind";
+export type { Cause } from "./generated/Cause";
 export type { NeedsView } from "./generated/NeedsView";
 export type { Need } from "./generated/Need";
 export type { Surface } from "./generated/Surface";
@@ -32,7 +36,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 11;
+export const PROTOCOL_VERSION = 12;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;
@@ -63,6 +67,10 @@ export interface WasmSim {
   economy(): unknown;
   clock(): unknown;
   rules(): unknown;
+  summaries(): unknown;
+  frontier(): number;
+  rewind(tick: number): void;
+  back_to_now(): void;
   free(): void;
 }
 
@@ -100,6 +108,13 @@ export interface Sim {
   clock(): ClockView;
   /** The constants behind the needs. */
   rules(): RulesView;
+  /** What happened on each finished day, deviations from routine first. */
+  summaries(): DaySummary[];
+  /** The furthest tick ever reached. */
+  readonly frontier: number;
+  /** Replays the past up to `tick`; inputs are refused until `backToNow`. */
+  rewind(tick: number): void;
+  backToNow(): void;
   renderPlace(id: string): string;
   whereIsEveryone(): string;
   placeIds(): string[];
@@ -197,6 +212,18 @@ export class LocalSim implements Sim {
   }
   rules(): RulesView {
     return this.guard(() => this.inner.rules() as RulesView);
+  }
+  summaries(): DaySummary[] {
+    return this.guard(() => this.inner.summaries() as DaySummary[]);
+  }
+  get frontier(): number {
+    return this.guard(() => this.inner.frontier());
+  }
+  rewind(tick: number): void {
+    this.guard(() => this.inner.rewind(tick));
+  }
+  backToNow(): void {
+    this.guard(() => this.inner.back_to_now());
   }
   renderPlace(id: string): string {
     return this.guard(() => this.inner.render_place(id));

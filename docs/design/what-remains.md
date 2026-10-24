@@ -257,7 +257,9 @@ resume), a decision trace, a PNG renderer, and a third placeholder villager
 (see `interactions.md`), terrain costs with cowpaths and regrowth, a
 tile renderer with placeholder art (`packages/viewer/src/render.ts`) with
 an inspector, a small economy (coins, stock, a carter and a pensioner; see
-decisions.md) and bodily needs with errands that return. Not
+decisions.md), bodily needs with errands that return, and day summaries
+with causes on events and replay to any summarised moment (see
+`living-world.md`). Not
 yet: Ian's cast and town, a renderer library if one turns out to be needed
 (the canvas renderer is plain Canvas 2D), relationships as a ledger,
 interruptions beyond conversations, dialogue content.

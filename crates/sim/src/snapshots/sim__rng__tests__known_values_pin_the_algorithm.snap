@@ -1,9 +1,10 @@
 ---
 source: crates/sim/src/rng.rs
+assertion_line: 94
 expression: v
 ---
 [
-    34,
-    51,
-    0,
+    15,
+    10,
+    48,
 ]
