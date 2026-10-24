@@ -701,3 +701,20 @@ decode internally tagged enums and causes are in the snapshot. Chained
 causes (goal, plot) wait for goals and plots to exist. The fingerprint
 changes on any edit to those crates, comments included; that is the
 conservative choice.
+
+## 2026-10-24: No zooming out
+
+Ian: "Don't do any of the zoom out stuff."
+
+Decided: no levels of detail. Every villager in every place is simulated
+at full detail. Nothing coarsens unobserved places, teleports travellers on
+a travel-time estimate, stands in closed-form outcomes for a zoomed-out
+region, or calibrates such outcomes against fine runs. This replaces the
+"scaling tricks later" door left open in "Simulate everyone on real tiles
+now; scaling tricks later" (2026-10-23) and the scale section of
+`docs/design/living-world.md`.
+
+Implications: the size of the world is bounded by what the full sim can run
+at the speeds the viewer and the summaries need. The LLM plot layer, when
+it comes, works at one granularity. If the world outgrows full detail, that
+is a new conversation, not an existing plan to pick up.

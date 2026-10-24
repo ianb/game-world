@@ -51,8 +51,8 @@ every tick, and no 2D town game that teleports NPCs on a travel-time estimate
 was found. At a few dozen NPCs and places, simulate everyone on real tiles,
 driven by a discrete-event scheduler (each villager wakes on its own next
 event, such as arriving at the next tile) rather than polled every tick.
-Scaling tricks (coarsening events in places with no observer) are a later
-event policy; the place graph and travel-time matrix leave room for them.
+Scaling tricks (coarsening events in places with no observer) are off the
+table: see "No zooming out" in decisions.md.
 
 ## Unified versus detached interiors (decided: inline by default)
 

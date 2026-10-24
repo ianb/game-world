@@ -128,7 +128,13 @@ Approach:
 
 - The LLM plot layer: triggers, bias hooks, scenes built backwards,
   knowledge and secrets.
-- Levels of detail beyond the existing note on teleports.
+
+### Out of scope
+
+- The "scale and levels of detail" section above. Ian, 2026-10-24: "Don't
+  do any of the zoom out stuff." Everyone is simulated at full detail; no
+  coarse regions, closed-form outcomes or calibration runs. See
+  decisions.md.
 
 ### Things the first summaries turned up
 
