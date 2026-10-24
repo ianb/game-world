@@ -1,7 +1,8 @@
 //! Hal, the carter. Twice a week he goes out along the road, buys flour and ale from the
 //! world beyond the town, and sells them on to the bakery and the tavern. Supplies enter
 //! and money leaves through him. He is touchy: quick to hear a refusal as a rebuff and to
-//! blame the person for it, and when money is short it is on his mind.
+//! blame the person for it, and when money is short it is on his mind. How touchy moves
+//! with experience: talks that go badly make him more so, warm ones ease him.
 use crate::toolbox::{
     Plan, activity_of, buy_ale, counter_talk, go, go_tile, pay, pick, stock, villager,
     wait_minutes, weekday,
@@ -10,7 +11,7 @@ use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
-use sim::social::{Interlocutor, Memory, Persona};
+use sim::social::{Episode, Interlocutor, Memory, Persona};
 use sim::time::Weekday;
 
 /// The east end of the street, where the road leaves the town.
@@ -23,18 +24,58 @@ pub const FLOUR_PRICE: u32 = 8;
 pub const ALE_DELIVERY_PRICE: u32 = 12;
 pub const LUNCH_PRICE: u32 = 1;
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// Touchiness is 0 to 100; his rejection sensitivity is a tenth of it.
+pub const TOUCHINESS_START: u8 = 80;
+pub const TOUCHINESS_MIN: u8 = 20;
+pub const TOUCHINESS_MAX: u8 = 100;
+/// Per point of how badly a talk went (peak plus end below zero).
+pub const TOUCHIER_PER_POINT: i16 = 8;
+/// After a talk that went well (peak plus end of 2 or more).
+pub const EASIER: i16 = 2;
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Hal {
     pub trips: u16,
     pub carrying_flour: i32,
     pub carrying_ale: i32,
     pub mind: Memory,
+    /// How ready he is to hear rejection, moved by how his talks go.
+    pub touchiness: u8,
+    /// The rejection sensitivity he last noted, so a change is news.
+    pub noted_sensitivity: u8,
+}
+
+impl Default for Hal {
+    fn default() -> Self {
+        Hal {
+            trips: 0,
+            carrying_flour: 0,
+            carrying_ale: 0,
+            mind: Memory::default(),
+            touchiness: TOUCHINESS_START,
+            noted_sensitivity: TOUCHINESS_START / 10,
+        }
+    }
 }
 
 impl Hal {
     pub fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
         let me = ctx.villager_id("hal").expect("hal exists");
         let mut plan = Plan::baseline(me, ctx);
+        let now = self.touchiness / 10;
+        if now != self.noted_sensitivity {
+            let how = if now > self.noted_sensitivity {
+                "touchier"
+            } else {
+                "easier"
+            };
+            plan.at(
+                0,
+                1,
+                Command::Note(format!("{how} lately (rejection sensitivity {now})")),
+            );
+            self.noted_sensitivity = now;
+        }
         if matches!(weekday(ctx), Weekday::Mon | Weekday::Thu) {
             plan.at(
                 7,
@@ -145,7 +186,7 @@ impl Interlocutor for Hal {
             sociable: 0,
             warmth: 0,
             skill: 5,
-            rejection_sensitivity: 8,
+            rejection_sensitivity: self.touchiness / 10,
             charity: -2,
         }
     }
@@ -159,5 +200,62 @@ impl Interlocutor for Hal {
     /// Money is on his mind whenever he could not pay for two full loads.
     fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<String> {
         (ctx.coins(me) < 2 * LOAD_COST).then(|| "money".into())
+    }
+
+    fn remember(&mut self, e: Episode) {
+        let felt = i16::from(e.peak) + i16::from(e.end);
+        let delta = if felt < 0 {
+            -felt * TOUCHIER_PER_POINT
+        } else if felt >= 2 {
+            -EASIER
+        } else {
+            0
+        };
+        let t = (i16::from(self.touchiness) + delta)
+            .clamp(i16::from(TOUCHINESS_MIN), i16::from(TOUCHINESS_MAX));
+        self.touchiness = u8::try_from(t).unwrap_or(TOUCHINESS_START);
+        self.mind.remember(e);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sim::ids::VillagerId;
+    use sim::protocol::Frame;
+    use sim::time::Tick;
+
+    fn talk(peak: i8, end: i8) -> Episode {
+        Episode {
+            tick: Tick(0),
+            with: VillagerId(0),
+            frame: Frame::SmallTalk,
+            peak,
+            end,
+            they_seemed: 0,
+            notes: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn bad_talks_make_him_touchier_and_good_ones_ease_him() {
+        let mut hal = Hal::default();
+        assert_eq!(hal.persona().rejection_sensitivity, 8);
+        hal.remember(talk(-1, -1));
+        assert_eq!(hal.touchiness, 96);
+        hal.remember(talk(-3, -3));
+        assert_eq!(hal.touchiness, TOUCHINESS_MAX);
+        assert_eq!(hal.persona().rejection_sensitivity, 10);
+        // A neutral talk changes nothing; each good one eases him a little.
+        hal.remember(talk(1, 0));
+        assert_eq!(hal.touchiness, TOUCHINESS_MAX);
+        for _ in 0..10 {
+            hal.remember(talk(1, 1));
+        }
+        assert_eq!(hal.touchiness, 80);
+        for _ in 0..100 {
+            hal.remember(talk(2, 2));
+        }
+        assert_eq!(hal.touchiness, TOUCHINESS_MIN);
     }
 }

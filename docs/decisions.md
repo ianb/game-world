@@ -869,3 +869,31 @@ money trouble in this economy (he ends weeks richer, and Mara poorer), so
 the original casting does not occur. The numbers (misread and misfire rates,
 the 7-day retelling gap, feeling thresholds) were tuned by reading six weeks
 of transcripts on ten seeds, not by any score.
+
+## 2026-10-24: Self-concept as changeable state in a character's program (experiment)
+
+Ian, on whether self-concept is more than hidden variables: "if you believe
+that their self-concept can really change, then you would do hidden
+variables that can change, and then change the code based on that." Then:
+"Yes, treating it as an experiment."
+
+Decided: no self-concept system. A character's program owns whatever
+private state it needs, reads it, and updates it from experience. The
+first case is Hal: a `touchiness` field (0 to 100, starting at 80) that
+each remembered conversation moves, 8 up per point a talk went below zero
+and 2 down after a good one. His rejection sensitivity is a tenth of it,
+computed in `persona()`. A change is noted at the start of the next day.
+
+Findings over six weeks on ten seeds: no runaway and no collapse. It moves
+as a sawtooth, slow easing and sudden jumps, mostly between 7 and 10; on
+seed 7 he settled lower (5 to 7) and misread less (4 times against 9 with
+a fixed 8). The jumps follow readable causes: on seed 1, Spring 18, Mara
+confided her money trouble to him, he took it as complaining and blamed
+her, misread Tom at lunch, and was touchier the next morning. The effect
+on behavior is small, because the shared default weighs sensitivity
+lightly (a misreading chance of 26% at 8 against 32% at 10).
+
+Implications: where the set point lands is mostly the ratio of the two
+constants, not his history. Open: whether a character needs a second
+layer (what they believe about themselves, separate from what is true) so
+they can be wrong; nothing here needs it yet.
