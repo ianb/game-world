@@ -828,8 +828,9 @@ const NEWS_DAYS: u32 = 7;
 
 /// Something they know about a third person that this listener has not had from them:
 /// heard in words in the last week, not about the listener or themselves, and not
-/// something they have heard the listener talk about. A confidence (disclosed to them directly) is passed on only at discretion
-/// 2 or less. Whether they pass it on at all is a roll weighted by discretion.
+/// something they have heard the listener talk about. A confidence (disclosed to them
+/// directly), or news between two people told to the second of them, is passed on only at
+/// discretion 2 or less. Whether they pass it on at all is a roll weighted by discretion.
 pub fn default_gossip<I: Interlocutor + ?Sized>(
     me: &I,
     s: &Situation<'_>,
@@ -850,6 +851,8 @@ pub fn default_gossip<I: Interlocutor + ?Sized>(
         })
         .filter_map(|h| h.topic.as_ref())
         .filter(|t| t.about.is_some_and(|a| a != s.me && a != s.other))
+        // For news between two people, only the indiscreet tell the second one.
+        .filter(|t| t.with != Some(s.me) && (t.with != Some(s.other) || p.discretion <= 2))
         .filter(|t| !me.memory().told_since(s.other, t, since))
         // Not to someone they have heard talking about it: they know already.
         .filter(|t| {
@@ -859,7 +862,11 @@ pub fn default_gossip<I: Interlocutor + ?Sized>(
                 .topic(&t.key)
                 .since(since)
                 .iter()
-                .any(|h| h.topic.as_ref().is_some_and(|ht| ht.about == t.about))
+                .any(|h| {
+                    h.topic
+                        .as_ref()
+                        .is_some_and(|ht| ht.about == t.about && ht.with == t.with)
+                })
         })
         .last()?
         .clone();

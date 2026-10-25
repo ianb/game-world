@@ -5,10 +5,11 @@
 //! mood colours everything, and each conversation moves it a little. A new fish is the
 //! first thing he mentions. When things go wrong he blames the town, for good and for
 //! everything; the grievance builds through the day and, past a point, the next person he
-//! talks to gets a dig whatever they did. He grumbles aloud.
+//! talks to gets a dig whatever they did. He grumbles aloud. Overhearing someone say
+//! something sharp about him adds to the grievance; he does not wonder why they said it.
 use crate::toolbox::{
     MEAL_WINDOW_MINUTES, Plan, activity_of, eat_something, errand, go_tile, meal_soon, object, pay,
-    pick, seen_doing, stock, stock_of, think_aloud, villager, wait_minutes, weekday,
+    pick, seen_doing, stock, stock_of, think, think_aloud, villager, wait_minutes, weekday,
 };
 use content::{Pos, Rect};
 use rand_pcg::Pcg32;
@@ -206,6 +207,18 @@ impl Tom {
         plan.build()
     }
 
+    /// Something sharp said about him: it goes on the pile.
+    fn overheard_about_me(&mut self, ctx: &Ctx<'_>, speaker: VillagerId) -> Vec<Command> {
+        self.grievance = self.grievance.saturating_add(1);
+        vec![think(
+            ctx.topic("what-was-said").about(speaker),
+            Blame::Them(speaker),
+            false,
+            false,
+            -1,
+        )]
+    }
+
     pub fn react(
         &mut self,
         trigger: Trigger,
@@ -305,6 +318,14 @@ impl Tom {
             Trigger::Passing { other } if activity_of(ctx, "tom") != "sleep" => {
                 vec![Command::Greet { with: other }]
             }
+            Trigger::Overheard {
+                speaker,
+                gesture,
+                about_me: true,
+                ..
+            // His own table is for what is said to his face; a complaint about him is
+            // sharp like it is for anyone.
+            } if gesture.warmth() < 0 => self.overheard_about_me(ctx, speaker),
             _ => return None,
         })
     }

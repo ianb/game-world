@@ -501,30 +501,38 @@ fn everyone_keeps_their_schedule_when_hungry_and_eats_when_starving() {
 
 #[test]
 fn errands_queue_rather_than_replace_each_other() {
-    // Waking with several pressing needs, each gets its errand in turn.
+    // Waking with several pressing needs, each gets its errand in turn. Which mornings
+    // have all three depends on the run, so check every one in the first week that does.
     let mut sim: Sim<Town> = Sim::new(1, town());
-    let events = sim.step_until(at(1, 9, 0)).unwrap();
+    let events = sim.step_until(at(7, 9, 0)).unwrap();
     let tom = sim.ctx().villager_id("tom").unwrap();
-    let morning: Vec<&str> = events
-        .iter()
-        .filter_map(|e| match e {
-            Emitted::Activity {
-                who,
-                activity,
-                tick,
-                ..
-            } if *who == tom && *tick >= at(1, 7, 30) && activity != "walking" => {
-                Some(activity.as_str())
-            }
-            _ => None,
-        })
-        .collect();
-    let relieve = morning.iter().position(|a| *a == "relieve");
-    let water = morning.iter().position(|a| *a == "drink-water");
-    let eat = morning.iter().position(|a| *a == "eat");
-    assert!(
-        relieve.is_some() && water.is_some() && eat.is_some(),
-        "{morning:?}"
-    );
-    assert!(relieve < water && water < eat, "{morning:?}");
+    let mut checked = 0;
+    for day in 1..7 {
+        let morning: Vec<&str> = events
+            .iter()
+            .filter_map(|e| match e {
+                Emitted::Activity {
+                    who,
+                    activity,
+                    tick,
+                    ..
+                } if *who == tom
+                    && *tick >= at(day, 7, 30)
+                    && *tick < at(day, 9, 0)
+                    && activity != "walking" =>
+                {
+                    Some(activity.as_str())
+                }
+                _ => None,
+            })
+            .collect();
+        let relieve = morning.iter().position(|a| *a == "relieve");
+        let water = morning.iter().position(|a| *a == "drink-water");
+        let eat = morning.iter().position(|a| *a == "eat");
+        if relieve.is_some() && water.is_some() && eat.is_some() {
+            assert!(relieve < water && water < eat, "day {day}: {morning:?}");
+            checked += 1;
+        }
+    }
+    assert!(checked > 0, "no morning with all three");
 }

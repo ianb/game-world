@@ -34,10 +34,10 @@ fn news_about_someone_is_passed_on_to_someone_else() {
 
 #[test]
 fn a_gift_cites_words_that_were_said_to_the_giver() {
-    // On seed 1, Nell gives Mara coins twice in the third week: once after Pip passes on
-    // Mara's trouble, once after overhearing Mara try to confide in Tom.
+    // On seed 1, Nell gives Mara coins twice in the fourth week: once after Mara tells her
+    // about her money trouble, once after Pip passes it on.
     let seed = 1;
-    let events = weeks(seed, 3);
+    let events = weeks(seed, 4);
     let gifts: Vec<_> = events
         .iter()
         .filter_map(|e| match e {

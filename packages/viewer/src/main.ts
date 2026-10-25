@@ -1,7 +1,7 @@
 // The viewer: the sim advancing in the browser, drawn as tiles, with the text views the
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import * as wasm from "@game-world/sim-wasm";
-import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type DaySummary, type MindView, type Sim, type StockView, type SummaryItem, type VillagerView } from "@game-world/protocol";
+import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type DaySummary, type MindView, type Sim, type StockView, type SummaryItem, type Topic, type VillagerView } from "@game-world/protocol";
 import { PlaceCanvas, Tileset, legend } from "./render";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -93,6 +93,12 @@ function describeNeeds(v: VillagerView): string[] {
   ];
 }
 
+/** A topic's gloss and who it concerns: "money (Mara)", "sweet on (Hal, Mara)". */
+function topicText(t: Topic, name: (id: number) => string): string {
+  const who = [t.about, t.with].filter((v): v is number => v !== null).map(name);
+  return `${glosses.get(t.key) ?? t.key}${who.length ? ` (${who.join(", ")})` : ""}`;
+}
+
 /** Why someone is doing something, in a few words. */
 function causeText(cause: Cause | null, villagers: VillagerView[]): string {
   if (cause === null) return "";
@@ -103,8 +109,8 @@ function causeText(cause: Cause | null, villagers: VillagerView[]): string {
   if ("Reaction" in cause) return `reacting to: ${cause.Reaction.trigger}`;
   if ("Knew" in cause) {
     const { from, topic, heard_at } = cause.Knew;
-    const about = topic.about === null ? "" : ` (${villagers[topic.about]?.name ?? "?"})`;
-    return `${villagers[from]?.name ?? "?"} said ${glosses.get(topic.key) ?? topic.key}${about} at ${sinceText(heard_at)}`;
+    const name = (id: number): string => villagers[id]?.name ?? "?";
+    return `${name(from)} said ${topicText(topic, name)} at ${sinceText(heard_at)}`;
   }
   return `outside input #${cause.Input.seq}`;
 }
@@ -140,7 +146,7 @@ function describeMind(m: MindView, villagers: VillagerView[]): string[] {
     const blame =
       t.blame === "Me" ? "blames themself" : t.blame === "World" ? "blames the world" : t.blame === "Luck" ? "puts it down to luck" : `blames ${name(t.blame.Them)}`;
     const span = [t.lasting ? "for good" : "", t.everywhere ? "for everything" : ""].filter(Boolean).join(" and ");
-    const about = `${glosses.get(t.about.key) ?? t.about.key}${t.about.about === null ? "" : ` (${name(t.about.about)})`}`;
+    const about = topicText(t.about, name);
     lines.push(`  ${sinceText(tick)} ${blame}${span ? `, ${span}` : ""}: ${about}${t.aloud ? ", aloud" : ""}`);
   }
   if (m.heard.length) lines.push("heard:");

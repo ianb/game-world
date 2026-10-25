@@ -3,6 +3,7 @@ import type { VillagerId } from "./VillagerId";
 
 /**
  * What a conversation or a turn is about: a topic declared in the content
- * (`content/topics/`), and the person it concerns, if any ("Mara's money").
+ * (`content/topics/`), the person it concerns, if any ("Mara's money"), and a second
+ * person for topics between two ("Hal sweet on Mara": about Hal, with Mara).
  */
-export type Topic = { key: string, about: VillagerId | null, };
+export type Topic = { key: string, about: VillagerId | null, with: VillagerId | null, };

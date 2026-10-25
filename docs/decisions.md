@@ -1064,3 +1064,30 @@ thresholds; facts travel as memories to the rule that acts on them. One
 rule exists; the next few will show whether `Trouble` stays a closed
 enum. News is retold verbatim, with no distortion yet. Protocol 17,
 snapshot 10.
+
+## 2026-10-25: A triangle among the existing cast
+
+Ian: "Most self-talk is only in someone's mind, so it can't be heard,
+overheard. But it's kind of interesting that you can. Seems like maybe we
+could have other stuff too, like maybe we either need to expand the world
+or something, so that there's some like social tension here, love
+triangle or something." Offered the existing cast or new villagers, he
+said: "sure, use them".
+
+Decided and built (details in `docs/design/triangle.md`):
+
+- Hal is sweet on Mara, Mara is fond of Tom, Tom does not notice. This is
+  code in each character's file.
+- Thoughts stay silent by default; saying one aloud is a per-character
+  habit (Tom grumbling, Hal after a drink when jealous).
+- `Topic` gains a second person (`with`) for news between two people.
+  Gossip tells the second person only at discretion 2 or less.
+- Hal's jealousy grows from what he sees in the town's record: Mara
+  starting conversations that are not business. It drives muttering
+  aloud, digs at the rival, and confiding.
+- Mara, once she knows, keeps Hal at a distance. Tom takes complaints
+  about him to heart without asking why.
+
+Implications: Hal's calls at the bakery are without buying, because
+buying kept Mara out of money trouble and removed the confidings and
+gifts that depend on it. Protocol 18, snapshot 11, layout 9.

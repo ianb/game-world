@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 17;
+pub const PROTOCOL_VERSION: u32 = 18;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -267,13 +267,15 @@ pub enum Act {
 }
 
 /// What a conversation or a turn is about: a topic declared in the content
-/// (`content/topics/`), and the person it concerns, if any ("Mara's money").
+/// (`content/topics/`), the person it concerns, if any ("Mara's money"), and a second
+/// person for topics between two ("Hal sweet on Mara": about Hal, with Mara).
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(ts_rs::TS))]
 #[cfg_attr(feature = "schema", ts(export))]
 pub struct Topic {
     pub key: String,
     pub about: Option<VillagerId>,
+    pub with: Option<VillagerId>,
 }
 
 impl Topic {
@@ -284,6 +286,7 @@ impl Topic {
         Topic {
             key: key.to_string(),
             about: None,
+            with: None,
         }
     }
 
@@ -294,11 +297,24 @@ impl Topic {
     }
 
     #[must_use]
+    pub fn with(mut self, who: VillagerId) -> Topic {
+        self.with = Some(who);
+        self
+    }
+
+    /// Whether `who` is either person the topic concerns.
+    #[must_use]
+    pub fn names(&self, who: VillagerId) -> bool {
+        self.about == Some(who) || self.with == Some(who)
+    }
+
+    #[must_use]
     pub fn is(&self, key: &str) -> bool {
         self.key == key
     }
 
-    /// The topic's gloss from `content`, and whose it is by `name`: "money (Mara)".
+    /// The topic's gloss from `content`, and whose it is by `name`: "money (Mara)",
+    /// "sweet on (Hal, Mara)".
     pub fn label_with(
         &self,
         content: &content::Content,
@@ -307,18 +323,21 @@ impl Topic {
         let gloss = content
             .topic(&self.key)
             .map_or(self.key.as_str(), |t| t.gloss.as_str());
-        match self.about {
-            Some(v) => format!("{gloss} ({})", name(v)),
-            None => gloss.to_string(),
+        match (self.about, self.with) {
+            (Some(a), Some(w)) => format!("{gloss} ({}, {})", name(a), name(w)),
+            (Some(v), None) | (None, Some(v)) => format!("{gloss} ({})", name(v)),
+            (None, None) => gloss.to_string(),
         }
     }
 }
 
 impl std::fmt::Display for Topic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.about {
-            Some(v) => write!(f, "{} of #{}", self.key, v.0),
-            None => write!(f, "{}", self.key),
+        match (self.about, self.with) {
+            (Some(a), Some(w)) => write!(f, "{} of #{} with #{}", self.key, a.0, w.0),
+            (Some(v), None) => write!(f, "{} of #{}", self.key, v.0),
+            (None, Some(w)) => write!(f, "{} with #{}", self.key, w.0),
+            (None, None) => write!(f, "{}", self.key),
         }
     }
 }

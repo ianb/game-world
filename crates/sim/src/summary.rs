@@ -131,15 +131,16 @@ impl Summarizer {
         self.names.get(who.index()).map_or("?", String::as_str)
     }
 
-    /// A topic's gloss and whose: "money (Mara)".
+    /// A topic's gloss and whose: "money (Mara)", "sweet on (Hal, Mara)".
     fn topic(&self, t: &crate::protocol::Topic) -> String {
         let gloss = self
             .glosses
             .get(&t.key)
             .map_or(t.key.as_str(), String::as_str);
-        match t.about {
-            Some(v) => format!("{gloss} ({})", self.name(v)),
-            None => gloss.to_string(),
+        match (t.about, t.with) {
+            (Some(a), Some(w)) => format!("{gloss} ({}, {})", self.name(a), self.name(w)),
+            (Some(v), None) | (None, Some(v)) => format!("{gloss} ({})", self.name(v)),
+            (None, None) => gloss.to_string(),
         }
     }
 
@@ -202,6 +203,36 @@ impl Summarizer {
     }
 
     /// One-off lines: notes, shortages, urgent needs, getting stuck.
+    /// "Tom blames the world, for good and for everything: tripping (Tom) (aloud)".
+    fn thought(&mut self, tick: Tick, who: VillagerId, thought: &crate::protocol::Thought) {
+        let name = self.name(who).to_string();
+        let blame = match thought.blame {
+            crate::protocol::Blame::Me => "blames themself".to_string(),
+            crate::protocol::Blame::Them(v) => format!("blames {}", self.name(v)),
+            crate::protocol::Blame::World => "blames the world".into(),
+            crate::protocol::Blame::Luck => "puts it down to luck".into(),
+        };
+        let span = match (thought.lasting, thought.everywhere) {
+            (true, true) => ", for good and for everything",
+            (true, false) => ", for good",
+            (false, true) => ", for everything",
+            (false, false) => "",
+        };
+        let key = format!(
+            "thought:{}:{}:{blame}:{}",
+            name.to_lowercase(),
+            thought.about.key,
+            thought.aloud
+        );
+        let aloud = if thought.aloud { " (aloud)" } else { "" };
+        let text = format!(
+            "{name} {blame}{span}: {}{aloud}",
+            self.topic(&thought.about)
+        );
+        // Saying it aloud is its own habit, so the first time stands out.
+        self.line(tick, who, SummaryKind::Thought, text, None, key);
+    }
+
     fn incident(&mut self, e: &Emitted) {
         let tick = e.tick();
         match e {
@@ -260,32 +291,7 @@ impl Summarizer {
                     self.line(tick, *who, SummaryKind::Need, text, None, key);
                 }
             }
-            Emitted::Thought { who, thought, .. } => {
-                let name = self.name(*who).to_string();
-                let blame = match thought.blame {
-                    crate::protocol::Blame::Me => "blames themself".to_string(),
-                    crate::protocol::Blame::Them(v) => format!("blames {}", self.name(v)),
-                    crate::protocol::Blame::World => "blames the world".into(),
-                    crate::protocol::Blame::Luck => "puts it down to luck".into(),
-                };
-                let span = match (thought.lasting, thought.everywhere) {
-                    (true, true) => ", for good and for everything",
-                    (true, false) => ", for good",
-                    (false, true) => ", for everything",
-                    (false, false) => "",
-                };
-                let key = format!(
-                    "thought:{}:{}:{blame}",
-                    name.to_lowercase(),
-                    thought.about.key
-                );
-                let aloud = if thought.aloud { " (aloud)" } else { "" };
-                let text = format!(
-                    "{name} {blame}{span}: {}{aloud}",
-                    self.topic(&thought.about)
-                );
-                self.line(tick, *who, SummaryKind::Thought, text, None, key);
-            }
+            Emitted::Thought { who, thought, .. } => self.thought(tick, *who, thought),
             Emitted::Stuck {
                 who, reason, cause, ..
             } => {

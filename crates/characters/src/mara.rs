@@ -3,8 +3,14 @@
 //! is friendly and discreet. She will hear a confidence from anyone she knows, but never
 //! with someone else in the shop. Minding the shop, she keeps an eye on the shelf: if it is
 //! bare and there is flour, she bakes again.
+//!
+//! She is fond of Tom. Evenings at the tavern she goes back to the bar for another word
+//! with him when they have not talked for an hour, and with him she pays compliments. Once
+//! she knows Hal is sweet on her (told so, or hearing him mutter about a rival), she keeps
+//! him at a distance: no chat at the counter, no small talk.
 use crate::toolbox::{
-    Plan, activity_of, buy_ale, counter_talk, errand, go, object, stock, stock_of, think, villager,
+    Plan, activity_of, buy_ale, chat, counter_talk, errand, go, object, stock, stock_of, think,
+    villager,
 };
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
@@ -14,13 +20,15 @@ use sim::protocol::{Act, BidAnswer, Blame, Frame, Gesture, Topic};
 use sim::social::{
     Interlocutor, Memory, Persona, Situation, act, default_answer_bid, default_next_act, roll,
 };
-use sim::time::{TICKS_PER_DAY, Tick};
+use sim::time::{TICKS_PER_DAY, TICKS_PER_MINUTE, Tick};
 
 pub const FLOUR_PER_BATCH: u16 = 2;
 pub const LOAVES_PER_BATCH: i32 = 6;
 /// With this many loaves left from yesterday she skips a bake (stale bread goes out
 /// first, so this only matters when the first bake of the day already happened).
 pub const LOAVES_ENOUGH: u16 = 4;
+/// Minutes since her last talk with Tom before she goes back to the bar for another word.
+pub const WORD_WITH_TOM_GAP: u32 = 60;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Mara {
@@ -28,6 +36,8 @@ pub struct Mara {
     pub fish_story_at: Option<Tick>,
     /// The day she last noticed the shelf bare, so she reacts once.
     pub bare_shelf_day: Option<u32>,
+    /// She knows Hal is sweet on her, and keeps him at a distance.
+    pub knows_hal_is_sweet: bool,
     pub mind: Memory,
 }
 
@@ -66,8 +76,50 @@ impl Mara {
         plan.build()
     }
 
+    /// After a talk or something overheard: whether she has now heard, in words, that Hal is
+    /// sweet on her, or Hal muttering about a rival for her.
+    fn notice_hal(&mut self, ctx: &Ctx<'_>, me: VillagerId) -> Option<Command> {
+        let hal = villager(ctx, "hal");
+        let told = self.mind.heard().words().iter().any(|h| {
+            h.topic.as_ref().is_some_and(|t| {
+                t.with == Some(me)
+                    && ((t.is("sweet-on") && t.about == Some(hal))
+                        || (t.is("rival") && h.speaker == hal))
+            })
+        });
+        if self.knows_hal_is_sweet || !told {
+            return None;
+        }
+        self.knows_hal_is_sweet = true;
+        Some(think(
+            ctx.topic("sweet-on").about(hal).with(me),
+            Blame::Luck,
+            true,
+            false,
+            -1,
+        ))
+    }
+
     pub fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>) -> Option<Vec<Command>> {
         let me = ctx.villager_id("mara").expect("mara exists");
+        if matches!(
+            trigger,
+            Trigger::TalkEnded { .. } | Trigger::Overheard { .. }
+        ) && let Some(thought) = self.notice_hal(ctx, me)
+        {
+            let mut cmds = vec![thought];
+            cmds.extend(self.react_to(trigger, ctx, me).unwrap_or_default());
+            return Some(cmds);
+        }
+        self.react_to(trigger, ctx, me)
+    }
+
+    fn react_to(
+        &mut self,
+        trigger: &Trigger,
+        ctx: &Ctx<'_>,
+        me: VillagerId,
+    ) -> Option<Vec<Command>> {
         let tom = villager(ctx, "tom");
         Some(match trigger {
             Trigger::Arrived => match ctx.villager(me).activity.as_str() {
@@ -117,6 +169,22 @@ impl Mara {
                     cmds.push(errand(object(ctx, "oven_bakery"), "bake", 30));
                 }
                 cmds
+            }
+            // At the tavern, back to the bar for another word with Tom.
+            Trigger::Look { .. }
+                if activity_of(ctx, "mara") == "drink"
+                    && activity_of(ctx, "tom") == "tend-bar"
+                    && self
+                        .mind
+                        .episodes
+                        .iter()
+                        .rev()
+                        .find(|e| e.with == tom)
+                        .is_none_or(|e| {
+                            e.tick.plus(WORD_WITH_TOM_GAP * TICKS_PER_MINUTE) <= ctx.tick
+                        }) =>
+            {
+                vec![chat(ctx, me, tom, Frame::SmallTalk, "day", 10)?]
             }
             Trigger::TalkEnded { other, .. } if *other == tom => {
                 let news = self
@@ -215,6 +283,20 @@ impl Interlocutor for Mara {
 
     fn next_act(&mut self, s: &Situation<'_>, rng: &mut Pcg32) -> Act {
         let ctx = s.ctx;
+        let hal = villager(ctx, "hal");
+        if s.other == hal && self.knows_hal_is_sweet && s.turn >= 1 {
+            return match (s.frame, s.turn) {
+                (Frame::Transaction, 1) => act(Gesture::Thank, s.topic),
+                _ => act(Gesture::Leave, s.topic),
+            };
+        }
+        if s.other == villager(ctx, "tom")
+            && s.frame == Frame::SmallTalk
+            && s.turn >= 1
+            && roll(rng) < 30
+        {
+            return act(Gesture::Compliment, s.topic);
+        }
         match (s.frame, s.topic.key.as_str(), s.initiator, s.turn) {
             (Frame::Transaction, "pastry", true, 0) => act(Gesture::Offer, s.topic),
             // Pip's bun: free when there is bread on the shelf and she is fond of him.
@@ -248,6 +330,9 @@ impl Interlocutor for Mara {
 
     fn answer_bid(&mut self, s: &Situation<'_>, frame: Frame, rng: &mut Pcg32) -> BidAnswer {
         let r = self.mind.regard(s.other);
+        if s.other == villager(s.ctx, "hal") && self.knows_hal_is_sweet {
+            return BidAnswer::Away { account: true };
+        }
         if frame == Frame::Confiding && s.private() && r.familiarity >= 2 && r.feeling > -2 {
             BidAnswer::Toward
         } else {

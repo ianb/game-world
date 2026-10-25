@@ -4,20 +4,27 @@
 //! blame the person for it, and when money is short it is on his mind. How touchy moves
 //! with experience: talks that go badly make him more so, warm ones ease him. When
 //! something goes wrong he blames whoever is nearest to hand.
+//!
+//! He is sweet on Mara. Some afternoons he calls at the bakery for a word, and
+//! with her he pays compliments. He watches whom she seeks out: each time he sees her
+//! start a talk with someone that is not business at a counter, he grows more jealous of
+//! them, and less so after a warm talk with her. Jealous enough, he mutters about it aloud
+//! when he has been drinking, he takes digs at the rival, and he confides in someone who is
+//! neither of them.
 use crate::tom::YARD;
 use crate::toolbox::{
-    Plan, activity_of, buy_ale, counter_talk, go, go_tile, pay, pick, stock, think, villager,
-    wait_minutes, weekday,
+    Plan, activity_of, buy_ale, counter_talk, go, go_tile, pay, pick, seen_seeking_out, stock,
+    think, think_aloud, villager, wait_minutes, weekday,
 };
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
-use sim::protocol::{Blame, Mishap};
+use sim::protocol::{Act, Blame, Frame, Mishap};
 use sim::protocol::{Gesture, Topic};
 use sim::recall::SIGHT;
-use sim::social::{Episode, Interlocutor, Memory, Persona};
-use sim::time::Weekday;
+use sim::social::{Episode, Interlocutor, Memory, Persona, Situation, act, default_next_act, roll};
+use sim::time::{TICKS_PER_DAY, Tick, Weekday};
 
 /// The east end of the street, where the road leaves the town.
 pub const ROAD_OUT: (u16, u16) = (46, 11);
@@ -38,6 +45,16 @@ pub const TOUCHIER_PER_POINT: i16 = 8;
 /// After a talk that went well (peak plus end of 2 or more).
 pub const EASIER: i16 = 2;
 
+/// Jealousy is 0 to `JEALOUSY_MAX`. Each time he sees Mara seek someone out it rises by
+/// `JEALOUSY_PER_SIGHT`; it falls by one each day and by `JEALOUSY_EASED` after a warm talk
+/// with her. At `JEALOUS` it shows.
+pub const JEALOUSY_MAX: u8 = 10;
+pub const JEALOUSY_PER_SIGHT: u8 = 3;
+pub const JEALOUSY_EASED: u8 = 2;
+pub const JEALOUS: u8 = 4;
+/// Out of 100: the chance of an afternoon call at the bakery on a day off the road.
+pub const CALL_CHANCE: u32 = 50;
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Hal {
     pub carrying_flour: i32,
@@ -47,6 +64,10 @@ pub struct Hal {
     pub touchiness: u8,
     /// The rejection sensitivity he last noted, so a change is news.
     pub noted_sensitivity: u8,
+    /// How jealous he is of `rival`; what he does about it depends on how much.
+    pub jealousy: u8,
+    /// The last person he saw Mara seek out.
+    pub rival: Option<VillagerId>,
 }
 
 impl Default for Hal {
@@ -57,6 +78,8 @@ impl Default for Hal {
             mind: Memory::default(),
             touchiness: TOUCHINESS_START,
             noted_sensitivity: TOUCHINESS_START / 10,
+            jealousy: 0,
+            rival: None,
         }
     }
 }
@@ -72,6 +95,65 @@ impl Hal {
             false,
             -1,
         )]
+    }
+
+    /// Whether he saw Mara seek someone out since `since`. Each time feeds his jealousy of
+    /// them, and he thinks about it: aloud when he is drinking and already jealous.
+    fn watch_mara(&mut self, ctx: &Ctx<'_>, me: VillagerId, since: Tick) -> Option<Vec<Command>> {
+        let mara = villager(ctx, "mara");
+        let seen = seen_seeking_out(ctx, me, mara, since);
+        let &(_, rival) = seen.last()?;
+        for _ in &seen {
+            self.jealousy = self
+                .jealousy
+                .saturating_add(JEALOUSY_PER_SIGHT)
+                .min(JEALOUSY_MAX);
+        }
+        self.rival = Some(rival);
+        let topic = ctx.topic("rival").about(rival).with(mara);
+        let thought = if self.jealousy >= JEALOUS && activity_of(ctx, "hal") == "drink" {
+            think_aloud(topic, Blame::Them(rival), false, false, -1)
+        } else {
+            think(topic, Blame::Them(rival), false, false, -1)
+        };
+        Some(vec![thought])
+    }
+
+    /// A warm talk with Mara reassures him.
+    fn reassure(&mut self, trigger: &Trigger, ctx: &Ctx<'_>) {
+        if let Trigger::TalkEnded { other, .. } = trigger
+            && *other == villager(ctx, "mara")
+            && self
+                .mind
+                .episodes
+                .last()
+                .is_some_and(|e| e.with == *other && i16::from(e.peak) + i16::from(e.end) >= 2)
+        {
+            self.jealousy = self.jealousy.saturating_sub(JEALOUSY_EASED);
+        }
+    }
+
+    /// At the edge of town: buy a load and be gone a while.
+    fn at_market(&mut self, ctx: &Ctx<'_>, me: VillagerId, rng: &mut Pcg32) -> Vec<Command> {
+        // A full load, a half load when short, or home empty when broke.
+        let coins = ctx.coins(me);
+        let (cost, share, what) = if coins >= LOAD_COST {
+            (LOAD_COST, 1, "flour and ale at market")
+        } else if coins >= LOAD_COST / 2 {
+            (LOAD_COST / 2, 2, "a half load at market")
+        } else {
+            return vec![
+                Command::Note("can't afford a load; back empty".into()),
+                go(ctx, "cart_hal", "tend-cart"),
+            ];
+        };
+        self.carrying_flour = FLOUR_PER_TRIP / share;
+        self.carrying_ale = ALE_PER_TRIP / share;
+        vec![
+            pay(ctx, "hal", "outside", cost, what),
+            // The market keeps him longer some days.
+            wait_minutes(*pick(rng, &[90u32, 120, 150]), "to-market"),
+        ]
     }
 
     /// Anyone close enough to have seen; failing that, Tom if it was his yard; else the
@@ -101,9 +183,10 @@ impl Hal {
         }
     }
 
-    pub fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
+    pub fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
         let me = ctx.villager_id("hal").expect("hal exists");
         let mut plan = Plan::baseline(me, ctx);
+        self.jealousy = self.jealousy.saturating_sub(1);
         let now = self.touchiness / 10;
         if now != self.noted_sensitivity {
             let how = if now > self.noted_sensitivity {
@@ -129,6 +212,8 @@ impl Hal {
                 30,
                 Command::Note("market day: out along the road".into()),
             );
+        } else if roll(rng) < i16::try_from(CALL_CHANCE).unwrap_or(0) {
+            plan.at(15, 30, go(ctx, "counter_bakery", "call-at-bakery"));
         }
         plan.build()
     }
@@ -140,28 +225,10 @@ impl Hal {
         rng: &mut Pcg32,
     ) -> Option<Vec<Command>> {
         let me = ctx.villager_id("hal").expect("hal exists");
+        self.reassure(trigger, ctx);
         Some(match trigger {
-            // At the edge of town: buy a load and be gone a while.
             Trigger::Arrived if activity_of(ctx, "hal") == "to-market" => {
-                // A full load, a half load when short, or home empty when broke.
-                let coins = ctx.coins(me);
-                let (cost, share, what) = if coins >= LOAD_COST {
-                    (LOAD_COST, 1, "flour and ale at market")
-                } else if coins >= LOAD_COST / 2 {
-                    (LOAD_COST / 2, 2, "a half load at market")
-                } else {
-                    return Some(vec![
-                        Command::Note("can't afford a load; back empty".into()),
-                        go(ctx, "cart_hal", "tend-cart"),
-                    ]);
-                };
-                self.carrying_flour = FLOUR_PER_TRIP / share;
-                self.carrying_ale = ALE_PER_TRIP / share;
-                vec![
-                    pay(ctx, "hal", "outside", cost, what),
-                    // The market keeps him longer some days.
-                    wait_minutes(*pick(rng, &[90u32, 120, 150]), "to-market"),
-                ]
+                self.at_market(ctx, me, rng)
             }
             Trigger::Waited if activity_of(ctx, "hal") == "to-market" => {
                 vec![go(ctx, "pantry_bakery", "deliver")]
@@ -189,6 +256,20 @@ impl Hal {
                     counter_talk(ctx, "hal", "tom", "ale")
                         .unwrap_or_else(|| go(ctx, "cart_hal", "tend-cart")),
                 ]
+            }
+            // A word with Mara if she is free. He buys nothing: when he bought a loaf each
+            // time, Mara never ran short of money.
+            Trigger::Arrived if activity_of(ctx, "hal") == "call-at-bakery" => {
+                vec![
+                    counter_talk(ctx, "hal", "mara", "road")
+                        .unwrap_or_else(|| go(ctx, "cart_hal", "tend-cart")),
+                ]
+            }
+            Trigger::TalkEnded { .. } if activity_of(ctx, "hal") == "call-at-bakery" => {
+                vec![go(ctx, "cart_hal", "tend-cart")]
+            }
+            Trigger::Look { since } if activity_of(ctx, "hal") != "sleep" => {
+                return self.watch_mara(ctx, me, *since);
             }
             // Deliveries go on once the talk at the counter is done.
             Trigger::TalkEnded { topic, .. }
@@ -287,6 +368,41 @@ impl Interlocutor for Hal {
             | G::Awkward
             | G::Rebuff => gesture.warmth(),
         }
+    }
+
+    /// With Mara he pays compliments. Jealous, he takes digs at the rival, and confides in
+    /// someone else that he is sweet on her.
+    fn next_act(&mut self, s: &Situation<'_>, rng: &mut Pcg32) -> Act {
+        let mara = villager(s.ctx, "mara");
+        let jealous = self.jealousy >= JEALOUS;
+        let sweet = s.ctx.topic("sweet-on").about(s.me).with(mara);
+        let week = s.ctx.tick.minus(7 * TICKS_PER_DAY);
+        if s.frame == Frame::Confiding && s.topic.is("sweet-on") && !s.i_did(Gesture::Disclose) {
+            return act(Gesture::Disclose, s.topic);
+        }
+        if s.turn >= 1 && s.frame != Frame::Confiding {
+            if s.other == mara && s.frame == Frame::SmallTalk && roll(rng) < 35 {
+                return act(Gesture::Compliment, s.topic);
+            }
+            if jealous && Some(s.other) == self.rival && roll(rng) < 40 {
+                return act(Gesture::Jab, s.topic);
+            }
+            if jealous
+                && s.other != mara
+                && Some(s.other) != self.rival
+                && matches!(s.frame, Frame::Greeting | Frame::SmallTalk)
+                && self.mind.regard(s.other).familiarity >= 1
+                && !s.i_bid(Frame::Confiding)
+                && !self.mind.told_since(s.other, &sweet, week)
+                && roll(rng) < 50
+            {
+                return Act::Bid {
+                    frame: Frame::Confiding,
+                    topic: sweet,
+                };
+            }
+        }
+        default_next_act(self, s, rng)
     }
 
     /// Money is on his mind whenever he could not pay for two full loads.

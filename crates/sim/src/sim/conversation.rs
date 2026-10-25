@@ -183,7 +183,7 @@ impl<C: CharacterSet> Sim<C> {
             Gesture::Tell
         };
         for (who, caught) in self.listeners_of(speaker, None, gesture.carry()) {
-            let about_me = thought.about.about == Some(who) && caught != Caught::Noise;
+            let about_me = thought.about.names(who) && caught != Caught::Noise;
             let heard = Heard {
                 tick: self.state.tick,
                 speaker,
@@ -456,7 +456,7 @@ impl<C: CharacterSet> Sim<C> {
             Act::Gesture { topic, .. } | Act::Bid { topic, .. } => Some(topic.clone()),
             Act::Answer { .. } => None,
         };
-        let about_me = topic.as_ref().is_some_and(|t| t.about == Some(who));
+        let about_me = topic.as_ref().is_some_and(|t| t.names(who));
         let to = self.state.conversations.get(&id).map(|c| c.other(speaker));
         let heard = Heard {
             tick,

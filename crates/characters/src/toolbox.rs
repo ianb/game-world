@@ -458,6 +458,32 @@ pub fn seen_doing(ctx: &Ctx<'_>, me: &str, activity: &str, since: Tick) -> Vec<V
     who
 }
 
+/// Talks `me` saw `other` start with someone else since `since`, other than the business at
+/// a counter: the people `other` sought out. As (when, with whom), oldest first.
+#[must_use]
+pub fn seen_seeking_out(
+    ctx: &Ctx<'_>,
+    me: VillagerId,
+    other: VillagerId,
+    since: Tick,
+) -> Vec<(Tick, VillagerId)> {
+    ctx.recall(me, since)
+        .filter(|(_, p)| *p == Perceived::Saw)
+        .filter_map(|(r, _)| match &r.event {
+            Emitted::ConversationStarted {
+                tick,
+                who,
+                with,
+                frame,
+                ..
+            } if *who == other && *with != me && *frame != Frame::Transaction => {
+                Some((*tick, *with))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 /// What every villager does unless their own code says otherwise: answer needs, shrug off
 /// a stumble, and not go to sleep starving. Character code returns `None` for a trigger to
 /// land here.

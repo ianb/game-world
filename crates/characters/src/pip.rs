@@ -14,7 +14,6 @@ use sim::social::{
 };
 use sim::time::Tick;
 
-/// Things a child might say to anyone.
 /// How long he stops to chat.
 const CHAT_MINUTES: u32 = 8;
 
