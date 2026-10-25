@@ -377,12 +377,12 @@ impl<C: CharacterSet> Sim<C> {
         let hearer = c.other(speaker);
         let side = c.side(speaker);
         c.turns[side] += 1;
-        if let Act::Gesture {
-            gesture: Gesture::Disclose,
-            topic,
-        } = did
+        // Telling a worry, or something about someone else, is remembered as told to them.
+        if let Act::Gesture { gesture, topic } = did
+            && (*gesture == Gesture::Disclose
+                || (*gesture == Gesture::Tell && topic.about.is_some_and(|a| a != hearer)))
         {
-            c.felt[side].notes.push(format!("told {}", topic.key));
+            c.felt[side].notes.push(format!("told {topic}"));
         }
         c.breach_reply = breach.then_some(hearer);
         let mut new_frame = None;

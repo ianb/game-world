@@ -1035,3 +1035,32 @@ Implications: talking to oneself is not recorded yet; the memory has room
 for it (the speaker as listener). Loud talk does not yet carry through a
 doorway. Hal is rarely near anyone else's conversation, so his reaction
 seldom fires.
+
+## 2026-10-25: Knowledge into action through shared rules; actions cite their cause
+
+Ian: "can nell act on any knowledge, or anyone else?" and "behaviors
+aren't really organic, right? They each are programmed specifically",
+then the worry that "the specific memories are smuggled into numbers and
+the numbers turn into logic and the logic turn into action". Then:
+"you can experiment and make conclusions and act on them".
+
+Decided and built (details in `docs/design/knowledge.md`):
+
+- Thoughts can be said aloud (`Thought.aloud`). Tom grumbles aloud;
+  anyone in earshot hears him complain to himself, and Mara takes him a
+  pastry when she has.
+- Shared rules in the characters toolbox read specific heard memories and
+  return commands; persona decides who runs them. The first is
+  `kindness`: help someone you like after hearing words about their
+  trouble. Topics mark trouble in content (`trouble: money | food`).
+- `Command::Because` makes the next event's cause `Cause::Knew {from,
+  topic, heard_at}`. Summaries and the viewer show the chain.
+- News about third parties passes on by default in conversation, gated
+  by a new `Persona.discretion`, and not to someone already heard
+  talking about it. Pip stops to chat when he meets people.
+
+Implications: numbers stay for aggregates (feeling, familiarity) and
+thresholds; facts travel as memories to the rule that acts on them. One
+rule exists; the next few will show whether `Trouble` stays a closed
+enum. News is retold verbatim, with no distortion yet. Protocol 17,
+snapshot 10.

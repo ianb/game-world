@@ -164,6 +164,7 @@ impl Interlocutor for Mara {
             skill: 7,
             rejection_sensitivity: 2,
             charity: 1,
+            discretion: 9,
         }
     }
     fn memory(&self) -> &Memory {

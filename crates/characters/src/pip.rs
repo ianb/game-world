@@ -3,16 +3,21 @@
 //! wandering, greetings and conversations. In talk he ignores the frame: he tells anyone
 //! anything, wherever they are, and never minds when others do the same.
 use crate::toolbox::{
-    Plan, activity_of, counter_talk, go_tile, pick, stock, stock_of, wait_minutes,
+    Plan, activity_of, chat, counter_talk, go_tile, pick, stock, stock_of, villager, wait_minutes,
 };
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::protocol::{Act, Frame, Gesture};
-use sim::social::{Interlocutor, Memory, Persona, Situation, act, default_next_act, roll};
+use sim::social::{
+    Interlocutor, Memory, Persona, Situation, act, default_gossip, default_next_act, roll,
+};
 use sim::time::Tick;
 
 /// Things a child might say to anyone.
+/// How long he stops to chat.
+const CHAT_MINUTES: u32 = 8;
+
 const NEWS: [&str; 4] = ["frog", "loose-tooth", "secret-den", "dead-mouse"];
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -89,10 +94,15 @@ impl Pip {
                     None => vec![wait_minutes(5, "roam")],
                 }
             }
-            // Greets anyone passing, once per cooldown; the sim handles the pairing.
-            Trigger::Passing { other } | Trigger::Encounter { other }
-                if activity_of(ctx, "pip") != "sleep" =>
-            {
+            // Meeting someone standing still, he stops for a chat; anyone else gets a hello.
+            Trigger::Encounter { other } if activity_of(ctx, "pip") != "sleep" => {
+                let me = villager(ctx, "pip");
+                vec![
+                    chat(ctx, me, other, Frame::Greeting, "greeting", CHAT_MINUTES)
+                        .unwrap_or(Command::Greet { with: other }),
+                ]
+            }
+            Trigger::Passing { other } if activity_of(ctx, "pip") != "sleep" => {
                 vec![Command::Greet { with: other }]
             }
             _ => return None,
@@ -108,6 +118,7 @@ impl Interlocutor for Pip {
             skill: 2,
             rejection_sensitivity: 1,
             charity: 2,
+            discretion: 1,
         }
     }
     fn memory(&self) -> &Memory {
@@ -145,9 +156,14 @@ impl Interlocutor for Pip {
         }
     }
 
-    /// Once the business is done, a quarter of the time he tells whatever is on his mind,
-    /// whatever the frame.
+    /// Once the business is done he passes on any news he has, and otherwise a quarter of
+    /// the time tells whatever is on his mind, whatever the frame.
     fn next_act(&mut self, s: &Situation<'_>, rng: &mut Pcg32) -> Act {
+        if s.turn >= 1
+            && let Some(news) = default_gossip(self, s, rng)
+        {
+            return act(Gesture::Tell, &news);
+        }
         if s.turn >= 1 && s.turn < 4 && s.frame != Frame::Confiding && roll(rng) < 25 {
             return act(Gesture::Disclose, &s.ctx.topic(pick(rng, &NEWS)));
         }

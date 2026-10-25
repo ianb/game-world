@@ -77,6 +77,7 @@ impl Interlocutor for Nell {
             skill: 4,
             rejection_sensitivity: 7,
             charity: 0,
+            discretion: 7,
         }
     }
     fn memory(&self) -> &Memory {

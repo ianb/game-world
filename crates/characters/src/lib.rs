@@ -79,7 +79,14 @@ impl CharacterSet for Town {
             "hal" => self.hal.react(&trigger, ctx, rng),
             _ => None,
         };
-        own.unwrap_or_else(|| toolbox::human(&trigger, ctx, id))
+        let mut cmds = own.unwrap_or_else(|| toolbox::human(&trigger, ctx, id));
+        // Shared rules that run alongside each character's own answer.
+        if let Trigger::TalkEnded { other, .. } | Trigger::Encounter { other } = &trigger
+            && let Some(mind) = self.interlocutor_ref(who, ctx)
+        {
+            cmds.extend(toolbox::kindness(ctx, who, *other, mind));
+        }
+        cmds
     }
 
     fn interlocutor(&mut self, who: VillagerId, ctx: &Ctx<'_>) -> Option<&mut dyn Interlocutor> {

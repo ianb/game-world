@@ -9,7 +9,7 @@ import type { VillagerId } from "./VillagerId";
  * A villager's inner side, for the inspector: settled tendencies, how they are now, how
  * they see the people they have talked to, and what they recently remember.
  */
-export type MindView = { who: VillagerId, sociable: number, warmth: number, skill: number, rejection_sensitivity: number, charity: number, mood: number, worry: string | null, regard: Array<RegardView>, 
+export type MindView = { who: VillagerId, sociable: number, warmth: number, skill: number, rejection_sensitivity: number, charity: number, discretion: number, mood: number, worry: string | null, regard: Array<RegardView>, 
 /**
  * Most recent last.
  */

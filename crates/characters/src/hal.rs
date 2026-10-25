@@ -252,6 +252,7 @@ impl Interlocutor for Hal {
             skill: 5,
             rejection_sensitivity: self.touchiness / 10,
             charity: -2,
+            discretion: 5,
         }
     }
     fn memory(&self) -> &Memory {

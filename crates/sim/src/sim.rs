@@ -633,16 +633,40 @@ impl<C: CharacterSet> Sim<C> {
         v.resume = None;
     }
 
-    fn run_command(&mut self, who: VillagerId, cmd: Command, out: &mut Vec<Emitted>) {
-        let tick = self.state.tick;
+    /// Commands that change nothing outside the villager: a reason for what follows, and a
+    /// thought (which others may overhear, if said aloud).
+    fn inner_command(&mut self, who: VillagerId, cmd: Command, out: &mut Vec<Emitted>) {
         match cmd {
+            Command::Because {
+                from,
+                topic,
+                heard_at,
+            } => {
+                self.cause = Cause::Knew {
+                    from,
+                    topic,
+                    heard_at,
+                };
+            }
             Command::Think(thought) => {
                 let aloud = thought.aloud.then(|| thought.clone());
-                out.push(Emitted::Thought { tick, who, thought });
+                out.push(Emitted::Thought {
+                    tick: self.state.tick,
+                    who,
+                    thought,
+                });
                 if let Some(thought) = aloud {
                     self.voice(who, &thought, out);
                 }
             }
+            _ => {}
+        }
+    }
+
+    fn run_command(&mut self, who: VillagerId, cmd: Command, out: &mut Vec<Emitted>) {
+        let tick = self.state.tick;
+        match cmd {
+            Command::Because { .. } | Command::Think(_) => self.inner_command(who, cmd, out),
             Command::Idle => {
                 self.interrupt(who);
                 self.drop_errand(who);

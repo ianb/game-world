@@ -123,6 +123,26 @@ impl Summarizer {
         }
     }
 
+    /// "Pip told Nell about money (Mara)", when a turn tells about someone not there.
+    fn passed_on(&self, convo: u32, who: VillagerId, did: &Act) -> Option<String> {
+        let listener = self
+            .talks
+            .get(&convo)
+            .map(|t| if t.a == who { t.b } else { t.a })?;
+        match did {
+            Act::Gesture {
+                gesture: crate::protocol::Gesture::Tell | crate::protocol::Gesture::Disclose,
+                topic,
+            } if topic.about.is_some_and(|a| a != who && a != listener) => Some(format!(
+                "{} told {} about {}",
+                self.name(who),
+                self.name(listener),
+                self.topic(topic)
+            )),
+            _ => None,
+        }
+    }
+
     fn beat(&mut self, convo: u32, who: VillagerId, meant: &Act, did: &Act, breach: bool) {
         let name = self.name(who).to_string();
         let bidder_name = self
@@ -131,6 +151,7 @@ impl Summarizer {
             .and_then(|t| t.bid.as_ref())
             .map(|(b, _, _)| self.name(*b).to_string());
         let label = |t: &crate::protocol::Topic| self.topic(t);
+        let passed_on = self.passed_on(convo, who, did);
         let did_text = describe_act(did, &label);
         let bid_about = match did {
             Act::Bid { topic, .. } => Some(self.topic(topic)),
@@ -175,6 +196,10 @@ impl Summarizer {
                 }
             }
             Act::Gesture { .. } => {}
+        }
+        // Passing on something about someone who is not there.
+        if let Some(about) = &passed_on {
+            push(&mut t.clauses, about.clone());
         }
         // A dig or a rebuff they meant: someone taking something out on the other.
         if meant == did

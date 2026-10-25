@@ -270,6 +270,17 @@ pub struct Villager {
     pub income: Vec<Income>,
 }
 
+/// What a topic says about the person it concerns, when it says they are in trouble.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Trouble {
+    /// Short of money.
+    Money,
+    /// Going without food.
+    Food,
+}
+
 /// Something villagers can talk about. Code refers to it by `id`; `gloss` is how views
 /// show it.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -277,6 +288,9 @@ pub struct Villager {
 pub struct TopicDef {
     pub id: String,
     pub gloss: String,
+    /// Hearing this topic about someone means they are in this kind of trouble.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trouble: Option<Trouble>,
 }
 
 /// Everything loaded from the content directory.

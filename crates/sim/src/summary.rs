@@ -180,8 +180,14 @@ impl Summarizer {
                 amount,
                 what,
                 payer_left,
+                cause,
                 ..
-            } => self.paid(tick, *from, *to, *amount, what, *payer_left),
+            } => {
+                self.paid(tick, *from, *to, *amount, what, *payer_left);
+                if let (Some(from), Some(to), Cause::Knew { .. }) = (from, to, cause) {
+                    self.acted_on_knowledge(tick, *from, *to, *amount, cause);
+                }
+            }
             Emitted::Cleared { who, tiles, .. } => {
                 let entry = self.day(tick).cleared.entry(who.0).or_insert((tick, 0));
                 entry.1 += u32::from(*tiles);
@@ -439,6 +445,46 @@ impl Summarizer {
                 entry.1 += 1;
             }
         }
+    }
+
+    /// A payment made because of something heard: always news, with what was heard and
+    /// from whom.
+    fn acted_on_knowledge(
+        &mut self,
+        tick: Tick,
+        from: VillagerId,
+        to: VillagerId,
+        amount: u32,
+        cause: &Cause,
+    ) {
+        let Cause::Knew {
+            from: source,
+            topic,
+            heard_at,
+        } = cause
+        else {
+            return;
+        };
+        let (giver, taker) = (self.name(from).to_string(), self.name(to).to_string());
+        let told = if *source == to {
+            format!("{taker} had told {giver}")
+        } else {
+            format!("{} had told {giver}", self.name(*source))
+        };
+        let text = format!(
+            "{giver} gave {taker} {amount} coins: {told} about {} ({})",
+            self.topic(topic),
+            time(*heard_at)
+        );
+        let key = format!("knew:{}:{}", tick.0, from.0);
+        self.line(
+            tick,
+            from,
+            SummaryKind::Money,
+            text,
+            Some(cause.clone()),
+            key,
+        );
     }
 
     fn paid(

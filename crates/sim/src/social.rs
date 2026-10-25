@@ -287,6 +287,9 @@ pub struct Persona {
     pub rejection_sensitivity: u8,
     /// How readily they excuse others by circumstance rather than character, -3 to 3.
     pub charity: i8,
+    /// How readily they keep what they know about others to themselves, 0 to 10. At 2 or
+    /// less they pass on even what was told them in confidence.
+    pub discretion: u8,
 }
 
 impl Default for Persona {
@@ -297,6 +300,7 @@ impl Default for Persona {
             skill: 5,
             rejection_sensitivity: 3,
             charity: 0,
+            discretion: 5,
         }
     }
 }
@@ -398,10 +402,10 @@ impl Memory {
         }
     }
 
-    /// Whether they told `other` about the topic `key` in a conversation since `tick`.
+    /// Whether they told `other` about `topic` in a conversation since `tick`.
     #[must_use]
-    pub fn told_since(&self, other: VillagerId, key: &str, tick: Tick) -> bool {
-        let note = format!("told {key}");
+    pub fn told_since(&self, other: VillagerId, topic: &Topic, tick: Tick) -> bool {
+        let note = format!("told {topic}");
         self.episodes
             .iter()
             .any(|e| e.with == other && e.tick >= tick && e.notes.contains(&note))
@@ -804,7 +808,10 @@ pub fn default_next_act<I: Interlocutor + ?Sized>(
         },
         Frame::Greeting => match s.turn {
             0 => act(Gesture::Ask, topic),
-            1 => act(Gesture::Tell, topic),
+            1 => match default_gossip(me, s, rng) {
+                Some(news) => act(Gesture::Tell, &news),
+                None => act(Gesture::Tell, topic),
+            },
             _ if wants_more(me, s, rng) => Act::Bid {
                 frame: Frame::SmallTalk,
                 topic: s.ctx.topic("day"),
@@ -814,6 +821,49 @@ pub fn default_next_act<I: Interlocutor + ?Sized>(
         Frame::SmallTalk => small_talk_act(me, s, rng),
         Frame::Confiding => confiding_act(me, s),
     }
+}
+
+/// How long something heard stays worth passing on.
+const NEWS_DAYS: u32 = 7;
+
+/// Something they know about a third person that this listener has not had from them:
+/// heard in words in the last week, not about the listener or themselves, and not
+/// something they have heard the listener talk about. A confidence (disclosed to them directly) is passed on only at discretion
+/// 2 or less. Whether they pass it on at all is a roll weighted by discretion.
+pub fn default_gossip<I: Interlocutor + ?Sized>(
+    me: &I,
+    s: &Situation<'_>,
+    rng: &mut Pcg32,
+) -> Option<Topic> {
+    let p = me.persona();
+    let since = s.ctx.tick.minus(NEWS_DAYS * crate::time::TICKS_PER_DAY);
+    let news = me
+        .memory()
+        .heard()
+        .words()
+        .since(since)
+        .iter()
+        .filter(|h| h.speaker != s.other)
+        .filter(|h| {
+            let confidence = h.gesture == Gesture::Disclose && h.caught == Caught::Addressed;
+            !confidence || p.discretion <= 2
+        })
+        .filter_map(|h| h.topic.as_ref())
+        .filter(|t| t.about.is_some_and(|a| a != s.me && a != s.other))
+        .filter(|t| !me.memory().told_since(s.other, t, since))
+        // Not to someone they have heard talking about it: they know already.
+        .filter(|t| {
+            !me.memory()
+                .heard()
+                .from(s.other)
+                .topic(&t.key)
+                .since(since)
+                .iter()
+                .any(|h| h.topic.as_ref().is_some_and(|ht| ht.about == t.about))
+        })
+        .last()?
+        .clone();
+    (roll(rng) < 10 * (10 - i16::from(p.discretion.min(10)))).then_some(news)
 }
 
 /// Days before someone tells the same person the same worry again.
@@ -828,6 +878,11 @@ fn small_talk_act<I: Interlocutor + ?Sized>(me: &I, s: &Situation<'_>, rng: &mut
     let mood = me.mood(s.ctx, s.me);
     let stance = me.stance(s);
     let topic = s.topic;
+    if s.turn >= 1
+        && let Some(news) = default_gossip(me, s, rng)
+    {
+        return act(Gesture::Tell, &news);
+    }
     if let Some(worry) = me.worry(s.ctx, s.me)
         && s.turn >= 1
         && r.familiarity >= 2
@@ -835,7 +890,7 @@ fn small_talk_act<I: Interlocutor + ?Sized>(me: &I, s: &Situation<'_>, rng: &mut
         && !s.i_bid(Frame::Confiding)
         && !me.memory().told_since(
             s.other,
-            &worry.key,
+            &worry,
             s.ctx.tick.minus(RETELL_DAYS * crate::time::TICKS_PER_DAY),
         )
         && roll(rng) < 60
@@ -1182,8 +1237,9 @@ mod tests {
         e.tick = Tick(100);
         e.notes.push("told money".into());
         m.remember(e);
-        assert!(m.told_since(VillagerId(1), "money", Tick(50)));
-        assert!(!m.told_since(VillagerId(1), "money", Tick(200)));
-        assert!(!m.told_since(VillagerId(2), "money", Tick(50)));
+        let money = Topic::new("money");
+        assert!(m.told_since(VillagerId(1), &money, Tick(50)));
+        assert!(!m.told_since(VillagerId(1), &money, Tick(200)));
+        assert!(!m.told_since(VillagerId(2), &money, Tick(50)));
     }
 }

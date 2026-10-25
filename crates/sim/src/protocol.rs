@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 16;
+pub const PROTOCOL_VERSION: u32 = 17;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -467,6 +467,12 @@ pub enum Cause {
     Return,
     /// An outside input, by sequence number.
     Input { seq: u32 },
+    /// Acting on something they heard: `from` said it at `heard_at`, about `topic`.
+    Knew {
+        from: VillagerId,
+        topic: Topic,
+        heard_at: Tick,
+    },
     /// The sim's own rules: the start of the day, someone else starting a conversation.
     #[default]
     Sim,
@@ -866,6 +872,7 @@ pub struct MindView {
     pub skill: u8,
     pub rejection_sensitivity: u8,
     pub charity: i8,
+    pub discretion: u8,
     pub mood: i8,
     pub worry: Option<String>,
     pub regard: Vec<RegardView>,
@@ -934,6 +941,7 @@ pub fn mind_view<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Option<MindV
         skill: p.skill,
         rejection_sensitivity: p.rejection_sensitivity,
         charity: p.charity,
+        discretion: p.discretion,
         mood: mind.mood(&ctx, who),
         worry: mind.worry(&ctx, who).map(|t| t.label(&ctx)),
         regard,

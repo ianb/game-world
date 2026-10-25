@@ -240,6 +240,13 @@ pub enum Command {
         activity: String,
         minutes: u32,
     },
+    /// The commands after this one in the same reaction act on something heard: `from`
+    /// said it at `heard_at`, about `topic`. Their events carry it as their cause.
+    Because {
+        from: VillagerId,
+        topic: Topic,
+        heard_at: Tick,
+    },
     /// Tell yourself something about what happened. Changes nothing; emits `Thought`, which
     /// the town keeps for a month. Only the thinker perceives it, unless it is said aloud:
     /// then it carries like a complaint (if it felt bad) or a remark, and anyone in earshot
@@ -265,6 +272,11 @@ impl Command {
             Command::Idle => "idle".to_string(),
             Command::Note(text) => format!("note: {text}"),
             Command::Think(t) => format!("thinks: {}", t.describe(ctx)),
+            Command::Because { from, topic, .. } => format!(
+                "because {} said {}",
+                ctx.villager(*from).name,
+                topic.label(ctx)
+            ),
             Command::Greet { with } => format!("greet {}", ctx.villager(*with).name),
             Command::Talk {
                 with,

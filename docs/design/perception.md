@@ -61,8 +61,11 @@ and any name further out, raised voices further still for loud gestures.
 Each villager keeps what they caught as a heard memory and can query it.
 Hearing your own name or something loud is an intrusion (`Overheard`).
 
+Talking to oneself aloud, and passing on what you heard, are built; see
+[knowledge.md](./knowledge.md).
+
 ## Not done
 
-Loud talk carrying through doorways, talking to oneself aloud, noticing an absence from what you
-expected, relaying what you perceived to others (Pip's blurting), and
+Loud talk carrying through doorways, noticing an absence from what you
+expected, relaying what you saw (rather than heard) to others, and
 thoughts in Ian's words rather than tags.

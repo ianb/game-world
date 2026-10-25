@@ -318,6 +318,7 @@ impl Interlocutor for Tom {
             skill: 4,
             rejection_sensitivity: 4,
             charity: -1,
+            discretion: 4,
         }
     }
     fn memory(&self) -> &Memory {

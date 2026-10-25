@@ -94,13 +94,18 @@ function describeNeeds(v: VillagerView): string[] {
 }
 
 /** Why someone is doing something, in a few words. */
-function causeText(cause: Cause | null): string {
+function causeText(cause: Cause | null, villagers: VillagerView[]): string {
   if (cause === null) return "";
   if (cause === "Schedule") return "the schedule";
   if (cause === "Plan") return "their own plan for the day";
   if (cause === "Return") return "back from an errand";
   if (cause === "Sim") return "the town's rules";
   if ("Reaction" in cause) return `reacting to: ${cause.Reaction.trigger}`;
+  if ("Knew" in cause) {
+    const { from, topic, heard_at } = cause.Knew;
+    const about = topic.about === null ? "" : ` (${villagers[topic.about]?.name ?? "?"})`;
+    return `${villagers[from]?.name ?? "?"} said ${glosses.get(topic.key) ?? topic.key}${about} at ${sinceText(heard_at)}`;
+  }
   return `outside input #${cause.Input.seq}`;
 }
 
@@ -152,7 +157,7 @@ function describeVillager(v: VillagerView, stock: StockView[]): string[] {
   const lines = [
     `${v.name}`,
     `${v.activity}${v.heading_for ? ` (heading for ${v.heading_for})` : ""} since ${sinceText(v.since)}`,
-    `because: ${causeText(v.cause)}`,
+    `because: ${causeText(v.cause, sim.villagers())}`,
     `at ${place?.key ?? "?"} (${v.pos.x}, ${v.pos.y})`,
     `${v.coins} coins`,
     ...describeNeeds(v),
@@ -376,7 +381,7 @@ function itemButton(item: SummaryItem): HTMLButtonElement {
   const what = document.createElement("span");
   what.textContent = item.text;
   b.append(when, what);
-  const why = causeText(item.cause);
+  const why = causeText(item.cause, sim.villagers());
   b.title = why ? `because: ${why}. Click to replay this moment.` : "Click to replay this moment.";
   b.addEventListener("click", () => goTo(item));
   return b;

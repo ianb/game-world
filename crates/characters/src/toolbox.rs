@@ -4,8 +4,9 @@ use rand_pcg::Pcg32;
 use sim::brain::{Command, Ctx, Party, Planned, Target, Trigger};
 use sim::ids::{ObjectId, VillagerId};
 use sim::needs::Need;
-use sim::protocol::{Blame, Emitted, Frame, Mishap, Thought, Topic};
+use sim::protocol::{Blame, Cause, Emitted, Frame, Mishap, Thought, Topic};
 use sim::recall::Perceived;
+use sim::social::Interlocutor;
 use sim::time::{TICKS_PER_MINUTE, Tick, TimeOfDay, Weekday};
 
 /// A day's intentions, built up and handed back to the sim.
@@ -232,17 +233,101 @@ pub fn counter_talk(ctx: &Ctx<'_>, me: &str, keeper: &str, topic: &str) -> Optio
     if me == keeper {
         return None;
     }
-    let k = villager(ctx, keeper);
-    let (mine, theirs) = (ctx.villager(villager(ctx, me)), ctx.villager(k));
-    let free = theirs.place == mine.place
+    chat(
+        ctx,
+        villager(ctx, me),
+        villager(ctx, keeper),
+        Frame::Transaction,
+        topic,
+        COUNTER_MINUTES,
+    )
+}
+
+/// A conversation with `other` if they are here, still and free.
+#[must_use]
+pub fn chat(
+    ctx: &Ctx<'_>,
+    me: VillagerId,
+    other: VillagerId,
+    frame: Frame,
+    topic: &str,
+    minutes: u32,
+) -> Option<Command> {
+    let (mine, theirs) = (ctx.villager(me), ctx.villager(other));
+    let free = me != other
+        && theirs.place == mine.place
         && theirs.moving.is_none()
+        && mine.moving.is_none()
         && !matches!(theirs.activity.as_str(), "talk" | "sleep");
     free.then(|| Command::Talk {
-        with: k,
-        frame: Frame::Transaction,
+        with: other,
+        frame,
         topic: ctx.topic(topic),
-        minutes: COUNTER_MINUTES,
+        minutes,
     })
+}
+
+/// Coins someone keeps back before they will give any away.
+pub const SPARE_COINS: u32 = 12;
+/// What a kindness gives.
+pub const KINDNESS_COINS: u32 = 3;
+
+/// The shared rule for helping someone you know is in trouble. You heard, in words and in
+/// the last week, a topic whose content marks trouble (`content/topics`) about `other`;
+/// you like them (feeling 1 or more) and are warm by nature (warmth 1 or more); you have
+/// coins to spare; and you have not helped them since you heard it. You give a few coins,
+/// and the payment cites what you heard. Run when you have just talked with or met them.
+#[must_use]
+pub fn kindness(
+    ctx: &Ctx<'_>,
+    me: VillagerId,
+    other: VillagerId,
+    mind: &dyn Interlocutor,
+) -> Vec<Command> {
+    if mind.persona().warmth < 1
+        || mind.memory().regard(other).feeling < 1
+        || ctx.coins(me) < SPARE_COINS
+    {
+        return Vec::new();
+    }
+    let week = ctx.tick.minus(7 * sim::time::TICKS_PER_DAY);
+    let trouble = mind
+        .memory()
+        .heard()
+        .words()
+        .about(other)
+        .since(week)
+        .iter()
+        .filter(|h| {
+            h.topic
+                .as_ref()
+                .and_then(|t| ctx.content.topic(&t.key))
+                .is_some_and(|d| d.trouble.is_some())
+        })
+        .last();
+    let Some(h) = trouble else {
+        return Vec::new();
+    };
+    let helped = ctx.recall(me, h.tick).any(|(r, p)| {
+        p == Perceived::Did
+            && matches!(&r.event, Emitted::Paid { to: Some(to), cause: Cause::Knew { .. }, .. } if *to == other)
+    });
+    if helped {
+        return Vec::new();
+    }
+    vec![
+        Command::Because {
+            from: h.speaker,
+            topic: h.topic.clone().expect("words were caught"),
+            heard_at: h.tick,
+        },
+        Command::Pay {
+            from: Party::Villager(me),
+            to: Party::Villager(other),
+            amount: KINDNESS_COINS,
+            what: "help".into(),
+        },
+    ]
 }
 
 /// Hunger at which anyone eats something before going to sleep.

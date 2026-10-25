@@ -435,11 +435,37 @@
         },
         "id": {
           "type": "string"
+        },
+        "trouble": {
+          "description": "Hearing this topic about someone means they are in this kind of trouble.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Trouble"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
         "id",
         "gloss"
+      ]
+    },
+    "Trouble": {
+      "description": "What a topic says about the person it concerns, when it says they are in trouble.",
+      "oneOf": [
+        {
+          "description": "Short of money.",
+          "type": "string",
+          "const": "money"
+        },
+        {
+          "description": "Going without food.",
+          "type": "string",
+          "const": "food"
+        }
       ]
     },
     "Villager": {
