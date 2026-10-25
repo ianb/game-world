@@ -205,6 +205,22 @@ impl Hal {
                 cmds.extend(counter_talk(ctx, "hal", "tom", "ale"));
                 cmds
             }
+            // Overhearing something sharp, or his own name: he assumes it was meant for him.
+            Trigger::Overheard {
+                speaker,
+                gesture,
+                about_me,
+                ..
+            } if *about_me || self.warmth_of(*gesture) < 0 => {
+                self.touchiness = self.touchiness.saturating_add(4).min(TOUCHINESS_MAX);
+                vec![think(
+                    "what was said",
+                    Blame::Them(*speaker),
+                    false,
+                    false,
+                    -1,
+                )]
+            }
             Trigger::Mishap {
                 what: Mishap::Tripped,
             } => {

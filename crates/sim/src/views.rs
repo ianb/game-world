@@ -1,7 +1,7 @@
 //! Text views of a running sim: the agent's eyes on the town.
 use crate::brain::CharacterSet;
 use crate::ids::VillagerId;
-use crate::protocol::{Act, Attribution, BidAnswer, Emitted, Topic};
+use crate::protocol::{Act, Attribution, BidAnswer, Caught, Emitted, Topic};
 use crate::sim::Sim;
 use content::Pos;
 use std::fmt::Write as _;
@@ -368,10 +368,15 @@ fn transcript_line<C: CharacterSet>(sim: &Sim<C>, e: &Emitted) -> Option<(u32, S
             taken_as,
             warmth,
             attribution,
-            overheard,
+            caught,
             ..
         } => {
-            let verb = if *overheard { "overhears" } else { "takes it" };
+            let verb = match caught {
+                Caught::Addressed => "takes it",
+                Caught::Close => "overhears",
+                Caught::Gist => "catches the tone",
+                Caught::Noise => "hears voices",
+            };
             let reading = if taken_as == did {
                 String::new()
             } else {

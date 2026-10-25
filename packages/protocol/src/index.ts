@@ -18,6 +18,7 @@ export type { HeardView } from "./generated/HeardView";
 export type { Frame } from "./generated/Frame";
 export type { Gesture } from "./generated/Gesture";
 export type { Topic } from "./generated/Topic";
+export type { Caught } from "./generated/Caught";
 export type { Thought } from "./generated/Thought";
 export type { ThoughtView } from "./generated/ThoughtView";
 export type { Blame } from "./generated/Blame";
@@ -47,7 +48,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 14;
+export const PROTOCOL_VERSION = 15;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;

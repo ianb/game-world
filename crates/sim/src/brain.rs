@@ -2,7 +2,7 @@
 //! reads the world through `Ctx`, and writes by returning commands. The sim applies them.
 use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::needs::{Need, Needs};
-use crate::protocol::{Blame, Frame, Mishap, Thought, Topic};
+use crate::protocol::{Blame, Caught, Frame, Gesture, Mishap, Thought, Topic};
 use crate::recall::{Perceived, Record, Recorded};
 use crate::social::Interlocutor;
 use crate::terrain::Terrain;
@@ -376,6 +376,15 @@ pub enum Trigger {
     Look { since: Tick },
     /// Something happened to your body. Intrusive: it reaches you whatever you attend to.
     Mishap { what: Mishap },
+    /// Someone nearby, talking to someone else, said something loud or something about
+    /// you. Intrusive. `gesture` is how you took it; what else you caught is in your
+    /// `Memory::heard`.
+    Overheard {
+        speaker: VillagerId,
+        gesture: Gesture,
+        about_me: bool,
+        caught: Caught,
+    },
 }
 
 impl Trigger {
@@ -399,6 +408,17 @@ impl Trigger {
             Trigger::Resumed => "resumed".into(),
             Trigger::Look { .. } => "looked around".into(),
             Trigger::Mishap { what } => format!("{what:?}").to_lowercase(),
+            Trigger::Overheard {
+                speaker,
+                gesture,
+                about_me,
+                ..
+            } => format!(
+                "overheard {} ({}){}",
+                name(speaker),
+                gesture.name(),
+                if *about_me { ", about me" } else { "" }
+            ),
         }
     }
 }

@@ -45,6 +45,10 @@ impl Nell {
             Trigger::Mishap {
                 what: Mishap::Tripped,
             } => vec![think("tripped", Blame::Me, true, false, -1)],
+            // Her name in someone else's talk: she assumes she did something wrong.
+            Trigger::Overheard { about_me: true, .. } => {
+                vec![think("being talked about", Blame::Me, true, false, -1)]
+            }
             Trigger::Passing { other } if activity_of(ctx, "nell") != "sleep" => {
                 vec![Command::Greet { with: *other }]
             }

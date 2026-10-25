@@ -9,7 +9,7 @@
 //! episodes, and `Memory::regard` reads a view of someone from them when asked.
 use crate::brain::Ctx;
 use crate::ids::VillagerId;
-use crate::protocol::{Act, Attribution, BidAnswer, Frame, Gesture, Stance, Topic};
+use crate::protocol::{Act, Attribution, BidAnswer, Caught, Frame, Gesture, Stance, Topic};
 use crate::time::Tick;
 use rand::RngExt;
 use rand_pcg::Pcg32;
@@ -181,6 +181,83 @@ impl Gesture {
     }
 }
 
+/// How far a turn carries: confiding is said low, a laugh carries, a dig or a complaint is
+/// said loud.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Carry {
+    Low,
+    Ordinary,
+    Carrying,
+    Loud,
+}
+
+impl Carry {
+    /// Tiles within which a listener catches the words, the gist, and raised voices.
+    #[must_use]
+    pub fn reach(self) -> (u16, u16, u16) {
+        match self {
+            Carry::Low => (2, 3, 0),
+            Carry::Ordinary => (4, 8, 0),
+            Carry::Carrying => (5, 10, 16),
+            Carry::Loud => (6, 12, 20),
+        }
+    }
+
+    /// What a listener `distance` tiles from the speaker catches, if anything.
+    #[must_use]
+    pub fn caught_at(self, distance: u16) -> Option<Caught> {
+        let (words, gist, noise) = self.reach();
+        if distance <= words {
+            Some(Caught::Close)
+        } else if distance <= gist {
+            Some(Caught::Gist)
+        } else if distance <= noise {
+            Some(Caught::Noise)
+        } else {
+            None
+        }
+    }
+}
+
+impl Gesture {
+    /// How far this gesture carries. Every gesture is listed.
+    #[deny(clippy::wildcard_enum_match_arm)]
+    #[must_use]
+    pub fn carry(self) -> Carry {
+        use Gesture as G;
+        match self {
+            G::Disclose | G::Sympathise => Carry::Low,
+            G::Ask
+            | G::Tell
+            | G::Agree
+            | G::Tease
+            | G::Compliment
+            | G::Request
+            | G::Offer
+            | G::Thank
+            | G::Decline
+            | G::Invite
+            | G::Leave
+            | G::Awkward
+            | G::Pry => Carry::Ordinary,
+            G::Joke => Carry::Carrying,
+            G::Complain | G::Jab | G::Rebuff => Carry::Loud,
+        }
+    }
+}
+
+/// How far an act carries: a bid to confide is made low, like the confiding itself.
+#[must_use]
+pub fn act_carry(act: &Act) -> Carry {
+    match act {
+        Act::Bid {
+            frame: Frame::Confiding,
+            ..
+        } => Carry::Low,
+        other => act_gesture(other).carry(),
+    }
+}
+
 /// Reads an act as the gesture it amounts to.
 #[must_use]
 pub fn act_gesture(act: &Act) -> Gesture {
@@ -238,14 +315,21 @@ pub struct Episode {
     pub notes: Vec<String>,
 }
 
-/// Something said, heard directly or overheard.
+/// A turn someone perceived: who was talking, to whom, about what, and how (the gesture,
+/// as they took it). Too far away for the words, the topic is missing; too far for more
+/// than raised voices, so is the listener. Character code reads these through
+/// `Memory::heard`.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Heard {
     pub tick: Tick,
-    pub from: VillagerId,
+    pub speaker: VillagerId,
+    /// Who it was said to, when they could tell.
+    pub to: Option<VillagerId>,
     pub gesture: Gesture,
-    pub topic: Topic,
-    pub overheard: bool,
+    pub topic: Option<Topic>,
+    /// Their own name was in it, which carries further than the words.
+    pub about_me: bool,
+    pub caught: Caught,
 }
 
 /// What a person keeps. Old things fall away; a character can override what to keep.
@@ -256,7 +340,7 @@ pub struct Memory {
 }
 
 const MAX_EPISODES: usize = 60;
-const MAX_HEARD: usize = 40;
+const MAX_HEARD: usize = 150;
 /// How many recent episodes with someone shape the view of them.
 const REGARD_WINDOW: usize = 8;
 
@@ -323,13 +407,100 @@ impl Memory {
             .any(|e| e.with == other && e.tick >= tick && e.notes.contains(&note))
     }
 
-    /// Whether `from` told (or was overheard telling) something about the topic `key` since
-    /// `tick`.
+    /// A query over what they heard: chain filters, then `iter`, `any`, `count` or `last`.
     #[must_use]
-    pub fn heard_since(&self, from: VillagerId, key: &str, tick: Tick) -> bool {
-        self.heard
-            .iter()
-            .any(|h| h.from == from && h.topic.is(key) && h.tick >= tick)
+    pub fn heard(&self) -> HeardQuery<'_> {
+        HeardQuery {
+            all: &self.heard,
+            speaker: None,
+            to: None,
+            gesture: None,
+            topic: None,
+            about: None,
+            since: Tick(0),
+            words: false,
+        }
+    }
+}
+
+/// Filters over a person's `Heard` memories. Unset filters match everything.
+#[derive(Clone, Debug)]
+pub struct HeardQuery<'a> {
+    all: &'a [Heard],
+    speaker: Option<VillagerId>,
+    to: Option<VillagerId>,
+    gesture: Option<Gesture>,
+    topic: Option<&'a str>,
+    about: Option<VillagerId>,
+    since: Tick,
+    words: bool,
+}
+
+impl<'a> HeardQuery<'a> {
+    #[must_use]
+    pub fn from(mut self, speaker: VillagerId) -> Self {
+        self.speaker = Some(speaker);
+        self
+    }
+    #[must_use]
+    pub fn to(mut self, listener: VillagerId) -> Self {
+        self.to = Some(listener);
+        self
+    }
+    #[must_use]
+    pub fn gesture(mut self, gesture: Gesture) -> Self {
+        self.gesture = Some(gesture);
+        self
+    }
+    #[must_use]
+    pub fn topic(mut self, key: &'a str) -> Self {
+        self.topic = Some(key);
+        self
+    }
+    /// About this person (the topic's `about`).
+    #[must_use]
+    pub fn about(mut self, who: VillagerId) -> Self {
+        self.about = Some(who);
+        self
+    }
+    #[must_use]
+    pub fn since(mut self, tick: Tick) -> Self {
+        self.since = tick;
+        self
+    }
+    /// Only those close enough to catch the words.
+    #[must_use]
+    pub fn words(mut self) -> Self {
+        self.words = true;
+        self
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &'a Heard> + '_ {
+        self.all.iter().filter(move |h| {
+            h.tick >= self.since
+                && self.speaker.is_none_or(|v| h.speaker == v)
+                && self.to.is_none_or(|v| h.to == Some(v))
+                && self.gesture.is_none_or(|g| h.gesture == g)
+                && self
+                    .topic
+                    .is_none_or(|k| h.topic.as_ref().is_some_and(|t| t.is(k)))
+                && self
+                    .about
+                    .is_none_or(|v| h.topic.as_ref().is_some_and(|t| t.about == Some(v)))
+                && (!self.words || matches!(h.caught, Caught::Addressed | Caught::Close))
+        })
+    }
+    #[must_use]
+    pub fn any(&self) -> bool {
+        self.iter().next().is_some()
+    }
+    #[must_use]
+    pub fn count(&self) -> usize {
+        self.iter().count()
+    }
+    #[must_use]
+    pub fn last(&self) -> Option<&'a Heard> {
+        self.iter().last()
     }
 }
 

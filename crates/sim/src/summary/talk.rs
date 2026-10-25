@@ -3,7 +3,7 @@
 //! A conversation with none of that is routine by its pair and frames.
 use super::{Draft, Summarizer, normalize};
 use crate::ids::VillagerId;
-use crate::protocol::{Act, Attribution, BidAnswer, Cause, Emitted, Frame, SummaryKind};
+use crate::protocol::{Act, Attribution, BidAnswer, Caught, Cause, Emitted, Frame, SummaryKind};
 use crate::social::act_gesture;
 use crate::time::Tick;
 use crate::views::describe_act;
@@ -64,20 +64,27 @@ impl Summarizer {
                 taken_as,
                 warmth,
                 attribution,
-                overheard,
+                caught: how,
                 ..
             } => {
                 let (name, speaker) =
                     (self.name(*who).to_string(), self.name(*speaker).to_string());
-                // What a bystander catches is the topic of a bid to confide or a disclosure.
+                // A bystander close enough for the words catches the topic of a bid to confide
+                // or a disclosure.
                 let caught = self
                     .talks
                     .get(convo)
                     .and_then(|t| t.last.as_ref())
                     .filter(|a| {
                         matches!(
-                            act_gesture(a),
-                            crate::protocol::Gesture::Invite | crate::protocol::Gesture::Disclose
+                            a,
+                            Act::Bid {
+                                frame: Frame::Confiding,
+                                ..
+                            } | Act::Gesture {
+                                gesture: crate::protocol::Gesture::Disclose,
+                                ..
+                            }
                         )
                     })
                     .and_then(|a| match a {
@@ -88,9 +95,16 @@ impl Summarizer {
                 let Some(t) = self.talks.get_mut(convo) else {
                     return;
                 };
-                if *overheard {
-                    if let Some(caught) = caught {
+                if *how != Caught::Addressed {
+                    if *how == Caught::Close
+                        && let Some(caught) = caught
+                    {
                         push(&mut t.clauses, format!("{name} overheard \"{caught}\""));
+                    } else if did.carry() == crate::social::Carry::Loud {
+                        push(
+                            &mut t.clauses,
+                            format!("{name} heard {speaker} ({})", taken_as.name()),
+                        );
                     }
                 } else if taken_as != did {
                     let mut c = format!(

@@ -2,12 +2,13 @@
 //! choice in a beat (what to do, how it comes out, how it is taken) belongs to the
 //! participants' programs, through `Interlocutor`.
 use super::Sim;
-use crate::brain::{CharacterSet, Ctx};
+use crate::brain::{CharacterSet, Ctx, Trigger};
 use crate::event::Event;
 use crate::ids::VillagerId;
-use crate::protocol::{Act, BidAnswer, Emitted, Frame, Gesture, Topic};
+use crate::protocol::{Act, BidAnswer, Caught, Emitted, Frame, Gesture, Topic};
 use crate::social::{
-    BeatRecord, Conversation, Episode, Felt, Heard, Interlocutor, Plain, Situation, act_gesture,
+    BeatRecord, Carry, Conversation, Episode, Felt, Heard, Interlocutor, Plain, Situation,
+    act_carry, act_gesture,
 };
 use crate::time::{TICKS_PER_MINUTE, Tick};
 use rand_pcg::Pcg32;
@@ -16,27 +17,6 @@ use rand_pcg::Pcg32;
 const EXTENSION_MINUTES: u32 = 12;
 /// Time between turns.
 const BEAT_TICKS: u32 = 2 * TICKS_PER_MINUTE;
-
-/// Turns worth a bystander's attention, including a bid to confide, whose subject is
-/// what gets overheard.
-fn notable(did: &Act) -> bool {
-    matches!(
-        did,
-        Act::Bid {
-            frame: Frame::Confiding,
-            ..
-        }
-    ) || matches!(
-        act_gesture(did),
-        Gesture::Disclose
-            | Gesture::Complain
-            | Gesture::Jab
-            | Gesture::Rebuff
-            | Gesture::Tease
-            | Gesture::Compliment
-            | Gesture::Sympathise
-    )
-}
 
 impl<C: CharacterSet> Sim<C> {
     /// Starts the record and the first beat. The caller has already checked the two can
@@ -102,6 +82,80 @@ impl<C: CharacterSet> Sim<C> {
             })
             .map(|(i, _)| VillagerId(u16::try_from(i).expect("few villagers")))
             .collect()
+    }
+
+    /// Who besides the two talking catches `did`, and how much: awake, in the same room (or
+    /// both outdoors), and within the gesture's reach of the speaker.
+    fn listeners(
+        &self,
+        speaker: VillagerId,
+        hearer: VillagerId,
+        did: &Act,
+    ) -> Vec<(VillagerId, Caught)> {
+        let carry = act_carry(did);
+        let vs = &self.state.villagers[speaker.index()];
+        let place = vs.place.index();
+        let room = self.world.room_at(place, vs.pos.x, vs.pos.y);
+        self.state
+            .villagers
+            .iter()
+            .enumerate()
+            .filter_map(|(i, v)| {
+                let who = VillagerId(u16::try_from(i).expect("few villagers"));
+                if who == speaker || who == hearer || v.activity == "sleep" || v.place != vs.place {
+                    return None;
+                }
+                if self.world.room_at(place, v.pos.x, v.pos.y) != room {
+                    return None;
+                }
+                let d = v.pos.x.abs_diff(vs.pos.x).max(v.pos.y.abs_diff(vs.pos.y));
+                carry.caught_at(d).map(|c| (who, c))
+            })
+            .collect()
+    }
+
+    /// Raised voices heard from afar: who, roughly how, and nothing of what or to whom.
+    fn hear_noise(
+        &mut self,
+        who: VillagerId,
+        speaker: VillagerId,
+        did: &Act,
+        out: &mut Vec<Emitted>,
+    ) {
+        let tick = self.state.tick;
+        let heard = Heard {
+            tick,
+            speaker,
+            to: None,
+            gesture: act_gesture(did),
+            topic: None,
+            about_me: false,
+            caught: Caught::Noise,
+        };
+        let ctx = Ctx {
+            tick,
+            calendar: tick.calendar(),
+            content: &self.content,
+            world: &self.world,
+            nav: &self.nav,
+            villagers: &self.state.villagers,
+            terrain: &self.state.terrain,
+            stock: &self.state.stock,
+            record: &self.state.record,
+        };
+        if let Some(m) = self.state.characters.interlocutor(who, &ctx) {
+            m.hear(heard);
+        }
+        self.react(
+            who,
+            Trigger::Overheard {
+                speaker,
+                gesture: act_gesture(did),
+                about_me: false,
+                caught: Caught::Noise,
+            },
+            out,
+        );
     }
 
     /// Runs `f` with `who`'s program and a view of the conversation from their side, where
@@ -216,14 +270,16 @@ impl<C: CharacterSet> Sim<C> {
                 speaker,
                 &did,
                 kind_meant,
-                false,
+                Caught::Addressed,
                 &bystanders,
                 out,
             );
-            // Bystanders notice what stands out.
-            if breach || notable(&did) {
-                for &b in &bystanders {
-                    self.take_up(id, b, speaker, &did, kind_meant, true, &bystanders, out);
+            // Anyone else in earshot catches as much as the gesture carries to them.
+            for (b, caught) in self.listeners(speaker, hearer, &did) {
+                if caught == Caught::Noise {
+                    self.hear_noise(b, speaker, &did, out);
+                } else {
+                    self.take_up(id, b, speaker, &did, kind_meant, caught, &bystanders, out);
                 }
             }
         }
@@ -312,8 +368,10 @@ impl<C: CharacterSet> Sim<C> {
         }
     }
 
-    /// `who` takes up `speaker`'s turn; a participant's reading goes into how they feel
-    /// about the conversation, and anything said goes into memory.
+    /// `who` takes up `speaker`'s turn as much as they caught of it. Everyone keeps it in
+    /// memory; a participant's reading also goes into how they feel about the conversation.
+    /// A bystander who hears their own name, or something said loud, gets an `Overheard`
+    /// trigger.
     #[allow(clippy::too_many_arguments)]
     fn take_up(
         &mut self,
@@ -322,7 +380,7 @@ impl<C: CharacterSet> Sim<C> {
         speaker: VillagerId,
         did: &Act,
         meant: Gesture,
-        overheard: bool,
+        caught: Caught,
         bystanders: &[VillagerId],
         out: &mut Vec<Emitted>,
     ) {
@@ -341,28 +399,37 @@ impl<C: CharacterSet> Sim<C> {
             taken_as: up.taken_as,
             warmth: up.warmth,
             attribution: up.attribution,
-            overheard,
+            caught,
         });
         let topic = match did {
             Act::Gesture { topic, .. } | Act::Bid { topic, .. } => Some(topic.clone()),
             Act::Answer { .. } => None,
         };
-        if let Some(topic) = &topic
-            && (matches!(
-                kind_did,
-                Gesture::Tell | Gesture::Disclose | Gesture::Complain | Gesture::Offer
-            ) || overheard)
-        {
-            let heard = Heard {
-                tick,
-                from: speaker,
-                gesture: up.taken_as,
-                topic: topic.clone(),
-                overheard,
-            };
-            self.with_mind(who, speaker, id, bystanders, |m, _, _| m.hear(heard));
-        }
-        if overheard {
+        let about_me = topic.as_ref().is_some_and(|t| t.about == Some(who));
+        let to = self.state.conversations.get(&id).map(|c| c.other(speaker));
+        let heard = Heard {
+            tick,
+            speaker,
+            to,
+            gesture: up.taken_as,
+            topic: topic.filter(|_| matches!(caught, Caught::Addressed | Caught::Close)),
+            about_me,
+            caught,
+        };
+        self.with_mind(who, speaker, id, bystanders, |m, _, _| m.hear(heard));
+        if caught != Caught::Addressed {
+            if about_me || act_carry(did) == Carry::Loud {
+                self.react(
+                    who,
+                    Trigger::Overheard {
+                        speaker,
+                        gesture: up.taken_as,
+                        about_me,
+                        caught,
+                    },
+                    out,
+                );
+            }
             return;
         }
         let c = self

@@ -105,10 +105,10 @@ impl Mara {
             Trigger::TalkEnded { other, .. } if *other == tom => {
                 let news = self
                     .mind
-                    .heard
-                    .iter()
-                    .rev()
-                    .find(|h| h.from == tom && h.topic.is("fish"))
+                    .heard()
+                    .from(tom)
+                    .topic("fish")
+                    .last()
                     .map(|h| h.tick)
                     .filter(|&t| self.fish_story_at.is_none_or(|seen| t > seen));
                 self.fish_story_at = Some(news?);

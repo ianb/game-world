@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 14;
+pub const PROTOCOL_VERSION: u32 = 15;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -162,7 +162,7 @@ pub enum Emitted {
         taken_as: Gesture,
         warmth: i8,
         attribution: Attribution,
-        overheard: bool,
+        caught: Caught,
     },
     FrameChanged {
         tick: Tick,
@@ -332,6 +332,19 @@ pub enum Stance {
     Guarded,
     Anxious,
     Cold,
+}
+
+/// How much of a turn reached someone: they were spoken to, they were close enough for the
+/// words, close enough for the tone and any name in it, or only heard that voices were
+/// raised.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum Caught {
+    Addressed,
+    Close,
+    Gist,
+    Noise,
 }
 
 /// Whether a hearer put a move down to the speaker's character or to circumstances.
@@ -830,11 +843,14 @@ pub struct EpisodeView {
 #[cfg_attr(feature = "schema", ts(export))]
 pub struct HeardView {
     pub tick: Tick,
-    pub from: VillagerId,
+    pub speaker: VillagerId,
+    /// Who it was said to, when they could tell.
+    pub to: Option<VillagerId>,
     pub gesture: Gesture,
-    /// As views show it: the topic's gloss, and whose.
-    pub topic: String,
-    pub overheard: bool,
+    /// As views show it: the topic's gloss, and whose. None when it was too far to catch.
+    pub topic: Option<String>,
+    pub about_me: bool,
+    pub caught: Caught,
 }
 
 /// A villager's inner side, for the inspector: settled tendencies, how they are now, how
@@ -936,10 +952,12 @@ pub fn mind_view<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Option<MindV
             .iter()
             .map(|h| HeardView {
                 tick: h.tick,
-                from: h.from,
+                speaker: h.speaker,
+                to: h.to,
                 gesture: h.gesture,
-                topic: h.topic.label(&ctx),
-                overheard: h.overheard,
+                topic: h.topic.as_ref().map(|t| t.label(&ctx)),
+                about_me: h.about_me,
+                caught: h.caught,
             })
             .collect(),
         thoughts,

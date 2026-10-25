@@ -53,8 +53,16 @@ struct; `recall` is the honest way to ask "what could I have perceived".
   Mara and Nell all take it at -2 and blame Tom; the next evening Hal
   misreads Tom twice.
 
+## Overhearing (2026-10-25)
+
+How much of someone else's turn reaches a listener depends on the
+gesture's carry and the distance: the words within a few tiles, the tone
+and any name further out, raised voices further still for loud gestures.
+Each villager keeps what they caught as a heard memory and can query it.
+Hearing your own name or something loud is an intrusion (`Overheard`).
+
 ## Not done
 
-Hearing your own name, raised voices, noticing an absence from what you
+Loud talk carrying through doorways, talking to oneself aloud, noticing an absence from what you
 expected, relaying what you perceived to others (Pip's blurting), and
 thoughts in Ian's words rather than tags.

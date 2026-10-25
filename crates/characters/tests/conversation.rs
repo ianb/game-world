@@ -3,7 +3,7 @@
 use characters::Town;
 use content::{Content, load_dir};
 use sim::Sim;
-use sim::protocol::{Act, BidAnswer, Emitted, Frame};
+use sim::protocol::{Act, BidAnswer, Caught, Emitted, Frame};
 use sim::time::{TICKS_PER_DAY, Tick};
 use std::path::PathBuf;
 
@@ -27,7 +27,7 @@ fn four_weeks_of_talk_hold_misfires_misreadings_breaches_and_refusals() {
     let misreadings = events
         .iter()
         .filter(|e| {
-            matches!(e, Emitted::TookUp { did, taken_as, overheard: false, .. } if did != taken_as)
+            matches!(e, Emitted::TookUp { did, taken_as, caught: Caught::Addressed, .. } if did != taken_as)
         })
         .count();
     let pip_breaches = events
@@ -46,7 +46,7 @@ fn four_weeks_of_talk_hold_misfires_misreadings_breaches_and_refusals() {
             matches!(
                 e,
                 Emitted::TookUp {
-                    overheard: true,
+                    caught: Caught::Close | Caught::Gist,
                     ..
                 }
             )
@@ -78,13 +78,44 @@ fn four_weeks_of_talk_hold_misfires_misreadings_breaches_and_refusals() {
             matches!(
                 e,
                 Emitted::TookUp {
-                    overheard: false,
+                    caught: Caught::Addressed,
                     ..
                 }
             )
         })
         .count();
     assert!(misreadings * 5 < turns, "{misreadings} of {turns} misread");
+}
+
+#[test]
+fn how_much_is_overheard_follows_the_gesture_and_the_distance() {
+    let mut sim: Sim<Town> = Sim::new(1, town());
+    sim.step_until(at(28, 0, 0)).unwrap();
+    let c = &sim.state().characters;
+    let heard = [
+        &c.mara.mind,
+        &c.tom.mind,
+        &c.pip.mind,
+        &c.nell.mind,
+        &c.hal.mind,
+    ];
+    let all: Vec<&sim::social::Heard> = heard.iter().flat_map(|m| m.heard.iter()).collect();
+    assert!(all.iter().any(|h| h.caught == Caught::Close));
+    assert!(all.iter().any(|h| h.caught == Caught::Gist));
+    // Words only reach those close enough; the gist and raised voices carry no topic.
+    for h in &all {
+        match h.caught {
+            Caught::Addressed | Caught::Close => {}
+            Caught::Gist | Caught::Noise => assert!(h.topic.is_none(), "{h:?}"),
+        }
+        if h.caught == Caught::Noise {
+            assert!(h.to.is_none());
+            assert!(
+                h.gesture.carry().reach().2 > 0,
+                "only carrying gestures reach that far"
+            );
+        }
+    }
 }
 
 #[test]

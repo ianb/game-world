@@ -1003,3 +1003,35 @@ Decided:
   pensions received and loaves bought, Hal's trips. Tests that counted
   them now count events.
 - Recorded as a rule in `CLAUDE.md` ("Character state is for behavior").
+
+## 2026-10-25: Overhearing follows the gesture; heard memories are queryable
+
+Ian: "I feel like gesture is attached to overhearing." Then: "the carry
+makes sense just folding in with the gesture", and on memory: "person
+talking, who they're talking to, which might be to themselves, and the
+topic they're talking about, and the way they're talking about it ...
+they're able to query those in programming code just to do general
+queries."
+
+Decided and built:
+
+- Each gesture has a carry (`Gesture::carry`, exhaustive): low (confiding,
+  sympathy, and a bid to confide), ordinary, carrying (a joke), loud (a
+  complaint, a dig, a rebuff). It replaces the fixed list of "notable"
+  gestures.
+- What a listener in the same room (or outdoors) catches depends on their
+  distance from the speaker against that carry: the words (`Close`), the
+  tone and any name in it (`Gist`), or only raised voices (`Noise`).
+- A heard memory is: when, speaker, to whom (when they could tell), the
+  gesture as they took it, the topic (only if they caught the words),
+  whether it was about them, and how much they caught. Character code
+  queries it: `mind.heard().from(tom).topic("fish").last()`.
+- Hearing your own name, or something loud, from someone else's talk is an
+  intrusive `Overheard` trigger. Hal assumes a sharp remark was meant for
+  him (he blames the speaker and grows touchier); Nell, hearing her name,
+  blames herself.
+
+Implications: talking to oneself is not recorded yet; the memory has room
+for it (the speaker as listener). Loud talk does not yet carry through a
+doorway. Hal is rarely near anyone else's conversation, so his reaction
+seldom fires.

@@ -59,12 +59,14 @@ impl Pip {
             // He takes a bun if he understood Mara to offer one.
             Trigger::TalkEnded { other, topic } if topic.is("bun") => {
                 let asked = self.asked_at.unwrap_or_default();
-                let offered = self.mind.heard.iter().any(|h| {
-                    h.from == other
-                        && h.topic.is("bun")
-                        && h.gesture == Gesture::Offer
-                        && h.tick >= asked
-                });
+                let offered = self
+                    .mind
+                    .heard()
+                    .from(other)
+                    .topic("bun")
+                    .gesture(Gesture::Offer)
+                    .since(asked)
+                    .any();
                 if offered && stock_of(ctx, "shelf_bakery", "bread") > 0 {
                     vec![
                         stock(ctx, "shelf_bakery", "bread", -1),
