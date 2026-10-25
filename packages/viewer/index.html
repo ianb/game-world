@@ -20,7 +20,12 @@
       button.moment { display: grid; grid-template-columns: 6em 1fr; gap: 8px; width: 100%; min-height: 32px; text-align: left; background: none; color: inherit; border: none; border-radius: 4px; padding: 4px 6px; }
       button.moment:hover { background: #2a2a2a; }
       button.moment .when { color: #999; text-align: right; }
+      /* Fixed widths so the header does not shift as the clock and labels change. */
+      #clock { display: inline-block; min-width: 27ch; }
       #clock.past { color: #e8c76a; }
+      #pause { width: 10ch; }
+      label.speed { display: inline-flex; gap: 6px; align-items: center; color: #999; }
+      select { font: inherit; min-height: 44px; }
       .muted { color: #999; }
       /* Fixed activity width: max-content resized the column as activities changed. */
       #everyone { display: grid; grid-template-columns: max-content 24ch minmax(0, 1fr); gap: 4px 12px; align-items: center; align-content: start; }
@@ -32,29 +37,14 @@
       canvas.legend { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
       h2 { font-size: 14px; margin: 8px 0 4px; color: #aaa; }
       button { font: inherit; min-height: 44px; min-width: 64px; }
-      .g-ground { color: #5f9a4a; }
-      .g-tall { color: #7fbf5a; font-weight: bold; }
-      .g-brush { color: #3f7a3a; }
-      .g-weedy { color: #8f8a4a; }
-      .g-path { color: #b8923e; }
-      .g-track { color: #d9b25a; }
-      .g-cowpath { color: #e8c76a; font-weight: bold; }
-      .g-blocked { color: #4e7fb8; }
-      .g-wall { color: #777; }
-      .g-door { color: #eee; font-weight: bold; }
-      .g-object { color: #c77dd6; }
-      .g-villager { color: #5fe0e0; font-weight: bold; }
     </style>
   </head>
   <body>
     <header>
       <strong id="clock">loading…</strong>
-      <span id="speed"></span>
+      <label class="speed">speed <select id="speed"></select></label>
       <button id="pause">pause</button>
-      <button id="faster">faster</button>
-      <button id="slower">slower</button>
-      <button id="day">+1 day</button>
-      <button id="text">text</button>
+      <button id="morning">to 6am</button>
       <button id="back" hidden>back to now</button>
     </header>
     <main>

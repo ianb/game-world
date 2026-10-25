@@ -36,7 +36,10 @@ const page = `<title>Game World</title>
   }
   body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bar); }
   header strong { color: var(--accent); }
-  #speed { color: var(--muted); }
+  label.speed { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
+  select { font: inherit; min-height: 44px; background: var(--bg); color: var(--fg); border: 1px solid var(--rule); border-radius: 4px; }
+  #clock { display: inline-block; min-width: 27ch; }
+  #pause { width: 10ch; }
   main {
     display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
     padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -65,9 +68,6 @@ const page = `<title>Game World</title>
   h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 8px 0 4px; }
   button { font: inherit; min-height: 44px; min-width: 64px; background: var(--bg); color: var(--fg); border: 1px solid var(--rule); border-radius: 4px; }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .g-ground { color: var(--c-ground); } .g-tall { color: var(--c-tall); font-weight: bold; } .g-brush { color: var(--c-brush); } .g-weedy { color: var(--c-weedy); } .g-path { color: var(--c-path); } .g-track { color: var(--c-track); }
-  .g-cowpath { color: var(--c-track); font-weight: bold; } .g-blocked { color: var(--c-water); } .g-wall { color: var(--c-wall); }
-  .g-door { color: var(--fg); font-weight: bold; } .g-object { color: var(--c-object); } .g-villager { color: var(--c-villager); font-weight: bold; }
   @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
 </style>
 ${script}

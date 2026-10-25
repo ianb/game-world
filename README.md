@@ -41,8 +41,9 @@ pnpm --filter @game-world/viewer dev   # then open the printed localhost URL
 ```
 
 The page shows the clock, who is where, and each place drawn in tiles,
-advancing at six game-minutes per second with pause, speed and `+1 day`
-buttons; the `text` button adds the text views underneath. Hover a tile to
+advancing at six game-minutes per second. Pick a speed from the list,
+pause, or skip to the next 6am. The text views are in the tools and in
+`window.__scene()`, not on the page. Hover a tile to
 see what it is and its numbers, click to pin it, or click a name to follow
 that person: activity, why, coins and needs. Under the legend, each
 finished day lists what was unusual; click a line to replay the town to

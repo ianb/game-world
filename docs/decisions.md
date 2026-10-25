@@ -924,3 +924,18 @@ event type is internally tagged for the viewer and postcard cannot decode
 that. Knowledge representation stays action-centric, per the Viv note:
 what a character knows is what it perceived of actions plus what it chose
 to keep.
+
+## 2026-10-25: Viewer controls: absolute speed, skip to morning, no text view
+
+Ian: "I'd rather select an absolute speed than faster/slower. And the
+layout changes as some of the values change size (like time). And at night
+I want to bump up to 6am or something, or maybe just a fast forward to
+morning button in general (instead of +1 day?) We can also kill the text
+version."
+
+Decided: a speed list (game-minutes per real second, with how long a day
+takes) replaces faster and slower; "to 6am" replaces "+1 day" and jumps to
+the next 6am, later the same day when it is still night. The clock and the
+pause button have fixed widths. The page no longer has the text view; the
+text views stay in `sim-tools` and in `window.__scene()`, which the browser
+smoke still checks.
