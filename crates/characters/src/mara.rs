@@ -24,9 +24,6 @@ pub const LOAVES_ENOUGH: u16 = 4;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Mara {
-    /// Baking sessions completed. Nobody else tracks this.
-    pub batches_baked: u16,
-    pub pastries_delivered: u16,
     /// When she last heard Tom tell about a fish, so a new story is news.
     pub fish_story_at: Option<Tick>,
     /// The day she last noticed the shelf bare, so she reacts once.
@@ -69,7 +66,6 @@ impl Mara {
                     if stock_of(ctx, "shelf_bakery", "bread") >= LOAVES_ENOUGH {
                         vec![Command::Note("shelf still full; no bake today".into())]
                     } else if stock_of(ctx, "pantry_bakery", "flour") >= FLOUR_PER_BATCH {
-                        self.batches_baked += 1;
                         vec![
                             stock(ctx, "pantry_bakery", "flour", -i32::from(FLOUR_PER_BATCH)),
                             stock(ctx, "shelf_bakery", "bread", LOAVES_PER_BATCH),
@@ -78,13 +74,10 @@ impl Mara {
                         vec![Command::Note("no flour; nothing to bake".into())]
                     }
                 }
-                "bring-pastry" => {
-                    self.pastries_delivered += 1;
-                    match counter_talk(ctx, "mara", "tom", "pastry") {
-                        Some(talk) => vec![talk],
-                        None => vec![Command::Note("Tom isn't free; left the pastry".into())],
-                    }
-                }
+                "bring-pastry" => match counter_talk(ctx, "mara", "tom", "pastry") {
+                    Some(talk) => vec![talk],
+                    None => vec![Command::Note("Tom isn't free; left the pastry".into())],
+                },
                 "drink" => {
                     let mut cmds = buy_ale(ctx, "mara")
                         .unwrap_or_else(|| vec![Command::Note("no ale".into())]);

@@ -57,6 +57,14 @@ character's `warmth_of(Gesture)` does). Strings are for open sets that
 grow with content (topics), and then they are declared in `content/` and
 checked, not matched by luck.
 
+## Character state is for behavior
+
+A field on a character's struct exists because something the character
+does reads it, and its name says what it means (`grievance`,
+`fish_told`). Don't add counters or labels to narrate what happened: the
+event log records it and the summaries count it. Facts about a villager
+that need no code (coins, schedule, income) belong in their content file.
+
 ## Boundary rules (Rust to TypeScript)
 
 Boundary types live in `crates/sim/src/protocol.rs`. They are integer-only,

@@ -206,6 +206,34 @@
         "arrival"
       ]
     },
+    "Income": {
+      "description": "Money that reaches a villager from outside the town on a schedule, such as a pension.",
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "at": {
+          "description": "\"HH:MM\" or \"9:00am\"",
+          "type": "string"
+        },
+        "days": {
+          "$ref": "#/$defs/DayPattern"
+        },
+        "what": {
+          "description": "What the payment is, as the event log shows it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "days",
+        "at",
+        "amount",
+        "what"
+      ]
+    },
     "ObjectSpec": {
       "type": "object",
       "properties": {
@@ -433,6 +461,14 @@
         },
         "id": {
           "type": "string"
+        },
+        "income": {
+          "description": "Money paid in from outside on a schedule.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Income"
+          }
         },
         "name": {
           "type": "string"

@@ -65,5 +65,4 @@ fn tom_blames_the_town_and_it_boils_over() {
         })
         .count();
     assert!(digs >= 1);
-    assert_eq!(usize::from(sim.state().characters.tom.outbursts), digs);
 }

@@ -687,6 +687,17 @@ fn check_roofs(content: &Content, world: &World, r: &mut Report) {
 fn check_villagers(content: &Content, world: &World, r: &mut Report) {
     for v in &content.villagers {
         let subj = format!("villagers/{}", v.id);
+        for i in &v.income {
+            if i.amount == 0 {
+                r.error(&subj, format!("income {:?} pays nothing", i.what));
+            }
+            if parse_time(&i.at).is_none() {
+                r.error(
+                    &subj,
+                    format!("income {:?} has a bad time {:?}", i.what, i.at),
+                );
+            }
+        }
         if !content.buildings.iter().any(|b| b.id == v.home) {
             r.error(&subj, format!("home {:?} not found", v.home));
         }

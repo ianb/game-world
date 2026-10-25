@@ -499,7 +499,7 @@ impl CharacterSet for DataCharacters {
 }
 
 /// The content schedule for `who` on the current day: most specific day pattern wins per
-/// departure time.
+/// departure time. Scheduled income is paid at its time.
 #[must_use]
 pub fn baseline_plan(who: VillagerId, ctx: &Ctx<'_>) -> Vec<Planned> {
     use content::DayPattern;
@@ -547,5 +547,20 @@ pub fn baseline_plan(who: VillagerId, ctx: &Ctx<'_>) -> Vec<Planned> {
             }
         }
     }
-    by_time.into_values().map(|(_, p)| p).collect()
+    let mut plan: Vec<Planned> = by_time.into_values().map(|(_, p)| p).collect();
+    for i in villager.income.iter().filter(|i| applies(&i.days)) {
+        let Some(secs) = content::validate::parse_time(&i.at) else {
+            continue;
+        };
+        plan.push(Planned {
+            at: TimeOfDay::from_seconds(secs),
+            command: Command::Pay {
+                from: Party::Outside,
+                to: Party::Villager(who),
+                amount: i.amount,
+                what: i.what.clone(),
+            },
+        });
+    }
+    plan
 }

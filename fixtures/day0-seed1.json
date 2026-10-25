@@ -177,18 +177,8 @@
             "minute": 0,
             "second": 0
           },
-          "schedule": false,
+          "schedule": true,
           "text": "outside pays Nell 20 for pension"
-        },
-        {
-          "activity": null,
-          "at": {
-            "hour": 9,
-            "minute": 0,
-            "second": 0
-          },
-          "schedule": false,
-          "text": "note: pension day"
         },
         {
           "activity": "shop",
@@ -3759,20 +3749,13 @@
     },
     {
       "amount": 20,
-      "cause": "Plan",
+      "cause": "Schedule",
       "from": null,
       "kind": "Paid",
       "payer_left": 0,
       "tick": 32400,
       "to": 2,
       "what": "pension",
-      "who": 2
-    },
-    {
-      "cause": "Plan",
-      "kind": "Noted",
-      "text": "pension day",
-      "tick": 32400,
       "who": 2
     },
     {
@@ -7567,7 +7550,7 @@
     },
     {
       "kind": "Decided",
-      "text": "finished a bun with Mara -> bread -1 at shelf_bakery; note: got a bun (1 so far)",
+      "text": "finished a bun with Mara -> bread -1 at shelf_bakery; note: got a bun",
       "tick": 43670,
       "who": 3
     },
@@ -7592,7 +7575,7 @@
         }
       },
       "kind": "Noted",
-      "text": "got a bun (1 so far)",
+      "text": "got a bun",
       "tick": 43670,
       "who": 3
     },
@@ -25445,7 +25428,7 @@
       "who": 4
     }
   ],
-  "hash": "b6714e339c66cec0",
+  "hash": "241bc8f6c01cb77c",
   "protocol_version": 14,
   "seed": 1
 }

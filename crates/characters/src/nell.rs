@@ -1,23 +1,19 @@
-//! Nell, a pensioner. Money comes to her from outside the town once a week and leaves
-//! through the bakery and the tavern, which is most of what makes the economy a loop.
+//! Nell, a pensioner. Her pension (in her content file) brings money into the town once a
+//! week, and it leaves through the bakery and the tavern, which is most of what makes the
+//! economy a loop.
 //! She is shy: anxious with anyone she does not know well or with others listening, at
 //! ease only with people she has come to like. When something goes wrong she blames
 //! herself and expects it to keep happening.
-use crate::toolbox::{Plan, activity_of, buy_ale, buy_bread, counter_talk, pay, think, weekday};
+use crate::toolbox::{Plan, activity_of, buy_ale, buy_bread, counter_talk, think};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
 use sim::protocol::{Blame, Gesture, Mishap, Stance, Topic};
 use sim::social::{Interlocutor, Memory, Persona, Situation, default_stance};
-use sim::time::Weekday;
-
-pub const PENSION: u32 = 20;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Nell {
-    pub pensions_received: u16,
-    pub loaves_bought: u16,
     pub days_without_bread: u8,
     pub mind: Memory,
 }
@@ -25,19 +21,13 @@ pub struct Nell {
 impl Nell {
     pub fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
         let me = ctx.villager_id("nell").expect("nell exists");
-        let mut plan = Plan::baseline(me, ctx);
-        if weekday(ctx) == Weekday::Mon {
-            plan.at(9, 0, pay(ctx, "outside", "nell", PENSION, "pension"));
-            plan.at(9, 0, Command::Note("pension day".into()));
-        }
-        plan.build()
+        Plan::baseline(me, ctx).build()
     }
 
     pub fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>) -> Option<Vec<Command>> {
         Some(match trigger {
             Trigger::Arrived if activity_of(ctx, "nell") == "shop" => {
                 if let Some(mut cmds) = buy_bread(ctx, "nell") {
-                    self.loaves_bought += 1;
                     self.days_without_bread = 0;
                     cmds.extend(counter_talk(ctx, "nell", "mara", "bread"));
                     cmds

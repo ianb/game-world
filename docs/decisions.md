@@ -983,3 +983,23 @@ sets, which are declared in content and validated.
 Implications: existing string-typed sets are candidates for conversion
 (activities, goods, villager and object keys in character code). Each is
 its own change.
+
+## 2026-10-25: Character state is for behavior; income is content
+
+Ian, on Nell's pension living in her code and struct: "just odd that
+there's a pension attribute or something, not just coins and the
+schedule", and "They shouldn't invent attributes to form as comments or
+text. We should have fields to explain the behavior, but not weird
+attributes."
+
+Decided:
+
+- Scheduled income is content: a villager's file can list `income`
+  (days, time, amount, what), and the baseline plan pays it from outside.
+  Nell's pension moved there; her code no longer mentions it.
+- Character structs keep only state their behavior reads. Removed:
+  Mara's batches baked and pastries delivered, Tom's days since a day
+  off, hunger breaks and outbursts, Pip's buns and greetings, Nell's
+  pensions received and loaves bought, Hal's trips. Tests that counted
+  them now count events.
+- Recorded as a rule in `CLAUDE.md` ("Character state is for behavior").

@@ -16,6 +16,18 @@ fn town() -> Content {
     load_dir(&root().join("content")).unwrap()
 }
 
+/// How many times `who` changed `good` on the object `object` by `delta`.
+fn stocked(sim: &Sim<Town>, events: &[Emitted], who: &str, object: &str, delta: i32) -> usize {
+    let who = sim.ctx().villager_id(who).unwrap();
+    events
+        .iter()
+        .filter(|e| {
+            matches!(e, Emitted::Stocked { who: w, object: o, delta: d, .. }
+                if *w == who && *d == delta && sim.world().objects[o.index()].id == object)
+        })
+        .count()
+}
+
 fn at(day: u32, hour: u32, minute: u32) -> Tick {
     Tick(day * TICKS_PER_DAY).at_time(hour, minute)
 }
@@ -29,17 +41,18 @@ fn tom_fishes_on_sunday_and_mara_bakes() {
     for day in 0..7 {
         events.extend(sim.step_until(at(day, 23, 59)).unwrap());
     }
-    let tom = &sim.state().characters.tom;
-    assert_eq!(
-        tom.days_since_day_off, 0,
-        "Sunday resets the counter: {tom:?}"
-    );
     let fished = events
         .iter()
         .any(|e| matches!(e, Emitted::Activity { activity, .. } if activity == "fish"));
     assert!(fished, "Tom fished at some point in the week");
-    let mara = &sim.state().characters.mara;
-    assert!(mara.batches_baked >= 6, "Mara bakes most days: {mara:?}");
+    let bakes = stocked(
+        &sim,
+        &events,
+        "mara",
+        "shelf_bakery",
+        characters::mara::LOAVES_PER_BATCH,
+    );
+    assert!(bakes >= 6, "Mara bakes most days: {bakes}");
 }
 
 #[test]
@@ -68,10 +81,6 @@ fn mara_brings_a_pastry_only_after_tom_seemed_low() {
         .filter(|e| matches!(e, Emitted::Noted { text, .. } if text.starts_with("Tom seemed low")))
         .count();
     assert_eq!(runs, reasons, "every run had its reason noted");
-    assert_eq!(
-        usize::from(sim.state().characters.mara.pastries_delivered),
-        runs
-    );
 }
 
 #[test]
@@ -191,7 +200,11 @@ fn villagers_greet_talk_and_remember() {
         .count();
     assert!(greetings >= 4, "greetings in passing: {greetings}");
     let c = &sim.state().characters;
-    assert_eq!(c.pip.buns, 1, "{:?}", c.pip);
+    assert_eq!(
+        stocked(&sim, &events, "pip", "shelf_bakery", -1),
+        1,
+        "one bun"
+    );
     // Each side keeps its own episode of every conversation it had.
     let mara = sim.ctx().villager_id("mara").unwrap();
     assert!(c.tom.mind.regard(mara).familiarity >= 1, "{:?}", c.tom.mind);
@@ -325,9 +338,13 @@ fn money_and_goods_go_round() {
         .sum();
     let now: u32 = sim.state().villagers.iter().map(|v| v.coins).sum();
     assert_eq!(now, start + inflow - outflow);
-    let hal = &sim.state().characters.hal;
-    assert_eq!(hal.trips, 2, "{hal:?}");
-    assert!(sim.state().characters.nell.loaves_bought >= 4);
+    let hal = sim.ctx().villager_id("hal").unwrap();
+    let trips = events
+        .iter()
+        .filter(|e| matches!(e, Emitted::Paid { from: Some(f), to: None, .. } if *f == hal))
+        .count();
+    assert_eq!(trips, 2, "two market trips");
+    assert!(paid("bread") >= 4, "Nell buys bread most days");
     assert!(views::economy(&sim).contains("flour"));
 }
 
@@ -476,7 +493,7 @@ fn everyone_keeps_their_schedule_when_hungry_and_eats_when_starving() {
         }
     }
     // Tom's own twist: starving behind the bar, he eats the bar's bread.
-    assert!(sim.state().characters.tom.hunger_breaks > 0);
+    assert!(stocked(&sim, &events, "tom", "bar_tavern", -1) > 0);
 }
 
 #[test]

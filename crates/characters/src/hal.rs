@@ -40,7 +40,6 @@ pub const EASIER: i16 = 2;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Hal {
-    pub trips: u16,
     pub carrying_flour: i32,
     pub carrying_ale: i32,
     pub mind: Memory,
@@ -53,7 +52,6 @@ pub struct Hal {
 impl Default for Hal {
     fn default() -> Self {
         Hal {
-            trips: 0,
             carrying_flour: 0,
             carrying_ale: 0,
             mind: Memory::default(),
@@ -147,7 +145,6 @@ impl Hal {
                 };
                 self.carrying_flour = FLOUR_PER_TRIP / share;
                 self.carrying_ale = ALE_PER_TRIP / share;
-                self.trips += 1;
                 vec![
                     pay(ctx, "hal", "outside", cost, what),
                     // The market keeps him longer some days.

@@ -59,5 +59,13 @@
       "object": "bed_nell",
       "activity": "sleep"
     }
+  ],
+  "income": [
+    {
+      "days": "mon",
+      "at": "9:00am",
+      "amount": 20,
+      "what": "pension"
+    }
   ]
 }

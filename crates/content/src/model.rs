@@ -239,6 +239,18 @@ pub struct ScheduleEntry {
     pub activity: String,
 }
 
+/// Money that reaches a villager from outside the town on a schedule, such as a pension.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct Income {
+    pub days: DayPattern,
+    /// "HH:MM" or "9:00am"
+    pub at: String,
+    pub amount: u32,
+    /// What the payment is, as the event log shows it.
+    pub what: String,
+}
+
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Villager {
@@ -253,6 +265,9 @@ pub struct Villager {
     /// Money to start with.
     #[serde(default)]
     pub coins: u32,
+    /// Money paid in from outside on a schedule.
+    #[serde(default)]
+    pub income: Vec<Income>,
 }
 
 /// Something villagers can talk about. Code refers to it by `id`; `gloss` is how views

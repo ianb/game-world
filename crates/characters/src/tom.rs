@@ -48,21 +48,17 @@ pub const BAR_BREAD_PRICE: u32 = 2;
 pub struct Tom {
     /// Negative is grumpy. Nudged by how the evening went.
     pub mood: i8,
-    pub days_since_day_off: u8,
     pub fish_caught: u16,
     /// Fish he has told someone about.
     pub fish_told: u16,
     /// Patches cleared so far this morning.
     pub weeded_today: u8,
-    /// Times hunger sent him behind the bar for bread.
-    pub hunger_breaks: u16,
     /// The day he last bought bread for the bar, so he buys once a day at most.
     pub bar_bread_day: u32,
     /// The day Mara last brought him a pastry.
     pub pastry_day: u32,
     /// Things that went wrong and that he put down to the town, building toward an outburst.
     pub grievance: u8,
-    pub outbursts: u16,
     /// The day he last noticed the bar out of bread.
     pub bare_bar_day: u32,
     pub mind: Memory,
@@ -72,15 +68,12 @@ impl Default for Tom {
     fn default() -> Self {
         Tom {
             mood: -1,
-            days_since_day_off: 0,
             fish_caught: 0,
             fish_told: 0,
             weeded_today: 0,
-            hunger_breaks: 0,
             bar_bread_day: u32::MAX,
             pastry_day: u32::MAX,
             grievance: 0,
-            outbursts: 0,
             bare_bar_day: u32::MAX,
             mind: Memory::default(),
         }
@@ -166,20 +159,12 @@ impl Tom {
 
         if weekday(ctx) == Weekday::Sun {
             // Day off: no bar. Fish from late morning, then home for a long evening.
-            let worked = self.days_since_day_off;
-            self.days_since_day_off = 0;
             let (x, y) = *pick(rng, &FISHING_SPOTS);
             plan.drop_activity("tend-bar").drop_activity("close-up");
-            plan.at(
-                0,
-                1,
-                Command::Note(format!("Sunday off after {worked} days")),
-            );
             plan.at(10, 30, go_tile(ctx, "town", x, y, "fish"));
             plan.at(16, 0, crate::toolbox::go(ctx, "table_house", "rest"));
             return plan.build();
         }
-        self.days_since_day_off = self.days_since_day_off.saturating_add(1);
 
         // Before opening: if the yard has gone to weed, go and clear the nearest patch.
         // Arriving there starts the loop in `react`.
@@ -293,7 +278,6 @@ impl Tom {
                 && !meal_soon(ctx, "tom", MEAL_WINDOW_MINUTES)
                 && stock_of(ctx, "bar_tavern", "bread") > 0 =>
             {
-                self.hunger_breaks += 1;
                 Tom::bar_meal(ctx)
             }
             Trigger::Arrived if activity_of(ctx, "tom") == "close-up" => Tom::closing_up(ctx),
@@ -368,7 +352,6 @@ impl Interlocutor for Tom {
         // Boiling over: whoever is in front of him gets it.
         if self.grievance >= BOILING {
             self.grievance = 0;
-            self.outbursts += 1;
             return act(Gesture::Jab, s.topic);
         }
         let fish = self.fish_caught > self.fish_told;

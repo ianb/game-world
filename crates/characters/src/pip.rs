@@ -17,8 +17,6 @@ const NEWS: [&str; 4] = ["frog", "loose-tooth", "secret-den", "dead-mouse"];
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Pip {
-    pub buns: u16,
-    pub greetings_today: u16,
     /// When he last asked for a bun.
     pub asked_at: Option<Tick>,
     pub mind: Memory,
@@ -26,7 +24,6 @@ pub struct Pip {
 
 impl Pip {
     pub fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
-        self.greetings_today = 0;
         let me = ctx.villager_id("pip").expect("pip exists");
         Plan::baseline(me, ctx).build()
     }
@@ -69,10 +66,9 @@ impl Pip {
                         && h.tick >= asked
                 });
                 if offered && stock_of(ctx, "shelf_bakery", "bread") > 0 {
-                    self.buns += 1;
                     vec![
                         stock(ctx, "shelf_bakery", "bread", -1),
-                        Command::Note(format!("got a bun ({} so far)", self.buns)),
+                        Command::Note("got a bun".into()),
                     ]
                 } else {
                     vec![Command::Note("no bun today".into())]
@@ -95,7 +91,6 @@ impl Pip {
             Trigger::Passing { other } | Trigger::Encounter { other }
                 if activity_of(ctx, "pip") != "sleep" =>
             {
-                self.greetings_today += 1;
                 vec![Command::Greet { with: other }]
             }
             _ => return None,
