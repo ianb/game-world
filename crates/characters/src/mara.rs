@@ -1,13 +1,16 @@
 //! Mara, the baker. Her content schedule, plus what is hers: she counts what she bakes,
 //! takes Tom a pastry when he seemed low the last time they talked, and at the counter she
 //! is friendly and discreet. She will hear a confidence from anyone she knows, but never
-//! with someone else in the shop.
-use crate::toolbox::{Plan, buy_ale, counter_talk, go, stock, stock_of, villager};
+//! with someone else in the shop. Minding the shop, she keeps an eye on the shelf: if it is
+//! bare and there is flour, she bakes again.
+use crate::toolbox::{
+    Plan, activity_of, buy_ale, counter_talk, errand, go, object, stock, stock_of, think, villager,
+};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
-use sim::protocol::{Act, BidAnswer, Frame, MoveKind};
+use sim::protocol::{Act, BidAnswer, Blame, Frame, MoveKind};
 use sim::social::{
     Interlocutor, Memory, Persona, Situation, default_answer_bid, default_next_act, mv, roll,
 };
@@ -26,6 +29,8 @@ pub struct Mara {
     pub pastries_delivered: u16,
     /// When she last heard Tom tell about a fish, so a new story is news.
     pub fish_story_at: Option<Tick>,
+    /// The day she last noticed the shelf bare, so she reacts once.
+    pub bare_shelf_day: Option<u32>,
     pub mind: Memory,
 }
 
@@ -88,6 +93,22 @@ impl Mara {
                 }
                 _ => return None,
             },
+            // Behind the counter, the shelf is in front of her.
+            Trigger::Look { .. }
+                if activity_of(ctx, "mara") == "tend-shop"
+                    && stock_of(ctx, "shelf_bakery", "bread") == 0
+                    && self.bare_shelf_day != Some(ctx.calendar.day_index) =>
+            {
+                self.bare_shelf_day = Some(ctx.calendar.day_index);
+                let mut cmds = vec![think("the shelf is bare", Blame::Luck, false, false, -1)];
+                if stock_of(ctx, "pantry_bakery", "flour") >= FLOUR_PER_BATCH
+                    && ctx.calendar.time.hour < 16
+                {
+                    cmds.push(Command::Note("baking again".into()));
+                    cmds.push(errand(object(ctx, "oven_bakery"), "bake", 30));
+                }
+                cmds
+            }
             Trigger::TalkEnded { other, .. } if *other == tom => {
                 let news = self
                     .mind

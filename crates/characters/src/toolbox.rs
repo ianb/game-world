@@ -4,8 +4,9 @@ use rand_pcg::Pcg32;
 use sim::brain::{Command, Ctx, Party, Planned, Target, Trigger};
 use sim::ids::{ObjectId, VillagerId};
 use sim::needs::Need;
-use sim::protocol::Frame;
-use sim::time::{TICKS_PER_MINUTE, TimeOfDay, Weekday};
+use sim::protocol::{Blame, Emitted, Frame, Mishap, Thought};
+use sim::recall::Perceived;
+use sim::time::{TICKS_PER_MINUTE, Tick, TimeOfDay, Weekday};
 
 /// A day's intentions, built up and handed back to the sim.
 #[derive(Debug, Default)]
@@ -323,12 +324,49 @@ pub fn satisfy(ctx: &Ctx<'_>, me: &str, need: Need, level: u8) -> Vec<Command> {
     }
 }
 
-/// What every villager does unless their own code says otherwise: answer needs, and not
-/// go to sleep starving. Character code returns `None` for a trigger to land here.
+/// A thought: what it was about, whose doing, whether it will last, how far it reaches,
+/// and how it felt.
+#[must_use]
+pub fn think(about: &str, blame: Blame, lasting: bool, everywhere: bool, feeling: i8) -> Command {
+    Command::Think(Thought {
+        about: about.into(),
+        blame,
+        lasting,
+        everywhere,
+        feeling,
+    })
+}
+
+/// Others `me` saw or heard start `activity` since `since`.
+#[must_use]
+pub fn seen_doing(ctx: &Ctx<'_>, me: &str, activity: &str, since: Tick) -> Vec<VillagerId> {
+    let me = villager(ctx, me);
+    let mut who: Vec<VillagerId> = ctx
+        .recall(me, since)
+        .filter(|(_, p)| *p != Perceived::Did)
+        .filter_map(|(r, _)| match &r.event {
+            Emitted::Activity {
+                who, activity: a, ..
+            } if a == activity => Some(*who),
+            _ => None,
+        })
+        .collect();
+    who.sort_unstable();
+    who.dedup();
+    who
+}
+
+/// What every villager does unless their own code says otherwise: answer needs, shrug off
+/// a stumble, and not go to sleep starving. Character code returns `None` for a trigger to
+/// land here.
 #[must_use]
 pub fn human(trigger: &Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
     match trigger {
         Trigger::Need { need, level } => satisfy(ctx, me, *need, *level),
+        // Most people put a stumble down to bad luck and forget it.
+        Trigger::Mishap {
+            what: Mishap::Tripped,
+        } => vec![think("tripped", Blame::Luck, false, false, -1)],
         Trigger::Arrived if activity_of(ctx, me) == "sleep" => {
             let hunger = ctx.needs(villager(ctx, me)).hunger;
             if hunger < BEDTIME_HUNGER {

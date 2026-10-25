@@ -8,8 +8,9 @@ use crate::hash::{HashParts, hash_of};
 use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::input::{Input, InputKind, Source};
 use crate::needs::{Need, Needs};
-use crate::protocol::{Cause, Emitted, Frame, PlanItem};
+use crate::protocol::{Cause, Emitted, Frame, Mishap, PlanItem};
 use crate::queue::EventQueue;
+use crate::recall::{self, Observer, Record};
 use crate::rng::Streams;
 use crate::snapshot::{self, SnapshotError};
 use crate::social::Conversation;
@@ -17,12 +18,19 @@ use crate::terrain::{Surface, Terrain};
 use crate::time::{TICKS_PER_DAY, TICKS_PER_HOUR, TICKS_PER_MINUTE, Tick};
 use crate::villager::{Crossing, Errand, Interlude, Movement, PlannedLeg, VillagerState};
 use content::{Content, Nav, Pos, Spot, WALK_TICKS_PER_TILE, World, nav};
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use thiserror::Error;
 
 /// Nested reactions (a greeting answered by a greeting answered by...) stop here.
 const MAX_REACT_DEPTH: u8 = 4;
+/// How often an awake villager takes in their surroundings.
+const LOOK_TICKS: u32 = 15 * TICKS_PER_MINUTE;
+/// Chance per thousand steps of tripping in brush or an overgrown path, and in long grass
+/// or a weedy path.
+const TRIP_OVERGROWN: u32 = 150;
+const TRIP_LONG_GRASS: u32 = 40;
 
 mod conversation;
 
@@ -54,6 +62,8 @@ pub struct SimState<C> {
     pub terrain: Terrain,
     pub day_rollovers: u32,
     pub markers: Vec<(Tick, String)>,
+    /// Recent events worth knowing, with who could perceive them.
+    pub record: Record,
     /// Character private state.
     pub characters: C,
     /// Events produced while constructing the sim (the first day's plans), returned by the
@@ -149,6 +159,7 @@ impl<C: CharacterSet> Sim<C> {
             let who = VillagerId(u16::try_from(i).expect("few villagers"));
             let offset = u32::try_from(i).expect("few villagers") * 7 * TICKS_PER_MINUTE;
             queue.schedule(Tick(TICKS_PER_HOUR + offset), Event::Body { who });
+            queue.schedule(Tick(LOOK_TICKS + offset / 7), Event::Look { who });
         }
         let mut sim = Sim {
             state: SimState {
@@ -167,6 +178,7 @@ impl<C: CharacterSet> Sim<C> {
                 terrain: Terrain::new(&world),
                 day_rollovers: 0,
                 markers: Vec::new(),
+                record: Record::default(),
                 characters,
                 pending: Vec::new(),
             },
@@ -218,6 +230,7 @@ impl<C: CharacterSet> Sim<C> {
             villagers: &self.state.villagers,
             terrain: &self.state.terrain,
             stock: &self.state.stock,
+            record: &self.state.record,
         }
     }
 
@@ -252,7 +265,9 @@ impl<C: CharacterSet> Sim<C> {
         let mut out = std::mem::take(&mut self.state.pending);
         while let Some(scheduled) = self.state.queue.pop_due(target) {
             self.state.tick = scheduled.tick;
+            let start = out.len();
             self.handle(scheduled.event, &mut out);
+            self.keep_record(&out[start..]);
         }
         self.state.tick = target;
         Ok(out)
@@ -263,6 +278,7 @@ impl<C: CharacterSet> Sim<C> {
         match event {
             Event::DayRollover => {
                 self.state.day_rollovers += 1;
+                self.state.record.forget(tick);
                 self.state.terrain.new_day(&self.world);
                 self.state
                     .queue
@@ -332,6 +348,33 @@ impl<C: CharacterSet> Sim<C> {
             Event::Woke { who } => self.woke(who, out),
             Event::Beat { convo } => self.beat(convo, out),
             Event::Body { who } => self.body_hour(who, out),
+            Event::Look { who } => {
+                self.state
+                    .queue
+                    .schedule(tick.plus(LOOK_TICKS), Event::Look { who });
+                if self.state.villagers[who.index()].activity != "sleep" {
+                    let since = tick.minus(LOOK_TICKS);
+                    self.react(who, Trigger::Look { since }, out);
+                }
+            }
+            Event::Tripped { who } => {
+                let v = &self.state.villagers[who.index()];
+                out.push(Emitted::Mishap {
+                    tick,
+                    who,
+                    what: Mishap::Tripped,
+                    place: v.place,
+                    x: v.pos.x,
+                    y: v.pos.y,
+                });
+                self.react(
+                    who,
+                    Trigger::Mishap {
+                        what: Mishap::Tripped,
+                    },
+                    out,
+                );
+            }
         }
     }
 
@@ -449,6 +492,7 @@ impl<C: CharacterSet> Sim<C> {
                     villagers: &self.state.villagers,
                     terrain: &self.state.terrain,
                     stock: &self.state.stock,
+                    record: &self.state.record,
                 };
                 let baseline = crate::brain::baseline_plan(who, &ctx);
                 let mut planned = self.state.characters.plan_day(
@@ -541,6 +585,7 @@ impl<C: CharacterSet> Sim<C> {
                 villagers: &self.state.villagers,
                 terrain: &self.state.terrain,
                 stock: &self.state.stock,
+                record: &self.state.record,
             };
             let label = trigger.label(&ctx);
             let commands = self.state.characters.react(
@@ -591,6 +636,7 @@ impl<C: CharacterSet> Sim<C> {
     fn run_command(&mut self, who: VillagerId, cmd: Command, out: &mut Vec<Emitted>) {
         let tick = self.state.tick;
         match cmd {
+            Command::Think(thought) => out.push(Emitted::Thought { tick, who, thought }),
             Command::Idle => {
                 self.interrupt(who);
                 self.drop_errand(who);
@@ -1286,6 +1332,44 @@ impl<C: CharacterSet> Sim<C> {
         self.encounters(who, out);
     }
 
+    /// Long grass and weeds catch feet now and then. The fall itself is handled as its own
+    /// event so the walker's movement is settled before they react.
+    fn maybe_trip(&mut self, who: VillagerId, place: PlaceId, pos: Pos) {
+        let per_mille = match self.state.terrain.surface(&self.world, place.index(), pos) {
+            Some(Surface::Brush | Surface::OvergrownPath) => TRIP_OVERGROWN,
+            Some(Surface::TallGrass | Surface::WeedyPath) => TRIP_LONG_GRASS,
+            _ => return,
+        };
+        let body = &mut self.state.rng.villagers[who.index()].body;
+        if body.random_range(0..1000u32) < per_mille {
+            self.state
+                .queue
+                .schedule(self.state.tick, Event::Tripped { who });
+        }
+    }
+
+    /// Keeps what is worth knowing of events just emitted, with who was there to see.
+    fn keep_record(&mut self, new: &[Emitted]) {
+        if new.iter().all(|e| recall::keep(e).is_none()) {
+            return;
+        }
+        let observers: Vec<Observer> = self
+            .state
+            .villagers
+            .iter()
+            .enumerate()
+            .map(|(i, v)| Observer {
+                who: VillagerId(u16::try_from(i).expect("few villagers")),
+                place: v.place,
+                pos: v.pos,
+                awake: v.activity != "sleep",
+            })
+            .collect();
+        for e in new {
+            self.state.record.note(e, &observers);
+        }
+    }
+
     /// One movement step: advance a tile, cross a door at a leg's end, or arrive.
     fn step_movement(&mut self, who: VillagerId, out: &mut Vec<Emitted>) {
         let tick = self.state.tick;
@@ -1305,6 +1389,7 @@ impl<C: CharacterSet> Sim<C> {
                 x: next.x,
                 y: next.y,
             });
+            self.maybe_trip(who, place, next);
             self.state.terrain.tread(&self.world, place, next);
             stepped = true;
         }
@@ -1379,6 +1464,7 @@ impl<C: CharacterSet> Sim<C> {
                 s.next_conversation,
                 s.day_rollovers,
                 &s.markers,
+                &s.record,
                 &s.characters,
             )),
             hash_of(&(&s.inputs, s.next_input_seq)),

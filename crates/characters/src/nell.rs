@@ -1,13 +1,14 @@
 //! Nell, a pensioner. Money comes to her from outside the town once a week and leaves
 //! through the bakery and the tavern, which is most of what makes the economy a loop.
 //! She is shy: anxious with anyone she does not know well or with others listening, at
-//! ease only with people she has come to like.
-use crate::toolbox::{Plan, activity_of, buy_ale, buy_bread, counter_talk, pay, weekday};
+//! ease only with people she has come to like. When something goes wrong she blames
+//! herself and expects it to keep happening.
+use crate::toolbox::{Plan, activity_of, buy_ale, buy_bread, counter_talk, pay, think, weekday};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
-use sim::protocol::Stance;
+use sim::protocol::{Blame, Mishap, Stance};
 use sim::social::{Interlocutor, Memory, Persona, Situation, default_stance};
 use sim::time::Weekday;
 
@@ -51,6 +52,9 @@ impl Nell {
                 cmds.extend(counter_talk(ctx, "nell", "tom", "ale"));
                 cmds
             }
+            Trigger::Mishap {
+                what: Mishap::Tripped,
+            } => vec![think("tripped", Blame::Me, true, false, -1)],
             Trigger::Passing { other } if activity_of(ctx, "nell") != "sleep" => {
                 vec![Command::Greet { with: *other }]
             }

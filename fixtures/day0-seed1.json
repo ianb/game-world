@@ -22653,7 +22653,7 @@
     },
     {
       "kind": "Decided",
-      "text": "waited -> note: mood 2 -> 4 (Mara is here drinking)",
+      "text": "waited -> note: mood 2 -> 4 (Mara came in)",
       "tick": 72000,
       "who": 4
     },
@@ -22664,7 +22664,7 @@
         }
       },
       "kind": "Noted",
-      "text": "mood 2 -> 4 (Mara is here drinking)",
+      "text": "mood 2 -> 4 (Mara came in)",
       "tick": 72000,
       "who": 4
     },
@@ -25235,7 +25235,7 @@
       "who": 4
     }
   ],
-  "hash": "9212d728898081f3",
-  "protocol_version": 13,
+  "hash": "714c3f13f920d52c",
+  "protocol_version": 14,
   "seed": 1
 }

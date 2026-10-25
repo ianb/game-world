@@ -17,6 +17,10 @@ export type { EpisodeView } from "./generated/EpisodeView";
 export type { HeardView } from "./generated/HeardView";
 export type { Frame } from "./generated/Frame";
 export type { MoveKind } from "./generated/MoveKind";
+export type { Thought } from "./generated/Thought";
+export type { ThoughtView } from "./generated/ThoughtView";
+export type { Blame } from "./generated/Blame";
+export type { Mishap } from "./generated/Mishap";
 export type { SummaryItem } from "./generated/SummaryItem";
 export type { SummaryKind } from "./generated/SummaryKind";
 export type { Cause } from "./generated/Cause";
@@ -42,7 +46,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 13;
+export const PROTOCOL_VERSION = 14;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;

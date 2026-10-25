@@ -2,6 +2,7 @@
 import type { EpisodeView } from "./EpisodeView";
 import type { HeardView } from "./HeardView";
 import type { RegardView } from "./RegardView";
+import type { ThoughtView } from "./ThoughtView";
 import type { VillagerId } from "./VillagerId";
 
 /**
@@ -12,4 +13,8 @@ export type MindView = { who: VillagerId, sociable: number, warmth: number, skil
 /**
  * Most recent last.
  */
-episodes: Array<EpisodeView>, heard: Array<HeardView>, };
+episodes: Array<EpisodeView>, heard: Array<HeardView>, 
+/**
+ * What they told themselves recently, most recent last.
+ */
+thoughts: Array<ThoughtView>, };

@@ -131,6 +131,13 @@ function describeMind(m: MindView, villagers: VillagerView[]): string[] {
     const notes = e.notes.length ? ` (${e.notes.join("; ")})` : "";
     lines.push(`  ${sinceText(e.tick)} ${name(e.with)}, ${words(e.frame)}: peak ${signed(e.peak)}, end ${signed(e.end)}${notes}`);
   }
+  if (m.thoughts.length) lines.push("thought:");
+  for (const { tick, thought: t } of m.thoughts) {
+    const blame =
+      t.blame === "Me" ? "blames themself" : t.blame === "World" ? "blames the world" : t.blame === "Luck" ? "puts it down to luck" : `blames ${name(t.blame.Them)}`;
+    const span = [t.lasting ? "for good" : "", t.everywhere ? "for everything" : ""].filter(Boolean).join(" and ");
+    lines.push(`  ${sinceText(tick)} ${blame}${span ? `, ${span}` : ""}: ${t.about}`);
+  }
   if (m.heard.length) lines.push("heard:");
   for (const h of m.heard) {
     lines.push(`  ${sinceText(h.tick)} ${name(h.from)}${h.overheard ? " (overheard)" : ""}: ${words(h.kind)} "${h.subject}"`);

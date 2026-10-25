@@ -2,7 +2,8 @@
 //! reads the world through `Ctx`, and writes by returning commands. The sim applies them.
 use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::needs::{Need, Needs};
-use crate::protocol::Frame;
+use crate::protocol::{Blame, Frame, Mishap, Thought};
+use crate::recall::{Perceived, Record, Recorded};
 use crate::social::Interlocutor;
 use crate::terrain::Terrain;
 use crate::time::{Calendar, Tick, TimeOfDay};
@@ -25,9 +26,21 @@ pub struct Ctx<'a> {
     pub terrain: &'a Terrain,
     /// Goods on objects, by object index then good.
     pub stock: &'a BTreeMap<u16, BTreeMap<String, u16>>,
+    /// What the town keeps of recent events, with who could perceive each.
+    pub record: &'a Record,
 }
 
 impl Ctx<'_> {
+    /// Kept events `who` did, saw or heard since `since`, oldest first. What they make of
+    /// them, and whether they noticed at all, is their own code's business.
+    pub fn recall(
+        &self,
+        who: VillagerId,
+        since: Tick,
+    ) -> impl Iterator<Item = (&Recorded, Perceived)> {
+        self.record.recall(who, since)
+    }
+
     #[must_use]
     pub fn villager(&self, who: VillagerId) -> &VillagerState {
         &self.villagers[who.index()]
@@ -216,6 +229,9 @@ pub enum Command {
         activity: String,
         minutes: u32,
     },
+    /// Tell yourself something about what happened. Changes nothing; emits `Thought`, which
+    /// the town keeps for a month (only the thinker perceives it).
+    Think(Thought),
 }
 
 /// Who pays or is paid. `Outside` is the world beyond the town: pensions come from it,
@@ -235,6 +251,7 @@ impl Command {
             Command::Wait { ticks, activity } => format!("{activity} for {}m", ticks / 60),
             Command::Idle => "idle".to_string(),
             Command::Note(text) => format!("note: {text}"),
+            Command::Think(t) => format!("thinks: {}", t.describe(ctx)),
             Command::Greet { with } => format!("greet {}", ctx.villager(*with).name),
             Command::Talk {
                 with,
@@ -341,6 +358,12 @@ pub enum Trigger {
     Need { need: Need, level: u8 },
     /// Back from an errand (an `Interlude`), at the spot and activity you left.
     Resumed,
+    /// A moment to take in your surroundings, every quarter hour while awake. `since` is
+    /// the last one. What you notice is up to you: `Ctx::recall` has what you could have
+    /// perceived, and the state of anything in front of you is in `Ctx`.
+    Look { since: Tick },
+    /// Something happened to your body. Intrusive: it reaches you whatever you attend to.
+    Mishap { what: Mishap },
 }
 
 impl Trigger {
@@ -358,7 +381,29 @@ impl Trigger {
             Trigger::TalkEnded { other, topic } => format!("finished {topic} with {}", name(other)),
             Trigger::Need { need, level } => format!("{} ({level})", need.name()),
             Trigger::Resumed => "resumed".into(),
+            Trigger::Look { .. } => "looked around".into(),
+            Trigger::Mishap { what } => format!("{what:?}").to_lowercase(),
         }
+    }
+}
+
+impl Thought {
+    /// "blames the world (lasting, everywhere): tripped on weeds".
+    #[must_use]
+    pub fn describe(&self, ctx: &Ctx<'_>) -> String {
+        let blame = match self.blame {
+            Blame::Me => "blames themself".to_string(),
+            Blame::Them(v) => format!("blames {}", ctx.villager(v).name),
+            Blame::World => "blames the world".into(),
+            Blame::Luck => "puts it down to luck".into(),
+        };
+        let span = match (self.lasting, self.everywhere) {
+            (true, true) => " (lasting, everywhere)",
+            (true, false) => " (lasting)",
+            (false, true) => " (everywhere)",
+            (false, false) => "",
+        };
+        format!("{blame}{span}: {} ({:+})", self.about, self.feeling)
     }
 }
 

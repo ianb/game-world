@@ -28,6 +28,10 @@ pub enum Event {
     Woke { who: VillagerId },
     /// The next turn of a conversation.
     Beat { convo: u32 },
+    /// `who` takes in their surroundings; repeats every quarter hour.
+    Look { who: VillagerId },
+    /// `who` tripped on the tile they just stepped onto.
+    Tripped { who: VillagerId },
     /// A player or external actor input, applied at its tick in `(tick, seq)` order.
     Input(Input),
 }

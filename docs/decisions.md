@@ -897,3 +897,30 @@ Implications: where the set point lands is mostly the ratio of the two
 constants, not his history. Open: whether a character needs a second
 layer (what they believe about themselves, separate from what is true) so
 they can be wrong; nothing here needs it yet.
+
+## 2026-10-25: Perception as recollection plus attention, and self-talk
+
+Ian, over several messages: self-talk "should build on perception"; "lots of
+knowledge is indirect (memory of patterns, phone calls, etc). But there's
+perceptions that intrude as well"; "we don't have to create an action log.
+We can just allow the character programs to read actions from the context
+... with helpers for ... would have perceived"; filtering events into "some
+worth keeping a day, some worth keeping a month ... That's about
+recollection, though ... That's not about attention"; and the watch list
+"maybe it's just a tick thing. Maybe it's just a pattern."
+
+Decided and built (`docs/design/perception.md`):
+
+- The town keeps worthwhile events for a day or a month, each with who was
+  close enough to see or hear it. Character code reads it through
+  `Ctx::recall`. No central knowledge store.
+- Attention is a quarter-hourly `Look` trigger and each character's own
+  checks. Intrusions (so far, tripping in weeds) are pushed as triggers.
+- Self-talk is a `Think` command carrying explanatory style; each villager
+  has a placeholder style. Tom's grievance builds from it and boils over.
+
+Implications: kept events go into the snapshot as JSON text, because the
+event type is internally tagged for the viewer and postcard cannot decode
+that. Knowledge representation stays action-centric, per the Viv note:
+what a character knows is what it perceived of actions plus what it chose
+to keep.

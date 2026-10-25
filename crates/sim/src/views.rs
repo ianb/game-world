@@ -144,7 +144,9 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
             Emitted::Need { need, level, .. } => {
                 let _ = writeln!(out, "  {t} {} ({level})", need.name());
             }
-            Emitted::ConversationStarted { .. } | Emitted::ConversationEnded { .. } => {
+            Emitted::ConversationStarted { .. }
+            | Emitted::ConversationEnded { .. }
+            | Emitted::Mishap { .. } => {
                 if let Some(line) = conversation_line(sim, e) {
                     let _ = writeln!(out, "  {t} {line}");
                 }
@@ -168,7 +170,7 @@ pub fn itinerary<C: CharacterSet>(sim: &Sim<C>, who: VillagerId, events: &[Emitt
     out
 }
 
-/// An itinerary line for the start or end of a conversation.
+/// An itinerary line for the start or end of a conversation, or a mishap.
 fn conversation_line<C: CharacterSet>(sim: &Sim<C>, e: &Emitted) -> Option<String> {
     let name = |v: &VillagerId| sim.state().villagers[v.index()].name.clone();
     match e {
@@ -189,6 +191,10 @@ fn conversation_line<C: CharacterSet>(sim: &Sim<C>, e: &Emitted) -> Option<Strin
             "done talking with {} ({}, peak {my_peak:+}, end {my_end:+})",
             name(with),
             frame.name()
+        )),
+        Emitted::Mishap { what, x, y, .. } => Some(format!(
+            "{} at ({x}, {y})",
+            format!("{what:?}").to_lowercase()
         )),
         _ => None,
     }

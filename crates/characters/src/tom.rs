@@ -3,10 +3,12 @@
 //! Starving, he eats the bar's bread; otherwise his body behaves like anyone's
 //! (`toolbox::human`). In talk he is blunt and teases his regulars, not always well; his
 //! mood colours everything, and each conversation moves it a little. A new fish is the
-//! first thing he mentions.
+//! first thing he mentions. When things go wrong he blames the town, for good and for
+//! everything; the grievance builds through the day and, past a point, the next person he
+//! talks to gets a dig whatever they did.
 use crate::toolbox::{
     MEAL_WINDOW_MINUTES, Plan, activity_of, eat_something, errand, go_tile, meal_soon, object, pay,
-    pick, stock, stock_of, together, wait_minutes, weekday,
+    pick, seen_doing, stock, stock_of, think, wait_minutes, weekday,
 };
 use content::{Pos, Rect};
 use rand_pcg::Pcg32;
@@ -14,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
 use sim::needs::{Need, URGENT};
-use sim::protocol::{Act, Frame, MoveKind};
+use sim::protocol::{Act, Blame, Frame, Mishap, MoveKind};
 use sim::social::{
     Episode, Interlocutor, Memory, Persona, Situation, default_next_act, mv, needs_mood,
 };
@@ -25,7 +27,7 @@ const FISHING_SPOTS: [(u16, u16); 3] = [(29, 21), (29, 22), (29, 23)];
 
 /// The tavern's yard: the building, the lane along its south side and a margin round it.
 /// Tom keeps this clear of weeds; the rest of the green can go wild.
-const YARD: Rect = Rect {
+pub const YARD: Rect = Rect {
     x: 2,
     y: 12,
     w: 17,
@@ -37,6 +39,8 @@ const WEEDING_RADIUS: u16 = 2;
 /// Hunger at which he will not go to bed without eating; he checks while closing up,
 /// so he can eat at the bar.
 const BEDTIME_HUNGER: u8 = crate::toolbox::BEDTIME_HUNGER;
+/// Grievance at which he takes it out on whoever he talks to next.
+pub const BOILING: u8 = 2;
 /// A loaf a day for the bar.
 pub const BAR_BREAD_PRICE: u32 = 2;
 
@@ -56,6 +60,11 @@ pub struct Tom {
     pub bar_bread_day: u32,
     /// The day Mara last brought him a pastry.
     pub pastry_day: u32,
+    /// Things that went wrong and that he put down to the town, building toward an outburst.
+    pub grievance: u8,
+    pub outbursts: u16,
+    /// The day he last noticed the bar out of bread.
+    pub bare_bar_day: u32,
     pub mind: Memory,
 }
 
@@ -70,6 +79,9 @@ impl Default for Tom {
             hunger_breaks: 0,
             bar_bread_day: u32::MAX,
             pastry_day: u32::MAX,
+            grievance: 0,
+            outbursts: 0,
+            bare_bar_day: u32::MAX,
             mind: Memory::default(),
         }
     }
@@ -117,9 +129,40 @@ impl Tom {
         ]
     }
 
+    /// 20:00 on a working day: did anyone come in for a drink this evening?
+    fn evening_check(&mut self, ctx: &Ctx<'_>) -> Vec<Command> {
+        let since = ctx.tick.day_start().at_time(19, 0);
+        let came = seen_doing(ctx, "tom", "drink", since);
+        let company = !came.is_empty();
+        let delivered_today = self.pastry_day == ctx.calendar.day_index;
+        let before = self.mood;
+        self.mood = if company || delivered_today {
+            self.mood.saturating_add(2).min(5)
+        } else {
+            self.mood.saturating_sub(1).max(-5)
+        };
+        let why = match (company, delivered_today) {
+            (true, _) => format!("{} came in", ctx.villager(came[0]).name),
+            (false, true) => "nobody here, but a pastry came by".into(),
+            (false, false) => "nobody came".into(),
+        };
+        // No further wait: he keeps the `tend-bar` activity until the 22:00 item.
+        let mut cmds = vec![Command::Note(format!(
+            "mood {before} -> {} ({why})",
+            self.mood
+        ))];
+        if !company && !delivered_today {
+            self.grievance = self.grievance.saturating_add(1);
+            cmds.push(think("nobody came", Blame::World, true, true, -1));
+        }
+        cmds
+    }
+
     pub fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
         let me = ctx.villager_id("tom").expect("tom exists");
         let mut plan = Plan::baseline(me, ctx);
+        // A night's sleep takes the edge off one grievance.
+        self.grievance = self.grievance.saturating_sub(1);
 
         if weekday(ctx) == Weekday::Sun {
             // Day off: no bar. Fish from late morning, then home for a long evening.
@@ -214,26 +257,28 @@ impl Tom {
                 self.mood = self.mood.saturating_add(1).min(5);
                 vec![wait_minutes(*pick(rng, &[40u32, 55, 70]), "fish")]
             }
-            Trigger::Waited => {
-                // 20:00 on a working day: is anyone here?
-                let company = together(ctx, "tom", "mara") && activity_of(ctx, "mara") == "drink";
-                let delivered_today = self.pastry_day == ctx.calendar.day_index;
-                let before = self.mood;
-                self.mood = if company || delivered_today {
-                    self.mood.saturating_add(2).min(5)
-                } else {
-                    self.mood.saturating_sub(1).max(-5)
-                };
-                let why = match (company, delivered_today) {
-                    (true, _) => "Mara is here drinking",
-                    (false, true) => "nobody here, but a pastry came by",
-                    (false, false) => "nobody came",
-                };
-                // No further wait: he keeps the `tend-bar` activity until the 22:00 item.
-                vec![Command::Note(format!(
-                    "mood {before} -> {} ({why})",
-                    self.mood
-                ))]
+            Trigger::Waited => self.evening_check(ctx),
+            // Behind the bar he keeps an eye on the bread.
+            Trigger::Look { .. }
+                if activity_of(ctx, "tom") == "tend-bar"
+                    && stock_of(ctx, "bar_tavern", "bread") == 0
+                    && self.bare_bar_day != ctx.calendar.day_index =>
+            {
+                self.bare_bar_day = ctx.calendar.day_index;
+                self.grievance = self.grievance.saturating_add(1);
+                vec![think(
+                    "the bar is out of bread",
+                    Blame::World,
+                    true,
+                    true,
+                    -1,
+                )]
+            }
+            Trigger::Mishap {
+                what: Mishap::Tripped,
+            } => {
+                self.grievance = self.grievance.saturating_add(1);
+                vec![think("tripped on weeds", Blame::World, true, true, -1)]
             }
             Trigger::TalkEnded { topic, .. } if topic == "a pastry" => {
                 self.pastry_day = ctx.calendar.day_index;
@@ -294,6 +339,12 @@ impl Interlocutor for Tom {
     }
 
     fn next_act(&mut self, s: &Situation<'_>, rng: &mut Pcg32) -> Act {
+        // Boiling over: whoever is in front of him gets it.
+        if self.grievance >= BOILING {
+            self.grievance = 0;
+            self.outbursts += 1;
+            return mv(MoveKind::Jab, s.topic);
+        }
         let fish = self.fish_caught > self.fish_told;
         match s.frame {
             Frame::SmallTalk if fish => {
@@ -309,10 +360,15 @@ impl Interlocutor for Tom {
         }
     }
 
-    /// Each conversation moves his mood by how it went for him.
+    /// Each conversation moves his mood by how it went for him; a bad one adds to the
+    /// grievance.
     fn remember(&mut self, e: Episode) {
         let felt = e.peak + e.end;
         self.mood = (self.mood + felt.signum()).clamp(-5, 5);
+        // A talk that went badly is one more thing the town did to him.
+        if felt < 0 {
+            self.grievance = self.grievance.saturating_add(1);
+        }
         self.mind.remember(e);
     }
 }

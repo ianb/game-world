@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 13;
+pub const PROTOCOL_VERSION: u32 = 14;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -184,6 +184,21 @@ pub enum Emitted {
         their_end: i8,
         ended_by: Option<VillagerId>,
     },
+    /// Something happened to `who`'s body.
+    Mishap {
+        tick: Tick,
+        who: VillagerId,
+        what: Mishap,
+        place: PlaceId,
+        x: u16,
+        y: u16,
+    },
+    /// What `who` told themselves about something.
+    Thought {
+        tick: Tick,
+        who: VillagerId,
+        thought: Thought,
+    },
 }
 
 /// The kind of exchange two people have settled on. Shared conventions: which moves make
@@ -268,6 +283,41 @@ pub enum Attribution {
     Situation,
 }
 
+/// A small accident to the body.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum Mishap {
+    /// Caught a foot in long grass or weeds.
+    Tripped,
+}
+
+/// Who or what a villager holds responsible, in their own account of an event.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum Blame {
+    Me,
+    Them(VillagerId),
+    World,
+    Luck,
+}
+
+/// A villager's account of something to themselves: what it was, whose doing, whether it
+/// will last and how far it reaches (explanatory style, after Seligman), and how it felt.
+/// `about` is an engineering tag, not the villager's words.
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct Thought {
+    pub about: String,
+    pub blame: Blame,
+    pub lasting: bool,
+    pub everywhere: bool,
+    /// -3 to 3.
+    pub feeling: i8,
+}
+
 /// What a summary line is about.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(ts_rs::TS))]
@@ -283,6 +333,8 @@ pub enum SummaryKind {
     Talk,
     /// A villager's note about their own reasons.
     Note,
+    /// What a villager told themselves about something.
+    Thought,
     /// Money in and out for one villager.
     Money,
     /// Goods ran out.
@@ -481,7 +533,9 @@ impl Emitted {
             | Emitted::Beat { tick, .. }
             | Emitted::TookUp { tick, .. }
             | Emitted::FrameChanged { tick, .. }
-            | Emitted::ConversationEnded { tick, .. } => *tick,
+            | Emitted::ConversationEnded { tick, .. }
+            | Emitted::Mishap { tick, .. }
+            | Emitted::Thought { tick, .. } => *tick,
         }
     }
 
@@ -504,7 +558,9 @@ impl Emitted {
             | Emitted::Beat { who, .. }
             | Emitted::TookUp { who, .. }
             | Emitted::FrameChanged { who, .. }
-            | Emitted::ConversationEnded { who, .. } => Some(*who),
+            | Emitted::ConversationEnded { who, .. }
+            | Emitted::Mishap { who, .. }
+            | Emitted::Thought { who, .. } => Some(*who),
             _ => None,
         }
     }
@@ -738,6 +794,17 @@ pub struct MindView {
     /// Most recent last.
     pub episodes: Vec<EpisodeView>,
     pub heard: Vec<HeardView>,
+    /// What they told themselves recently, most recent last.
+    pub thoughts: Vec<ThoughtView>,
+}
+
+/// A thought and when it was had.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct ThoughtView {
+    pub tick: Tick,
+    pub thought: Thought,
 }
 
 /// How many recent episodes and heard things a `MindView` carries.
@@ -764,6 +831,24 @@ pub fn mind_view<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Option<MindV
         })
         .collect();
     let recent = |n: usize| n.saturating_sub(MIND_RECENT);
+    let thoughts: Vec<ThoughtView> = sim
+        .state()
+        .record
+        .entries
+        .iter()
+        .filter_map(|r| match &r.event {
+            Emitted::Thought {
+                tick,
+                who: w,
+                thought,
+            } if *w == who => Some(ThoughtView {
+                tick: *tick,
+                thought: thought.clone(),
+            }),
+            _ => None,
+        })
+        .collect();
+    let thoughts = thoughts[recent(thoughts.len())..].to_vec();
     Some(MindView {
         who,
         sociable: p.sociable,
@@ -796,6 +881,7 @@ pub fn mind_view<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Option<MindV
                 overheard: h.overheard,
             })
             .collect(),
+        thoughts,
     })
 }
 

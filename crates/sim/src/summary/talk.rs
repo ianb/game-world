@@ -145,6 +145,18 @@ impl Summarizer {
             }
             Act::Move { .. } => {}
         }
+        // A dig or a rebuff they meant: someone taking something out on the other.
+        if meant == did
+            && matches!(
+                act_kind(did),
+                crate::protocol::MoveKind::Jab | crate::protocol::MoveKind::Rebuff
+            )
+        {
+            push(
+                &mut t.clauses,
+                format!("{name} meant {}", act_kind(did).name()),
+            );
+        }
         if meant != did {
             let c = match (meant, did) {
                 (Act::Answer { .. }, Act::Answer { .. }) => {

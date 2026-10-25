@@ -2,15 +2,19 @@
 //! world beyond the town, and sells them on to the bakery and the tavern. Supplies enter
 //! and money leaves through him. He is touchy: quick to hear a refusal as a rebuff and to
 //! blame the person for it, and when money is short it is on his mind. How touchy moves
-//! with experience: talks that go badly make him more so, warm ones ease him.
+//! with experience: talks that go badly make him more so, warm ones ease him. When
+//! something goes wrong he blames whoever is nearest to hand.
+use crate::tom::YARD;
 use crate::toolbox::{
-    Plan, activity_of, buy_ale, counter_talk, go, go_tile, pay, pick, stock, villager,
+    Plan, activity_of, buy_ale, counter_talk, go, go_tile, pay, pick, stock, think, villager,
     wait_minutes, weekday,
 };
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
+use sim::protocol::{Blame, Mishap};
+use sim::recall::SIGHT;
 use sim::social::{Episode, Interlocutor, Memory, Persona};
 use sim::time::Weekday;
 
@@ -59,6 +63,33 @@ impl Default for Hal {
 }
 
 impl Hal {
+    /// Anyone close enough to have seen; failing that, Tom if it was his yard; else the
+    /// world.
+    fn someone_to_blame(ctx: &Ctx<'_>, me: VillagerId) -> Blame {
+        let here = ctx.villager(me);
+        let near = (0..ctx.villagers.len())
+            .map(|i| VillagerId(u16::try_from(i).expect("few villagers")))
+            .filter(|&o| o != me)
+            .find(|&o| {
+                let v = ctx.villager(o);
+                v.place == here.place
+                    && v.activity != "sleep"
+                    && v.pos
+                        .x
+                        .abs_diff(here.pos.x)
+                        .max(v.pos.y.abs_diff(here.pos.y))
+                        <= SIGHT
+            });
+        let town = ctx.place_id("town");
+        match near {
+            Some(o) => Blame::Them(o),
+            None if Some(here.place) == town && YARD.contains(here.pos.x, here.pos.y) => {
+                Blame::Them(villager(ctx, "tom"))
+            }
+            None => Blame::World,
+        }
+    }
+
     pub fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
         let me = ctx.villager_id("hal").expect("hal exists");
         let mut plan = Plan::baseline(me, ctx);
@@ -171,6 +202,12 @@ impl Hal {
                     .unwrap_or_else(|| vec![Command::Note("barrel's dry".into())]);
                 cmds.extend(counter_talk(ctx, "hal", "tom", "ale"));
                 cmds
+            }
+            Trigger::Mishap {
+                what: Mishap::Tripped,
+            } => {
+                let blame = Hal::someone_to_blame(ctx, me);
+                vec![think("tripped on weeds", blame, false, false, -1)]
             }
             Trigger::Passing { other } if activity_of(ctx, "hal") != "sleep" => {
                 vec![Command::Greet { with: *other }]

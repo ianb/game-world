@@ -13,6 +13,7 @@ pub mod input;
 pub mod needs;
 pub mod protocol;
 pub mod queue;
+pub mod recall;
 pub mod rng;
 pub mod sim;
 pub mod snapshot;

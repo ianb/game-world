@@ -78,6 +78,8 @@ impl Pip {
                     vec![Command::Note("no bun today".into())]
                 }
             }
+            // Children fall over all the time; he does not give it a thought.
+            Trigger::Mishap { .. } => Vec::new(),
             // An unroutable roam target: shrug and try somewhere else.
             Trigger::Stuck => {
                 let town = ctx.place_id("town").expect("town exists");

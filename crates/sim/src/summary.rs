@@ -235,6 +235,24 @@ impl Summarizer {
                     self.line(tick, *who, SummaryKind::Need, text, None, key);
                 }
             }
+            Emitted::Thought { who, thought, .. } => {
+                let name = self.name(*who).to_string();
+                let blame = match thought.blame {
+                    crate::protocol::Blame::Me => "blames themself".to_string(),
+                    crate::protocol::Blame::Them(v) => format!("blames {}", self.name(v)),
+                    crate::protocol::Blame::World => "blames the world".into(),
+                    crate::protocol::Blame::Luck => "puts it down to luck".into(),
+                };
+                let span = match (thought.lasting, thought.everywhere) {
+                    (true, true) => ", for good and for everything",
+                    (true, false) => ", for good",
+                    (false, true) => ", for everything",
+                    (false, false) => "",
+                };
+                let key = format!("thought:{}:{}:{blame}", name.to_lowercase(), thought.about);
+                let text = format!("{name} {blame}{span}: {}", thought.about);
+                self.line(tick, *who, SummaryKind::Thought, text, None, key);
+            }
             Emitted::Stuck {
                 who, reason, cause, ..
             } => {

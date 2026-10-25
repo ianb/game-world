@@ -125,6 +125,7 @@ impl<C: CharacterSet> Sim<C> {
             villagers: &self.state.villagers,
             terrain: &self.state.terrain,
             stock: &self.state.stock,
+            record: &self.state.record,
         };
         let in_it = who == convo.a || who == convo.b;
         let situation = Situation {
