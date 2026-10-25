@@ -47,6 +47,16 @@ The sim is a pure function of (content, seed, inputs). Enforced by
   serialized. Anything not in the snapshot is not in the hash, and a
   snapshot restored at tick t must behave exactly like the live sim.
 
+## Types over strings
+
+Use types as much as possible, so the compiler finds every place a change
+has to reach. A closed set is an enum. Where a new variant should force a
+decision, match it exhaustively with no `_` arm and put
+`#[deny(clippy::wildcard_enum_match_arm)]` on that function (as each
+character's `warmth_of(Gesture)` does). Strings are for open sets that
+grow with content (topics), and then they are declared in `content/` and
+checked, not matched by luck.
+
 ## Boundary rules (Rust to TypeScript)
 
 Boundary types live in `crates/sim/src/protocol.rs`. They are integer-only,

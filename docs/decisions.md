@@ -969,3 +969,17 @@ Decided and built:
 
 Implications: what a topic implies for the listener (knowledge, gossip) is
 still to come; this only makes topics typed and declared.
+
+## 2026-10-25: Types over strings, as a general pattern
+
+Ian: "As a general pattern, I like to make use of types as much as
+possible, often to support exhaustive updates."
+
+Decided: recorded as a rule in `CLAUDE.md` ("Types over strings"). Closed
+sets are enums, matched exhaustively without a wildcard where a new
+variant should force a decision. Strings are kept for open, content-grown
+sets, which are declared in content and validated.
+
+Implications: existing string-typed sets are candidates for conversion
+(activities, goods, villager and object keys in character code). Each is
+its own change.
