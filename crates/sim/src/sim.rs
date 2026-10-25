@@ -8,7 +8,7 @@ use crate::hash::{HashParts, hash_of};
 use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::input::{Input, InputKind, Source};
 use crate::needs::{Need, Needs};
-use crate::protocol::{Cause, Emitted, Frame, Mishap, PlanItem};
+use crate::protocol::{Cause, Emitted, Frame, Mishap, PlanItem, Topic};
 use crate::queue::EventQueue;
 use crate::recall::{self, Observer, Record};
 use crate::rng::Streams;
@@ -712,7 +712,7 @@ impl<C: CharacterSet> Sim<C> {
                     with,
                     Trigger::TalkedTo {
                         other: who,
-                        topic: "greeting".into(),
+                        topic: Topic::new("greeting"),
                     },
                     out,
                 );
@@ -734,7 +734,7 @@ impl<C: CharacterSet> Sim<C> {
         who: VillagerId,
         with: VillagerId,
         frame: Frame,
-        topic: String,
+        topic: Topic,
         minutes: u32,
         out: &mut Vec<Emitted>,
     ) {

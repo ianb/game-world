@@ -135,7 +135,7 @@ pub enum Emitted {
         with: VillagerId,
         place: PlaceId,
         frame: Frame,
-        topic: String,
+        topic: Topic,
         cause: Cause,
     },
     /// One turn. `meant` is what the speaker's program chose, `did` what came out.
@@ -157,9 +157,9 @@ pub enum Emitted {
         convo: u32,
         who: VillagerId,
         speaker: VillagerId,
-        meant: MoveKind,
-        did: MoveKind,
-        taken_as: MoveKind,
+        meant: Gesture,
+        did: Gesture,
+        taken_as: Gesture,
         warmth: i8,
         attribution: Attribution,
         overheard: bool,
@@ -213,12 +213,14 @@ pub enum Frame {
     Confiding,
 }
 
-/// Something a person does in a conversation. Some kinds only ever come out of a misfire or
-/// a reading (`Jab`, `Awkward`, `Rebuff`, `Pry`): nobody means to do them.
+/// What a person does with a turn in a conversation. A small fixed set: every character
+/// says what each one means to them (`Interlocutor::warmth_of`). Some usually only come
+/// out of a misfire or a reading (`Jab`, `Awkward`, `Rebuff`, `Pry`), though a character
+/// can mean one.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(ts_rs::TS))]
 #[cfg_attr(feature = "schema", ts(export))]
-pub enum MoveKind {
+pub enum Gesture {
     Ask,
     Tell,
     Agree,
@@ -253,14 +255,72 @@ pub enum BidAnswer {
     Against,
 }
 
-/// One turn's content: a move, a bid for another frame, or an answer to a bid.
+/// One turn's content: a gesture about a topic, a bid for another frame, or an answer to a
+/// bid.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(ts_rs::TS))]
 #[cfg_attr(feature = "schema", ts(export))]
 pub enum Act {
-    Move { kind: MoveKind, subject: String },
-    Bid { frame: Frame, subject: String },
+    Gesture { gesture: Gesture, topic: Topic },
+    Bid { frame: Frame, topic: Topic },
     Answer { answer: BidAnswer },
+}
+
+/// What a conversation or a turn is about: a topic declared in the content
+/// (`content/topics/`), and the person it concerns, if any ("Mara's money").
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct Topic {
+    pub key: String,
+    pub about: Option<VillagerId>,
+}
+
+impl Topic {
+    /// A topic that is about nobody in particular. Character code should go through
+    /// `Ctx::topic`, which checks the key is declared.
+    #[must_use]
+    pub fn new(key: &str) -> Topic {
+        Topic {
+            key: key.to_string(),
+            about: None,
+        }
+    }
+
+    #[must_use]
+    pub fn about(mut self, who: VillagerId) -> Topic {
+        self.about = Some(who);
+        self
+    }
+
+    #[must_use]
+    pub fn is(&self, key: &str) -> bool {
+        self.key == key
+    }
+
+    /// The topic's gloss from `content`, and whose it is by `name`: "money (Mara)".
+    pub fn label_with(
+        &self,
+        content: &content::Content,
+        name: impl Fn(VillagerId) -> String,
+    ) -> String {
+        let gloss = content
+            .topic(&self.key)
+            .map_or(self.key.as_str(), |t| t.gloss.as_str());
+        match self.about {
+            Some(v) => format!("{gloss} ({})", name(v)),
+            None => gloss.to_string(),
+        }
+    }
+}
+
+impl std::fmt::Display for Topic {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.about {
+            Some(v) => write!(f, "{} of #{}", self.key, v.0),
+            None => write!(f, "{}", self.key),
+        }
+    }
 }
 
 /// How someone comes into a turn (Goffman's footing).
@@ -771,8 +831,9 @@ pub struct EpisodeView {
 pub struct HeardView {
     pub tick: Tick,
     pub from: VillagerId,
-    pub kind: MoveKind,
-    pub subject: String,
+    pub gesture: Gesture,
+    /// As views show it: the topic's gloss, and whose.
+    pub topic: String,
     pub overheard: bool,
 }
 
@@ -857,7 +918,7 @@ pub fn mind_view<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Option<MindV
         rejection_sensitivity: p.rejection_sensitivity,
         charity: p.charity,
         mood: mind.mood(&ctx, who),
-        worry: mind.worry(&ctx, who),
+        worry: mind.worry(&ctx, who).map(|t| t.label(&ctx)),
         regard,
         episodes: memory.episodes[recent(memory.episodes.len())..]
             .iter()
@@ -876,8 +937,8 @@ pub fn mind_view<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Option<MindV
             .map(|h| HeardView {
                 tick: h.tick,
                 from: h.from,
-                kind: h.kind,
-                subject: h.subject.clone(),
+                gesture: h.gesture,
+                topic: h.topic.label(&ctx),
                 overheard: h.overheard,
             })
             .collect(),

@@ -54,6 +54,7 @@ impl Report {
 pub fn validate(content: &Content) -> Vec<ContentError> {
     let mut r = Report { errors: Vec::new() };
     check_ids(content, &mut r);
+    check_topics(content, &mut r);
     check_buildings(content, &mut r);
     if r.errors.iter().any(|e| e.severity == Severity::Error) {
         // Compilation assumes references resolve; stop here with the referential errors.
@@ -73,6 +74,28 @@ pub fn validate(content: &Content) -> Vec<ContentError> {
             .then_with(|| a.subject.cmp(&b.subject))
     });
     r.errors
+}
+
+fn check_topics(content: &Content, r: &mut Report) {
+    let mut seen = BTreeSet::new();
+    for t in &content.topics {
+        let ok = !t.id.is_empty()
+            && t.id
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-');
+        if !ok {
+            r.error(
+                format!("topic {}", t.id),
+                "id must be lowercase letters, digits and dashes",
+            );
+        }
+        if !seen.insert(&t.id) {
+            r.error(format!("topic {}", t.id), "declared twice");
+        }
+        if t.gloss.trim().is_empty() {
+            r.error(format!("topic {}", t.id), "gloss is empty");
+        }
+    }
 }
 
 fn check_ids(content: &Content, r: &mut Report) {

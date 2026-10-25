@@ -10,6 +10,14 @@
         "$ref": "#/$defs/Building"
       }
     },
+    "topics": {
+      "description": "The topics conversations can be about. A topic that code uses must be listed here.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/TopicDef"
+      }
+    },
     "villagers": {
       "type": "array",
       "items": {
@@ -388,6 +396,22 @@
         "days",
         "at",
         "activity"
+      ]
+    },
+    "TopicDef": {
+      "description": "Something villagers can talk about. Code refers to it by `id`; `gloss` is how views\nshow it.",
+      "type": "object",
+      "properties": {
+        "gloss": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "gloss"
       ]
     },
     "Villager": {

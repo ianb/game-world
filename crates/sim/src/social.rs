@@ -9,7 +9,7 @@
 //! episodes, and `Memory::regard` reads a view of someone from them when asked.
 use crate::brain::Ctx;
 use crate::ids::VillagerId;
-use crate::protocol::{Act, Attribution, BidAnswer, Frame, MoveKind, Stance};
+use crate::protocol::{Act, Attribution, BidAnswer, Frame, Gesture, Stance, Topic};
 use crate::time::Tick;
 use rand::RngExt;
 use rand_pcg::Pcg32;
@@ -29,8 +29,8 @@ impl Frame {
     /// Whether a move belongs in this frame. Moves nobody means (a jab, an awkward moment)
     /// are failures inside the frame, not breaches of it.
     #[must_use]
-    pub fn allows(self, kind: MoveKind) -> bool {
-        use MoveKind as M;
+    pub fn allows(self, kind: Gesture) -> bool {
+        use Gesture as M;
         if matches!(kind, M::Leave | M::Jab | M::Awkward | M::Rebuff | M::Pry) {
             return true;
         }
@@ -82,8 +82,8 @@ impl Frame {
     /// Moves that are this frame's script, which leave little room to be misread: the
     /// request and the offer at a counter, the how-are-you of a greeting.
     #[must_use]
-    pub fn scripted(self, kind: MoveKind) -> bool {
-        use MoveKind as M;
+    pub fn scripted(self, kind: Gesture) -> bool {
+        use Gesture as M;
         match self {
             Frame::Transaction => matches!(kind, M::Request | M::Offer | M::Thank),
             Frame::Greeting => matches!(kind, M::Ask | M::Tell | M::Thank),
@@ -104,11 +104,11 @@ impl Frame {
     }
 }
 
-impl MoveKind {
+impl Gesture {
     /// How warm the move is, from -3 to 2, as conventionally meant.
     #[must_use]
     pub fn warmth(self) -> i8 {
-        use MoveKind as M;
+        use Gesture as M;
         match self {
             M::Compliment | M::Sympathise => 2,
             M::Agree | M::Joke | M::Tease | M::Offer | M::Thank | M::Disclose | M::Invite => 1,
@@ -121,7 +121,7 @@ impl MoveKind {
 
     #[must_use]
     pub fn name(self) -> &'static str {
-        use MoveKind as M;
+        use Gesture as M;
         match self {
             M::Ask => "ask",
             M::Tell => "tell",
@@ -147,8 +147,8 @@ impl MoveKind {
 
     /// The move a suspicious ear makes of this one.
     #[must_use]
-    pub fn worse(self) -> MoveKind {
-        use MoveKind as M;
+    pub fn worse(self) -> Gesture {
+        use Gesture as M;
         match self {
             M::Tease | M::Joke | M::Complain => M::Jab,
             M::Ask | M::Invite | M::Request => M::Pry,
@@ -161,8 +161,8 @@ impl MoveKind {
 
     /// The move a generous ear makes of this one.
     #[must_use]
-    pub fn better(self) -> MoveKind {
-        use MoveKind as M;
+    pub fn better(self) -> Gesture {
+        use Gesture as M;
         match self {
             M::Jab => M::Tease,
             M::Rebuff => M::Decline,
@@ -177,23 +177,20 @@ impl MoveKind {
     /// Moves that are easy to get wrong.
     #[must_use]
     pub fn hard(self) -> bool {
-        matches!(
-            self,
-            MoveKind::Tease | MoveKind::Joke | MoveKind::Compliment
-        )
+        matches!(self, Gesture::Tease | Gesture::Joke | Gesture::Compliment)
     }
 }
 
-/// Reads an act as the move it amounts to.
+/// Reads an act as the gesture it amounts to.
 #[must_use]
-pub fn act_kind(act: &Act) -> MoveKind {
+pub fn act_gesture(act: &Act) -> Gesture {
     match act {
-        Act::Move { kind, .. } => *kind,
-        Act::Bid { .. } => MoveKind::Invite,
+        Act::Gesture { gesture, .. } => *gesture,
+        Act::Bid { .. } => Gesture::Invite,
         Act::Answer { answer } => match answer {
-            BidAnswer::Toward => MoveKind::Agree,
-            BidAnswer::Away { .. } => MoveKind::Decline,
-            BidAnswer::Against => MoveKind::Rebuff,
+            BidAnswer::Toward => Gesture::Agree,
+            BidAnswer::Away { .. } => Gesture::Decline,
+            BidAnswer::Against => Gesture::Rebuff,
         },
     }
 }
@@ -246,8 +243,8 @@ pub struct Episode {
 pub struct Heard {
     pub tick: Tick,
     pub from: VillagerId,
-    pub kind: MoveKind,
-    pub subject: String,
+    pub gesture: Gesture,
+    pub topic: Topic,
     pub overheard: bool,
 }
 
@@ -317,21 +314,22 @@ impl Memory {
         }
     }
 
-    /// Whether they told `other` about `subject` in a conversation since `tick`.
+    /// Whether they told `other` about the topic `key` in a conversation since `tick`.
     #[must_use]
-    pub fn told_since(&self, other: VillagerId, subject: &str, tick: Tick) -> bool {
-        let note = format!("told {subject}");
+    pub fn told_since(&self, other: VillagerId, key: &str, tick: Tick) -> bool {
+        let note = format!("told {key}");
         self.episodes
             .iter()
             .any(|e| e.with == other && e.tick >= tick && e.notes.contains(&note))
     }
 
-    /// Whether `from` told (or was overheard telling) something about `subject` since `tick`.
+    /// Whether `from` told (or was overheard telling) something about the topic `key` since
+    /// `tick`.
     #[must_use]
-    pub fn heard_since(&self, from: VillagerId, subject: &str, tick: Tick) -> bool {
+    pub fn heard_since(&self, from: VillagerId, key: &str, tick: Tick) -> bool {
         self.heard
             .iter()
-            .any(|h| h.from == from && h.subject == subject && h.tick >= tick)
+            .any(|h| h.from == from && h.topic.is(key) && h.tick >= tick)
     }
 }
 
@@ -376,9 +374,9 @@ pub struct Conversation {
     pub b: VillagerId,
     pub frame: Frame,
     /// What it is about now; a bid that is taken changes it.
-    pub topic: String,
+    pub topic: Topic,
     /// What it was opened about, which is what `TalkEnded` reports.
-    pub booked: String,
+    pub booked: Topic,
     pub started: Tick,
     pub ends: Tick,
     /// Whose turn it is.
@@ -387,7 +385,7 @@ pub struct Conversation {
     pub turns: [u16; 2],
     pub beats: Vec<BeatRecord>,
     /// A bid waiting for an answer: who must answer, into which frame, about what.
-    pub bid: Option<(VillagerId, Frame, String)>,
+    pub bid: Option<(VillagerId, Frame, Topic)>,
     /// Who has to respond to the other stepping outside the frame.
     pub breach_reply: Option<VillagerId>,
     /// How `a` and `b` have felt so far.
@@ -414,7 +412,7 @@ pub struct Situation<'a> {
     /// The other participant (for a bystander, the speaker).
     pub other: VillagerId,
     pub frame: Frame,
-    pub topic: &'a str,
+    pub topic: &'a Topic,
     pub beats: &'a [BeatRecord],
     pub bystanders: &'a [VillagerId],
     /// Whether `me` opened the conversation.
@@ -434,12 +432,12 @@ impl Situation<'_> {
             .map(|b| &b.did)
     }
 
-    /// Whether `me` has already done `kind` in this conversation.
+    /// Whether `me` has already made `gesture` in this conversation.
     #[must_use]
-    pub fn i_did(&self, kind: MoveKind) -> bool {
+    pub fn i_did(&self, gesture: Gesture) -> bool {
         self.beats
             .iter()
-            .any(|b| b.who == self.me && act_kind(&b.did) == kind)
+            .any(|b| b.who == self.me && act_gesture(&b.did) == gesture)
     }
 
     /// Whether `me` has already bid into `frame` in this conversation.
@@ -459,7 +457,7 @@ impl Situation<'_> {
 /// How a hearer took a turn.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Uptake {
-    pub taken_as: MoveKind,
+    pub taken_as: Gesture,
     pub warmth: i8,
     pub attribution: Attribution,
 }
@@ -483,20 +481,21 @@ pub fn roll(rng: &mut Pcg32) -> i16 {
     i16::try_from(rng.random_range(0..100u32)).unwrap_or(0)
 }
 
-/// A plain move about `subject`.
+/// A gesture about `topic`.
 #[must_use]
-pub fn mv(kind: MoveKind, subject: &str) -> Act {
-    Act::Move {
-        kind,
-        subject: subject.to_string(),
+pub fn act(gesture: Gesture, topic: &Topic) -> Act {
+    Act::Gesture {
+        gesture,
+        topic: topic.clone(),
     }
 }
 
-/// Picks one of `options` with integer weights; zero weights never win.
+/// Picks one of `options` with integer weights; zero weights never win, and if every weight
+/// is zero the last option is taken.
 fn weighted(rng: &mut Pcg32, options: &[(Act, i16)]) -> Act {
     let total: i16 = options.iter().map(|(_, w)| (*w).max(0)).sum();
     if total <= 0 {
-        return mv(MoveKind::Leave, "");
+        return options[options.len() - 1].0.clone();
     }
     let mut pick =
         i16::try_from(rng.random_range(0..u32::try_from(total).unwrap_or(1))).unwrap_or(0);
@@ -522,8 +521,13 @@ pub trait Interlocutor {
         needs_mood(ctx, me)
     }
 
+    /// What each gesture means to them, -3 to 3. Required, and written as a match with no
+    /// catch-all arm (`#[deny(clippy::wildcard_enum_match_arm)]`), so a new gesture makes
+    /// every character decide. `Gesture::warmth` is the shared starting point.
+    fn warmth_of(&self, gesture: Gesture) -> i8;
+
     /// Something on their mind they might want to confide.
-    fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<String> {
+    fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<Topic> {
         let _ = (ctx, me);
         None
     }
@@ -614,27 +618,27 @@ pub fn default_next_act<I: Interlocutor + ?Sized>(
     let topic = s.topic;
     match s.frame {
         Frame::Transaction => match (s.initiator, s.turn) {
-            (true, 0) => mv(MoveKind::Request, topic),
+            (true, 0) => act(Gesture::Request, topic),
             // Thanks for a gift; otherwise serve what was asked for.
-            (false, 0) if s.last_from_other().map(act_kind) == Some(MoveKind::Offer) => {
-                mv(MoveKind::Thank, topic)
+            (false, 0) if s.last_from_other().map(act_gesture) == Some(Gesture::Offer) => {
+                act(Gesture::Thank, topic)
             }
-            (false, 0) => mv(MoveKind::Offer, topic),
-            (_, 1) => mv(MoveKind::Thank, topic),
+            (false, 0) => act(Gesture::Offer, topic),
+            (_, 1) => act(Gesture::Thank, topic),
             _ if wants_more(me, s, rng) => Act::Bid {
                 frame: Frame::SmallTalk,
-                subject: "the day".into(),
+                topic: s.ctx.topic("day"),
             },
-            _ => mv(MoveKind::Leave, ""),
+            _ => act(Gesture::Leave, topic),
         },
         Frame::Greeting => match s.turn {
-            0 => mv(MoveKind::Ask, "how things are"),
-            1 => mv(MoveKind::Tell, "how things are"),
+            0 => act(Gesture::Ask, topic),
+            1 => act(Gesture::Tell, topic),
             _ if wants_more(me, s, rng) => Act::Bid {
                 frame: Frame::SmallTalk,
-                subject: "the day".into(),
+                topic: s.ctx.topic("day"),
             },
-            _ => mv(MoveKind::Leave, ""),
+            _ => act(Gesture::Leave, topic),
         },
         Frame::SmallTalk => small_talk_act(me, s, rng),
         Frame::Confiding => confiding_act(me, s),
@@ -660,34 +664,34 @@ fn small_talk_act<I: Interlocutor + ?Sized>(me: &I, s: &Situation<'_>, rng: &mut
         && !s.i_bid(Frame::Confiding)
         && !me.memory().told_since(
             s.other,
-            &worry,
+            &worry.key,
             s.ctx.tick.minus(RETELL_DAYS * crate::time::TICKS_PER_DAY),
         )
         && roll(rng) < 60
     {
         return Act::Bid {
             frame: Frame::Confiding,
-            subject: worry,
+            topic: worry,
         };
     }
     if stance == Stance::Cold && s.turn >= 1 {
-        return mv(MoveKind::Leave, "");
+        return act(Gesture::Leave, topic);
     }
     if s.turn >= 5 || (p.sociable < 0 && s.turn >= 2 && r.familiarity < 3) {
-        return mv(MoveKind::Leave, "");
+        return act(Gesture::Leave, topic);
     }
     let open = stance == Stance::Open;
     let other_warm = s
         .last_from_other()
-        .is_some_and(|a| act_kind(a).warmth() > 0);
+        .is_some_and(|a| me.warmth_of(act_gesture(a)) > 0);
     weighted(
         rng,
         &[
-            (mv(MoveKind::Tell, topic), 3),
-            (mv(MoveKind::Ask, topic), 2),
-            (mv(MoveKind::Agree, topic), if other_warm { 3 } else { 0 }),
+            (act(Gesture::Tell, topic), 3),
+            (act(Gesture::Ask, topic), 2),
+            (act(Gesture::Agree, topic), if other_warm { 3 } else { 0 }),
             (
-                mv(MoveKind::Joke, topic),
+                act(Gesture::Joke, topic),
                 if open {
                     1 + i16::from(p.warmth.max(0))
                 } else {
@@ -695,7 +699,7 @@ fn small_talk_act<I: Interlocutor + ?Sized>(me: &I, s: &Situation<'_>, rng: &mut
                 },
             ),
             (
-                mv(MoveKind::Tease, topic),
+                act(Gesture::Tease, topic),
                 if open && r.familiarity >= 4 && r.feeling >= 1 {
                     2
                 } else {
@@ -703,11 +707,11 @@ fn small_talk_act<I: Interlocutor + ?Sized>(me: &I, s: &Situation<'_>, rng: &mut
                 },
             ),
             (
-                mv(MoveKind::Compliment, topic),
+                act(Gesture::Compliment, topic),
                 i16::from(p.warmth >= 1 && r.feeling >= 0),
             ),
             (
-                mv(MoveKind::Complain, topic),
+                act(Gesture::Complain, topic),
                 if mood < 0 || stance == Stance::Cold {
                     3
                 } else {
@@ -724,21 +728,19 @@ fn confiding_act<I: Interlocutor + ?Sized>(me: &I, s: &Situation<'_>) -> Act {
     let stance = me.stance(s);
     let topic = s.topic;
     if let Some(worry) = me.worry(s.ctx, s.me)
-        && !s.i_did(MoveKind::Disclose)
+        && !s.i_did(Gesture::Disclose)
     {
-        return mv(MoveKind::Disclose, &worry);
+        return act(Gesture::Disclose, &worry);
     }
     if s.turn >= 3 {
-        return mv(MoveKind::Leave, "");
+        return act(Gesture::Leave, topic);
     }
-    match s.last_from_other().map(act_kind) {
-        Some(MoveKind::Disclose | MoveKind::Complain)
-            if stance != Stance::Cold && p.warmth >= 0 =>
-        {
-            mv(MoveKind::Sympathise, topic)
+    match s.last_from_other().map(act_gesture) {
+        Some(Gesture::Disclose | Gesture::Complain) if stance != Stance::Cold && p.warmth >= 0 => {
+            act(Gesture::Sympathise, topic)
         }
-        Some(MoveKind::Disclose) => mv(MoveKind::Ask, topic),
-        _ => mv(MoveKind::Agree, topic),
+        Some(Gesture::Disclose) => act(Gesture::Ask, topic),
+        _ => act(Gesture::Agree, topic),
     }
 }
 
@@ -804,12 +806,12 @@ pub fn default_perform<I: Interlocutor + ?Sized>(
         chance += 10;
     }
     match meant {
-        Act::Move { kind, subject } if kind.hard() && roll(rng) < chance => {
-            let came_out = match kind {
-                MoveKind::Tease => MoveKind::Jab,
-                _ => MoveKind::Awkward,
+        Act::Gesture { gesture, topic } if gesture.hard() && roll(rng) < chance => {
+            let came_out = match gesture {
+                Gesture::Tease => Gesture::Jab,
+                _ => Gesture::Awkward,
             };
-            mv(came_out, subject)
+            act(came_out, topic)
         }
         Act::Answer {
             answer: BidAnswer::Away { account: true },
@@ -835,7 +837,7 @@ pub fn default_take_up<I: Interlocutor + ?Sized>(
     let p = me.persona();
     let r = me.memory().regard(speaker);
     let mood = me.mood(s.ctx, s.me);
-    let base = act_kind(did);
+    let base = act_gesture(did);
     let curt = matches!(
         did,
         Act::Answer {
@@ -866,7 +868,7 @@ pub fn default_take_up<I: Interlocutor + ?Sized>(
     } else {
         base
     };
-    let mut warmth = taken_as.warmth();
+    let mut warmth = me.warmth_of(taken_as);
     // A reason given with a refusal softens it, if it is heard as the refusal it was.
     if taken_as == base
         && matches!(
@@ -913,11 +915,11 @@ pub fn default_out_of_frame<I: Interlocutor + ?Sized>(
     let _ = (did, rng);
     let r = me.memory().regard(s.other);
     if r.feeling >= 1 || r.familiarity >= 6 {
-        mv(MoveKind::Joke, "laughs it off")
+        act(Gesture::Joke, s.topic)
     } else if r.feeling <= -1 {
-        mv(MoveKind::Decline, "that's not for here")
+        act(Gesture::Decline, s.topic)
     } else {
-        mv(MoveKind::Ask, "what do you mean?")
+        act(Gesture::Ask, s.topic)
     }
 }
 
@@ -931,6 +933,9 @@ pub struct Plain {
 impl Interlocutor for Plain {
     fn persona(&self) -> Persona {
         Persona::default()
+    }
+    fn warmth_of(&self, gesture: Gesture) -> i8 {
+        gesture.warmth()
     }
     fn memory(&self) -> &Memory {
         &self.memory
@@ -989,12 +994,12 @@ mod tests {
 
     #[test]
     fn frames_say_what_belongs_and_what_is_script() {
-        assert!(!Frame::Transaction.allows(MoveKind::Disclose));
-        assert!(Frame::Confiding.allows(MoveKind::Disclose));
+        assert!(!Frame::Transaction.allows(Gesture::Disclose));
+        assert!(Frame::Confiding.allows(Gesture::Disclose));
         // Failures are failures inside the frame, never breaches of it.
-        assert!(Frame::Greeting.allows(MoveKind::Jab));
-        assert!(Frame::Transaction.scripted(MoveKind::Request));
-        assert!(!Frame::SmallTalk.scripted(MoveKind::Ask));
+        assert!(Frame::Greeting.allows(Gesture::Jab));
+        assert!(Frame::Transaction.scripted(Gesture::Request));
+        assert!(!Frame::SmallTalk.scripted(Gesture::Ask));
         assert!(Frame::SmallTalk.bids_to(Frame::Confiding));
         assert!(!Frame::Transaction.bids_to(Frame::Confiding));
     }

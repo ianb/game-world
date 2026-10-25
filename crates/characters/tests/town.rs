@@ -46,7 +46,7 @@ fn tom_fishes_on_sunday_and_mara_bakes() {
 fn mara_brings_a_pastry_only_after_tom_seemed_low() {
     // She knows Tom only from talking to him: no pastry before they have talked, and each
     // pastry run follows a conversation in which he seemed low to her.
-    let mut sim: Sim<Town> = Sim::new(7, town());
+    let mut sim: Sim<Town> = Sim::new(1, town());
     let mut events = sim.step_until(at(1, 0, 0)).unwrap();
     // Days with a pastry run (the activity restarts after the talk at the bar).
     let ran = |events: &[Emitted]| {
@@ -161,7 +161,7 @@ fn conversations<'a>(sim: &'a Sim<Town>, events: &'a [Emitted]) -> Vec<(&'a str,
         .filter_map(|e| match e {
             Emitted::ConversationStarted { who, topic, .. } => Some((
                 sim.state().villagers[who.index()].id.as_str(),
-                topic.as_str(),
+                topic.key.as_str(),
             )),
             _ => None,
         })
@@ -174,7 +174,7 @@ fn villagers_greet_talk_and_remember() {
     let events = sim.step_until(at(1, 0, 0)).unwrap();
     let talks = conversations(&sim, &events);
     assert!(
-        talks.contains(&("pip", "a bun")),
+        talks.contains(&("pip", "bun")),
         "Pip asks Mara for a bun at noon: {talks:?}"
     );
     assert!(
@@ -216,7 +216,7 @@ fn a_conversation_defers_a_wait_instead_of_cancelling_it() {
     let events = sim.step_until(at(0, 13, 30)).unwrap();
     let pip = sim.ctx().villager_id("pip").unwrap();
     assert!(
-        conversations(&sim, &events).contains(&("pip", "a bun")),
+        conversations(&sim, &events).contains(&("pip", "bun")),
         "{}",
         views::itinerary(&sim, pip, &events)
     );

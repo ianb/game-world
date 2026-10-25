@@ -2,7 +2,7 @@
 use characters::Town;
 use content::{Content, load_dir};
 use sim::Sim;
-use sim::protocol::{Act, Blame, Emitted, MoveKind};
+use sim::protocol::{Act, Blame, Emitted, Gesture};
 use sim::time::{TICKS_PER_DAY, Tick};
 use std::path::PathBuf;
 
@@ -60,8 +60,8 @@ fn tom_blames_the_town_and_it_boils_over() {
     let digs = events
         .iter()
         .filter(|e| {
-            matches!(e, Emitted::Beat { who, meant: Act::Move { kind: MoveKind::Jab, .. }, did, .. }
-                if *who == tom && matches!(did, Act::Move { kind: MoveKind::Jab, .. }))
+            matches!(e, Emitted::Beat { who, meant: Act::Gesture { gesture: Gesture::Jab, .. }, did, .. }
+                if *who == tom && matches!(did, Act::Gesture { gesture: Gesture::Jab, .. }))
         })
         .count();
     assert!(digs >= 1);

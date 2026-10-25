@@ -4,7 +4,7 @@
 use super::{Draft, Summarizer, normalize};
 use crate::ids::VillagerId;
 use crate::protocol::{Act, Attribution, BidAnswer, Cause, Emitted, Frame, SummaryKind};
-use crate::social::act_kind;
+use crate::social::act_gesture;
 use crate::time::Tick;
 use crate::views::describe_act;
 use std::fmt::Write as _;
@@ -35,11 +35,12 @@ impl Summarizer {
                 cause,
                 ..
             } => {
+                let about = self.topic(topic);
                 let t = Talk {
                     tick: *tick,
                     a: *who,
                     b: *with,
-                    frames: vec![format!("{} about {topic}", frame.name())],
+                    frames: vec![format!("{} about {about}", frame.name())],
                     cause: cause.clone(),
                     bid: None,
                     last: None,
@@ -68,20 +69,28 @@ impl Summarizer {
             } => {
                 let (name, speaker) =
                     (self.name(*who).to_string(), self.name(*speaker).to_string());
+                // What a bystander catches is the topic of a bid to confide or a disclosure.
+                let caught = self
+                    .talks
+                    .get(convo)
+                    .and_then(|t| t.last.as_ref())
+                    .filter(|a| {
+                        matches!(
+                            act_gesture(a),
+                            crate::protocol::Gesture::Invite | crate::protocol::Gesture::Disclose
+                        )
+                    })
+                    .and_then(|a| match a {
+                        Act::Bid { topic, .. } | Act::Gesture { topic, .. } => Some(topic),
+                        Act::Answer { .. } => None,
+                    })
+                    .map(|t| self.topic(t));
                 let Some(t) = self.talks.get_mut(convo) else {
                     return;
                 };
                 if *overheard {
-                    if let Some(Act::Bid { subject, .. } | Act::Move { subject, .. }) = &t.last
-                        && matches!(
-                            t.last.as_ref().map(act_kind),
-                            Some(
-                                crate::protocol::MoveKind::Invite
-                                    | crate::protocol::MoveKind::Disclose
-                            )
-                        )
-                    {
-                        push(&mut t.clauses, format!("{name} overheard \"{subject}\""));
+                    if let Some(caught) = caught {
+                        push(&mut t.clauses, format!("{name} overheard \"{caught}\""));
                     }
                 } else if taken_as != did {
                     let mut c = format!(
@@ -107,11 +116,19 @@ impl Summarizer {
             .get(&convo)
             .and_then(|t| t.bid.as_ref())
             .map(|(b, _, _)| self.name(*b).to_string());
+        let label = |t: &crate::protocol::Topic| self.topic(t);
+        let did_text = describe_act(did, &label);
+        let bid_about = match did {
+            Act::Bid { topic, .. } => Some(self.topic(topic)),
+            _ => None,
+        };
         let Some(t) = self.talks.get_mut(&convo) else {
             return;
         };
         match did {
-            Act::Bid { frame, subject } => t.bid = Some((who, *frame, subject.clone())),
+            Act::Bid { frame, .. } => {
+                t.bid = Some((who, *frame, bid_about.unwrap_or_default()));
+            }
             Act::Answer { answer } => {
                 if let Some((_, frame, subject)) = t.bid.take() {
                     let bidder = bidder_name.unwrap_or_default();
@@ -143,18 +160,18 @@ impl Summarizer {
                     }
                 }
             }
-            Act::Move { .. } => {}
+            Act::Gesture { .. } => {}
         }
         // A dig or a rebuff they meant: someone taking something out on the other.
         if meant == did
             && matches!(
-                act_kind(did),
-                crate::protocol::MoveKind::Jab | crate::protocol::MoveKind::Rebuff
+                act_gesture(did),
+                crate::protocol::Gesture::Jab | crate::protocol::Gesture::Rebuff
             )
         {
             push(
                 &mut t.clauses,
-                format!("{name} meant {}", act_kind(did).name()),
+                format!("{name} meant {}", act_gesture(did).name()),
             );
         }
         if meant != did {
@@ -164,8 +181,8 @@ impl Summarizer {
                 }
                 _ => format!(
                     "{name}'s {} came out as {}",
-                    act_kind(meant).name(),
-                    act_kind(did).name()
+                    act_gesture(meant).name(),
+                    act_gesture(did).name()
                 ),
             };
             push(&mut t.clauses, c);
@@ -173,7 +190,7 @@ impl Summarizer {
         if breach {
             push(
                 &mut t.clauses,
-                format!("{name} stepped out of the frame ({})", describe_act(did)),
+                format!("{name} stepped out of the frame ({did_text})"),
             );
         }
         t.last = Some(did.clone());

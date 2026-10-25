@@ -8,7 +8,7 @@ use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
-use sim::protocol::{Blame, Mishap, Stance};
+use sim::protocol::{Blame, Gesture, Mishap, Stance, Topic};
 use sim::social::{Interlocutor, Memory, Persona, Situation, default_stance};
 use sim::time::Weekday;
 
@@ -80,11 +80,38 @@ impl Interlocutor for Nell {
         &mut self.mind
     }
 
-    fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<String> {
+    /// What each gesture means to Nell: sympathy is the warmest thing there is; teasing,
+    /// prying and being left all sting. Every gesture is listed: a new one makes this decide.
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn warmth_of(&self, gesture: Gesture) -> i8 {
+        use Gesture as G;
+        match gesture {
+            G::Sympathise => 3,
+            G::Joke => 0,
+            G::Jab => -3,
+            G::Pry => -2,
+            G::Tease | G::Leave => -1,
+            G::Ask
+            | G::Tell
+            | G::Agree
+            | G::Compliment
+            | G::Complain
+            | G::Request
+            | G::Offer
+            | G::Thank
+            | G::Disclose
+            | G::Decline
+            | G::Invite
+            | G::Awkward
+            | G::Rebuff => gesture.warmth(),
+        }
+    }
+
+    fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<Topic> {
         if self.days_without_bread >= 1 {
-            Some("going without".into())
+            Some(ctx.topic("going-without").about(me))
         } else if ctx.coins(me) < 3 {
-            Some("money".into())
+            Some(ctx.topic("money").about(me))
         } else {
             None
         }

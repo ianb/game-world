@@ -16,9 +16,9 @@ use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
 use sim::needs::{Need, URGENT};
-use sim::protocol::{Act, Blame, Frame, Mishap, MoveKind};
+use sim::protocol::{Act, Blame, Frame, Gesture, Mishap, Topic};
 use sim::social::{
-    Episode, Interlocutor, Memory, Persona, Situation, default_next_act, mv, needs_mood,
+    Episode, Interlocutor, Memory, Persona, Situation, act, default_next_act, needs_mood,
 };
 use sim::time::Weekday;
 
@@ -280,7 +280,7 @@ impl Tom {
                 self.grievance = self.grievance.saturating_add(1);
                 vec![think("tripped on weeds", Blame::World, true, true, -1)]
             }
-            Trigger::TalkEnded { topic, .. } if topic == "a pastry" => {
+            Trigger::TalkEnded { topic, .. } if topic.is("pastry") => {
                 self.pastry_day = ctx.calendar.day_index;
                 vec![Command::Note("a pastry from Mara".into())]
             }
@@ -330,12 +330,38 @@ impl Interlocutor for Tom {
         &mut self.mind
     }
 
+    /// What each gesture means to Tom: he likes banter, even rough, and has no use for pity
+    /// or praise; a complaint is just bar talk. Every gesture is listed: a new one makes this decide.
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn warmth_of(&self, gesture: Gesture) -> i8 {
+        use Gesture as G;
+        match gesture {
+            G::Tease => 2,
+            G::Jab | G::Sympathise => -1,
+            G::Compliment | G::Complain => 0,
+            G::Ask
+            | G::Tell
+            | G::Agree
+            | G::Joke
+            | G::Request
+            | G::Offer
+            | G::Thank
+            | G::Disclose
+            | G::Decline
+            | G::Invite
+            | G::Leave
+            | G::Awkward
+            | G::Rebuff
+            | G::Pry => gesture.warmth(),
+        }
+    }
+
     fn mood(&self, ctx: &Ctx<'_>, me: VillagerId) -> i8 {
         (needs_mood(ctx, me) + self.mood / 2).clamp(-3, 3)
     }
 
-    fn worry(&self, _ctx: &Ctx<'_>, _me: VillagerId) -> Option<String> {
-        (self.mood <= -3).then(|| "the empty bar".into())
+    fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<Topic> {
+        (self.mood <= -3).then(|| ctx.topic("empty-bar").about(me))
     }
 
     fn next_act(&mut self, s: &Situation<'_>, rng: &mut Pcg32) -> Act {
@@ -343,18 +369,18 @@ impl Interlocutor for Tom {
         if self.grievance >= BOILING {
             self.grievance = 0;
             self.outbursts += 1;
-            return mv(MoveKind::Jab, s.topic);
+            return act(Gesture::Jab, s.topic);
         }
         let fish = self.fish_caught > self.fish_told;
         match s.frame {
             Frame::SmallTalk if fish => {
                 self.fish_told = self.fish_caught;
-                mv(MoveKind::Tell, "the fish")
+                act(Gesture::Tell, &s.ctx.topic("fish"))
             }
             // Past the business, a new fish is worth keeping someone for.
             Frame::Transaction if fish && s.turn >= 1 && !s.i_bid(Frame::SmallTalk) => Act::Bid {
                 frame: Frame::SmallTalk,
-                subject: "the fish".into(),
+                topic: s.ctx.topic("fish"),
             },
             _ => default_next_act(self, s, rng),
         }

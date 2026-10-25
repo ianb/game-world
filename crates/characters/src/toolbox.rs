@@ -224,7 +224,8 @@ pub fn buy_ale(ctx: &Ctx<'_>, me: &str) -> Option<Vec<Command>> {
 /// How long a word at the counter is booked for; it can end sooner.
 pub const COUNTER_MINUTES: u32 = 15;
 
-/// A conversation at the counter with whoever keeps it, if they are here, still and free.
+/// A conversation at the counter about the topic `topic` with whoever keeps it, if they are
+/// here, still and free.
 /// `None` when there is nobody to talk to, so the caller can carry on alone.
 #[must_use]
 pub fn counter_talk(ctx: &Ctx<'_>, me: &str, keeper: &str, topic: &str) -> Option<Command> {
@@ -239,7 +240,7 @@ pub fn counter_talk(ctx: &Ctx<'_>, me: &str, keeper: &str, topic: &str) -> Optio
     free.then(|| Command::Talk {
         with: k,
         frame: Frame::Transaction,
-        topic: topic.into(),
+        topic: ctx.topic(topic),
         minutes: COUNTER_MINUTES,
     })
 }

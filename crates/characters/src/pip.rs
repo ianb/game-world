@@ -8,12 +8,12 @@ use crate::toolbox::{
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
-use sim::protocol::{Act, Frame, MoveKind};
-use sim::social::{Interlocutor, Memory, Persona, Situation, default_next_act, mv, roll};
+use sim::protocol::{Act, Frame, Gesture};
+use sim::social::{Interlocutor, Memory, Persona, Situation, act, default_next_act, roll};
 use sim::time::Tick;
 
 /// Things a child might say to anyone.
-const NEWS: [&str; 4] = ["a frog", "a loose tooth", "a secret den", "a dead mouse"];
+const NEWS: [&str; 4] = ["frog", "loose-tooth", "secret-den", "dead-mouse"];
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Pip {
@@ -51,7 +51,7 @@ impl Pip {
             }
             // At the bakery: ask for a bun.
             Trigger::Arrived if activity_of(ctx, "pip") == "pester" => {
-                match counter_talk(ctx, "pip", "mara", "a bun") {
+                match counter_talk(ctx, "pip", "mara", "bun") {
                     Some(talk) => {
                         self.asked_at = Some(ctx.tick);
                         vec![talk]
@@ -60,12 +60,12 @@ impl Pip {
                 }
             }
             // He takes a bun if he understood Mara to offer one.
-            Trigger::TalkEnded { other, topic } if topic == "a bun" => {
+            Trigger::TalkEnded { other, topic } if topic.is("bun") => {
                 let asked = self.asked_at.unwrap_or_default();
                 let offered = self.mind.heard.iter().any(|h| {
                     h.from == other
-                        && h.subject == "a bun"
-                        && h.kind == MoveKind::Offer
+                        && h.topic.is("bun")
+                        && h.gesture == Gesture::Offer
                         && h.tick >= asked
                 });
                 if offered && stock_of(ctx, "shelf_bakery", "bread") > 0 {
@@ -120,11 +120,39 @@ impl Interlocutor for Pip {
         &mut self.mind
     }
 
+    /// What each gesture means to Pip: jokes and being asked things delight him, and a no is
+    /// the worst thing there is. Every gesture is listed: a new one makes this decide.
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn warmth_of(&self, gesture: Gesture) -> i8 {
+        use Gesture as G;
+        match gesture {
+            G::Joke => 2,
+            G::Ask => 1,
+            G::Decline => -2,
+            G::Complain => 0,
+            G::Tell
+            | G::Agree
+            | G::Tease
+            | G::Compliment
+            | G::Request
+            | G::Offer
+            | G::Thank
+            | G::Sympathise
+            | G::Disclose
+            | G::Invite
+            | G::Leave
+            | G::Jab
+            | G::Awkward
+            | G::Rebuff
+            | G::Pry => gesture.warmth(),
+        }
+    }
+
     /// Once the business is done, a quarter of the time he tells whatever is on his mind,
     /// whatever the frame.
     fn next_act(&mut self, s: &Situation<'_>, rng: &mut Pcg32) -> Act {
         if s.turn >= 1 && s.turn < 4 && s.frame != Frame::Confiding && roll(rng) < 25 {
-            return mv(MoveKind::Disclose, pick(rng, &NEWS));
+            return act(Gesture::Disclose, &s.ctx.topic(pick(rng, &NEWS)));
         }
         default_next_act(self, s, rng)
     }
@@ -132,6 +160,6 @@ impl Interlocutor for Pip {
     /// He never sanctions anyone; he joins in.
     fn out_of_frame(&mut self, s: &Situation<'_>, did: &Act, rng: &mut Pcg32) -> Act {
         let _ = (s, did);
-        mv(MoveKind::Tell, pick(rng, &NEWS))
+        act(Gesture::Tell, &s.ctx.topic(pick(rng, &NEWS)))
     }
 }

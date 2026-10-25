@@ -1,0 +1,19 @@
+[
+  { "id": "greeting", "gloss": "a greeting" },
+  { "id": "day", "gloss": "the day" },
+  { "id": "road", "gloss": "the road" },
+  { "id": "bread", "gloss": "bread" },
+  { "id": "ale", "gloss": "ale" },
+  { "id": "flour", "gloss": "flour" },
+  { "id": "lunch", "gloss": "lunch" },
+  { "id": "pastry", "gloss": "a pastry" },
+  { "id": "bun", "gloss": "a bun" },
+  { "id": "fish", "gloss": "the fish" },
+  { "id": "money", "gloss": "money" },
+  { "id": "empty-bar", "gloss": "the empty bar" },
+  { "id": "going-without", "gloss": "going without" },
+  { "id": "frog", "gloss": "a frog" },
+  { "id": "loose-tooth", "gloss": "a loose tooth" },
+  { "id": "secret-den", "gloss": "a secret den" },
+  { "id": "dead-mouse", "gloss": "a dead mouse" }
+]

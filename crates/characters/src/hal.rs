@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
 use sim::protocol::{Blame, Mishap};
+use sim::protocol::{Gesture, Topic};
 use sim::recall::SIGHT;
 use sim::social::{Episode, Interlocutor, Memory, Persona};
 use sim::time::Weekday;
@@ -164,7 +165,7 @@ impl Hal {
                 vec![
                     stock(ctx, "pantry_bakery", "flour", flour),
                     pay(ctx, "mara", "hal", price, "flour"),
-                    counter_talk(ctx, "hal", "mara", "the flour")
+                    counter_talk(ctx, "hal", "mara", "flour")
                         .unwrap_or_else(|| go(ctx, "barrel_tavern", "deliver-ale")),
                 ]
             }
@@ -176,15 +177,19 @@ impl Hal {
                 vec![
                     stock(ctx, "barrel_tavern", "ale", ale),
                     pay(ctx, "tom", "hal", price, "ale"),
-                    counter_talk(ctx, "hal", "tom", "the ale")
+                    counter_talk(ctx, "hal", "tom", "ale")
                         .unwrap_or_else(|| go(ctx, "cart_hal", "tend-cart")),
                 ]
             }
             // Deliveries go on once the talk at the counter is done.
-            Trigger::TalkEnded { topic, .. } if topic == "the flour" => {
+            Trigger::TalkEnded { topic, .. }
+                if topic.is("flour") && activity_of(ctx, "hal") == "deliver" =>
+            {
                 vec![go(ctx, "barrel_tavern", "deliver-ale")]
             }
-            Trigger::TalkEnded { topic, .. } if topic == "the ale" => {
+            Trigger::TalkEnded { topic, .. }
+                if topic.is("ale") && activity_of(ctx, "hal") == "deliver-ale" =>
+            {
                 vec![go(ctx, "cart_hal", "tend-cart")]
             }
             // Lunch at the tavern is paid for when Tom is behind the bar.
@@ -234,9 +239,36 @@ impl Interlocutor for Hal {
         &mut self.mind
     }
 
+    /// What each gesture means to Hal: a refusal or a question about his business is never
+    /// neutral, and an offer means money. Every gesture is listed: a new one makes this decide.
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn warmth_of(&self, gesture: Gesture) -> i8 {
+        use Gesture as G;
+        match gesture {
+            G::Decline | G::Pry => -2,
+            G::Offer => 2,
+            G::Joke => 0,
+            G::Ask
+            | G::Tell
+            | G::Agree
+            | G::Tease
+            | G::Compliment
+            | G::Complain
+            | G::Request
+            | G::Thank
+            | G::Sympathise
+            | G::Disclose
+            | G::Invite
+            | G::Leave
+            | G::Jab
+            | G::Awkward
+            | G::Rebuff => gesture.warmth(),
+        }
+    }
+
     /// Money is on his mind whenever he could not pay for two full loads.
-    fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<String> {
-        (ctx.coins(me) < 2 * LOAD_COST).then(|| "money".into())
+    fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<Topic> {
+        (ctx.coins(me) < 2 * LOAD_COST).then(|| ctx.topic("money").about(me))
     }
 
     fn remember(&mut self, e: Episode) {

@@ -10,9 +10,9 @@ use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
-use sim::protocol::{Act, BidAnswer, Blame, Frame, MoveKind};
+use sim::protocol::{Act, BidAnswer, Blame, Frame, Gesture, Topic};
 use sim::social::{
-    Interlocutor, Memory, Persona, Situation, default_answer_bid, default_next_act, mv, roll,
+    Interlocutor, Memory, Persona, Situation, act, default_answer_bid, default_next_act, roll,
 };
 use sim::time::Tick;
 
@@ -80,7 +80,7 @@ impl Mara {
                 }
                 "bring-pastry" => {
                     self.pastries_delivered += 1;
-                    match counter_talk(ctx, "mara", "tom", "a pastry") {
+                    match counter_talk(ctx, "mara", "tom", "pastry") {
                         Some(talk) => vec![talk],
                         None => vec![Command::Note("Tom isn't free; left the pastry".into())],
                     }
@@ -115,7 +115,7 @@ impl Mara {
                     .heard
                     .iter()
                     .rev()
-                    .find(|h| h.from == tom && h.subject == "the fish")
+                    .find(|h| h.from == tom && h.topic.is("fish"))
                     .map(|h| h.tick)
                     .filter(|&t| self.fish_story_at.is_none_or(|seen| t > seen));
                 self.fish_story_at = Some(news?);
@@ -135,14 +135,14 @@ impl Mara {
 impl Mara {
     /// A bid for small talk; with the carter it is about the road.
     fn small_talk(s: &Situation<'_>) -> Act {
-        let subject = if s.other == villager(s.ctx, "hal") {
-            "the road"
+        let topic = if s.other == villager(s.ctx, "hal") {
+            "road"
         } else {
-            "the day"
+            "day"
         };
         Act::Bid {
             frame: Frame::SmallTalk,
-            subject: subject.into(),
+            topic: s.ctx.topic(topic),
         }
     }
 }
@@ -164,12 +164,40 @@ impl Interlocutor for Mara {
         &mut self.mind
     }
 
+    /// What each gesture means to Mara: being confided in matters to her, and a dig stings
+    /// less than it might. Every gesture is listed: a new one makes this decide.
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn warmth_of(&self, gesture: Gesture) -> i8 {
+        use Gesture as G;
+        match gesture {
+            G::Disclose => 2,
+            G::Jab => -1,
+            G::Ask
+            | G::Tell
+            | G::Agree
+            | G::Joke
+            | G::Tease
+            | G::Compliment
+            | G::Complain
+            | G::Request
+            | G::Offer
+            | G::Thank
+            | G::Sympathise
+            | G::Decline
+            | G::Invite
+            | G::Leave
+            | G::Awkward
+            | G::Rebuff
+            | G::Pry => gesture.warmth(),
+        }
+    }
+
     /// Running out of flour, or of money to pay the carter for more.
-    fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<String> {
+    fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<Topic> {
         if stock_of(ctx, "pantry_bakery", "flour") < FLOUR_PER_BATCH {
-            Some("the flour".into())
+            Some(ctx.topic("flour").about(me))
         } else if ctx.coins(me) < crate::hal::FLOUR_PRICE {
-            Some("money".into())
+            Some(ctx.topic("money").about(me))
         } else {
             None
         }
@@ -177,16 +205,16 @@ impl Interlocutor for Mara {
 
     fn next_act(&mut self, s: &Situation<'_>, rng: &mut Pcg32) -> Act {
         let ctx = s.ctx;
-        match (s.frame, s.topic, s.initiator, s.turn) {
-            (Frame::Transaction, "a pastry", true, 0) => mv(MoveKind::Offer, "a pastry"),
+        match (s.frame, s.topic.key.as_str(), s.initiator, s.turn) {
+            (Frame::Transaction, "pastry", true, 0) => act(Gesture::Offer, s.topic),
             // Pip's bun: free when there is bread on the shelf and she is fond of him.
-            (Frame::Transaction, "a bun", false, 0) => {
+            (Frame::Transaction, "bun", false, 0) => {
                 if stock_of(ctx, "shelf_bakery", "bread") > 0
                     && self.mind.regard(s.other).feeling >= 0
                 {
-                    mv(MoveKind::Offer, "a bun")
+                    act(Gesture::Offer, s.topic)
                 } else {
-                    mv(MoveKind::Decline, "a bun")
+                    act(Gesture::Decline, s.topic)
                 }
             }
             // Behind the counter, she keeps people she knows for a chat rather than thanking

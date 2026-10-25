@@ -1,7 +1,7 @@
 //! Text views of a running sim: the agent's eyes on the town.
 use crate::brain::CharacterSet;
 use crate::ids::VillagerId;
-use crate::protocol::{Act, Attribution, BidAnswer, Emitted};
+use crate::protocol::{Act, Attribution, BidAnswer, Emitted, Topic};
 use crate::sim::Sim;
 use content::Pos;
 use std::fmt::Write as _;
@@ -177,9 +177,10 @@ fn conversation_line<C: CharacterSet>(sim: &Sim<C>, e: &Emitted) -> Option<Strin
         Emitted::ConversationStarted {
             with, frame, topic, ..
         } => Some(format!(
-            "starts {} with {} about {topic}",
+            "starts {} with {} about {}",
             frame.name(),
-            name(with)
+            name(with),
+            topic_label(sim, topic)
         )),
         Emitted::ConversationEnded {
             with,
@@ -264,13 +265,14 @@ fn plan_lines(
     }
 }
 
-/// An act as a transcript line.
+/// An act as a transcript line, with topics shown by `label`.
 #[must_use]
-pub fn describe_act(act: &Act) -> String {
+pub fn describe_act(act: &Act, label: &dyn Fn(&Topic) -> String) -> String {
     match act {
-        Act::Move { kind, subject } if subject.is_empty() => kind.name().to_string(),
-        Act::Move { kind, subject } => format!("{} \"{subject}\"", kind.name()),
-        Act::Bid { frame, subject } => format!("bids for {} about \"{subject}\"", frame.name()),
+        Act::Gesture { gesture, topic } => format!("{} \"{}\"", gesture.name(), label(topic)),
+        Act::Bid { frame, topic } => {
+            format!("bids for {} about \"{}\"", frame.name(), label(topic))
+        }
         Act::Answer { answer } => match answer {
             BidAnswer::Toward => "turns toward it".into(),
             BidAnswer::Away { account: true } => "turns away, with a reason".into(),
@@ -278,6 +280,13 @@ pub fn describe_act(act: &Act) -> String {
             BidAnswer::Against => "turns against it".into(),
         },
     }
+}
+
+/// How views show a topic: its gloss and whose.
+fn topic_label<C: CharacterSet>(sim: &Sim<C>, t: &Topic) -> String {
+    t.label_with(sim.content(), |v| {
+        sim.state().villagers[v.index()].name.clone()
+    })
 }
 
 /// Every conversation in `events`, turn by turn: what each speaker meant and did, and how
@@ -327,7 +336,10 @@ fn transcript_line<C: CharacterSet>(sim: &Sim<C>, e: &Emitted) -> Option<(u32, S
             let day = cal.day_index;
             let weekday = cal.weekday;
             let head = format!("day {day} {weekday:?} {t} {a} and {b} ({place}): {frame}");
-            (*convo, format!("{head} about \"{topic}\""))
+            (
+                *convo,
+                format!("{head} about \"{}\"", topic_label(sim, topic)),
+            )
         }
         Emitted::Beat {
             convo,
@@ -338,9 +350,10 @@ fn transcript_line<C: CharacterSet>(sim: &Sim<C>, e: &Emitted) -> Option<(u32, S
             breach,
             ..
         } => {
-            let mut line = format!("  {t} {:<5} {}", name(*who), describe_act(did));
+            let label = |t: &Topic| topic_label(sim, t);
+            let mut line = format!("  {t} {:<5} {}", name(*who), describe_act(did, &label));
             if meant != did {
-                let _ = write!(line, "  (meant: {})", describe_act(meant));
+                let _ = write!(line, "  (meant: {})", describe_act(meant, &label));
             }
             if *breach {
                 line.push_str("  [out of frame]");

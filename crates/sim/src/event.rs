@@ -18,7 +18,7 @@ pub enum Event {
     TalkEnd {
         who: VillagerId,
         other: VillagerId,
-        topic: String,
+        topic: crate::protocol::Topic,
     },
     /// An object's occupant released it.
     ObjectFree { object: ObjectId },

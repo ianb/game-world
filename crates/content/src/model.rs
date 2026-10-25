@@ -255,6 +255,15 @@ pub struct Villager {
     pub coins: u32,
 }
 
+/// Something villagers can talk about. Code refers to it by `id`; `gloss` is how views
+/// show it.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct TopicDef {
+    pub id: String,
+    pub gloss: String,
+}
+
 /// Everything loaded from the content directory.
 #[derive(Clone, PartialEq, Eq, Debug, Default, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -262,4 +271,14 @@ pub struct Content {
     pub zones: Vec<Zone>,
     pub buildings: Vec<Building>,
     pub villagers: Vec<Villager>,
+    /// The topics conversations can be about. A topic that code uses must be listed here.
+    #[serde(default)]
+    pub topics: Vec<TopicDef>,
+}
+
+impl Content {
+    #[must_use]
+    pub fn topic(&self, id: &str) -> Option<&TopicDef> {
+        self.topics.iter().find(|t| t.id == id)
+    }
 }

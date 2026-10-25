@@ -2,7 +2,7 @@
 //! reads the world through `Ctx`, and writes by returning commands. The sim applies them.
 use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::needs::{Need, Needs};
-use crate::protocol::{Blame, Frame, Mishap, Thought};
+use crate::protocol::{Blame, Frame, Mishap, Thought, Topic};
 use crate::recall::{Perceived, Record, Recorded};
 use crate::social::Interlocutor;
 use crate::terrain::Terrain;
@@ -31,6 +31,17 @@ pub struct Ctx<'a> {
 }
 
 impl Ctx<'_> {
+    /// The topic `key`, which must be declared in the content (`content/topics/`). Panics
+    /// on an undeclared key, so a typo fails the first test that reaches it.
+    #[must_use]
+    pub fn topic(&self, key: &str) -> Topic {
+        assert!(
+            self.content.topic(key).is_some(),
+            "topic {key:?} is not declared in content/topics"
+        );
+        Topic::new(key)
+    }
+
     /// Kept events `who` did, saw or heard since `since`, oldest first. What they make of
     /// them, and whether they noticed at all, is their own code's business.
     pub fn recall(
@@ -202,7 +213,7 @@ pub enum Command {
     Talk {
         with: VillagerId,
         frame: Frame,
-        topic: String,
+        topic: Topic,
         minutes: u32,
     },
     /// Clear grass and weeds within `radius` tiles of where you stand. Instant; pair it
@@ -260,9 +271,10 @@ impl Command {
                 minutes,
             } => {
                 format!(
-                    "{} with {} about {topic} for {minutes}m",
+                    "{} with {} about {} for {minutes}m",
                     frame.name(),
-                    ctx.villager(*with).name
+                    ctx.villager(*with).name,
+                    topic.label(ctx)
                 )
             }
             Command::Clear { radius } => format!("clear within {radius}"),
@@ -351,9 +363,9 @@ pub enum Trigger {
     /// both, with the same cooldown.
     Passing { other: VillagerId },
     /// `other` greeted you or started a conversation with you.
-    TalkedTo { other: VillagerId, topic: String },
+    TalkedTo { other: VillagerId, topic: Topic },
     /// A conversation with `other` finished. Your previous activity is already restored.
-    TalkEnded { other: VillagerId, topic: String },
+    TalkEnded { other: VillagerId, topic: Topic },
     /// A need of yours got pressing (70) or urgent (90). `level` is its value now.
     Need { need: Need, level: u8 },
     /// Back from an errand (an `Interlude`), at the spot and activity you left.
@@ -377,13 +389,25 @@ impl Trigger {
             Trigger::Stuck => "stuck".into(),
             Trigger::Encounter { other } => format!("encounter {}", name(other)),
             Trigger::Passing { other } => format!("passing {}", name(other)),
-            Trigger::TalkedTo { other, topic } => format!("{} talked about {topic}", name(other)),
-            Trigger::TalkEnded { other, topic } => format!("finished {topic} with {}", name(other)),
+            Trigger::TalkedTo { other, topic } => {
+                format!("{} talked about {}", name(other), topic.label(ctx))
+            }
+            Trigger::TalkEnded { other, topic } => {
+                format!("finished {} with {}", topic.label(ctx), name(other))
+            }
             Trigger::Need { need, level } => format!("{} ({level})", need.name()),
             Trigger::Resumed => "resumed".into(),
             Trigger::Look { .. } => "looked around".into(),
             Trigger::Mishap { what } => format!("{what:?}").to_lowercase(),
         }
+    }
+}
+
+impl Topic {
+    /// The topic's gloss from the content, and whose it is: "money (Mara)".
+    #[must_use]
+    pub fn label(&self, ctx: &Ctx<'_>) -> String {
+        self.label_with(ctx.content, |v| ctx.villager(v).name.clone())
     }
 }
 

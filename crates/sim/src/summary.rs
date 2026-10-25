@@ -75,6 +75,8 @@ pub struct Summarizer {
     habits: BTreeMap<String, (Option<VillagerId>, String)>,
     /// Conversations in progress.
     talks: BTreeMap<u32, talk::Talk>,
+    /// Topic glosses by key, for showing what conversations were about.
+    glosses: BTreeMap<String, String>,
 }
 
 fn time(tick: Tick) -> String {
@@ -100,7 +102,11 @@ fn need_trigger(cause: &Cause) -> bool {
 
 impl Summarizer {
     #[must_use]
-    pub fn new(names: Vec<String>, objects: Vec<String>) -> Summarizer {
+    pub fn new(
+        names: Vec<String>,
+        objects: Vec<String>,
+        glosses: BTreeMap<String, String>,
+    ) -> Summarizer {
         Summarizer {
             names,
             objects,
@@ -111,6 +117,7 @@ impl Summarizer {
             seen: Vec::new(),
             habits: BTreeMap::new(),
             talks: BTreeMap::new(),
+            glosses,
         }
     }
 
@@ -122,6 +129,18 @@ impl Summarizer {
 
     fn name(&self, who: VillagerId) -> &str {
         self.names.get(who.index()).map_or("?", String::as_str)
+    }
+
+    /// A topic's gloss and whose: "money (Mara)".
+    fn topic(&self, t: &crate::protocol::Topic) -> String {
+        let gloss = self
+            .glosses
+            .get(&t.key)
+            .map_or(t.key.as_str(), String::as_str);
+        match t.about {
+            Some(v) => format!("{gloss} ({})", self.name(v)),
+            None => gloss.to_string(),
+        }
     }
 
     fn day(&mut self, tick: Tick) -> &mut Day {

@@ -58,13 +58,18 @@ impl<C: CharacterSet> History<C> {
             .map(|v| v.name.clone())
             .collect();
         let objects = sim.world().objects.iter().map(|o| o.id.clone()).collect();
+        let glosses = content
+            .topics
+            .iter()
+            .map(|t| (t.id.clone(), t.gloss.clone()))
+            .collect();
         let mut snapshots = BTreeMap::new();
         snapshots.insert(sim.tick().0, sim.snapshot());
         let inputs = sim.state().inputs.clone();
         History {
             sim,
             content,
-            summarizer: Summarizer::new(names, objects),
+            summarizer: Summarizer::new(names, objects, glosses),
             snapshots,
             frontier: None,
             inputs,

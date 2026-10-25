@@ -5,9 +5,9 @@ use super::Sim;
 use crate::brain::{CharacterSet, Ctx};
 use crate::event::Event;
 use crate::ids::VillagerId;
-use crate::protocol::{Act, BidAnswer, Emitted, Frame, MoveKind};
+use crate::protocol::{Act, BidAnswer, Emitted, Frame, Gesture, Topic};
 use crate::social::{
-    BeatRecord, Conversation, Episode, Felt, Heard, Interlocutor, Plain, Situation, act_kind,
+    BeatRecord, Conversation, Episode, Felt, Heard, Interlocutor, Plain, Situation, act_gesture,
 };
 use crate::time::{TICKS_PER_MINUTE, Tick};
 use rand_pcg::Pcg32;
@@ -27,14 +27,14 @@ fn notable(did: &Act) -> bool {
             ..
         }
     ) || matches!(
-        act_kind(did),
-        MoveKind::Disclose
-            | MoveKind::Complain
-            | MoveKind::Jab
-            | MoveKind::Rebuff
-            | MoveKind::Tease
-            | MoveKind::Compliment
-            | MoveKind::Sympathise
+        act_gesture(did),
+        Gesture::Disclose
+            | Gesture::Complain
+            | Gesture::Jab
+            | Gesture::Rebuff
+            | Gesture::Tease
+            | Gesture::Compliment
+            | Gesture::Sympathise
     )
 }
 
@@ -46,7 +46,7 @@ impl<C: CharacterSet> Sim<C> {
         who: VillagerId,
         with: VillagerId,
         frame: Frame,
-        topic: &str,
+        topic: &Topic,
         ends: Tick,
         out: &mut Vec<Emitted>,
     ) {
@@ -60,8 +60,8 @@ impl<C: CharacterSet> Sim<C> {
                 a: who,
                 b: with,
                 frame,
-                topic: topic.to_string(),
-                booked: topic.to_string(),
+                topic: topic.clone(),
+                booked: topic.clone(),
                 started: tick,
                 ends,
                 next: who,
@@ -79,7 +79,7 @@ impl<C: CharacterSet> Sim<C> {
             with,
             place: self.state.villagers[who.index()].place,
             frame,
-            topic: topic.to_string(),
+            topic: topic.clone(),
             cause: self.cause.clone(),
         });
         self.state
@@ -189,7 +189,7 @@ impl<C: CharacterSet> Sim<C> {
             m.perform(s, &meant, stance, r)
         });
         let breach = match &did {
-            Act::Move { kind, .. } => !frame.allows(*kind),
+            Act::Gesture { gesture, .. } => !frame.allows(*gesture),
             Act::Bid { frame: to, .. } => !frame.bids_to(*to),
             Act::Answer { .. } => false,
         };
@@ -205,11 +205,11 @@ impl<C: CharacterSet> Sim<C> {
         });
 
         self.record_beat(id, speaker, frame, &meant, &did, breach, out);
-        let kind_did = act_kind(&did);
-        let kind_meant = act_kind(&meant);
+        let kind_did = act_gesture(&did);
+        let kind_meant = act_gesture(&meant);
 
         // The other participant takes it up.
-        if kind_did != MoveKind::Leave {
+        if kind_did != Gesture::Leave {
             self.take_up(
                 id,
                 hearer,
@@ -227,7 +227,7 @@ impl<C: CharacterSet> Sim<C> {
                 }
             }
         }
-        if kind_did == MoveKind::Leave {
+        if kind_did == Gesture::Leave {
             self.finish(id, Some(speaker), out);
             return;
         }
@@ -270,26 +270,26 @@ impl<C: CharacterSet> Sim<C> {
         let hearer = c.other(speaker);
         let side = c.side(speaker);
         c.turns[side] += 1;
-        if let Act::Move {
-            kind: MoveKind::Disclose,
-            subject,
+        if let Act::Gesture {
+            gesture: Gesture::Disclose,
+            topic,
         } = did
         {
-            c.felt[side].notes.push(format!("told {subject}"));
+            c.felt[side].notes.push(format!("told {}", topic.key));
         }
         c.breach_reply = breach.then_some(hearer);
         let mut new_frame = None;
         match did {
             Act::Answer { answer } => {
-                if let Some((_, to, subject)) = c.bid.take()
+                if let Some((_, to, topic)) = c.bid.take()
                     && *answer == BidAnswer::Toward
                 {
                     new_frame = Some(to);
-                    c.topic = subject;
+                    c.topic = topic;
                 }
             }
-            Act::Bid { frame: to, subject } if !breach => {
-                c.bid = Some((hearer, *to, subject.clone()));
+            Act::Bid { frame: to, topic } if !breach => {
+                c.bid = Some((hearer, *to, topic.clone()));
             }
             _ => {}
         }
@@ -321,7 +321,7 @@ impl<C: CharacterSet> Sim<C> {
         who: VillagerId,
         speaker: VillagerId,
         did: &Act,
-        meant: MoveKind,
+        meant: Gesture,
         overheard: bool,
         bystanders: &[VillagerId],
         out: &mut Vec<Emitted>,
@@ -330,7 +330,7 @@ impl<C: CharacterSet> Sim<C> {
         let up = self.with_mind(who, speaker, id, bystanders, |m, s, r| {
             m.take_up(s, speaker, did, r)
         });
-        let kind_did = act_kind(did);
+        let kind_did = act_gesture(did);
         out.push(Emitted::TookUp {
             tick,
             convo: id,
@@ -343,22 +343,21 @@ impl<C: CharacterSet> Sim<C> {
             attribution: up.attribution,
             overheard,
         });
-        let subject = match did {
-            Act::Move { subject, .. } | Act::Bid { subject, .. } => subject.clone(),
-            Act::Answer { .. } => String::new(),
+        let topic = match did {
+            Act::Gesture { topic, .. } | Act::Bid { topic, .. } => Some(topic.clone()),
+            Act::Answer { .. } => None,
         };
-        if !subject.is_empty()
-            && matches!(
+        if let Some(topic) = &topic
+            && (matches!(
                 kind_did,
-                MoveKind::Tell | MoveKind::Disclose | MoveKind::Complain | MoveKind::Offer
-            )
-            || overheard
+                Gesture::Tell | Gesture::Disclose | Gesture::Complain | Gesture::Offer
+            ) || overheard)
         {
             let heard = Heard {
                 tick,
                 from: speaker,
-                kind: up.taken_as,
-                subject: subject.clone(),
+                gesture: up.taken_as,
+                topic: topic.clone(),
                 overheard,
             };
             self.with_mind(who, speaker, id, bystanders, |m, _, _| m.hear(heard));
@@ -387,14 +386,12 @@ impl<C: CharacterSet> Sim<C> {
         {
             felt.notes.push("was turned away".to_string());
         }
-        if matches!(
-            did,
-            Act::Move {
-                kind: MoveKind::Disclose,
-                ..
-            }
-        ) {
-            felt.notes.push(format!("was told about {subject}"));
+        if let Act::Gesture {
+            gesture: Gesture::Disclose,
+            topic,
+        } = did
+        {
+            felt.notes.push(format!("was told about {}", topic.key));
         }
     }
 
@@ -450,7 +447,7 @@ impl<C: CharacterSet> Sim<C> {
     }
 
     /// Keeps both talking until `until`; the earlier `TalkEnd`s no longer match and pass.
-    fn extend_talk(&mut self, a: VillagerId, b: VillagerId, booked: &str, until: Tick) {
+    fn extend_talk(&mut self, a: VillagerId, b: VillagerId, booked: &Topic, until: Tick) {
         for (me, other) in [(a, b), (b, a)] {
             let v = &mut self.state.villagers[me.index()];
             if v.activity != "talk" {
@@ -462,7 +459,7 @@ impl<C: CharacterSet> Sim<C> {
                 Event::TalkEnd {
                     who: me,
                     other,
-                    topic: booked.to_string(),
+                    topic: booked.clone(),
                 },
             );
         }

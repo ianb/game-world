@@ -4184,7 +4184,7 @@
     },
     {
       "kind": "Decided",
-      "text": "arrived -> flour +8 at pantry_bakery; Mara pays Hal 8 for flour; transaction with Mara about the flour for 15m",
+      "text": "arrived -> flour +8 at pantry_bakery; Mara pays Hal 8 for flour; transaction with Mara about flour for 15m",
       "tick": 33330,
       "who": 0
     },
@@ -4228,7 +4228,10 @@
       "kind": "ConversationStarted",
       "place": 0,
       "tick": 33330,
-      "topic": "the flour",
+      "topic": {
+        "about": null,
+        "key": "flour"
+      },
       "who": 0,
       "with": 1
     },
@@ -4258,17 +4261,23 @@
       "breach": false,
       "convo": 0,
       "did": {
-        "Move": {
-          "kind": "Request",
-          "subject": "the flour"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "flour"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Request",
-          "subject": "the flour"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "flour"
+          }
         }
       },
       "stance": "Open",
@@ -4292,17 +4301,23 @@
       "breach": false,
       "convo": 0,
       "did": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "the flour"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "flour"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "the flour"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "flour"
+          }
         }
       },
       "stance": "Open",
@@ -4319,24 +4334,30 @@
       "speaker": 1,
       "taken_as": "Offer",
       "tick": 33510,
-      "warmth": 1,
+      "warmth": 2,
       "who": 0
     },
     {
       "breach": false,
       "convo": 0,
       "did": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "the flour"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "flour"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "the flour"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "flour"
+          }
         }
       },
       "stance": "Open",
@@ -4447,17 +4468,23 @@
       "breach": false,
       "convo": 0,
       "did": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "the flour"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "flour"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "the flour"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "flour"
+          }
         }
       },
       "stance": "Open",
@@ -4483,7 +4510,10 @@
       "did": {
         "Bid": {
           "frame": "SmallTalk",
-          "subject": "the day"
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "frame": "Transaction",
@@ -4491,7 +4521,10 @@
       "meant": {
         "Bid": {
           "frame": "SmallTalk",
-          "subject": "the day"
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "stance": "Open",
@@ -4617,17 +4650,23 @@
       "breach": false,
       "convo": 0,
       "did": {
-        "Move": {
-          "kind": "Agree",
-          "subject": "the day"
+        "Gesture": {
+          "gesture": "Agree",
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "frame": "SmallTalk",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Agree",
-          "subject": "the day"
+        "Gesture": {
+          "gesture": "Agree",
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "stance": "Open",
@@ -4651,17 +4690,23 @@
       "breach": false,
       "convo": 0,
       "did": {
-        "Move": {
-          "kind": "Joke",
-          "subject": "the day"
+        "Gesture": {
+          "gesture": "Joke",
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "frame": "SmallTalk",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Joke",
-          "subject": "the day"
+        "Gesture": {
+          "gesture": "Joke",
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "stance": "Open",
@@ -4685,17 +4730,23 @@
       "breach": false,
       "convo": 0,
       "did": {
-        "Move": {
-          "kind": "Agree",
-          "subject": "the day"
+        "Gesture": {
+          "gesture": "Ask",
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "frame": "SmallTalk",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Agree",
-          "subject": "the day"
+        "Gesture": {
+          "gesture": "Ask",
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "stance": "Open",
@@ -4705,31 +4756,37 @@
     {
       "attribution": "Character",
       "convo": 0,
-      "did": "Agree",
+      "did": "Ask",
       "kind": "TookUp",
-      "meant": "Agree",
+      "meant": "Ask",
       "overheard": false,
       "speaker": 0,
-      "taken_as": "Agree",
+      "taken_as": "Ask",
       "tick": 34350,
-      "warmth": 1,
+      "warmth": 0,
       "who": 1
     },
     {
       "breach": false,
       "convo": 0,
       "did": {
-        "Move": {
-          "kind": "Tell",
-          "subject": "the day"
+        "Gesture": {
+          "gesture": "Tell",
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "frame": "SmallTalk",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Tell",
-          "subject": "the day"
+        "Gesture": {
+          "gesture": "Tell",
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "stance": "Open",
@@ -4753,17 +4810,23 @@
       "breach": false,
       "convo": 0,
       "did": {
-        "Move": {
-          "kind": "Tell",
-          "subject": "the day"
+        "Gesture": {
+          "gesture": "Tell",
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "frame": "SmallTalk",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Tell",
-          "subject": "the day"
+        "Gesture": {
+          "gesture": "Tell",
+          "topic": {
+            "about": null,
+            "key": "day"
+          }
         }
       },
       "stance": "Open",
@@ -4796,7 +4859,7 @@
     },
     {
       "kind": "Decided",
-      "text": "finished the flour with Mara -> deliver-ale @ barrel_tavern",
+      "text": "finished flour with Mara -> deliver-ale @ barrel_tavern",
       "tick": 34710,
       "who": 0
     },
@@ -4804,7 +4867,7 @@
       "activity": "walking",
       "cause": {
         "Reaction": {
-          "trigger": "finished the flour with Mara"
+          "trigger": "finished flour with Mara"
         }
       },
       "kind": "Activity",
@@ -4815,7 +4878,7 @@
       "activity": "deliver-ale",
       "cause": {
         "Reaction": {
-          "trigger": "finished the flour with Mara"
+          "trigger": "finished flour with Mara"
         }
       },
       "eta": 35130,
@@ -5234,7 +5297,7 @@
       "activity": "deliver-ale",
       "cause": {
         "Reaction": {
-          "trigger": "finished the flour with Mara"
+          "trigger": "finished flour with Mara"
         }
       },
       "kind": "Activity",
@@ -5243,7 +5306,7 @@
     },
     {
       "kind": "Decided",
-      "text": "arrived -> ale +6 at barrel_tavern; Tom pays Hal 12 for ale; transaction with Tom about the ale for 15m",
+      "text": "arrived -> ale +6 at barrel_tavern; Tom pays Hal 12 for ale; transaction with Tom about ale for 15m",
       "tick": 35130,
       "who": 0
     },
@@ -5287,7 +5350,10 @@
       "kind": "ConversationStarted",
       "place": 0,
       "tick": 35130,
-      "topic": "the ale",
+      "topic": {
+        "about": null,
+        "key": "ale"
+      },
       "who": 0,
       "with": 4
     },
@@ -5317,17 +5383,23 @@
       "breach": false,
       "convo": 1,
       "did": {
-        "Move": {
-          "kind": "Request",
-          "subject": "the ale"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Request",
-          "subject": "the ale"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "stance": "Open",
@@ -5351,17 +5423,23 @@
       "breach": false,
       "convo": 1,
       "did": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "the ale"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "the ale"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "stance": "Open",
@@ -5378,24 +5456,30 @@
       "speaker": 4,
       "taken_as": "Offer",
       "tick": 35310,
-      "warmth": 1,
+      "warmth": 2,
       "who": 0
     },
     {
       "breach": false,
       "convo": 1,
       "did": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "the ale"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "the ale"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "stance": "Open",
@@ -5419,17 +5503,23 @@
       "breach": false,
       "convo": 1,
       "did": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "the ale"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "the ale"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "stance": "Open",
@@ -5453,17 +5543,23 @@
       "breach": false,
       "convo": 1,
       "did": {
-        "Move": {
-          "kind": "Leave",
-          "subject": ""
+        "Gesture": {
+          "gesture": "Leave",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Leave",
-          "subject": ""
+        "Gesture": {
+          "gesture": "Leave",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "stance": "Open",
@@ -5476,7 +5572,7 @@
       "frame": "Transaction",
       "kind": "ConversationEnded",
       "my_end": 1,
-      "my_peak": 1,
+      "my_peak": 2,
       "their_end": 1,
       "their_peak": 1,
       "tick": 35670,
@@ -5491,7 +5587,7 @@
       "my_end": 1,
       "my_peak": 1,
       "their_end": 1,
-      "their_peak": 1,
+      "their_peak": 2,
       "tick": 35670,
       "who": 4,
       "with": 0
@@ -5500,7 +5596,7 @@
       "activity": "deliver-ale",
       "cause": {
         "Reaction": {
-          "trigger": "finished the flour with Mara"
+          "trigger": "finished flour with Mara"
         }
       },
       "kind": "Activity",
@@ -5509,7 +5605,7 @@
     },
     {
       "kind": "Decided",
-      "text": "finished the ale with Tom -> tend-cart @ cart_hal",
+      "text": "finished ale with Tom -> tend-cart @ cart_hal",
       "tick": 35670,
       "who": 0
     },
@@ -5517,7 +5613,7 @@
       "activity": "walking",
       "cause": {
         "Reaction": {
-          "trigger": "finished the ale with Tom"
+          "trigger": "finished ale with Tom"
         }
       },
       "kind": "Activity",
@@ -5528,7 +5624,7 @@
       "activity": "tend-cart",
       "cause": {
         "Reaction": {
-          "trigger": "finished the ale with Tom"
+          "trigger": "finished ale with Tom"
         }
       },
       "eta": 35800,
@@ -5651,7 +5747,7 @@
       "activity": "tend-cart",
       "cause": {
         "Reaction": {
-          "trigger": "finished the ale with Tom"
+          "trigger": "finished ale with Tom"
         }
       },
       "kind": "Activity",
@@ -6489,7 +6585,10 @@
       "kind": "ConversationStarted",
       "place": 0,
       "tick": 38070,
-      "topic": "bread",
+      "topic": {
+        "about": null,
+        "key": "bread"
+      },
       "who": 2,
       "with": 1
     },
@@ -6519,17 +6618,23 @@
       "breach": false,
       "convo": 2,
       "did": {
-        "Move": {
-          "kind": "Request",
-          "subject": "bread"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "bread"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Request",
-          "subject": "bread"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "bread"
+          }
         }
       },
       "stance": "Anxious",
@@ -6553,17 +6658,23 @@
       "breach": false,
       "convo": 2,
       "did": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "bread"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "bread"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "bread"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "bread"
+          }
         }
       },
       "stance": "Open",
@@ -6587,17 +6698,23 @@
       "breach": false,
       "convo": 2,
       "did": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "bread"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "bread"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "bread"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "bread"
+          }
         }
       },
       "stance": "Anxious",
@@ -6621,17 +6738,23 @@
       "breach": false,
       "convo": 2,
       "did": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "bread"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "bread"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "bread"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "bread"
+          }
         }
       },
       "stance": "Open",
@@ -6655,17 +6778,23 @@
       "breach": false,
       "convo": 2,
       "did": {
-        "Move": {
-          "kind": "Leave",
-          "subject": ""
+        "Gesture": {
+          "gesture": "Leave",
+          "topic": {
+            "about": null,
+            "key": "bread"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Leave",
-          "subject": ""
+        "Gesture": {
+          "gesture": "Leave",
+          "topic": {
+            "about": null,
+            "key": "bread"
+          }
         }
       },
       "stance": "Anxious",
@@ -7218,7 +7347,10 @@
       "kind": "ConversationStarted",
       "place": 0,
       "tick": 43370,
-      "topic": "a bun",
+      "topic": {
+        "about": null,
+        "key": "bun"
+      },
       "who": 3,
       "with": 1
     },
@@ -7248,17 +7380,23 @@
       "breach": false,
       "convo": 3,
       "did": {
-        "Move": {
-          "kind": "Request",
-          "subject": "a bun"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "bun"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Request",
-          "subject": "a bun"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "bun"
+          }
         }
       },
       "stance": "Open",
@@ -7282,17 +7420,23 @@
       "breach": false,
       "convo": 3,
       "did": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "a bun"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "bun"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "a bun"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "bun"
+          }
         }
       },
       "stance": "Open",
@@ -8517,7 +8661,10 @@
       "kind": "ConversationStarted",
       "place": 0,
       "tick": 45140,
-      "topic": "lunch",
+      "topic": {
+        "about": null,
+        "key": "lunch"
+      },
       "who": 0,
       "with": 4
     },
@@ -8622,17 +8769,23 @@
       "breach": false,
       "convo": 4,
       "did": {
-        "Move": {
-          "kind": "Request",
-          "subject": "lunch"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "lunch"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Request",
-          "subject": "lunch"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "lunch"
+          }
         }
       },
       "stance": "Open",
@@ -8656,17 +8809,23 @@
       "breach": false,
       "convo": 4,
       "did": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "lunch"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "lunch"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "lunch"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "lunch"
+          }
         }
       },
       "stance": "Open",
@@ -8683,7 +8842,7 @@
       "speaker": 4,
       "taken_as": "Offer",
       "tick": 45320,
-      "warmth": 1,
+      "warmth": 2,
       "who": 0
     },
     {
@@ -8783,17 +8942,23 @@
       "breach": false,
       "convo": 4,
       "did": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "lunch"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "lunch"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "lunch"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "lunch"
+          }
         }
       },
       "stance": "Open",
@@ -8913,17 +9078,23 @@
       "breach": false,
       "convo": 4,
       "did": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "lunch"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "lunch"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "lunch"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "lunch"
+          }
         }
       },
       "stance": "Open",
@@ -9015,17 +9186,23 @@
       "breach": false,
       "convo": 4,
       "did": {
-        "Move": {
-          "kind": "Leave",
-          "subject": ""
+        "Gesture": {
+          "gesture": "Leave",
+          "topic": {
+            "about": null,
+            "key": "lunch"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Leave",
-          "subject": ""
+        "Gesture": {
+          "gesture": "Leave",
+          "topic": {
+            "about": null,
+            "key": "lunch"
+          }
         }
       },
       "stance": "Open",
@@ -9038,7 +9215,7 @@
       "frame": "Transaction",
       "kind": "ConversationEnded",
       "my_end": 1,
-      "my_peak": 1,
+      "my_peak": 2,
       "their_end": 1,
       "their_peak": 1,
       "tick": 45680,
@@ -9053,7 +9230,7 @@
       "my_end": 1,
       "my_peak": 1,
       "their_end": 1,
-      "their_peak": 1,
+      "their_peak": 2,
       "tick": 45680,
       "who": 4,
       "with": 0
@@ -21874,7 +22051,10 @@
       "kind": "ConversationStarted",
       "place": 0,
       "tick": 68760,
-      "topic": "ale",
+      "topic": {
+        "about": null,
+        "key": "ale"
+      },
       "who": 1,
       "with": 4
     },
@@ -21928,17 +22108,23 @@
       "breach": false,
       "convo": 5,
       "did": {
-        "Move": {
-          "kind": "Request",
-          "subject": "ale"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Request",
-          "subject": "ale"
+        "Gesture": {
+          "gesture": "Request",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "stance": "Guarded",
@@ -22033,17 +22219,23 @@
       "breach": false,
       "convo": 5,
       "did": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "ale"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Offer",
-          "subject": "ale"
+        "Gesture": {
+          "gesture": "Offer",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "stance": "Open",
@@ -22163,17 +22355,23 @@
       "breach": false,
       "convo": 5,
       "did": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "ale"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "ale"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "stance": "Guarded",
@@ -22228,17 +22426,23 @@
       "breach": false,
       "convo": 5,
       "did": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "ale"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Thank",
-          "subject": "ale"
+        "Gesture": {
+          "gesture": "Thank",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "stance": "Open",
@@ -22338,17 +22542,23 @@
       "breach": false,
       "convo": 5,
       "did": {
-        "Move": {
-          "kind": "Leave",
-          "subject": ""
+        "Gesture": {
+          "gesture": "Leave",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "frame": "Transaction",
       "kind": "Beat",
       "meant": {
-        "Move": {
-          "kind": "Leave",
-          "subject": ""
+        "Gesture": {
+          "gesture": "Leave",
+          "topic": {
+            "about": null,
+            "key": "ale"
+          }
         }
       },
       "stance": "Guarded",
@@ -25235,7 +25445,7 @@
       "who": 4
     }
   ],
-  "hash": "714c3f13f920d52c",
+  "hash": "b6714e339c66cec0",
   "protocol_version": 14,
   "seed": 1
 }

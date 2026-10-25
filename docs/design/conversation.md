@@ -228,3 +228,7 @@ Not done yet: catching up, favour, courting and quarrel frames; the
 self-concept as a belief; anyone but Mara having a worry often enough to
 confide it; summaries that say why a misreading happened.
 
+Since then (2026-10-25): moves are called gestures in the code
+(`Gesture`), each character has an exhaustive table of what each gesture
+means to them, and topics are declared in `content/topics/`. See the
+decision log.

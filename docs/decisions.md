@@ -939,3 +939,33 @@ the next 6am, later the same day when it is still night. The clock and the
 pause button have fixed widths. The page no longer has the text view; the
 text views stay in `sim-tools` and in `window.__scene()`, which the browser
 smoke still checks.
+
+## 2026-10-25: Gestures are exhaustive per character; topics are declared, not exhaustive
+
+Ian: "I almost want an exhaustive switch for those cases in characters."
+Then: "I suspect exhaustive topic handling is too hard. Move kind is maybe
+not the best term. But that's the only one I want exhaustive. Topics grow
+easily, moves don't." And: "Let's do gesture. Later maybe we could do a
+topic adjacency list, but not yet."
+
+Decided and built:
+
+- `MoveKind` is now `Gesture`, and a turn is `Act::Gesture { gesture, topic }`.
+- Every character must implement `warmth_of(Gesture)`: what each gesture
+  means to them. It is written as a match under
+  `#[deny(clippy::wildcard_enum_match_arm)]`, so it names every gesture
+  and a new one fails the build until each character decides. Arms can be
+  grouped and fall back to the shared `Gesture::warmth`. The placeholders:
+  Tom likes banter and dislikes pity, Nell is hurt by teasing and warmed by
+  sympathy, Pip loves jokes and hates a no, Hal takes refusals and prying
+  hard, Mara values being confided in.
+- Topics are declared in `content/topics/` with an id and a gloss, checked
+  by content validation. `Ctx::topic(id)` panics on an undeclared id, so a
+  typo fails the first test that reaches it. A topic can say whom it
+  concerns ("money" about Mara). Characters match only the topics they
+  care about. Views show the gloss.
+- Hal's delivery talks are routed by his activity, not by matching a topic
+  string.
+
+Implications: what a topic implies for the listener (knowledge, gossip) is
+still to come; this only makes topics typed and declared.

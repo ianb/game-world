@@ -135,7 +135,7 @@ function describeMind(m: MindView, villagers: VillagerView[]): string[] {
   }
   if (m.heard.length) lines.push("heard:");
   for (const h of m.heard) {
-    lines.push(`  ${sinceText(h.tick)} ${name(h.from)}${h.overheard ? " (overheard)" : ""}: ${words(h.kind)} "${h.subject}"`);
+    lines.push(`  ${sinceText(h.tick)} ${name(h.from)}${h.overheard ? " (overheard)" : ""}: ${words(h.gesture)} "${h.topic}"`);
   }
   return lines;
 }

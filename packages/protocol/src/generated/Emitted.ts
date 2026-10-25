@@ -4,8 +4,8 @@ import type { Attribution } from "./Attribution";
 import type { Calendar } from "./Calendar";
 import type { Cause } from "./Cause";
 import type { Frame } from "./Frame";
+import type { Gesture } from "./Gesture";
 import type { Mishap } from "./Mishap";
-import type { MoveKind } from "./MoveKind";
 import type { Need } from "./Need";
 import type { ObjectId } from "./ObjectId";
 import type { PlaceId } from "./PlaceId";
@@ -13,6 +13,7 @@ import type { PlanItem } from "./PlanItem";
 import type { Stance } from "./Stance";
 import type { Thought } from "./Thought";
 import type { Tick } from "./Tick";
+import type { Topic } from "./Topic";
 import type { VillagerId } from "./VillagerId";
 
 /**
@@ -22,4 +23,4 @@ export type Emitted = { "kind": "DayStarted", tick: Tick, calendar: Calendar, } 
 /**
  * What the payer has left afterwards; 0 for the world outside.
  */
-payer_left: number, cause: Cause, } | { "kind": "Stocked", tick: Tick, who: VillagerId, object: ObjectId, good: string, delta: number, now: number, cause: Cause, } | { "kind": "Need", tick: Tick, who: VillagerId, need: Need, level: number, } | { "kind": "ConversationStarted", tick: Tick, convo: number, who: VillagerId, with: VillagerId, place: PlaceId, frame: Frame, topic: string, cause: Cause, } | { "kind": "Beat", tick: Tick, convo: number, who: VillagerId, frame: Frame, stance: Stance, meant: Act, did: Act, breach: boolean, } | { "kind": "TookUp", tick: Tick, convo: number, who: VillagerId, speaker: VillagerId, meant: MoveKind, did: MoveKind, taken_as: MoveKind, warmth: number, attribution: Attribution, overheard: boolean, } | { "kind": "FrameChanged", tick: Tick, convo: number, who: VillagerId, from: Frame, to: Frame, } | { "kind": "ConversationEnded", tick: Tick, convo: number, who: VillagerId, with: VillagerId, frame: Frame, my_peak: number, my_end: number, their_peak: number, their_end: number, ended_by: VillagerId | null, } | { "kind": "Mishap", tick: Tick, who: VillagerId, what: Mishap, place: PlaceId, x: number, y: number, } | { "kind": "Thought", tick: Tick, who: VillagerId, thought: Thought, };
+payer_left: number, cause: Cause, } | { "kind": "Stocked", tick: Tick, who: VillagerId, object: ObjectId, good: string, delta: number, now: number, cause: Cause, } | { "kind": "Need", tick: Tick, who: VillagerId, need: Need, level: number, } | { "kind": "ConversationStarted", tick: Tick, convo: number, who: VillagerId, with: VillagerId, place: PlaceId, frame: Frame, topic: Topic, cause: Cause, } | { "kind": "Beat", tick: Tick, convo: number, who: VillagerId, frame: Frame, stance: Stance, meant: Act, did: Act, breach: boolean, } | { "kind": "TookUp", tick: Tick, convo: number, who: VillagerId, speaker: VillagerId, meant: Gesture, did: Gesture, taken_as: Gesture, warmth: number, attribution: Attribution, overheard: boolean, } | { "kind": "FrameChanged", tick: Tick, convo: number, who: VillagerId, from: Frame, to: Frame, } | { "kind": "ConversationEnded", tick: Tick, convo: number, who: VillagerId, with: VillagerId, frame: Frame, my_peak: number, my_end: number, their_peak: number, their_end: number, ended_by: VillagerId | null, } | { "kind": "Mishap", tick: Tick, who: VillagerId, what: Mishap, place: PlaceId, x: number, y: number, } | { "kind": "Thought", tick: Tick, who: VillagerId, thought: Thought, };
