@@ -58,3 +58,8 @@ project's prose preferences; the notes were not.
   signatures, self-concept, attribution and metaperception, rejection
   sensitivity, appraisal and mood, how intimacy forms, and how memory
   weighs episodes, as background for villagers' inner lives.
+- `viv.md` (2026-10-25): James Ryan's Viv engine, read from its docs and
+  source: knowledge as memories of actions with sources, salience and
+  forgetting, knowledge relayed by reference and inscription, causal
+  bookkeeping and story sifting, and what that suggests for this sim's
+  knowledge representation. Source-available, non-commercial license.
