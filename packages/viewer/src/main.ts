@@ -17,8 +17,12 @@ async function loadContent(): Promise<string> {
 }
 
 let sim: Sim;
+/** Topic glosses by id, from the content. */
+const glosses = new Map<string, string>();
 try {
-  sim = LocalSim.create(wasm, 1, await loadContent());
+  const contentJson = await loadContent();
+  sim = LocalSim.create(wasm, 1, contentJson);
+  for (const t of (JSON.parse(contentJson) as { topics?: { id: string; gloss: string }[] }).topics ?? []) glosses.set(t.id, t.gloss);
 } catch (e) {
   clockEl.textContent = `failed to start: ${String(e)}`;
   throw e;
@@ -131,7 +135,8 @@ function describeMind(m: MindView, villagers: VillagerView[]): string[] {
     const blame =
       t.blame === "Me" ? "blames themself" : t.blame === "World" ? "blames the world" : t.blame === "Luck" ? "puts it down to luck" : `blames ${name(t.blame.Them)}`;
     const span = [t.lasting ? "for good" : "", t.everywhere ? "for everything" : ""].filter(Boolean).join(" and ");
-    lines.push(`  ${sinceText(tick)} ${blame}${span ? `, ${span}` : ""}: ${t.about}`);
+    const about = `${glosses.get(t.about.key) ?? t.about.key}${t.about.about === null ? "" : ` (${name(t.about.about)})`}`;
+    lines.push(`  ${sinceText(tick)} ${blame}${span ? `, ${span}` : ""}: ${about}${t.aloud ? ", aloud" : ""}`);
   }
   if (m.heard.length) lines.push("heard:");
   for (const h of m.heard) {

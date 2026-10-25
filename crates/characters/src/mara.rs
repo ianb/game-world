@@ -14,7 +14,7 @@ use sim::protocol::{Act, BidAnswer, Blame, Frame, Gesture, Topic};
 use sim::social::{
     Interlocutor, Memory, Persona, Situation, act, default_answer_bid, default_next_act, roll,
 };
-use sim::time::Tick;
+use sim::time::{TICKS_PER_DAY, Tick};
 
 pub const FLOUR_PER_BATCH: u16 = 2;
 pub const LOAVES_PER_BATCH: i32 = 6;
@@ -40,18 +40,28 @@ impl Mara {
         if stale > 0 {
             plan.at(6, 35, stock(ctx, "shelf_bakery", "bread", -stale));
         }
-        // She knows Tom only from talking to him.
-        let tom = self.mind.regard(villager(ctx, "tom"));
-        if tom.familiarity > 0 && tom.last_seemed < 0 {
+        // She knows Tom only from talking to him and from hearing him grumble.
+        let tom_id = villager(ctx, "tom");
+        let tom = self.mind.regard(tom_id);
+        let yesterday = ctx.tick.day_start().minus(TICKS_PER_DAY);
+        let grumbling = self
+            .mind
+            .heard()
+            .from(tom_id)
+            .to(tom_id)
+            .gesture(Gesture::Complain)
+            .since(yesterday)
+            .any();
+        let why = if grumbling {
+            Some("heard Tom grumbling".to_string())
+        } else if tom.familiarity > 0 && tom.last_seemed < 0 {
+            Some(format!("Tom seemed low last time ({})", tom.last_seemed))
+        } else {
+            None
+        };
+        if let Some(why) = why {
             plan.at(17, 30, go(ctx, "bar_tavern", "bring-pastry"));
-            plan.at(
-                0,
-                1,
-                Command::Note(format!(
-                    "Tom seemed low last time ({}); pastry at 5:30pm",
-                    tom.last_seemed
-                )),
-            );
+            plan.at(0, 1, Command::Note(format!("{why}; pastry at 5:30pm")));
         }
         plan.build()
     }
@@ -93,7 +103,13 @@ impl Mara {
                     && self.bare_shelf_day != Some(ctx.calendar.day_index) =>
             {
                 self.bare_shelf_day = Some(ctx.calendar.day_index);
-                let mut cmds = vec![think("the shelf is bare", Blame::Luck, false, false, -1)];
+                let mut cmds = vec![think(
+                    ctx.topic("bare-shelf").about(me),
+                    Blame::Luck,
+                    false,
+                    false,
+                    -1,
+                )];
                 if stock_of(ctx, "pantry_bakery", "flour") >= FLOUR_PER_BATCH
                     && ctx.calendar.time.hour < 16
                 {

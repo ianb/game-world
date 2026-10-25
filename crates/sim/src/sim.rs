@@ -636,7 +636,13 @@ impl<C: CharacterSet> Sim<C> {
     fn run_command(&mut self, who: VillagerId, cmd: Command, out: &mut Vec<Emitted>) {
         let tick = self.state.tick;
         match cmd {
-            Command::Think(thought) => out.push(Emitted::Thought { tick, who, thought }),
+            Command::Think(thought) => {
+                let aloud = thought.aloud.then(|| thought.clone());
+                out.push(Emitted::Thought { tick, who, thought });
+                if let Some(thought) = aloud {
+                    self.voice(who, &thought, out);
+                }
+            }
             Command::Idle => {
                 self.interrupt(who);
                 self.drop_errand(who);

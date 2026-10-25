@@ -4,7 +4,7 @@ use rand_pcg::Pcg32;
 use sim::brain::{Command, Ctx, Party, Planned, Target, Trigger};
 use sim::ids::{ObjectId, VillagerId};
 use sim::needs::Need;
-use sim::protocol::{Blame, Emitted, Frame, Mishap, Thought};
+use sim::protocol::{Blame, Emitted, Frame, Mishap, Thought, Topic};
 use sim::recall::Perceived;
 use sim::time::{TICKS_PER_MINUTE, Tick, TimeOfDay, Weekday};
 
@@ -326,16 +326,32 @@ pub fn satisfy(ctx: &Ctx<'_>, me: &str, need: Need, level: u8) -> Vec<Command> {
 }
 
 /// A thought: what it was about, whose doing, whether it will last, how far it reaches,
-/// and how it felt.
+/// and how it felt. Kept to oneself.
 #[must_use]
-pub fn think(about: &str, blame: Blame, lasting: bool, everywhere: bool, feeling: i8) -> Command {
+pub fn think(about: Topic, blame: Blame, lasting: bool, everywhere: bool, feeling: i8) -> Command {
     Command::Think(Thought {
-        about: about.into(),
+        about,
         blame,
         lasting,
         everywhere,
         feeling,
+        aloud: false,
     })
+}
+
+/// The same thought, said aloud for anyone in earshot.
+#[must_use]
+pub fn think_aloud(
+    about: Topic,
+    blame: Blame,
+    lasting: bool,
+    everywhere: bool,
+    feeling: i8,
+) -> Command {
+    match think(about, blame, lasting, everywhere, feeling) {
+        Command::Think(t) => Command::Think(Thought { aloud: true, ..t }),
+        other => other,
+    }
 }
 
 /// Others `me` saw or heard start `activity` since `since`.
@@ -367,7 +383,13 @@ pub fn human(trigger: &Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
         // Most people put a stumble down to bad luck and forget it.
         Trigger::Mishap {
             what: Mishap::Tripped,
-        } => vec![think("tripped", Blame::Luck, false, false, -1)],
+        } => vec![think(
+            ctx.topic("tripped").about(villager(ctx, me)),
+            Blame::Luck,
+            false,
+            false,
+            -1,
+        )],
         Trigger::Arrived if activity_of(ctx, me) == "sleep" => {
             let hunger = ctx.needs(villager(ctx, me)).hunger;
             if hunger < BEDTIME_HUNGER {

@@ -5,7 +5,7 @@ use super::Sim;
 use crate::brain::{CharacterSet, Ctx, Trigger};
 use crate::event::Event;
 use crate::ids::VillagerId;
-use crate::protocol::{Act, BidAnswer, Caught, Emitted, Frame, Gesture, Topic};
+use crate::protocol::{Act, BidAnswer, Caught, Emitted, Frame, Gesture, Thought, Topic};
 use crate::social::{
     BeatRecord, Carry, Conversation, Episode, Felt, Heard, Interlocutor, Plain, Situation,
     act_carry, act_gesture,
@@ -84,15 +84,24 @@ impl<C: CharacterSet> Sim<C> {
             .collect()
     }
 
-    /// Who besides the two talking catches `did`, and how much: awake, in the same room (or
-    /// both outdoors), and within the gesture's reach of the speaker.
+    /// Who besides the two talking catches `did`, and how much.
     fn listeners(
         &self,
         speaker: VillagerId,
         hearer: VillagerId,
         did: &Act,
     ) -> Vec<(VillagerId, Caught)> {
-        let carry = act_carry(did);
+        self.listeners_of(speaker, Some(hearer), act_carry(did))
+    }
+
+    /// Who catches a voice from `speaker` that carries `carry`, and how much: awake, in the
+    /// same room (or both outdoors), within reach, and not `exclude`.
+    fn listeners_of(
+        &self,
+        speaker: VillagerId,
+        exclude: Option<VillagerId>,
+        carry: Carry,
+    ) -> Vec<(VillagerId, Caught)> {
         let vs = &self.state.villagers[speaker.index()];
         let place = vs.place.index();
         let room = self.world.room_at(place, vs.pos.x, vs.pos.y);
@@ -102,10 +111,12 @@ impl<C: CharacterSet> Sim<C> {
             .enumerate()
             .filter_map(|(i, v)| {
                 let who = VillagerId(u16::try_from(i).expect("few villagers"));
-                if who == speaker || who == hearer || v.activity == "sleep" || v.place != vs.place {
-                    return None;
-                }
-                if self.world.room_at(place, v.pos.x, v.pos.y) != room {
+                if who == speaker
+                    || Some(who) == exclude
+                    || v.activity == "sleep"
+                    || v.place != vs.place
+                    || self.world.room_at(place, v.pos.x, v.pos.y) != room
+                {
                     return None;
                 }
                 let d = v.pos.x.abs_diff(vs.pos.x).max(v.pos.y.abs_diff(vs.pos.y));
@@ -114,24 +125,9 @@ impl<C: CharacterSet> Sim<C> {
             .collect()
     }
 
-    /// Raised voices heard from afar: who, roughly how, and nothing of what or to whom.
-    fn hear_noise(
-        &mut self,
-        who: VillagerId,
-        speaker: VillagerId,
-        did: &Act,
-        out: &mut Vec<Emitted>,
-    ) {
+    /// Keeps `heard` in `who`'s memory, if they have a program.
+    fn remember_heard(&mut self, who: VillagerId, heard: Heard) {
         let tick = self.state.tick;
-        let heard = Heard {
-            tick,
-            speaker,
-            to: None,
-            gesture: act_gesture(did),
-            topic: None,
-            about_me: false,
-            caught: Caught::Noise,
-        };
         let ctx = Ctx {
             tick,
             calendar: tick.calendar(),
@@ -146,6 +142,26 @@ impl<C: CharacterSet> Sim<C> {
         if let Some(m) = self.state.characters.interlocutor(who, &ctx) {
             m.hear(heard);
         }
+    }
+
+    /// Raised voices heard from afar: who, roughly how, and nothing of what or to whom.
+    fn hear_noise(
+        &mut self,
+        who: VillagerId,
+        speaker: VillagerId,
+        did: &Act,
+        out: &mut Vec<Emitted>,
+    ) {
+        let heard = Heard {
+            tick: self.state.tick,
+            speaker,
+            to: None,
+            gesture: act_gesture(did),
+            topic: None,
+            about_me: false,
+            caught: Caught::Noise,
+        };
+        self.remember_heard(who, heard);
         self.react(
             who,
             Trigger::Overheard {
@@ -156,6 +172,41 @@ impl<C: CharacterSet> Sim<C> {
             },
             out,
         );
+    }
+
+    /// A thought said aloud. Anyone in earshot overhears `speaker` talking to themselves:
+    /// a complaint if it felt bad, a remark otherwise.
+    pub(super) fn voice(&mut self, speaker: VillagerId, thought: &Thought, out: &mut Vec<Emitted>) {
+        let gesture = if thought.feeling < 0 {
+            Gesture::Complain
+        } else {
+            Gesture::Tell
+        };
+        for (who, caught) in self.listeners_of(speaker, None, gesture.carry()) {
+            let about_me = thought.about.about == Some(who) && caught != Caught::Noise;
+            let heard = Heard {
+                tick: self.state.tick,
+                speaker,
+                to: (caught != Caught::Noise).then_some(speaker),
+                gesture,
+                topic: (caught == Caught::Close).then(|| thought.about.clone()),
+                about_me,
+                caught,
+            };
+            self.remember_heard(who, heard);
+            if about_me || gesture.carry() == Carry::Loud {
+                self.react(
+                    who,
+                    Trigger::Overheard {
+                        speaker,
+                        gesture,
+                        about_me,
+                        caught,
+                    },
+                    out,
+                );
+            }
+        }
     }
 
     /// Runs `f` with `who`'s program and a view of the conversation from their side, where

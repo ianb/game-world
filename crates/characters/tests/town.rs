@@ -56,9 +56,9 @@ fn tom_fishes_on_sunday_and_mara_bakes() {
 }
 
 #[test]
-fn mara_brings_a_pastry_only_after_tom_seemed_low() {
-    // She knows Tom only from talking to him: no pastry before they have talked, and each
-    // pastry run follows a conversation in which he seemed low to her.
+fn mara_brings_a_pastry_only_after_tom_seemed_or_sounded_low() {
+    // She knows Tom only from talking to him and hearing him: no pastry on the first day,
+    // and each run follows a talk in which he seemed low or grumbling she overheard.
     let mut sim: Sim<Town> = Sim::new(1, town());
     let mut events = sim.step_until(at(1, 0, 0)).unwrap();
     // Days with a pastry run (the activity restarts after the talk at the bar).
@@ -78,7 +78,10 @@ fn mara_brings_a_pastry_only_after_tom_seemed_low() {
     assert!(runs >= 1, "Tom seemed low at least once in four weeks");
     let reasons = events
         .iter()
-        .filter(|e| matches!(e, Emitted::Noted { text, .. } if text.starts_with("Tom seemed low")))
+        .filter(|e| {
+            matches!(e, Emitted::Noted { text, .. }
+                if text.starts_with("Tom seemed low") || text.starts_with("heard Tom grumbling"))
+        })
         .count();
     assert_eq!(runs, reasons, "every run had its reason noted");
 }

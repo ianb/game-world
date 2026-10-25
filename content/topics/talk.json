@@ -15,5 +15,11 @@
   { "id": "frog", "gloss": "a frog" },
   { "id": "loose-tooth", "gloss": "a loose tooth" },
   { "id": "secret-den", "gloss": "a secret den" },
-  { "id": "dead-mouse", "gloss": "a dead mouse" }
+  { "id": "dead-mouse", "gloss": "a dead mouse" },
+  { "id": "tripped", "gloss": "tripping" },
+  { "id": "nobody-came", "gloss": "nobody coming in" },
+  { "id": "bar-out-of-bread", "gloss": "the bar out of bread" },
+  { "id": "bare-shelf", "gloss": "the bare shelf" },
+  { "id": "what-was-said", "gloss": "what was said" },
+  { "id": "talked-about", "gloss": "being talked about" }
 ]

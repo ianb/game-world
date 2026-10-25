@@ -241,7 +241,9 @@ pub enum Command {
         minutes: u32,
     },
     /// Tell yourself something about what happened. Changes nothing; emits `Thought`, which
-    /// the town keeps for a month (only the thinker perceives it).
+    /// the town keeps for a month. Only the thinker perceives it, unless it is said aloud:
+    /// then it carries like a complaint (if it felt bad) or a remark, and anyone in earshot
+    /// may overhear it.
     Think(Thought),
 }
 
@@ -447,7 +449,12 @@ impl Thought {
             (false, true) => " (everywhere)",
             (false, false) => "",
         };
-        format!("{blame}{span}: {} ({:+})", self.about, self.feeling)
+        let aloud = if self.aloud { ", aloud" } else { "" };
+        format!(
+            "{blame}{span}: {} ({:+}){aloud}",
+            self.about.label(ctx),
+            self.feeling
+        )
     }
 }
 

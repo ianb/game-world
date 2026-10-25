@@ -268,8 +268,16 @@ impl Summarizer {
                     (false, true) => ", for everything",
                     (false, false) => "",
                 };
-                let key = format!("thought:{}:{}:{blame}", name.to_lowercase(), thought.about);
-                let text = format!("{name} {blame}{span}: {}", thought.about);
+                let key = format!(
+                    "thought:{}:{}:{blame}",
+                    name.to_lowercase(),
+                    thought.about.key
+                );
+                let aloud = if thought.aloud { " (aloud)" } else { "" };
+                let text = format!(
+                    "{name} {blame}{span}: {}{aloud}",
+                    self.topic(&thought.about)
+                );
                 self.line(tick, *who, SummaryKind::Thought, text, None, key);
             }
             Emitted::Stuck {

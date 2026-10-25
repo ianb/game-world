@@ -4,7 +4,7 @@
 //! She is shy: anxious with anyone she does not know well or with others listening, at
 //! ease only with people she has come to like. When something goes wrong she blames
 //! herself and expects it to keep happening.
-use crate::toolbox::{Plan, activity_of, buy_ale, buy_bread, counter_talk, think};
+use crate::toolbox::{Plan, activity_of, buy_ale, buy_bread, counter_talk, think, villager};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
@@ -44,10 +44,22 @@ impl Nell {
             }
             Trigger::Mishap {
                 what: Mishap::Tripped,
-            } => vec![think("tripped", Blame::Me, true, false, -1)],
+            } => vec![think(
+                ctx.topic("tripped").about(villager(ctx, "nell")),
+                Blame::Me,
+                true,
+                false,
+                -1,
+            )],
             // Her name in someone else's talk: she assumes she did something wrong.
             Trigger::Overheard { about_me: true, .. } => {
-                vec![think("being talked about", Blame::Me, true, false, -1)]
+                vec![think(
+                    ctx.topic("talked-about").about(villager(ctx, "nell")),
+                    Blame::Me,
+                    true,
+                    false,
+                    -1,
+                )]
             }
             Trigger::Passing { other } if activity_of(ctx, "nell") != "sleep" => {
                 vec![Command::Greet { with: *other }]

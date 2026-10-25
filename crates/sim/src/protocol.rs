@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 15;
+pub const PROTOCOL_VERSION: u32 = 16;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -378,17 +378,18 @@ pub enum Blame {
 
 /// A villager's account of something to themselves: what it was, whose doing, whether it
 /// will last and how far it reaches (explanatory style, after Seligman), and how it felt.
-/// `about` is an engineering tag, not the villager's words.
+/// Said `aloud`, anyone in earshot can overhear it.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(ts_rs::TS))]
 #[cfg_attr(feature = "schema", ts(export))]
 pub struct Thought {
-    pub about: String,
+    pub about: Topic,
     pub blame: Blame,
     pub lasting: bool,
     pub everywhere: bool,
     /// -3 to 3.
     pub feeling: i8,
+    pub aloud: bool,
 }
 
 /// What a summary line is about.

@@ -62,6 +62,18 @@ impl Default for Hal {
 }
 
 impl Hal {
+    /// Something sharp overheard: he assumes it was meant for him.
+    fn stung(&mut self, ctx: &Ctx<'_>, speaker: VillagerId) -> Vec<Command> {
+        self.touchiness = self.touchiness.saturating_add(4).min(TOUCHINESS_MAX);
+        vec![think(
+            ctx.topic("what-was-said").about(speaker),
+            Blame::Them(speaker),
+            false,
+            false,
+            -1,
+        )]
+    }
+
     /// Anyone close enough to have seen; failing that, Tom if it was his yard; else the
     /// world.
     fn someone_to_blame(ctx: &Ctx<'_>, me: VillagerId) -> Blame {
@@ -211,21 +223,18 @@ impl Hal {
                 gesture,
                 about_me,
                 ..
-            } if *about_me || self.warmth_of(*gesture) < 0 => {
-                self.touchiness = self.touchiness.saturating_add(4).min(TOUCHINESS_MAX);
-                vec![think(
-                    "what was said",
-                    Blame::Them(*speaker),
-                    false,
-                    false,
-                    -1,
-                )]
-            }
+            } if *about_me || self.warmth_of(*gesture) < 0 => self.stung(ctx, *speaker),
             Trigger::Mishap {
                 what: Mishap::Tripped,
             } => {
                 let blame = Hal::someone_to_blame(ctx, me);
-                vec![think("tripped on weeds", blame, false, false, -1)]
+                vec![think(
+                    ctx.topic("tripped").about(me),
+                    blame,
+                    false,
+                    false,
+                    -1,
+                )]
             }
             Trigger::Passing { other } if activity_of(ctx, "hal") != "sleep" => {
                 vec![Command::Greet { with: *other }]

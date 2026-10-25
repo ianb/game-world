@@ -5,10 +5,10 @@
 //! mood colours everything, and each conversation moves it a little. A new fish is the
 //! first thing he mentions. When things go wrong he blames the town, for good and for
 //! everything; the grievance builds through the day and, past a point, the next person he
-//! talks to gets a dig whatever they did.
+//! talks to gets a dig whatever they did. He grumbles aloud.
 use crate::toolbox::{
     MEAL_WINDOW_MINUTES, Plan, activity_of, eat_something, errand, go_tile, meal_soon, object, pay,
-    pick, seen_doing, stock, stock_of, think, wait_minutes, weekday,
+    pick, seen_doing, stock, stock_of, think_aloud, villager, wait_minutes, weekday,
 };
 use content::{Pos, Rect};
 use rand_pcg::Pcg32;
@@ -146,7 +146,14 @@ impl Tom {
         ))];
         if !company && !delivered_today {
             self.grievance = self.grievance.saturating_add(1);
-            cmds.push(think("nobody came", Blame::World, true, true, -1));
+            let me = villager(ctx, "tom");
+            cmds.push(think_aloud(
+                ctx.topic("nobody-came").about(me),
+                Blame::World,
+                true,
+                true,
+                -1,
+            ));
         }
         cmds
     }
@@ -251,8 +258,8 @@ impl Tom {
             {
                 self.bare_bar_day = ctx.calendar.day_index;
                 self.grievance = self.grievance.saturating_add(1);
-                vec![think(
-                    "the bar is out of bread",
+                vec![think_aloud(
+                    ctx.topic("bar-out-of-bread").about(villager(ctx, "tom")),
                     Blame::World,
                     true,
                     true,
@@ -263,7 +270,13 @@ impl Tom {
                 what: Mishap::Tripped,
             } => {
                 self.grievance = self.grievance.saturating_add(1);
-                vec![think("tripped on weeds", Blame::World, true, true, -1)]
+                vec![think_aloud(
+                    ctx.topic("tripped").about(villager(ctx, "tom")),
+                    Blame::World,
+                    true,
+                    true,
+                    -1,
+                )]
             }
             Trigger::TalkEnded { topic, .. } if topic.is("pastry") => {
                 self.pastry_day = ctx.calendar.day_index;
