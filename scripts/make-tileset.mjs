@@ -106,29 +106,32 @@ shapes("water", "tiles/base/water.png", 0, 0, true);
 shapes("path", "tiles/base/dirt.png", 0, 0);
 shapes("track", "tiles/base/dirt2.png", 0, 0);
 shapes("cowpath", "tiles/atlas/terrain_atlas.png", 3, 26);
-shapes("tall_grass", "tiles/atlas/terrain_atlas.png", 21, 6);
-shapes("brush", "tiles/atlas/terrain_atlas.png", 21, 0);
+shapes("tall_grass", "tiles/atlas/terrain_atlas.png", 21, 6, true);
+shapes("brush", "tiles/atlas/terrain_atlas.png", 21, 0, true);
 shapes("canopy", "tiles/atlas/terrain_atlas.png", 6, 24, true);
 
-// Weeds on a path: the dirt shapes with grass tufts from the grass block's scrap tile laid
-// over wherever there is dirt, at fixed spots so the PNG is reproducible.
-function weedy(name, from, spots) {
-  const tuft = sheet("tiles/base/grass.png");
+// Weeds on a path: the dirt shapes with grass and weeds laid over, only where there is
+// dirt so the edges stay clean. Overlays are [sheet, sx, sy, w, h, dx, dy] in pixels.
+const ATLAS = "tiles/atlas/terrain_atlas.png";
+const BLADES = [ATLAS, 0, 31 * T, T, T, 0, 0];
+const clump = (dx, dy) => ["tiles/base/grass.png", 9, T + 10, 15, 13, dx, dy];
+const weed = (dx, dy) => [ATLAS, 9 * T + 7, 25 * T + 14, 18, 15, dx, dy];
+const sprout = (dx, dy) => [ATLAS, 11 * T + 10, 24 * T + 15, 9, 13, dx, dy];
+function weedy(name, from, overlays) {
   for (const shape of ["full", "out", "h", "v", "in"]) {
     const base = out[`${from}_${shape}`].img;
+    const layer = blank();
+    for (const [path, sx, sy, w, h, dx, dy] of overlays) layer.draw(sheet(path), sx, sy, w, h, dx, dy);
+    for (let i = 3; i < layer.data.length; i += 4) if (base.data[i] === 0) layer.data[i] = 0;
     const t = blank();
     t.draw(base, 0, 0, T, T, 0, 0);
-    for (const [x, y] of spots) {
-      // Only where the path is, so the edges stay clean.
-      if (base.data[((y + 4) * T + x + 4) * 4 + 3] === 0) continue;
-      t.draw(tuft, 2, 70, 12, 10, x, y);
-    }
+    t.draw(layer, 0, 0, T, T, 0, 0);
     put(`${name}_${shape}`, t);
   }
   put(name, out[`${name}_full`].img);
 }
-weedy("weedy_path", "path", [[3, 4], [18, 17]]);
-weedy("overgrown_path", "track", [[2, 2], [17, 5], [6, 18], [19, 20]]);
+weedy("weedy_path", "path", [BLADES, sprout(18, 3)]);
+weedy("overgrown_path", "track", [BLADES, clump(2, 3), clump(16, 17), weed(13, 1), sprout(3, 18)]);
 
 // A broadleaf tree, crown over trunk, standing on the bottom of its cell.
 put("tree", (() => {
