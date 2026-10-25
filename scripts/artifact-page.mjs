@@ -1,6 +1,8 @@
 // Turns packages/viewer/dist into a page for a host that supplies its own document
 // skeleton (claude.ai artifacts): strips the outer tags, swaps in theme tokens, and
 // copies the assets and content next to it. Usage: node scripts/artifact-page.mjs <outdir>
+// Its stylesheet is a themed copy of the one in packages/viewer/index.html: a layout change
+// there has to be made here too.
 import { cpSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -53,11 +55,12 @@ const page = `<title>Game World</title>
   button.moment .when { color: var(--muted); text-align: right; }
   #clock.past { color: var(--accent); }
   .muted { color: var(--muted); }
-  #everyone { display: grid; grid-template-columns: max-content max-content max-content; gap: 4px 12px; align-items: center; align-content: start; }
+  #everyone { display: grid; grid-template-columns: max-content 24ch minmax(0, 1fr); gap: 4px 12px; align-items: center; align-content: start; }
+  #everyone > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #everyone .muted { color: var(--muted); }
   button.name { min-height: 32px; min-width: 0; padding: 4px 10px; text-align: left; }
   button.name[aria-pressed="true"] { outline: 2px solid var(--accent); }
-  #inspect { white-space: pre; overflow-x: auto; min-height: 12.5em; padding: 8px; border: 1px solid var(--rule); border-radius: 4px; font-variant-numeric: tabular-nums; }
+  #inspect { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 12.5em; padding: 8px; border: 1px solid var(--rule); border-radius: 4px; font-variant-numeric: tabular-nums; }
   canvas.legend { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
   h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 8px 0 4px; }
   button { font: inherit; min-height: 44px; min-width: 64px; background: var(--bg); color: var(--fg); border: 1px solid var(--rule); border-radius: 4px; }
