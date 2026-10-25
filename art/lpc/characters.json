@@ -1,0 +1,63 @@
+{
+  "_": "What each villager wears, as items from the Universal LPC Spritesheet Character Generator (sheet_definitions/ paths) with a color. `node scripts/lpc-vendor.mjs <generator checkout>` copies the files these need into art/lpc/characters; `just tileset` composes them.",
+  "villagers": {
+    "mara": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        ["head/heads/human/heads_human_female.json"],
+        ["hair/bob/hair_bob.json", "chestnut"],
+        ["torso/shirts/torso_clothes_blouse.json", "tan"],
+        ["legs/skirts/legs_skirts_plain.json", "brown"],
+        ["torso/aprons/torso_aprons_apron_full.json", "white"],
+        ["feet/shoes/feet_shoes_basic.json", "brown"]
+      ]
+    },
+    "tom": {
+      "body": "male",
+      "skin": "amber",
+      "items": [
+        ["head/heads/human/heads_human_male_plump.json"],
+        ["hair/short/hair_messy1.json", "dark_brown"],
+        ["torso/shirts/longsleeve/torso_clothes_longsleeve.json", "white"],
+        ["legs/pants/legs_pants.json", "brown"],
+        ["torso/aprons/torso_aprons_apron.json", "leather"],
+        ["feet/boots/feet_boots_basic.json", "black"]
+      ]
+    },
+    "pip": {
+      "body": "child",
+      "skin": "light",
+      "items": [
+        ["head/heads/human/heads_human_child.json"],
+        ["hair/bob/hair_relm_short.json", "carrot"],
+        ["torso/shirts/torso_clothes_child_shirt.json", "green"],
+        ["legs/pants/legs_childpants.json", "brown"]
+      ]
+    },
+    "nell": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        ["head/heads/human/heads_human_female_elderly.json"],
+        ["hair/braids/hair_bangs_bun.json", "white"],
+        ["torso/shirts/torso_clothes_blouse_longsleeve.json", "lavender"],
+        ["legs/skirts/legs_skirt_straight.json", "navy"],
+        ["feet/shoes/feet_shoes_basic.json", "black"]
+      ]
+    },
+    "hal": {
+      "body": "male",
+      "skin": "bronze",
+      "items": [
+        ["head/heads/human/heads_human_male.json"],
+        ["hair/short/hair_plain.json", "light_brown"],
+        ["hair/beards/beards_beard.json", "light_brown"],
+        ["torso/shirts/longsleeve/torso_clothes_longsleeve.json", "forest"],
+        ["legs/pants/legs_pants.json", "charcoal"],
+        ["torso/waist/belt_leather.json", "brown"],
+        ["feet/boots/feet_boots_basic.json", "brown"]
+      ]
+    }
+  }
+}

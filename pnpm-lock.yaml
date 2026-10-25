@@ -11,6 +11,9 @@ importers:
       playwright:
         specifier: 1.57.0
         version: 1.57.0
+      pngjs:
+        specifier: 7.0.0
+        version: 7.0.0
       typescript:
         specifier: ^5.9.0
         version: 5.9.3
@@ -492,6 +495,10 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  pngjs@7.0.0:
+    resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
+    engines: {node: '>=14.19.0'}
+
   postcss@8.5.31:
     resolution: {integrity: sha512-YUbWYCgErwnMAVkjUnYa+KlMBzGpHwiIt/DE7f0G33AuX2LH9UcTk6KgWxd3zRU+pN3u/C+Xl3EnMLM4Hea7Sg==}
     engines: {node: ^10 || ^12 || >=14}
@@ -939,6 +946,8 @@ snapshots:
       playwright-core: 1.57.0
     optionalDependencies:
       fsevents: 2.3.2
+
+  pngjs@7.0.0: {}
 
   postcss@8.5.31:
     dependencies:

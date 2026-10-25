@@ -1,210 +1,283 @@
-// Draws the placeholder tileset: 16px pixel tiles, procedurally, from a fixed seed, into
-// packages/viewer/public/tiles.png with an atlas in tiles.json (name -> column, row).
-// Generated art from the asset pipeline replaces the PNG; the names are the contract.
+// Builds the viewer's tileset from the LPC art in art/lpc: 32px tiles composed from the
+// source sheets into packages/viewer/public/tiles.png, with an atlas in tiles.json. The tile
+// names are the contract with the renderer; this script decides what each looks like.
 // Usage: node scripts/make-tileset.mjs
-import { deflateSync } from "node:zlib";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { PNG } from "pngjs";
 
-const T = 16;
-const COLS = 8;
+const T = 32;
+const H = T / 2;
+const ART = "art/lpc";
 
-// Blocked cells draw as a canopy blob; the lone `tree` tile stays for objects later.
-// A small deterministic PRNG so the committed PNG is reproducible.
-let seed = 0x9e3779b9;
-function rnd() {
-  seed = (Math.imul(seed ^ (seed >>> 15), 0x2c1b3c6d) >>> 0);
-  seed = (Math.imul(seed ^ (seed >>> 12), 0x297a2d39) >>> 0);
-  return ((seed ^ (seed >>> 15)) >>> 0) / 4294967296;
-}
-const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), 255];
-const CLEAR = [0, 0, 0, 0];
-
-class Tile {
-  constructor() { this.px = Array.from({ length: T * T }, () => CLEAR); }
-  set(x, y, c) { if (x >= 0 && y >= 0 && x < T && y < T) this.px[y * T + x] = c; }
-  fill(c) { for (let i = 0; i < T * T; i++) this.px[i] = c; }
-  rect(x, y, w, h, c) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.set(i, j, c); }
-  speckle(c, n) { for (let k = 0; k < n; k++) this.set(Math.floor(rnd() * T), Math.floor(rnd() * T), c); }
-  blades(c, n, len = 3) {
-    for (let k = 0; k < n; k++) {
-      const x = Math.floor(rnd() * T), y = Math.floor(rnd() * T);
-      for (let j = 0; j < len; j++) this.set(x, y + j, c);
-    }
+class Img {
+  constructor(w, h, data) {
+    this.w = w;
+    this.h = h;
+    this.data = data ?? Buffer.alloc(w * h * 4);
   }
-  blob(cx, cy, r, c) { for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) if (i * i + j * j <= r * r + 1) this.set(cx + i, cy + j, c); }
-}
-
-const grass = ["#5e9a48", "#6ba854", "#528a40"];
-const dirt = ["#a68a5a", "#b89a66", "#8f7649"];
-const stone = ["#8d8a80", "#a3a096", "#6e6b63"];
-const wood = ["#9a7046", "#b08456", "#7a5836"];
-
-function grassBase(t) {
-  t.fill(hex(grass[0]));
-  t.speckle(hex(grass[1]), 18);
-  t.speckle(hex(grass[2]), 14);
-}
-function pathBase(t) {
-  t.fill(hex(dirt[0]));
-  t.speckle(hex(dirt[1]), 22);
-  t.speckle(hex(dirt[2]), 10);
-}
-function floorBase(t) {
-  t.fill(hex(wood[0]));
-  for (let y = 0; y < T; y += 4) t.rect(0, y, T, 1, hex(wood[2]));
-  for (let y = 0; y < T; y += 4) t.rect((y / 4) % 2 ? 11 : 4, y + 1, 1, 3, hex(wood[2]));
-  t.speckle(hex(wood[1]), 10);
-}
-
-const tiles = {
-  grass: (t) => grassBase(t),
-  tall_grass: (t) => { t.fill(hex("#4f8a3e")); t.speckle(hex("#5e9a48"), 20); t.blades(hex("#7fbf5a"), 16, 4); t.blades(hex("#3f7030"), 8, 3); },
-  brush: (t) => { t.fill(hex("#3f6e36")); t.blob(5, 6, 3, hex("#4f8a3e")); t.blob(11, 9, 3, hex("#4a803a")); t.blob(7, 12, 2, hex("#5e9a48")); t.speckle(hex("#2f5a2a"), 16); t.blades(hex("#6ba854"), 6, 3); },
-  track: (t) => { grassBase(t); for (let y = 0; y < T; y++) for (let x = 5; x < 11; x++) if (rnd() < 0.55) t.set(x, y, hex(dirt[Math.floor(rnd() * 3)])); },
-  cowpath: (t) => { pathBase(t); t.rect(0, 0, 2, T, hex(grass[0])); t.rect(14, 0, 2, T, hex(grass[0])); t.speckle(hex(grass[2]), 8); },
-  path: (t) => { pathBase(t); t.speckle(hex("#c9ad78"), 6); },
-  weedy_path: (t) => { pathBase(t); t.blades(hex("#6ba854"), 10, 2); t.speckle(hex("#5e9a48"), 8); },
-  overgrown_path: (t) => { pathBase(t); t.speckle(hex("#4f8a3e"), 60); t.blades(hex("#7fbf5a"), 10, 3); },
-  tree: (t) => { grassBase(t); t.blob(8, 7, 6, hex("#2f6a30")); t.blob(6, 6, 3, hex("#3f8a3c")); t.blob(10, 9, 2, hex("#3f8a3c")); t.rect(7, 12, 2, 3, hex("#5a4028")); },
-  water: (t) => { t.fill(hex("#3a6fa8")); t.speckle(hex("#4a84c0"), 14); for (let k = 0; k < 4; k++) { const x = Math.floor(rnd() * 12), y = Math.floor(rnd() * T); t.rect(x, y, 4, 1, hex("#7fb0e0")); } },
-  wall: (t) => { t.fill(hex(stone[0])); for (let y = 0; y < T; y += 4) { t.rect(0, y, T, 1, hex(stone[2])); const off = (y / 4) % 2 ? 4 : 0; for (let x = off; x < T; x += 8) t.rect(x, y, 1, 4, hex(stone[2])); } t.speckle(hex(stone[1]), 12); },
-  floor: (t) => floorBase(t),
-  opening: (t) => { floorBase(t); t.rect(0, 7, T, 2, hex("#5a4028")); },
-  door: (t) => { floorBase(t); t.rect(3, 1, 10, 14, hex("#6b4a2c")); t.rect(4, 2, 8, 12, hex("#8a6238")); t.rect(7, 2, 1, 12, hex("#6b4a2c")); t.set(10, 8, hex("#e0c060")); },
-  void: (t) => t.fill(hex("#101010")),
-  obj_bed: (t) => { t.rect(1, 1, 14, 14, hex("#6b4a2c")); t.rect(2, 2, 12, 12, hex("#e8e4d8")); t.rect(2, 2, 12, 4, hex("#f4f1ea")); t.rect(2, 7, 12, 7, hex("#a84a5a")); },
-  obj_table: (t) => { t.rect(2, 3, 12, 9, hex(wood[1])); t.rect(2, 3, 12, 1, hex("#c9a070")); t.rect(2, 12, 2, 3, hex(wood[2])); t.rect(12, 12, 2, 3, hex(wood[2])); },
-  obj_counter: (t) => { t.rect(0, 4, T, 9, hex(wood[1])); t.rect(0, 4, T, 2, hex("#c9a070")); t.rect(0, 12, T, 1, hex(wood[2])); t.speckle(hex(wood[2]), 6); },
-  obj_oven: (t) => { t.rect(1, 1, 14, 14, hex("#4a4a4a")); t.rect(2, 2, 12, 12, hex("#5e5e5e")); t.rect(4, 8, 8, 5, hex("#2a2a2a")); t.rect(5, 9, 6, 3, hex("#e07a2a")); t.set(7, 10, hex("#f6c04a")); },
-  obj_stove: (t) => { t.rect(1, 1, 14, 14, hex("#3a3a3a")); t.rect(2, 2, 12, 12, hex("#555555")); t.blob(5, 5, 2, hex("#222222")); t.blob(10, 5, 2, hex("#222222")); t.blob(5, 10, 2, hex("#222222")); t.blob(10, 10, 2, hex("#222222")); },
-  obj_shelf: (t) => { t.rect(1, 0, 14, 16, hex(wood[2])); t.rect(2, 1, 12, 14, hex(wood[0])); for (let y = 2; y < 15; y += 5) { t.rect(2, y + 3, 12, 1, hex(wood[2])); t.rect(3, y, 2, 3, hex("#c04a4a")); t.rect(7, y, 2, 3, hex("#4a7ac0")); t.rect(11, y, 2, 3, hex("#d0b040")); } },
-  obj_generic: (t) => { t.rect(2, 2, 12, 12, hex("#9b4fb0")); t.rect(3, 3, 10, 10, hex("#c77dd6")); },
-  obj_pantry: (t) => { t.rect(2, 6, 5, 9, hex("#c9b07a")); t.rect(8, 8, 6, 7, hex("#b89a66")); t.rect(3, 5, 3, 2, hex("#a88a5a")); t.rect(9, 7, 4, 2, hex("#8f7649")); t.speckle(hex("#e0d0a0"), 6); },
-  obj_barrel: (t) => { t.rect(3, 2, 10, 12, hex("#8a6238")); t.rect(3, 4, 10, 1, hex("#555555")); t.rect(3, 11, 10, 1, hex("#555555")); t.rect(5, 2, 1, 12, hex("#6b4a2c")); t.rect(10, 2, 1, 12, hex("#6b4a2c")); },
-  obj_cart: (t) => { t.rect(2, 4, 12, 7, hex("#9a7046")); t.rect(2, 4, 12, 1, hex("#c9a070")); t.blob(4, 12, 2, hex("#333333")); t.blob(11, 12, 2, hex("#333333")); t.rect(14, 6, 2, 1, hex("#7a5836")); },
-  obj_privy: (t) => { t.rect(3, 1, 10, 14, hex("#6b5a3a")); t.rect(4, 2, 8, 12, hex("#8a7248")); t.rect(7, 3, 2, 2, hex("#3a3020")); t.rect(6, 8, 4, 6, hex("#5a4a2c")); t.rect(2, 0, 12, 2, hex("#4a3a22")); },
-  obj_well: (t) => { t.blob(8, 9, 5, hex("#8d8a80")); t.blob(8, 9, 3, hex("#3a6fa8")); t.rect(3, 3, 1, 7, hex("#6b4a2c")); t.rect(12, 3, 1, 7, hex("#6b4a2c")); t.rect(2, 2, 12, 2, hex("#8a6238")); },
-  obj_bench: (t) => { t.rect(1, 6, 14, 3, hex("#9a7046")); t.rect(1, 6, 14, 1, hex("#c9a070")); t.rect(2, 9, 2, 4, hex("#6b4a2c")); t.rect(12, 9, 2, 4, hex("#6b4a2c")); },
-  obj_chair: (t) => { t.rect(4, 2, 8, 2, hex("#6b4a2c")); t.rect(4, 4, 2, 5, hex("#6b4a2c")); t.rect(4, 8, 8, 3, hex("#9a7046")); t.rect(4, 11, 2, 4, hex("#6b4a2c")); t.rect(10, 11, 2, 4, hex("#6b4a2c")); },
-};
-
-// Villagers: a simple front-facing figure, four palettes.
-const outfits = [["#d8a070", "#3a2a1a", "#c04a4a"], ["#e0b080", "#6a4a2a", "#4a7ac0"], ["#c89060", "#1a1a1a", "#d0b040"], ["#e8c8a0", "#8a6a3a", "#4aa070"]];
-outfits.forEach(([skin, hair, shirt], i) => {
-  tiles[`villager_${i}`] = (t) => {
-    t.rect(5, 2, 6, 5, hex(skin));
-    t.rect(5, 1, 6, 2, hex(hair));
-    t.set(5, 3, hex(hair)); t.set(10, 3, hex(hair));
-    t.set(7, 4, hex("#1a1a1a")); t.set(9, 4, hex("#1a1a1a"));
-    t.rect(4, 7, 8, 5, hex(shirt));
-    t.rect(3, 8, 1, 3, hex(skin)); t.rect(12, 8, 1, 3, hex(skin));
-    t.rect(5, 12, 2, 3, hex("#3a3a5a")); t.rect(9, 12, 2, 3, hex("#3a3a5a"));
-    t.rect(5, 15, 2, 1, hex("#2a2a2a")); t.rect(9, 15, 2, 1, hex("#2a2a2a"));
-  };
-});
-
-// Auto-shaped features: drawn over a background (grass outdoors, floor indoors) in four
-// 8px quadrants, each picked by whether the feature continues to that quadrant's two
-// cardinal neighbours and its diagonal. Five shape tiles per feature: `full`, `h` (an
-// edge along the top or bottom), `v` (an edge along a side), `out` (an outer corner,
-// rounded), `in` (an inner corner, notched). Each shape tile holds the four quadrant
-// variants in their own quadrants, so the renderer reads an 8px sub-rect.
-const AUTO = {
-  water: { draw: tiles.water, rim: hex("#8cc0e8") },
-  canopy: { draw: (t) => { t.fill(hex("#2f6a30")); t.speckle(hex("#3f8a3c"), 28); t.speckle(hex("#245824"), 18); t.blob(4, 4, 2, hex("#4a9a44")); t.blob(11, 10, 2, hex("#4a9a44")); }, rim: hex("#1f4a22") },
-  path: { draw: tiles.path, rim: null },
-  weedy_path: { draw: tiles.weedy_path, rim: null },
-  overgrown_path: { draw: tiles.overgrown_path, rim: null },
-  // Worn ground reads as trodden grass, not laid road: a track is grass with bare patches,
-  // a cowpath is dark packed earth with grass creeping in from the sides.
-  track: { draw: (t) => { grassBase(t); for (let k = 0; k < 7; k++) t.blob(2 + Math.floor(rnd() * 12), 2 + Math.floor(rnd() * 12), 1, hex("#8a7448")); t.speckle(hex("#7a6640"), 10); }, rim: null },
-  cowpath: { draw: (t) => { t.fill(hex("#86703f")); t.speckle(hex("#9a8350"), 18); t.speckle(hex("#6f5c34"), 14); t.speckle(hex(grass[0]), 12); t.blades(hex(grass[1]), 4, 2); }, rim: hex("#6f5c34") },
-  tall_grass: { draw: tiles.tall_grass, rim: null },
-  brush: { draw: tiles.brush, rim: hex("#2f5a2a") },
-};
-
-// Shape masks in top-left orientation: (0, 0) is the tile's outer corner.
-const SHAPES = {
-  full: () => true,
-  h: () => true,
-  v: () => true,
-  out: (x, y) => (7.5 - x) ** 2 + (7.5 - y) ** 2 <= 64,
-  in: (x, y) => (x + 0.5) ** 2 + (y + 0.5) ** 2 >= 9,
-};
-// Which quadrant edges are feature edges, for the rim: [top, left] in TL orientation.
-const EDGES = { full: [false, false], h: [true, false], v: [false, true], out: [true, true], in: [false, false] };
-
-for (const [feature, { draw, rim }] of Object.entries(AUTO)) {
-  for (const [shape, inside] of Object.entries(SHAPES)) {
-    if (shape === "full") {
-      tiles[`${feature}_full`] = draw;
-      continue;
-    }
-    tiles[`${feature}_${shape}`] = (t) => {
-      const full = new Tile();
-      draw(full);
-      const [edgeTop, edgeLeft] = EDGES[shape];
-      for (const [qx, qy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
-        for (let y = 0; y < 8; y++) {
-          for (let x = 0; x < 8; x++) {
-            // Orient so (0, 0) is the outer corner of this quadrant.
-            const ox = qx ? 7 - x : x;
-            const oy = qy ? 7 - y : y;
-            if (!inside(ox, oy)) continue;
-            const px = qx * 8 + x, py = qy * 8 + y;
-            let c = full.px[py * T + px];
-            if (rim) {
-              const onRim =
-                (edgeTop && oy === 0) || (edgeLeft && ox === 0) ||
-                !inside(ox + 1, oy) || !inside(ox, oy + 1) || !inside(ox - 1, oy) || !inside(ox, oy - 1);
-              if (onRim) c = rim;
-            }
-            t.set(px, py, c);
-          }
+  static load(path) {
+    const p = PNG.sync.read(readFileSync(`${ART}/${path}`));
+    return new Img(p.width, p.height, p.data);
+  }
+  /** Alpha-composites `src`'s (sx, sy, w, h) at (dx, dy). */
+  draw(src, sx, sy, w, h, dx, dy) {
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const tx = dx + x, ty = dy + y, fx = sx + x, fy = sy + y;
+        if (tx < 0 || ty < 0 || tx >= this.w || ty >= this.h) continue;
+        if (fx < 0 || fy < 0 || fx >= src.w || fy >= src.h) continue;
+        const s = (fy * src.w + fx) * 4;
+        const a = src.data[s + 3] / 255;
+        if (a === 0) continue;
+        const d = (ty * this.w + tx) * 4;
+        const da = this.data[d + 3] / 255;
+        const oa = a + da * (1 - a);
+        for (let c = 0; c < 3; c++) {
+          this.data[d + c] = Math.round((src.data[s + c] * a + this.data[d + c] * da * (1 - a)) / oa);
         }
+        this.data[d + 3] = Math.round(oa * 255);
       }
-    };
+    }
+  }
+  fill(x0, y0, w, h, rgba) {
+    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) this.data.set(rgba, (y * this.w + x) * 4);
   }
 }
 
-const names = Object.keys(tiles);
-const rows = Math.ceil(names.length / COLS);
-const W = COLS * T, H = rows * T;
-const img = new Uint8Array(W * H * 4);
-const atlas = {};
-names.forEach((name, n) => {
-  const t = new Tile();
-  tiles[name](t);
-  const col = n % COLS, row = Math.floor(n / COLS);
-  atlas[name] = { col, row };
-  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
-    const c = t.px[y * T + x];
-    const o = ((row * T + y) * W + col * T + x) * 4;
-    img[o] = c[0]; img[o + 1] = c[1]; img[o + 2] = c[2]; img[o + 3] = c[3];
+const sheets = new Map();
+const sheet = (path) => {
+  if (!sheets.has(path)) sheets.set(path, Img.load(path));
+  return sheets.get(path);
+};
+
+/** A tile-sized (or w x h tiles) image, built by drawing onto it. */
+const blank = (w = 1, h = 1) => new Img(w * T, h * T);
+/** A copy of whole tiles from a sheet. */
+function tiles(path, col, row, w = 1, h = 1) {
+  const t = blank(w, h);
+  t.draw(sheet(path), col * T, row * T, w * T, h * T, 0, 0);
+  return t;
+}
+/** A copy of a pixel rectangle from a sheet, placed at (dx, dy) in a w x h tile image. */
+function pixels(path, sx, sy, sw, sh, w = 1, h = 1, dx = 0, dy = 0) {
+  const t = blank(w, h);
+  t.draw(sheet(path), sx, sy, sw, sh, dx, dy);
+  return t;
+}
+
+// What goes in the atlas: name -> { img, ox, oy } where ox/oy place a sprite larger than a
+// tile relative to its cell (negative oy rises above it).
+const out = {};
+const put = (name, img, ox = 0, oy = 0, variants = undefined) => {
+  out[name] = { img, ox, oy, variants };
+};
+
+// ---- Terrain: LPC blocks are 3 tiles wide and 6 tall: a scrap tile and a 2x2 of inner
+// corners on top, a 3x3 blob of edges in the middle, three plain fills at the bottom. The
+// renderer draws a shaped feature one quadrant at a time from five shape tiles, so each
+// shape tile is assembled here from the matching quadrants of the block.
+function shapes(name, path, bx, by, fullFromFill = false) {
+  const q = (shape, pick) => {
+    const t = blank();
+    for (const [qx, qy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+      const [c, r] = pick(qx, qy);
+      t.draw(sheet(path), c * T + qx * H, r * T + qy * H, H, H, qx * H, qy * H);
+    }
+    put(`${name}_${shape}`, t);
+  };
+  // Some blocks' blob centre is flat; their textured fill row reads better in the middle.
+  q("full", () => (fullFromFill ? [bx, by + 5] : [bx + 1, by + 3]));
+  q("out", (qx, qy) => [bx + 2 * qx, by + 2 + 2 * qy]);
+  q("h", (qx, qy) => [bx + 1, by + 2 + 2 * qy]);
+  q("v", (qx) => [bx + 2 * qx, by + 3]);
+  q("in", (qx, qy) => [bx + 2 - qx, by + 1 - qy]);
+  put(name, out[`${name}_full`].img);
+}
+
+/** Plain fills from the bottom row of a block, as variants the renderer picks by position. */
+function fills(name, path, bx, by, n = 3) {
+  const t = blank(n, 1);
+  t.draw(sheet(path), bx * T, (by + 5) * T, n * T, T, 0, 0);
+  put(name, t, 0, 0, n);
+}
+
+fills("grass", "tiles/base/grass.png", 0, 0);
+shapes("water", "tiles/base/water.png", 0, 0, true);
+shapes("path", "tiles/base/dirt.png", 0, 0);
+shapes("track", "tiles/base/dirt2.png", 0, 0);
+shapes("cowpath", "tiles/atlas/terrain_atlas.png", 3, 26);
+shapes("tall_grass", "tiles/atlas/terrain_atlas.png", 21, 6);
+shapes("brush", "tiles/atlas/terrain_atlas.png", 21, 0);
+shapes("canopy", "tiles/atlas/terrain_atlas.png", 6, 24, true);
+
+// Weeds on a path: the dirt shapes with grass tufts from the grass block's scrap tile laid
+// over wherever there is dirt, at fixed spots so the PNG is reproducible.
+function weedy(name, from, spots) {
+  const tuft = sheet("tiles/base/grass.png");
+  for (const shape of ["full", "out", "h", "v", "in"]) {
+    const base = out[`${from}_${shape}`].img;
+    const t = blank();
+    t.draw(base, 0, 0, T, T, 0, 0);
+    for (const [x, y] of spots) {
+      // Only where the path is, so the edges stay clean.
+      if (base.data[((y + 4) * T + x + 4) * 4 + 3] === 0) continue;
+      t.draw(tuft, 2, 70, 12, 10, x, y);
+    }
+    put(`${name}_${shape}`, t);
   }
+  put(name, out[`${name}_full`].img);
+}
+weedy("weedy_path", "path", [[3, 4], [18, 17]]);
+weedy("overgrown_path", "track", [[2, 2], [17, 5], [6, 18], [19, 20]]);
+
+// A broadleaf tree, crown over trunk, standing on the bottom of its cell.
+put("tree", (() => {
+  const t = blank(3, 4);
+  t.draw(sheet("tiles/base/trunk.png"), 0, 0, 3 * T, 3 * T, 0, T);
+  t.draw(sheet("tiles/base/treetop.png"), 0, 0, 3 * T, 3 * T, 0, 0);
+  return t;
+})(), -T, -3 * T);
+
+// ---- Buildings. Wall tops are drawn from the LPC wall-top beam: a dark fill with a beam
+// along every side that faces away from the wall, assembled per quadrant like terrain.
+const WALL = "tiles/walls/walls.png";
+const BEAM = 9;
+const dark = (() => {
+  const s = sheet(WALL);
+  const i = (40 * s.w + 48) * 4;
+  return [s.data[i], s.data[i + 1], s.data[i + 2], 255];
+})();
+function wallShape(shape) {
+  const t = blank();
+  for (const [qx, qy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+    const x0 = qx * H, y0 = qy * H;
+    t.fill(x0, y0, H, H, dark);
+    const edgeY = shape === "h" || shape === "out";
+    const edgeX = shape === "v" || shape === "out";
+    // Horizontal beam from the top of the horizontal wall-top tile, vertical from the left
+    // of the vertical one.
+    if (edgeY) t.draw(sheet(WALL), 64 + x0, 0, H, BEAM, x0, qy === 0 ? 0 : T - BEAM);
+    if (edgeX) t.draw(sheet(WALL), 0, y0, BEAM, H, qx === 0 ? 0 : T - BEAM, y0);
+    if (shape === "in") t.draw(sheet(WALL), 64, 0, BEAM, BEAM, qx === 0 ? 0 : T - BEAM, qy === 0 ? 0 : T - BEAM);
+  }
+  put(`wall_${shape}`, t);
+}
+for (const s of ["full", "out", "h", "v", "in"]) wallShape(s);
+put("wall", out.wall_full.img);
+
+// A wall seen from the room below it: a strip of top, then the panelled face.
+const face = (col, row) => {
+  const t = blank();
+  t.draw(sheet(WALL), col * T, row * T + BEAM, T, T - BEAM, 0, BEAM);
+  t.draw(sheet(WALL), 64, 0, T, BEAM, 0, 0);
+  return t;
+};
+put("wall_face", face(1, 61));
+// The outside of a building's south wall, seen from the street.
+put("wall_outside", face(53, 67));
+
+put("floor", tiles("tiles/house-interior/interior.png", 0, 3));
+put("opening", tiles("tiles/house-interior/interior.png", 0, 3));
+put("door", tiles("tiles/windows-doors/windows-doors.png", 4, 26));
+put("void", (() => {
+  const t = blank();
+  t.fill(0, 0, T, T, [24, 20, 24, 255]);
+  return t;
+})());
+
+// ---- Objects. Most sit in their cell; taller ones rise above it, wider ones are centred.
+// The bed is three tiles long in LPC; ours keep the head and the foot.
+put("obj_bed", (() => {
+  const t = blank(1, 2);
+  t.draw(sheet("tiles/house-interior/interior.png"), 14 * T, 0, T, T, 0, 0);
+  t.draw(sheet("tiles/house-interior/interior.png"), 14 * T, 2 * T, T, T, 0, T);
+  return t;
+})());
+put("obj_table", tiles("tiles/house-interior/interior.png", 13, 2));
+put("obj_counter", tiles("tiles/house-interior/interior.png", 3, 3, 1, 2), 0, -T);
+put("obj_oven", tiles("tiles/house-interior/interior.png", 11, 4));
+put("obj_stove", tiles("tiles/house-interior/interior.png", 11, 8));
+put("obj_shelf", tiles("tiles/house-interior/interior.png", 2, 6, 1, 2), 0, -T);
+put("obj_pantry", tiles("tiles/house-interior/interior.png", 6, 6));
+put("obj_barrel", tiles("tiles/base/barrel.png", 0, 0, 1, 2), 0, -T);
+put("obj_cart", tiles("tiles/decorations-medieval/decorations-medieval.png", 7, 20, 2, 2), -H, -T);
+put("obj_privy", tiles("tiles/decorations-medieval/decorations-medieval.png", 11, 11, 2, 2), -H, -T);
+put("obj_well", tiles("tiles/decorations-medieval/decorations-medieval.png", 0, 13, 2, 2), -H, -T);
+put("obj_bench", tiles("tiles/decorations-medieval/decorations-medieval.png", 6, 34, 2, 1), -H, 0);
+put("obj_chair", tiles("tiles/base/country.png", 2, 0));
+put("obj_generic", tiles("tiles/house-interior/interior.png", 6, 6));
+
+// ---- Villagers: each one's walk sheet composed from their layers (art/lpc/characters),
+// recolored from each material's base palette. 9 frames of 64px; rows face up, left, down,
+// right.
+const FRAME = 64;
+const layers = JSON.parse(readFileSync(`${ART}/characters/layers.json`, "utf8"));
+const rgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+function recolor(img, material, color) {
+  const p = layers.palettes[material];
+  const map = new Map(p.base.map((b, i) => [rgb(b).join(","), rgb(p.colors[color][i])]));
+  const t = new Img(img.w, img.h, Buffer.from(img.data));
+  for (let i = 0; i < t.data.length; i += 4) {
+    if (t.data[i + 3] === 0) continue;
+    const to = map.get(`${t.data[i]},${t.data[i + 1]},${t.data[i + 2]}`);
+    if (to) t.data.set(to, i);
+  }
+  return t;
+}
+const villagers = {};
+for (const [who, list] of Object.entries(layers.villagers)) {
+  const s = new Img(9 * FRAME, 4 * FRAME);
+  for (const l of list) {
+    let img = Img.load(`characters/${l.file}`);
+    if (l.recolor) img = recolor(img, l.recolor.material, l.recolor.color);
+    s.draw(img, 0, 0, s.w, s.h, 0, 0);
+  }
+  villagers[who] = s;
+}
+
+// ---- Pack: tiles on shelves of equal height, then one band per villager.
+const COLS = 18;
+const names = Object.keys(out).sort((a, b) => out[b].img.h - out[a].img.h || a.localeCompare(b));
+const placed = {};
+let x = 0, y = 0, shelf = 0;
+for (const name of names) {
+  const { img } = out[name];
+  const w = img.w / T, h = img.h / T;
+  if (x + w > COLS) {
+    x = 0;
+    y += shelf;
+    shelf = 0;
+  }
+  placed[name] = { col: x, row: y };
+  x += w;
+  shelf = Math.max(shelf, h);
+}
+y += shelf;
+const villagerTop = y * T;
+const atlas = new Img(COLS * T, villagerTop + Object.keys(villagers).length * 4 * FRAME);
+const entries = {};
+for (const name of Object.keys(out).sort()) {
+  const { img, ox, oy, variants } = out[name];
+  const { col, row } = placed[name];
+  atlas.draw(img, 0, 0, img.w, img.h, col * T, row * T);
+  const e = { col, row };
+  if (variants) e.variants = variants;
+  else if (img.w !== T || img.h !== T) Object.assign(e, { w: img.w / T, h: img.h / T });
+  if (ox) e.ox = ox;
+  if (oy) e.oy = oy;
+  entries[name] = e;
+}
+const villagerRows = {};
+Object.entries(villagers).forEach(([who, img], i) => {
+  atlas.draw(img, 0, 0, img.w, img.h, 0, villagerTop + i * 4 * FRAME);
+  villagerRows[who] = villagerTop + i * 4 * FRAME;
 });
 
-// Minimal PNG writer: RGBA, no filtering.
-function crc32(buf) {
-  let c = 0xffffffff;
-  for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1; }
-  return (c ^ 0xffffffff) >>> 0;
-}
-function chunk(type, data) {
-  const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
-  const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
-  const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(body));
-  return Buffer.concat([len, body, crc]);
-}
-const raw = Buffer.alloc((W * 4 + 1) * H);
-for (let y = 0; y < H; y++) { raw[y * (W * 4 + 1)] = 0; img.subarray(y * W * 4, (y + 1) * W * 4).forEach((v, i) => { raw[y * (W * 4 + 1) + 1 + i] = v; }); }
-const ihdr = Buffer.alloc(13);
-ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4); ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
-const png = Buffer.concat([
-  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw, { level: 9 })), chunk("IEND", Buffer.alloc(0)),
-]);
-mkdirSync("packages/viewer/public", { recursive: true });
-writeFileSync("packages/viewer/public/tiles.png", png);
-writeFileSync("packages/viewer/public/tiles.json", JSON.stringify({ tile: T, columns: COLS, tiles: atlas }, null, 2) + "\n");
-console.log(`wrote tiles.png (${W}x${H}, ${names.length} tiles) and tiles.json`);
+const png = new PNG({ width: atlas.w, height: atlas.h });
+atlas.data.copy(png.data);
+writeFileSync("packages/viewer/public/tiles.png", PNG.sync.write(png));
+writeFileSync(
+  "packages/viewer/public/tiles.json",
+  `${JSON.stringify({ tile: T, columns: COLS, tiles: entries, villagers: { frame: FRAME, frames: 9, top: villagerRows } }, null, 1)}\n`,
+);
+console.log(`wrote tiles.png (${atlas.w}x${atlas.h}, ${names.length} tiles, ${Object.keys(villagers).length} villagers) and tiles.json`);

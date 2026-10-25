@@ -47,9 +47,11 @@ pause, or skip to the next 6am. The text views are in the tools and in
 see what it is and its numbers, click to pin it, or click a name to follow
 that person: activity, why, coins and needs. Under the legend, each
 finished day lists what was unusual; click a line to replay the town to
-that moment, and "back to now" to return. The tiles are placeholders
-drawn by `scripts/make-tileset.mjs` (`just tileset`); generated art replaces
-`packages/viewer/public/tiles.png` later, keeping the names in `tiles.json`.
+that moment, and "back to now" to return. The art is
+Liberated Pixel Cup tiles and villagers (CC-BY-SA), composed into
+`packages/viewer/public/tiles.png` by `scripts/make-tileset.mjs`
+(`just tileset`); sources, credits and how to change an outfit are in
+[art/lpc/README.md](./art/lpc/README.md).
 Without a browser: `cargo run -p tools -- day --seed 7` prints everyone's
 day, `summary --days 14` what was unusual each day, `economy --day 13` the
 money, needs and goods, and `png --at 2pm` writes a picture to

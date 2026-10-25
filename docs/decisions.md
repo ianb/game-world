@@ -1091,3 +1091,32 @@ Decided and built (details in `docs/design/triangle.md`):
 Implications: Hal's calls at the bakery are without buying, because
 buying kept Mara out of money trouble and removed the confidings and
 gifts that depend on it. Protocol 18, snapshot 11, layout 9.
+
+## 2026-10-25: Art from the Liberated Pixel Cup
+
+Ian: "We should really have much better tiles. Can you look around for
+better tile sets". After a comparison (Ninja Adventure, Serene Village,
+Kenney, LPC, paid packs): "this is no problem licensing-wise. I'm totally
+fine with share-alike. So let's go with LPC".
+
+Decided and built:
+
+- The viewer's tiles and villagers come from LPC art, 32px tiles, kept
+  under `art/lpc` with each pack's credits. `tiles.png` is a derivative and
+  is CC-BY-SA 3.0 / GPL 3.0; the viewer links the credits.
+- Ruled out on the way: Mana Seed (its license forbids use alongside
+  AI-generated code or writing), and paid packs that forbid
+  redistribution (the repository is public).
+- `scripts/make-tileset.mjs` composes the atlas. Terrain uses the LPC
+  3x6 blocks, cut into the renderer's existing quadrant shapes. Wall tops
+  are built from the LPC beam; a wall shows its panelled face to a room
+  below it and an outside face to the street.
+- Each villager's look is a list of generator items and colors in
+  `art/lpc/characters.json`; `scripts/lpc-vendor.mjs` copies the layers
+  from a generator checkout and the tileset build recolors and composes
+  them. Villagers face the way they last moved and step while walking.
+- The procedural placeholder tileset is gone.
+
+Implications: anything we draw by editing LPC art is share-alike too.
+Sleeping villagers are shown by name only, since LPC has no lying-down
+frames. Roofs are still not drawn; interiors stay visible from above.

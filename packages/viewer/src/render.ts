@@ -1,12 +1,28 @@
-// The tile renderer: one canvas per place, drawn from the sim's views with the placeholder
-// tileset in public/tiles.png. Pixel art at native size, scaled up by CSS at an integer
-// factor. The text views stay the source of truth for tests; this is for eyes.
+// The tile renderer: one canvas per place, drawn from the sim's views with the LPC tileset
+// in public/tiles.png (built by scripts/make-tileset.mjs). Pixel art at native size, scaled
+// by CSS at an integer factor. The text views stay the source of truth for tests; this is
+// for eyes.
 import type { Cell, ObjectView, PlaceView, RoofView, Sim, Surface, VillagerView } from "@game-world/protocol";
+
+interface AtlasTile {
+  col: number;
+  row: number;
+  /** Size in tiles, for sprites bigger than one. */
+  w?: number;
+  h?: number;
+  /** Where the sprite sits relative to its cell, in pixels. */
+  ox?: number;
+  oy?: number;
+  /** Plain variants in consecutive columns, picked by position. */
+  variants?: number;
+}
 
 interface Atlas {
   tile: number;
   columns: number;
-  tiles: Record<string, { col: number; row: number }>;
+  tiles: Record<string, AtlasTile>;
+  /** Each villager's walk sheet: `frames` frames of `frame` px; rows face up, left, down, right. */
+  villagers: { frame: number; frames: number; top: Record<string, number> };
 }
 
 export class Tileset {
@@ -31,11 +47,17 @@ export class Tileset {
     return name in this.atlas.tiles;
   }
 
-  draw(ctx: CanvasRenderingContext2D, name: string, x: number, y: number): void {
+  /** Draws a tile or sprite at a cell. A sprite taller than a tile with no set offset
+   * hangs down from its cell, or rises from it when `rise` (there is no room below). */
+  draw(ctx: CanvasRenderingContext2D, name: string, x: number, y: number, rise = false): void {
     const t = this.atlas.tiles[name] ?? this.atlas.tiles["obj_generic"];
     if (!t) return;
     const s = this.atlas.tile;
-    ctx.drawImage(this.image, t.col * s, t.row * s, s, s, x * s, y * s, s, s);
+    const col = t.variants ? t.col + variantAt(x, y, t.variants) : t.col;
+    const w = (t.w ?? 1) * s;
+    const h = (t.h ?? 1) * s;
+    const oy = t.oy ?? (rise ? s - h : 0);
+    ctx.drawImage(this.image, col * s, t.row * s, w, h, x * s + (t.ox ?? 0), y * s + oy, w, h);
   }
 
   /** Draws one quadrant (qx, qy in 0..1) of a shape tile into the same quadrant of (x, y). */
@@ -46,6 +68,31 @@ export class Tileset {
     const h = s / 2;
     ctx.drawImage(this.image, t.col * s + qx * h, t.row * s + qy * h, h, h, x * s + qx * h, y * s + qy * h, h, h);
   }
+
+  /** A villager standing (frame 0) or mid-step, feet on the bottom of their cell. */
+  drawVillager(ctx: CanvasRenderingContext2D, key: string, facing: Facing, frame: number, x: number, y: number): void {
+    const v = this.atlas.villagers;
+    const top = v.top[key] ?? Object.values(v.top)[0];
+    if (top === undefined) return;
+    const s = this.atlas.tile;
+    const f = v.frame;
+    const sx = (frame % v.frames) * f;
+    const sy = top + FACING_ROW[facing] * f;
+    ctx.drawImage(this.image, sx, sy, f, f, x * s + s / 2 - f / 2, (y + 1) * s - f + FEET, f, f);
+  }
+}
+
+/** LPC frames leave a little room under the feet. */
+const FEET = 2;
+
+export type Facing = "up" | "left" | "down" | "right";
+const FACING_ROW: Record<Facing, number> = { up: 0, left: 1, down: 2, right: 3 };
+
+/** A stable pseudo-random pick for a cell, so the ground does not repeat in a grid. */
+function variantAt(x: number, y: number, n: number): number {
+  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) % n;
 }
 
 /** Features drawn over a background with auto-shaped edges, and which of them join up. */
@@ -59,7 +106,12 @@ const FEATURE_GROUP: Record<string, string> = {
   cowpath: "path",
   tall_grass: "grass",
   brush: "grass",
+  wall: "wall",
+  door: "wall",
 };
+
+/** Groups whose features run off the edge of the map, like the border forest. Walls stop. */
+const RUNS_OFF_MAP = new Set(["water", "canopy", "path", "grass"]);
 
 type Shape = "full" | "h" | "v" | "out" | "in";
 
@@ -95,6 +147,13 @@ const SURFACE_TILE: Record<Surface, string> = {
   OvergrownPath: "overgrown_path",
 };
 
+/** What a wall shows from the south: the room's panelling, the street side, or its top. */
+function wallFace(below: string | undefined): string | null {
+  if (below === "floor" || below === "opening") return "wall_face";
+  if (below === undefined || below === "void" || FEATURE_GROUP[below] === "wall") return null;
+  return "wall_outside";
+}
+
 function objectTile(kind: string): string {
   switch (kind) {
     case "bed":
@@ -116,6 +175,14 @@ function objectTile(kind: string): string {
   }
 }
 
+/** Where a villager was last drawn and which way they were going. */
+interface Gait {
+  x: number;
+  y: number;
+  facing: Facing;
+  steps: number;
+}
+
 /** A canvas showing one place. `draw` repaints it from the current sim state. */
 export class PlaceCanvas {
   readonly canvas: HTMLCanvasElement;
@@ -124,8 +191,7 @@ export class PlaceCanvas {
   /** Inline buildings' footprints in this place, for their name labels. */
   private readonly roofs: RoofView[];
   private readonly outdoors: boolean;
-  /** Villager key -> sprite variant, in first-seen order. */
-  private readonly variants = new Map<string, number>();
+  private readonly gaits = new Map<string, Gait>();
 
   constructor(
     private readonly tiles: Tileset,
@@ -175,6 +241,25 @@ export class PlaceCanvas {
     return this.place.id;
   }
 
+  /** Which way a villager faces and which step they are on, from how they moved since the
+   * last draw. Standing still shows the standing frame, facing the way they last went. */
+  private gait(v: VillagerView): { facing: Facing; frame: number } {
+    const g = this.gaits.get(v.key) ?? { x: v.pos.x, y: v.pos.y, facing: "down" as Facing, steps: 0 };
+    const dx = v.pos.x - g.x;
+    const dy = v.pos.y - g.y;
+    let frame = 0;
+    if (dx !== 0 || dy !== 0) {
+      if (Math.abs(dx) > Math.abs(dy)) g.facing = dx > 0 ? "right" : "left";
+      else g.facing = dy > 0 ? "down" : "up";
+      g.steps += 1;
+      frame = 1 + (g.steps % 8);
+    }
+    g.x = v.pos.x;
+    g.y = v.pos.y;
+    this.gaits.set(v.key, g);
+    return { facing: g.facing, frame };
+  }
+
   draw(sim: Sim, villagers: VillagerView[], highlight: { x: number; y: number } | null = null): void {
     const { ctx, tiles, place } = this;
     const terrain = this.outdoors ? sim.terrain(place.key).tiles : null;
@@ -187,20 +272,30 @@ export class PlaceCanvas {
       const surface = terrain?.[i] ?? null;
       names[i] = surface ? SURFACE_TILE[surface] : CELL_TILE[place.cells[i] ?? "Void"];
     }
-    // Off the map counts as the same feature, so a border forest runs off the edge.
+    const at = (x: number, y: number): string | undefined =>
+      x < 0 || y < 0 || x >= w || y >= h ? undefined : names[y * w + x];
     const group = (x: number, y: number, self: string): boolean => {
-      if (x < 0 || y < 0 || x >= w || y >= h) return true;
-      return FEATURE_GROUP[names[y * w + x] ?? ""] === self;
+      const n = at(x, y);
+      if (n === undefined) return RUNS_OFF_MAP.has(self);
+      return FEATURE_GROUP[n] === self;
     };
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const name = names[y * w + x] ?? "void";
         const g = FEATURE_GROUP[name];
-        if (!g || !tiles.has(`${name}_out`)) {
+        if (g === "wall") {
+          const face = name === "door" ? null : wallFace(at(x, y + 1));
+          if (face) {
+            tiles.draw(ctx, face, x, y);
+            continue;
+          }
+        }
+        if (!g || !tiles.has(`${g === "wall" ? "wall" : name}_out`)) {
           tiles.draw(ctx, name, x, y);
           continue;
         }
-        tiles.draw(ctx, background, x, y);
+        const shapeName = g === "wall" ? "wall" : name;
+        if (g !== "wall") tiles.draw(ctx, background, x, y);
         const n = group(x, y - 1, g), s = group(x, y + 1, g);
         const e = group(x + 1, y, g), wst = group(x - 1, y, g);
         const quads: [number, number, boolean, boolean, boolean][] = [
@@ -210,34 +305,49 @@ export class PlaceCanvas {
           [1, 1, s, e, group(x + 1, y + 1, g)],
         ];
         for (const [qx, qy, vert, side, diag] of quads) {
-          tiles.drawQuadrant(ctx, `${name}_${quadrantShape(side, vert, diag)}`, qx, qy, x, y);
+          tiles.drawQuadrant(ctx, `${shapeName}_${quadrantShape(side, vert, diag)}`, qx, qy, x, y);
+        }
+        if (name === "door") tiles.draw(ctx, "door", x, y);
+      }
+    }
+    // Objects and people back to front, so whoever is lower on the map is in front.
+    const sprites: { y: number; draw: () => void }[] = [];
+    // Trees stand in the forest, scattered so they do not line up.
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (names[y * w + x] === "canopy" && (x + y) % 2 === 0 && variantAt(x, y, 3) === 0) {
+          sprites.push({ y, draw: () => tiles.draw(ctx, "tree", x, y) });
         }
       }
     }
-    for (const o of this.objects) tiles.draw(ctx, objectTile(o.kind), o.pos.x, o.pos.y);
+    for (const o of this.objects) {
+      const below = at(o.pos.x, o.pos.y + 1);
+      const rise = below !== "floor" && below !== "opening";
+      sprites.push({ y: o.pos.y, draw: () => tiles.draw(ctx, objectTile(o.kind), o.pos.x, o.pos.y, rise) });
+    }
+    for (const v of villagers) {
+      if (v.place !== place.id) continue;
+      const { facing, frame } = this.gait(v);
+      // LPC has no lying-down frames: a sleeper is in their bed, shown by their name.
+      if (v.activity === "sleep") continue;
+      sprites.push({ y: v.pos.y + 0.5, draw: () => tiles.drawVillager(ctx, v.key, facing, frame, v.pos.x, v.pos.y) });
+    }
+    sprites.sort((a, b) => a.y - b.y);
+    for (const s of sprites) s.draw();
     // Building names, on the top wall of each footprint.
-    ctx.font = "bold 8px ui-monospace, monospace";
+    ctx.font = "bold 12px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     for (const r of this.roofs) {
       const s = tiles.size;
       const label = r.building.replace(/[_-]+/g, " ");
       const cx = (r.rect.x + r.rect.w / 2) * s;
-      const top = r.rect.y * s + 2;
-      const w = ctx.measureText(label).width + 6;
+      const top = r.rect.y * s + 3;
+      const lw = ctx.measureText(label).width + 8;
       ctx.fillStyle = "rgba(20, 16, 10, 0.7)";
-      ctx.fillRect(cx - w / 2, top - 1, w, 11);
+      ctx.fillRect(cx - lw / 2, top - 2, lw, 16);
       ctx.fillStyle = "#f4e8c8";
       ctx.fillText(label, cx, top);
-    }
-    for (const v of villagers) {
-      if (v.place !== place.id) continue;
-      let variant = this.variants.get(v.key);
-      if (variant === undefined) {
-        variant = this.variants.size % 4;
-        this.variants.set(v.key, variant);
-      }
-      tiles.draw(ctx, `villager_${variant}`, v.pos.x, v.pos.y);
     }
     if (highlight) {
       const s = tiles.size;
@@ -247,18 +357,18 @@ export class PlaceCanvas {
       ctx.strokeStyle = "#000000";
       ctx.strokeRect(highlight.x * s + 1.5, highlight.y * s + 1.5, s - 3, s - 3);
     }
-    // Name labels last, so they sit over everything.
-    ctx.font = "7px ui-monospace, monospace";
+    // Name labels last, so they sit over everything: above the head.
+    ctx.font = "10px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
     for (const v of villagers) {
       if (v.place !== place.id) continue;
       const s = tiles.size;
       const cx = v.pos.x * s + s / 2;
-      const top = v.pos.y * s - 1;
-      const w = ctx.measureText(v.name).width + 2;
+      const top = (v.pos.y + 1) * s - 50;
+      const lw = ctx.measureText(v.name).width + 4;
       ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fillRect(cx - w / 2, top - 8, w, 8);
+      ctx.fillRect(cx - lw / 2, top - 11, lw, 11);
       ctx.fillStyle = "#fff";
       ctx.fillText(v.name, cx, top);
     }

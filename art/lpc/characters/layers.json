@@ -1,0 +1,408 @@
+{
+ "animation": "walk",
+ "villagers": {
+  "mara": [
+   {
+    "file": "body/bodies/female/walk.png",
+    "z": 10,
+    "recolor": {
+     "material": "body",
+     "color": "light"
+    }
+   },
+   {
+    "file": "feet/shoes/basic/thin/walk.png",
+    "z": 15,
+    "recolor": {
+     "material": "cloth",
+     "color": "brown"
+    }
+   },
+   {
+    "file": "legs/skirts/plain/thin/walk.png",
+    "z": 20,
+    "recolor": {
+     "material": "cloth",
+     "color": "brown"
+    }
+   },
+   {
+    "file": "torso/clothes/blouse/female/walk/tan.png",
+    "z": 35,
+    "recolor": null
+   },
+   {
+    "file": "torso/aprons/apron_full/female/walk/white.png",
+    "z": 40,
+    "recolor": null
+   },
+   {
+    "file": "head/heads/human/female/walk.png",
+    "z": 100,
+    "recolor": {
+     "material": "body",
+     "color": "light"
+    }
+   },
+   {
+    "file": "hair/bob/adult/walk.png",
+    "z": 120,
+    "recolor": {
+     "material": "hair",
+     "color": "chestnut"
+    }
+   }
+  ],
+  "tom": [
+   {
+    "file": "body/bodies/male/walk.png",
+    "z": 10,
+    "recolor": {
+     "material": "body",
+     "color": "amber"
+    }
+   },
+   {
+    "file": "legs/pants/male/walk.png",
+    "z": 20,
+    "recolor": {
+     "material": "cloth",
+     "color": "brown"
+    }
+   },
+   {
+    "file": "feet/boots/basic/male/walk.png",
+    "z": 25,
+    "recolor": {
+     "material": "cloth",
+     "color": "black"
+    }
+   },
+   {
+    "file": "torso/clothes/longsleeve/longsleeve/male/walk.png",
+    "z": 35,
+    "recolor": {
+     "material": "cloth",
+     "color": "white"
+    }
+   },
+   {
+    "file": "torso/aprons/apron/male/walk/leather.png",
+    "z": 40,
+    "recolor": null
+   },
+   {
+    "file": "head/heads/human/male_plump/walk.png",
+    "z": 100,
+    "recolor": {
+     "material": "body",
+     "color": "amber"
+    }
+   },
+   {
+    "file": "hair/messy1/adult/walk.png",
+    "z": 120,
+    "recolor": {
+     "material": "hair",
+     "color": "dark_brown"
+    }
+   }
+  ],
+  "pip": [
+   {
+    "file": "body/bodies/child/walk.png",
+    "z": 10,
+    "recolor": {
+     "material": "body",
+     "color": "light"
+    }
+   },
+   {
+    "file": "legs/pants/child/walk/brown.png",
+    "z": 20,
+    "recolor": null
+   },
+   {
+    "file": "torso/clothes/shirt/child/walk/green.png",
+    "z": 35,
+    "recolor": null
+   },
+   {
+    "file": "head/heads/human/child/walk.png",
+    "z": 100,
+    "recolor": {
+     "material": "body",
+     "color": "light"
+    }
+   },
+   {
+    "file": "hair/relm_short/child/walk.png",
+    "z": 120,
+    "recolor": {
+     "material": "hair",
+     "color": "carrot"
+    }
+   }
+  ],
+  "nell": [
+   {
+    "file": "body/bodies/female/walk.png",
+    "z": 10,
+    "recolor": {
+     "material": "body",
+     "color": "light"
+    }
+   },
+   {
+    "file": "feet/shoes/basic/thin/walk.png",
+    "z": 15,
+    "recolor": {
+     "material": "cloth",
+     "color": "black"
+    }
+   },
+   {
+    "file": "legs/skirts/straight/thin/walk.png",
+    "z": 20,
+    "recolor": {
+     "material": "cloth",
+     "color": "navy"
+    }
+   },
+   {
+    "file": "torso/clothes/blouse_longsleeve/female/walk/lavender.png",
+    "z": 35,
+    "recolor": null
+   },
+   {
+    "file": "head/heads/human/female_elderly/walk.png",
+    "z": 100,
+    "recolor": {
+     "material": "body",
+     "color": "light"
+    }
+   },
+   {
+    "file": "hair/bangs_bun/adult/walk.png",
+    "z": 120,
+    "recolor": {
+     "material": "hair",
+     "color": "white"
+    }
+   }
+  ],
+  "hal": [
+   {
+    "file": "body/bodies/male/walk.png",
+    "z": 10,
+    "recolor": {
+     "material": "body",
+     "color": "bronze"
+    }
+   },
+   {
+    "file": "legs/pants/male/walk.png",
+    "z": 20,
+    "recolor": {
+     "material": "cloth",
+     "color": "charcoal"
+    }
+   },
+   {
+    "file": "feet/boots/basic/male/walk.png",
+    "z": 25,
+    "recolor": {
+     "material": "cloth",
+     "color": "brown"
+    }
+   },
+   {
+    "file": "torso/clothes/longsleeve/longsleeve/male/walk.png",
+    "z": 35,
+    "recolor": {
+     "material": "cloth",
+     "color": "forest"
+    }
+   },
+   {
+    "file": "torso/waist/belt_leather/male/walk/brown.png",
+    "z": 70,
+    "recolor": null
+   },
+   {
+    "file": "head/heads/human/male/walk.png",
+    "z": 100,
+    "recolor": {
+     "material": "body",
+     "color": "bronze"
+    }
+   },
+   {
+    "file": "beards/beard/basic/walk.png",
+    "z": 110,
+    "recolor": {
+     "material": "hair",
+     "color": "light_brown"
+    }
+   },
+   {
+    "file": "hair/plain/adult/walk.png",
+    "z": 120,
+    "recolor": {
+     "material": "hair",
+     "color": "light_brown"
+    }
+   }
+  ]
+ },
+ "palettes": {
+  "body": {
+   "base": [
+    "#271920",
+    "#99423c",
+    "#cc8665",
+    "#E4A47C",
+    "#F9D5BA",
+    "#FAECE7"
+   ],
+   "colors": {
+    "light": [
+     "#271920",
+     "#99423c",
+     "#cc8665",
+     "#E4A47C",
+     "#F9D5BA",
+     "#FAECE7"
+    ],
+    "amber": [
+     "#281716",
+     "#9E3E37",
+     "#D28144",
+     "#EA9F54",
+     "#FDD082",
+     "#FBE7A4"
+    ],
+    "bronze": [
+     "#1A1213",
+     "#442725",
+     "#644133",
+     "#7F4C31",
+     "#AE6B3F",
+     "#D38B59"
+    ]
+   }
+  },
+  "cloth": {
+   "base": [
+    "#281820",
+    "#4D4A5D",
+    "#958080",
+    "#C4B59F",
+    "#E5E6C7",
+    "#FFFFFF"
+   ],
+   "colors": {
+    "brown": [
+     "#1d131e",
+     "#411E05",
+     "#4B2B13",
+     "#62351C",
+     "#744B30",
+     "#996B4A"
+    ],
+    "black": [
+     "#000000",
+     "#101414",
+     "#1C2222",
+     "#22282A",
+     "#2A3034",
+     "#4A5057"
+    ],
+    "white": [
+     "#281820",
+     "#4D4A5D",
+     "#958080",
+     "#C4B59F",
+     "#E5E6C7",
+     "#FFFFFF"
+    ],
+    "navy": [
+     "#180716",
+     "#20102B",
+     "#281E41",
+     "#322D6A",
+     "#3C49AD",
+     "#466AC9"
+    ],
+    "charcoal": [
+     "#000000",
+     "#130D14",
+     "#1C2222",
+     "#2A3034",
+     "#4A5057",
+     "#6E7675"
+    ],
+    "forest": [
+     "#09131d",
+     "#07391D",
+     "#0B1F25",
+     "#0B2B28",
+     "#134507",
+     "#1B5502"
+    ]
+   }
+  },
+  "hair": {
+   "base": [
+    "#260D14",
+    "#6A1108",
+    "#A42600",
+    "#BF4000",
+    "#E55600",
+    "#FF8A00"
+   ],
+   "colors": {
+    "chestnut": [
+     "#200C0D",
+     "#3A130E",
+     "#63200B",
+     "#81310A",
+     "#B6550E",
+     "#D28102"
+    ],
+    "dark_brown": [
+     "#050100",
+     "#160701",
+     "#290E02",
+     "#421603",
+     "#5F1F04",
+     "#792806"
+    ],
+    "carrot": [
+     "#5A1500",
+     "#8A2000",
+     "#AC2800",
+     "#EC673E",
+     "#F68764",
+     "#FFB39C"
+    ],
+    "white": [
+     "#1D1D21",
+     "#484E57",
+     "#8B9498",
+     "#B8BBBC",
+     "#D8DCDC",
+     "#FFFFFF"
+    ],
+    "light_brown": [
+     "#1A0E04",
+     "#301B07",
+     "#60350F",
+     "#7D4513",
+     "#AE682A",
+     "#C88D58"
+    ]
+   }
+  }
+ }
+}

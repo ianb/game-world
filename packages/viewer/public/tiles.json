@@ -1,318 +1,376 @@
 {
-  "tile": 16,
-  "columns": 8,
-  "tiles": {
-    "grass": {
-      "col": 0,
-      "row": 0
-    },
-    "tall_grass": {
-      "col": 1,
-      "row": 0
-    },
-    "brush": {
-      "col": 2,
-      "row": 0
-    },
-    "track": {
-      "col": 3,
-      "row": 0
-    },
-    "cowpath": {
-      "col": 4,
-      "row": 0
-    },
-    "path": {
-      "col": 5,
-      "row": 0
-    },
-    "weedy_path": {
-      "col": 6,
-      "row": 0
-    },
-    "overgrown_path": {
-      "col": 7,
-      "row": 0
-    },
-    "tree": {
-      "col": 0,
-      "row": 1
-    },
-    "water": {
-      "col": 1,
-      "row": 1
-    },
-    "wall": {
-      "col": 2,
-      "row": 1
-    },
-    "floor": {
-      "col": 3,
-      "row": 1
-    },
-    "opening": {
-      "col": 4,
-      "row": 1
-    },
-    "door": {
-      "col": 5,
-      "row": 1
-    },
-    "void": {
-      "col": 6,
-      "row": 1
-    },
-    "obj_bed": {
-      "col": 7,
-      "row": 1
-    },
-    "obj_table": {
-      "col": 0,
-      "row": 2
-    },
-    "obj_counter": {
-      "col": 1,
-      "row": 2
-    },
-    "obj_oven": {
-      "col": 2,
-      "row": 2
-    },
-    "obj_stove": {
-      "col": 3,
-      "row": 2
-    },
-    "obj_shelf": {
-      "col": 4,
-      "row": 2
-    },
-    "obj_generic": {
-      "col": 5,
-      "row": 2
-    },
-    "obj_pantry": {
-      "col": 6,
-      "row": 2
-    },
-    "obj_barrel": {
-      "col": 7,
-      "row": 2
-    },
-    "obj_cart": {
-      "col": 0,
-      "row": 3
-    },
-    "obj_privy": {
-      "col": 1,
-      "row": 3
-    },
-    "obj_well": {
-      "col": 2,
-      "row": 3
-    },
-    "obj_bench": {
-      "col": 3,
-      "row": 3
-    },
-    "obj_chair": {
-      "col": 4,
-      "row": 3
-    },
-    "villager_0": {
-      "col": 5,
-      "row": 3
-    },
-    "villager_1": {
-      "col": 6,
-      "row": 3
-    },
-    "villager_2": {
-      "col": 7,
-      "row": 3
-    },
-    "villager_3": {
-      "col": 0,
-      "row": 4
-    },
-    "water_full": {
-      "col": 1,
-      "row": 4
-    },
-    "water_h": {
-      "col": 2,
-      "row": 4
-    },
-    "water_v": {
-      "col": 3,
-      "row": 4
-    },
-    "water_out": {
-      "col": 4,
-      "row": 4
-    },
-    "water_in": {
-      "col": 5,
-      "row": 4
-    },
-    "canopy_full": {
-      "col": 6,
-      "row": 4
-    },
-    "canopy_h": {
-      "col": 7,
-      "row": 4
-    },
-    "canopy_v": {
-      "col": 0,
-      "row": 5
-    },
-    "canopy_out": {
-      "col": 1,
-      "row": 5
-    },
-    "canopy_in": {
-      "col": 2,
-      "row": 5
-    },
-    "path_full": {
-      "col": 3,
-      "row": 5
-    },
-    "path_h": {
-      "col": 4,
-      "row": 5
-    },
-    "path_v": {
-      "col": 5,
-      "row": 5
-    },
-    "path_out": {
-      "col": 6,
-      "row": 5
-    },
-    "path_in": {
-      "col": 7,
-      "row": 5
-    },
-    "weedy_path_full": {
-      "col": 0,
-      "row": 6
-    },
-    "weedy_path_h": {
-      "col": 1,
-      "row": 6
-    },
-    "weedy_path_v": {
-      "col": 2,
-      "row": 6
-    },
-    "weedy_path_out": {
-      "col": 3,
-      "row": 6
-    },
-    "weedy_path_in": {
-      "col": 4,
-      "row": 6
-    },
-    "overgrown_path_full": {
-      "col": 5,
-      "row": 6
-    },
-    "overgrown_path_h": {
-      "col": 6,
-      "row": 6
-    },
-    "overgrown_path_v": {
-      "col": 7,
-      "row": 6
-    },
-    "overgrown_path_out": {
-      "col": 0,
-      "row": 7
-    },
-    "overgrown_path_in": {
-      "col": 1,
-      "row": 7
-    },
-    "track_full": {
-      "col": 2,
-      "row": 7
-    },
-    "track_h": {
-      "col": 3,
-      "row": 7
-    },
-    "track_v": {
-      "col": 4,
-      "row": 7
-    },
-    "track_out": {
-      "col": 5,
-      "row": 7
-    },
-    "track_in": {
-      "col": 6,
-      "row": 7
-    },
-    "cowpath_full": {
-      "col": 7,
-      "row": 7
-    },
-    "cowpath_h": {
-      "col": 0,
-      "row": 8
-    },
-    "cowpath_v": {
-      "col": 1,
-      "row": 8
-    },
-    "cowpath_out": {
-      "col": 2,
-      "row": 8
-    },
-    "cowpath_in": {
-      "col": 3,
-      "row": 8
-    },
-    "tall_grass_full": {
-      "col": 4,
-      "row": 8
-    },
-    "tall_grass_h": {
-      "col": 5,
-      "row": 8
-    },
-    "tall_grass_v": {
-      "col": 6,
-      "row": 8
-    },
-    "tall_grass_out": {
-      "col": 7,
-      "row": 8
-    },
-    "tall_grass_in": {
-      "col": 0,
-      "row": 9
-    },
-    "brush_full": {
-      "col": 1,
-      "row": 9
-    },
-    "brush_h": {
-      "col": 2,
-      "row": 9
-    },
-    "brush_v": {
-      "col": 3,
-      "row": 9
-    },
-    "brush_out": {
-      "col": 4,
-      "row": 9
-    },
-    "brush_in": {
-      "col": 5,
-      "row": 9
-    }
+ "tile": 32,
+ "columns": 18,
+ "tiles": {
+  "brush": {
+   "col": 13,
+   "row": 0
+  },
+  "brush_full": {
+   "col": 14,
+   "row": 0
+  },
+  "brush_h": {
+   "col": 15,
+   "row": 0
+  },
+  "brush_in": {
+   "col": 16,
+   "row": 0
+  },
+  "brush_out": {
+   "col": 17,
+   "row": 0
+  },
+  "brush_v": {
+   "col": 0,
+   "row": 4
+  },
+  "canopy": {
+   "col": 1,
+   "row": 4
+  },
+  "canopy_full": {
+   "col": 2,
+   "row": 4
+  },
+  "canopy_h": {
+   "col": 3,
+   "row": 4
+  },
+  "canopy_in": {
+   "col": 4,
+   "row": 4
+  },
+  "canopy_out": {
+   "col": 5,
+   "row": 4
+  },
+  "canopy_v": {
+   "col": 6,
+   "row": 4
+  },
+  "cowpath": {
+   "col": 7,
+   "row": 4
+  },
+  "cowpath_full": {
+   "col": 8,
+   "row": 4
+  },
+  "cowpath_h": {
+   "col": 9,
+   "row": 4
+  },
+  "cowpath_in": {
+   "col": 10,
+   "row": 4
+  },
+  "cowpath_out": {
+   "col": 11,
+   "row": 4
+  },
+  "cowpath_v": {
+   "col": 12,
+   "row": 4
+  },
+  "door": {
+   "col": 13,
+   "row": 4
+  },
+  "floor": {
+   "col": 14,
+   "row": 4
+  },
+  "grass": {
+   "col": 15,
+   "row": 4,
+   "variants": 3
+  },
+  "obj_barrel": {
+   "col": 3,
+   "row": 0,
+   "w": 1,
+   "h": 2,
+   "oy": -32
+  },
+  "obj_bed": {
+   "col": 4,
+   "row": 0,
+   "w": 1,
+   "h": 2
+  },
+  "obj_bench": {
+   "col": 0,
+   "row": 5,
+   "w": 2,
+   "h": 1,
+   "ox": -16
+  },
+  "obj_cart": {
+   "col": 5,
+   "row": 0,
+   "w": 2,
+   "h": 2,
+   "ox": -16,
+   "oy": -32
+  },
+  "obj_chair": {
+   "col": 2,
+   "row": 5
+  },
+  "obj_counter": {
+   "col": 7,
+   "row": 0,
+   "w": 1,
+   "h": 2,
+   "oy": -32
+  },
+  "obj_generic": {
+   "col": 3,
+   "row": 5
+  },
+  "obj_oven": {
+   "col": 4,
+   "row": 5
+  },
+  "obj_pantry": {
+   "col": 5,
+   "row": 5
+  },
+  "obj_privy": {
+   "col": 8,
+   "row": 0,
+   "w": 2,
+   "h": 2,
+   "ox": -16,
+   "oy": -32
+  },
+  "obj_shelf": {
+   "col": 10,
+   "row": 0,
+   "w": 1,
+   "h": 2,
+   "oy": -32
+  },
+  "obj_stove": {
+   "col": 6,
+   "row": 5
+  },
+  "obj_table": {
+   "col": 7,
+   "row": 5
+  },
+  "obj_well": {
+   "col": 11,
+   "row": 0,
+   "w": 2,
+   "h": 2,
+   "ox": -16,
+   "oy": -32
+  },
+  "opening": {
+   "col": 8,
+   "row": 5
+  },
+  "overgrown_path": {
+   "col": 9,
+   "row": 5
+  },
+  "overgrown_path_full": {
+   "col": 10,
+   "row": 5
+  },
+  "overgrown_path_h": {
+   "col": 11,
+   "row": 5
+  },
+  "overgrown_path_in": {
+   "col": 12,
+   "row": 5
+  },
+  "overgrown_path_out": {
+   "col": 13,
+   "row": 5
+  },
+  "overgrown_path_v": {
+   "col": 14,
+   "row": 5
+  },
+  "path": {
+   "col": 15,
+   "row": 5
+  },
+  "path_full": {
+   "col": 16,
+   "row": 5
+  },
+  "path_h": {
+   "col": 17,
+   "row": 5
+  },
+  "path_in": {
+   "col": 0,
+   "row": 6
+  },
+  "path_out": {
+   "col": 1,
+   "row": 6
+  },
+  "path_v": {
+   "col": 2,
+   "row": 6
+  },
+  "tall_grass": {
+   "col": 3,
+   "row": 6
+  },
+  "tall_grass_full": {
+   "col": 4,
+   "row": 6
+  },
+  "tall_grass_h": {
+   "col": 5,
+   "row": 6
+  },
+  "tall_grass_in": {
+   "col": 6,
+   "row": 6
+  },
+  "tall_grass_out": {
+   "col": 7,
+   "row": 6
+  },
+  "tall_grass_v": {
+   "col": 8,
+   "row": 6
+  },
+  "track": {
+   "col": 9,
+   "row": 6
+  },
+  "track_full": {
+   "col": 10,
+   "row": 6
+  },
+  "track_h": {
+   "col": 11,
+   "row": 6
+  },
+  "track_in": {
+   "col": 12,
+   "row": 6
+  },
+  "track_out": {
+   "col": 13,
+   "row": 6
+  },
+  "track_v": {
+   "col": 14,
+   "row": 6
+  },
+  "tree": {
+   "col": 0,
+   "row": 0,
+   "w": 3,
+   "h": 4,
+   "ox": -32,
+   "oy": -96
+  },
+  "void": {
+   "col": 15,
+   "row": 6
+  },
+  "wall": {
+   "col": 16,
+   "row": 6
+  },
+  "wall_face": {
+   "col": 17,
+   "row": 6
+  },
+  "wall_full": {
+   "col": 0,
+   "row": 7
+  },
+  "wall_h": {
+   "col": 1,
+   "row": 7
+  },
+  "wall_in": {
+   "col": 2,
+   "row": 7
+  },
+  "wall_out": {
+   "col": 3,
+   "row": 7
+  },
+  "wall_outside": {
+   "col": 4,
+   "row": 7
+  },
+  "wall_v": {
+   "col": 5,
+   "row": 7
+  },
+  "water": {
+   "col": 6,
+   "row": 7
+  },
+  "water_full": {
+   "col": 7,
+   "row": 7
+  },
+  "water_h": {
+   "col": 8,
+   "row": 7
+  },
+  "water_in": {
+   "col": 9,
+   "row": 7
+  },
+  "water_out": {
+   "col": 10,
+   "row": 7
+  },
+  "water_v": {
+   "col": 11,
+   "row": 7
+  },
+  "weedy_path": {
+   "col": 12,
+   "row": 7
+  },
+  "weedy_path_full": {
+   "col": 13,
+   "row": 7
+  },
+  "weedy_path_h": {
+   "col": 14,
+   "row": 7
+  },
+  "weedy_path_in": {
+   "col": 15,
+   "row": 7
+  },
+  "weedy_path_out": {
+   "col": 16,
+   "row": 7
+  },
+  "weedy_path_v": {
+   "col": 17,
+   "row": 7
   }
+ },
+ "villagers": {
+  "frame": 64,
+  "frames": 9,
+  "top": {
+   "mara": 256,
+   "tom": 512,
+   "pip": 768,
+   "nell": 1024,
+   "hal": 1280
+  }
+ }
 }

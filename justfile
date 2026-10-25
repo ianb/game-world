@@ -35,7 +35,7 @@ wasm-check:
     fi
 
 # Build the wasm package for the viewer (bundler) and for vitest (nodejs).
-# Redraws the placeholder tileset into packages/viewer/public (deterministic; commit it).
+# Builds the tileset in packages/viewer/public from the LPC art in art/lpc (commit it).
 tileset:
     node scripts/make-tileset.mjs
 
