@@ -6,16 +6,29 @@
     <title>game-world</title>
     <link rel="icon" href="data:," />
     <style>
-      body { margin: 0; background: #111; color: #ddd; font: 14px/1.25 ui-monospace, monospace; }
+      /* Layout: a header bar, then the map (one place at a time, scrolling inside its own
+         pane) beside a sidebar of tabs that scrolls on its own. Narrow screens stack them. */
+      html, body { height: 100%; }
+      body { margin: 0; background: #111; color: #ddd; font: 14px/1.25 ui-monospace, monospace; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
       header { padding: 8px 12px; background: #222; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
-      main { padding: 12px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); }
+      #app { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 460px; }
+      #stage, #side { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+      #side { border-left: 1px solid #333; }
+      nav.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px; border-bottom: 1px solid #333; }
+      nav.tabs button { min-height: 36px; padding: 4px 10px; }
+      nav.tabs button[aria-selected="true"] { outline: 2px solid #d9a35e; }
+      #map { flex: 1; min-height: 0; overflow: auto; background: #0b0b0b; }
+      .tab { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; display: grid; gap: 12px; align-content: start; }
+      .tab[hidden], section[hidden] { display: none; }
+      .zoom { display: inline-flex; gap: 4px; align-items: center; color: #999; }
+      .zoom button { min-width: 44px; }
       pre { margin: 0; white-space: pre; overflow-x: auto; }
       canvas.place { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
-      #places { grid-column: 1 / -1; }
       #legend { overflow-x: auto; }
-      #days { grid-column: 1 / -1; display: grid; gap: 6px; align-content: start; max-height: 45vh; overflow-y: auto; }
-      #days details { border: 1px solid #333; border-radius: 4px; padding: 4px 8px; }
-      #days details details { border: none; padding: 0; margin-top: 4px; }
+      .daynav { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
+      .daynav strong { text-align: center; }
+      #days { display: grid; gap: 4px; align-content: start; }
+      #days details { border-top: 1px solid #333; padding-top: 4px; }
       #days summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
       button.moment { display: grid; grid-template-columns: 6em 1fr; gap: 8px; width: 100%; min-height: 32px; text-align: left; background: none; color: inherit; border: none; border-radius: 4px; padding: 4px 6px; }
       button.moment:hover { background: #2a2a2a; }
@@ -28,15 +41,22 @@
       select { font: inherit; min-height: 44px; }
       .muted { color: #999; }
       /* Fixed activity width: max-content resized the column as activities changed. */
-      #everyone { display: grid; grid-template-columns: max-content 24ch minmax(0, 1fr); gap: 4px 12px; align-items: center; align-content: start; }
+      #everyone { display: grid; grid-template-columns: max-content 22ch minmax(0, 1fr); gap: 4px 12px; align-items: center; align-content: start; }
       #everyone > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       #everyone .muted { color: #999; }
       button.name { min-height: 32px; min-width: 0; padding: 4px 10px; text-align: left; }
       button.name[aria-pressed="true"] { outline: 2px solid #d9a35e; }
       #inspect { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 12.5em; padding: 8px; border: 1px solid #333; border-radius: 4px; font-variant-numeric: tabular-nums; }
       canvas.legend { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
-      h2 { font-size: 14px; margin: 8px 0 4px; color: #aaa; }
       button { font: inherit; min-height: 44px; min-width: 64px; }
+      button:disabled { opacity: 0.4; }
+      @media (max-width: 900px) {
+        body { height: auto; overflow: auto; }
+        #app { grid-template-columns: minmax(0, 1fr); }
+        #map { flex: none; max-height: 70vh; }
+        #side { border-left: none; border-top: 1px solid #333; }
+        .tab { max-height: 75vh; }
+      }
     </style>
   </head>
   <body>
@@ -46,15 +66,37 @@
       <button id="pause">pause</button>
       <button id="morning">to 6am</button>
       <button id="back" hidden>back to now</button>
+      <span class="zoom">zoom <button id="zoom-out" aria-label="zoom out">−</button><button id="zoom-fit">fit</button><button id="zoom-in" aria-label="zoom in">+</button></span>
     </header>
-    <main>
-      <div id="everyone"></div>
-      <pre id="inspect">hover or click a tile; click a name for the person</pre>
-      <div id="legend"></div>
-      <section id="days" aria-label="What happened each day"></section>
-      <div id="places"></div>
-      <p class="muted">Art: Liberated Pixel Cup contributors, CC-BY-SA 3.0 / GPL 3.0. <a href="https://github.com/ianb/game-world/blob/main/art/lpc/README.md">Credits</a>.</p>
-    </main>
+    <div id="app">
+      <section id="stage" aria-label="Map">
+        <nav class="tabs" id="place-tabs" role="tablist" aria-label="Places"></nav>
+        <div id="map"><div id="places"></div></div>
+      </section>
+      <aside id="side">
+        <nav class="tabs" id="side-tabs" role="tablist" aria-label="Panels">
+          <button role="tab" data-tab="people" aria-selected="true">people</button>
+          <button role="tab" data-tab="days" aria-selected="false">days</button>
+          <button role="tab" data-tab="key" aria-selected="false">key</button>
+        </nav>
+        <div class="tab" id="tab-people" role="tabpanel">
+          <div id="everyone"></div>
+          <pre id="inspect">hover or click a tile; click a name for the person</pre>
+        </div>
+        <div class="tab" id="tab-days" role="tabpanel" hidden>
+          <div class="daynav">
+            <button id="day-prev" aria-label="earlier day">◀</button>
+            <strong id="day-title"></strong>
+            <button id="day-next" aria-label="later day">▶</button>
+          </div>
+          <section id="days" aria-label="What happened that day"></section>
+        </div>
+        <div class="tab" id="tab-key" role="tabpanel" hidden>
+          <div id="legend"></div>
+          <p class="muted">Art: Liberated Pixel Cup contributors, CC-BY-SA 3.0 / GPL 3.0. <a href="https://github.com/ianb/game-world/blob/main/art/lpc/README.md">Credits</a>.</p>
+        </div>
+      </aside>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

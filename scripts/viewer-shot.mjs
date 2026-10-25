@@ -1,7 +1,8 @@
-// Screenshots one place from the built viewer after running the sim forward, at 2x, so a
-// person or the agent's image reader can look at the tiles. Serves dist itself.
+// Screenshots one place from the built viewer after running the sim forward, at the tiles'
+// native size (read from its canvas), so a person or the agent's image reader can look at
+// the tiles. Serves dist itself.
 // Usage: node scripts/viewer-shot.mjs [--place town] [--days 12] [--out target/town-tiles.png]
-import { existsSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { chromium } from "playwright";
 
@@ -24,8 +25,9 @@ try {
   await page.waitForFunction(() => typeof window.__scene === "function", undefined, { timeout: 15_000 });
   await page.evaluate((d) => window.__advance(d), days);
   const scene = await page.evaluate(() => window.__scene());
-  const index = sim_place_index(scene.places, placeKey);
-  await page.locator("canvas.place").nth(index).screenshot({ path: out });
+  sim_place_index(scene.places, placeKey);
+  const url = await page.evaluate((k) => window.__show(k), placeKey);
+  writeFileSync(out, Buffer.from(url.slice(url.indexOf(",") + 1), "base64"));
   await browser.close();
   console.log(`${scene.clock}: wrote ${out}`);
 } finally {

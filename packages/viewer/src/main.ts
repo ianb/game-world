@@ -38,14 +38,32 @@ try {
 
 const world = sim.world();
 const canvases: PlaceCanvas[] = [];
+// One place on screen at a time, picked by a tab or by following whoever is pinned.
+const mapEl = $("map");
+const placeTabsEl = $("place-tabs");
+const sections = new Map<number, HTMLElement>();
+const placeTabs = new Map<number, HTMLButtonElement>();
+let activePlace = (world.places.find((p) => p.key === "town") ?? world.places[0])?.id ?? 0;
 for (const place of world.places) {
   const section = document.createElement("section");
-  const h = document.createElement("h2");
-  h.textContent = place.key;
   const canvas = new PlaceCanvas(tileset, place, world.objects, world.roofs);
-  section.append(h, canvas.canvas);
+  section.append(canvas.canvas);
+  section.hidden = place.id !== activePlace;
   placesEl.appendChild(section);
+  sections.set(place.id, section);
   canvases.push(canvas);
+  const tab = document.createElement("button");
+  tab.type = "button";
+  tab.setAttribute("role", "tab");
+  tab.textContent = place.key;
+  tab.addEventListener("click", () => {
+    // Choosing a place stops following someone who is elsewhere.
+    const p = pinned;
+    if (p?.kind === "villager" && sim.villagers().find((v) => v.key === p.key)?.place !== place.id) pinned = null;
+    showPlace(place.id);
+  });
+  placeTabsEl.append(tab);
+  placeTabs.set(place.id, tab);
   canvas.canvas.addEventListener("pointermove", (e) => {
     const t = canvas.tileAt(e.clientX, e.clientY);
     hover = t ? { kind: "tile", place: canvas.id, x: t.x, y: t.y } : null;
@@ -275,12 +293,85 @@ legendEl.append(
   ]),
 );
 
-function fitCanvases(): void {
-  const width = placesEl.clientWidth || window.innerWidth;
-  for (const c of canvases) c.fit(width - 8);
+function showPlace(id: number): void {
+  activePlace = id;
+  for (const [k, section] of sections) section.hidden = k !== id;
+  for (const [k, tab] of placeTabs) tab.setAttribute("aria-selected", String(k === id));
+  applyZoom();
+  drawnTick = -1;
 }
-fitCanvases();
-window.addEventListener("resize", fitCanvases);
+
+// Zoom: the steps keep pixels even; `null` fits the whole place into the map pane.
+const ZOOMS = [0.5, 1, 2, 3];
+let zoom: number | null = null;
+const narrow = window.matchMedia("(max-width: 900px)");
+function fitZoom(c: PlaceCanvas): number {
+  const w = mapEl.clientWidth || window.innerWidth;
+  // Stacked on a narrow screen, the map pane takes its height from the map: fit the width.
+  if (narrow.matches) return Math.min(3, w / c.canvas.width);
+  const h = mapEl.clientHeight || window.innerHeight;
+  return Math.min(3, w / c.canvas.width, h / c.canvas.height);
+}
+function activeCanvas(): PlaceCanvas | undefined {
+  return canvases.find((c) => c.id === activePlace);
+}
+function currentZoom(): number {
+  const c = activeCanvas();
+  return zoom ?? (c ? fitZoom(c) : 1);
+}
+function applyZoom(): void {
+  for (const c of canvases) c.scale(zoom ?? fitZoom(c));
+}
+$("zoom-in").addEventListener("click", () => {
+  zoom = ZOOMS.find((z) => z > currentZoom()) ?? ZOOMS[ZOOMS.length - 1]!;
+  applyZoom();
+});
+$("zoom-out").addEventListener("click", () => {
+  zoom = [...ZOOMS].reverse().find((z) => z < currentZoom()) ?? ZOOMS[0]!;
+  applyZoom();
+});
+$("zoom-fit").addEventListener("click", () => {
+  zoom = null;
+  applyZoom();
+});
+for (const [k, tab] of placeTabs) tab.setAttribute("aria-selected", String(k === activePlace));
+applyZoom();
+window.addEventListener("resize", applyZoom);
+
+/** Keeps a followed villager in view: scrolls the map when they get near its edge. */
+function keepInView(v: VillagerView): void {
+  const c = activeCanvas();
+  if (!c || c.id !== v.place) return;
+  const z = c.canvas.clientWidth / c.canvas.width;
+  const px = (v.pos.x + 0.5) * tileset.size * z;
+  const py = (v.pos.y + 0.5) * tileset.size * z;
+  const margin = 3 * tileset.size * z;
+  const { scrollLeft, scrollTop, clientWidth, clientHeight } = mapEl;
+  if (px < scrollLeft + margin || px > scrollLeft + clientWidth - margin) mapEl.scrollLeft = px - clientWidth / 2;
+  if (py < scrollTop + margin || py > scrollTop + clientHeight - margin) mapEl.scrollTop = py - clientHeight / 2;
+}
+
+/** Place tabs show how many people are in each place. */
+function labelPlaces(villagers: VillagerView[]): void {
+  for (const place of world.places) {
+    const n = villagers.filter((v) => v.place === place.id).length;
+    const text = n ? `${place.key} (${n})` : place.key;
+    const tab = placeTabs.get(place.id);
+    if (tab && tab.textContent !== text) tab.textContent = text;
+  }
+}
+
+// The sidebar's tabs.
+const sideTabs = Array.from(document.querySelectorAll<HTMLButtonElement>("#side-tabs button"));
+for (const b of sideTabs) {
+  b.addEventListener("click", () => {
+    for (const o of sideTabs) {
+      const on = o === b;
+      o.setAttribute("aria-selected", String(on));
+      $(`tab-${o.dataset.tab ?? ""}`).hidden = !on;
+    }
+  });
+}
 
 // Game-minutes per real second. 6 means a day takes four real minutes.
 const SPEEDS = [1, 2, 6, 12, 30, 60, 120, 240];
@@ -316,7 +407,13 @@ function draw(): void {
   listDays();
   const villagers = sim.villagers();
   listEveryone(villagers);
-  for (const c of canvases) c.draw(sim, villagers, highlightFor(c.id, villagers));
+  labelPlaces(villagers);
+  // Follow whoever is pinned, into whatever place they go.
+  const p = pinned;
+  const followed = p?.kind === "villager" ? villagers.find((v) => v.key === p.key) : undefined;
+  if (followed && followed.place !== activePlace) showPlace(followed.place);
+  for (const c of canvases) if (c.id === activePlace) c.draw(sim, villagers, highlightFor(c.id, villagers));
+  if (followed) keepInView(followed);
   inspect(villagers);
 }
 
@@ -365,11 +462,26 @@ $("morning").addEventListener("click", () => {
   drawnTick = -1;
 });
 
-// The days panel: one entry per finished day, news first. Clicking a line replays the town
-// to that moment (from the day's snapshot) and pins whoever it is about.
+// The days panel: one finished day at a time, with buttons to page through, news first and
+// routine folded away. Clicking a line replays the town to that moment (from the day's
+// snapshot) and pins whoever it is about.
 const daysEl = $("days");
+const dayTitleEl = $("day-title");
+const dayPrev = $("day-prev") as HTMLButtonElement;
+const dayNext = $("day-next") as HTMLButtonElement;
 const backEl = $("back") as HTMLButtonElement;
-let shownDays = -1;
+/** The day shown, by index; `null` keeps up with the latest. */
+let dayIndex: number | null = null;
+let shownDays = "";
+function pageDays(step: number): void {
+  const n = sim.summaries().length;
+  if (n === 0) return;
+  const i = Math.min(n - 1, Math.max(0, (dayIndex ?? n - 1) + step));
+  dayIndex = i === n - 1 ? null : i;
+  listDays();
+}
+dayPrev.addEventListener("click", () => pageDays(-1));
+dayNext.addEventListener("click", () => pageDays(1));
 
 function dayTitle(d: DaySummary): string {
   const c = d.calendar;
@@ -406,33 +518,37 @@ function goTo(item: SummaryItem): void {
 
 function listDays(): void {
   const days = sim.summaries();
-  if (days.length === shownDays) return;
-  shownDays = days.length;
-  const frag = document.createDocumentFragment();
-  if (days.length === 0) {
+  const n = days.length;
+  const i = dayIndex ?? n - 1;
+  const key = `${n}:${i}`;
+  if (key === shownDays) return;
+  shownDays = key;
+  dayPrev.disabled = i <= 0;
+  dayNext.disabled = i >= n - 1;
+  const d = days[i];
+  if (!d) {
+    dayTitleEl.textContent = "no days yet";
     const p = document.createElement("p");
     p.className = "muted";
-    p.textContent = "Summaries appear after the first day ends (try +1 day).";
-    frag.append(p);
+    p.textContent = "A summary appears when the first day ends (try to 6am).";
+    daysEl.replaceChildren(p);
+    return;
   }
-  // Most recent first; the latest is open.
-  [...days].reverse().forEach((d, i) => {
-    const details = document.createElement("details");
-    if (i === 0) details.open = true;
-    const summary = document.createElement("summary");
-    summary.textContent = `${dayTitle(d)}: ${d.news.length} unusual, ${d.routine.length} routine`;
-    details.append(summary);
-    for (const item of d.news) details.append(itemButton(item));
-    if (d.routine.length > 0) {
-      const more = document.createElement("details");
-      const label = document.createElement("summary");
-      label.textContent = `${d.routine.length} routine`;
-      more.append(label, ...d.routine.map(itemButton));
-      details.append(more);
-    }
-    frag.append(details);
-  });
+  dayTitleEl.textContent = `${dayTitle(d)}, day ${i + 1} of ${n}`;
+  const frag = document.createDocumentFragment();
+  const head = document.createElement("p");
+  head.className = "muted";
+  head.textContent = d.news.length ? `${d.news.length} unusual` : "nothing unusual";
+  frag.append(head, ...d.news.map(itemButton));
+  if (d.routine.length > 0) {
+    const more = document.createElement("details");
+    const label = document.createElement("summary");
+    label.textContent = `${d.routine.length} routine`;
+    more.append(label, ...d.routine.map(itemButton));
+    frag.append(more);
+  }
   daysEl.replaceChildren(frag);
+  daysEl.parentElement?.scrollTo({ top: 0 });
 }
 
 backEl.addEventListener("click", () => {
@@ -447,6 +563,8 @@ declare global {
     __scene: () => { tick: number; clock: string; everyone: string; hash: string; places: string[]; canvases: number; days: number };
     /** Runs the sim forward by whole days and redraws, for screenshots. */
     __advance: (days: number) => void;
+    /** Puts a place on screen and redraws; returns its canvas as a PNG data URL. */
+    __show: (key: string) => string | null;
   }
 }
 window.__advance = (days: number) => {
@@ -455,6 +573,14 @@ window.__advance = (days: number) => {
   sim.stepUntil(gameTick);
   drawnTick = -1;
   draw();
+};
+window.__show = (key: string) => {
+  const place = world.places.find((p) => p.key === key);
+  if (!place) return null;
+  pinned = null;
+  showPlace(place.id);
+  draw();
+  return activeCanvas()?.canvas.toDataURL("image/png") ?? null;
 };
 window.__scene = () => ({
   tick: sim.tick,

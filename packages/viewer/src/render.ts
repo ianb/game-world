@@ -214,12 +214,9 @@ export class PlaceCanvas {
     this.outdoors = place.kind === "Zone";
   }
 
-  /** Integer upscale so the place fits the given width, at most `max`. Only the width is
-   * set; the height follows, so tiles stay square when the page is narrower than 1x. */
-  fit(width: number, max = 3): void {
-    const scale = Math.max(1, Math.min(max, Math.floor(width / this.canvas.width)));
-    this.canvas.style.width = `${this.canvas.width * scale}px`;
-    this.canvas.style.maxWidth = "100%";
+  /** Shows the place at `zoom` times its pixel size; the height follows the width. */
+  scale(zoom: number): void {
+    this.canvas.style.width = `${this.canvas.width * zoom}px`;
     this.canvas.style.height = "auto";
   }
 
