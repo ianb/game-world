@@ -49,7 +49,9 @@ const page = `<title>Game World</title>
   nav.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px; border-bottom: 1px solid var(--rule); }
   nav.tabs button { min-height: 36px; padding: 4px 10px; }
   nav.tabs button[aria-selected="true"] { outline: 2px solid var(--accent); }
-  #map { flex: 1; min-height: 0; overflow: auto; background: var(--bar); }
+  #map { flex: 1; min-height: 320px; position: relative; overflow: hidden; touch-action: none; cursor: grab; background: var(--bar); }
+  #map.dragging { cursor: grabbing; }
+  #map canvas.place { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
   .tab { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; display: grid; gap: 12px; align-content: start; }
   .tab[hidden], section[hidden] { display: none; }
   pre { margin: 0; white-space: pre; overflow-x: auto; }
@@ -86,7 +88,7 @@ const page = `<title>Game World</title>
   @media (max-width: 900px) {
     body { height: auto; overflow: auto; }
     #app { grid-template-columns: minmax(0, 1fr); }
-    #map { flex: none; max-height: 70vh; }
+    #map { flex: none; height: 60vh; }
     #side { border-left: none; border-top: 1px solid var(--rule); }
     .tab { max-height: 75vh; }
   }

@@ -333,58 +333,205 @@ function showPlace(id: number): void {
   activePlace = id;
   for (const [k, section] of sections) section.hidden = k !== id;
   for (const [k, tab] of placeTabs) tab.setAttribute("aria-selected", String(k === id));
-  applyZoom();
+  applyCamera();
   drawnTick = -1;
 }
 
-// Zoom: the steps keep pixels even; `null` fits the whole place into the map pane.
-const ZOOMS = [0.5, 1, 2, 3];
-let zoom: number | null = null;
-const narrow = window.matchMedia("(max-width: 900px)");
-function fitZoom(c: PlaceCanvas): number {
-  const w = mapEl.clientWidth || window.innerWidth;
-  // Stacked on a narrow screen, the map pane takes its height from the map: fit the width.
-  if (narrow.matches) return Math.min(3, w / c.canvas.width);
-  const h = mapEl.clientHeight || window.innerHeight;
-  return Math.min(3, w / c.canvas.width, h / c.canvas.height);
-}
 function activeCanvas(): PlaceCanvas | undefined {
   return canvases.find((c) => c.id === activePlace);
 }
-function currentZoom(): number {
-  const c = activeCanvas();
-  return zoom ?? (c ? fitZoom(c) : 1);
-}
-function applyZoom(): void {
-  for (const c of canvases) c.scale(zoom ?? fitZoom(c));
-}
-$("zoom-in").addEventListener("click", () => {
-  zoom = ZOOMS.find((z) => z > currentZoom()) ?? ZOOMS[ZOOMS.length - 1]!;
-  applyZoom();
-});
-$("zoom-out").addEventListener("click", () => {
-  zoom = [...ZOOMS].reverse().find((z) => z < currentZoom()) ?? ZOOMS[0]!;
-  applyZoom();
-});
-$("zoom-fit").addEventListener("click", () => {
-  zoom = null;
-  applyZoom();
-});
-for (const [k, tab] of placeTabs) tab.setAttribute("aria-selected", String(k === activePlace));
-applyZoom();
-window.addEventListener("resize", applyZoom);
 
-/** Keeps a followed villager in view: scrolls the map when they get near its edge. */
+// The camera: each place is drawn at its pixel size and moved and scaled inside the map
+// pane. Two-finger scroll or a drag pans; pinch, ctrl+scroll or the buttons zoom. Until
+// someone pans or zooms, a place is fitted to the pane.
+interface Camera {
+  x: number;
+  y: number;
+  z: number;
+  fitted: boolean;
+}
+const cameras = new Map<number, Camera>();
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 6;
+const clampZoom = (z: number): number => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
+
+function paneSize(): { w: number; h: number } {
+  return { w: mapEl.clientWidth || window.innerWidth, h: mapEl.clientHeight || window.innerHeight };
+}
+
+function fitted(c: PlaceCanvas): Camera {
+  const { w, h } = paneSize();
+  const z = clampZoom(Math.min(w / c.canvas.width, h / c.canvas.height));
+  return { x: (w - c.canvas.width * z) / 2, y: (h - c.canvas.height * z) / 2, z, fitted: true };
+}
+
+function camera(): Camera | undefined {
+  const c = activeCanvas();
+  if (!c) return undefined;
+  let cam = cameras.get(c.id);
+  if (!cam || cam.fitted) {
+    cam = fitted(c);
+    cameras.set(c.id, cam);
+  }
+  return cam;
+}
+
+/** Keeps the middle of the pane over the place, so it cannot be lost off screen. */
+function applyCamera(): void {
+  const c = activeCanvas();
+  const cam = camera();
+  if (!c || !cam) return;
+  const { w, h } = paneSize();
+  const cw = c.canvas.width * cam.z;
+  const ch = c.canvas.height * cam.z;
+  cam.x = Math.min(w / 2, Math.max(w / 2 - cw, cam.x));
+  cam.y = Math.min(h / 2, Math.max(h / 2 - ch, cam.y));
+  c.canvas.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})`;
+}
+
+/** Zooms by `f` keeping the pane point (px, py) where it is. */
+function zoomAt(f: number, px: number, py: number): void {
+  const cam = camera();
+  if (!cam) return;
+  const z = clampZoom(cam.z * f);
+  const k = z / cam.z;
+  cam.x = px - (px - cam.x) * k;
+  cam.y = py - (py - cam.y) * k;
+  cam.z = z;
+  cam.fitted = false;
+  applyCamera();
+}
+
+function panBy(dx: number, dy: number): void {
+  const cam = camera();
+  if (!cam) return;
+  cam.x += dx;
+  cam.y += dy;
+  cam.fitted = false;
+  applyCamera();
+}
+
+const paneCentre = (): [number, number] => {
+  const { w, h } = paneSize();
+  return [w / 2, h / 2];
+};
+$("zoom-in").addEventListener("click", () => zoomAt(1.5, ...paneCentre()));
+$("zoom-out").addEventListener("click", () => zoomAt(1 / 1.5, ...paneCentre()));
+$("zoom-fit").addEventListener("click", () => {
+  const c = activeCanvas();
+  if (c) cameras.set(c.id, fitted(c));
+  applyCamera();
+});
+
+// Trackpads send two-finger scrolls as wheel events, and pinches as wheel events with
+// ctrlKey (Chrome, Firefox) or as gesture events (Safari).
+mapEl.addEventListener(
+  "wheel",
+  (e) => {
+    e.preventDefault();
+    const r = mapEl.getBoundingClientRect();
+    if (e.ctrlKey || e.metaKey) {
+      // A trackpad pinch sends small deltas, a mouse wheel's notches large ones.
+      const f = Math.min(1.5, Math.max(1 / 1.5, Math.exp(-e.deltaY * 0.01)));
+      zoomAt(f, e.clientX - r.left, e.clientY - r.top);
+    } else {
+      const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? r.height : 1;
+      panBy(-e.deltaX * k, -e.deltaY * k);
+    }
+  },
+  { passive: false },
+);
+let gestureScale = 1;
+mapEl.addEventListener("gesturestart", (e) => {
+  e.preventDefault();
+  gestureScale = 1;
+});
+mapEl.addEventListener("gesturechange", (e) => {
+  e.preventDefault();
+  const g = e as unknown as { scale: number; clientX: number; clientY: number };
+  const r = mapEl.getBoundingClientRect();
+  zoomAt(g.scale / gestureScale, g.clientX - r.left, g.clientY - r.top);
+  gestureScale = g.scale;
+});
+
+// Dragging pans (a mouse, or one finger); two fingers on a touch screen pinch. A drag is
+// not a click, so it does not pin what it started on.
+const pointers = new Map<number, { x: number; y: number }>();
+let dragged = false;
+let pressed: { x: number; y: number } | null = null;
+mapEl.addEventListener("pointerdown", (e) => {
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 1) {
+    pressed = { x: e.clientX, y: e.clientY };
+    dragged = false;
+  }
+});
+mapEl.addEventListener("pointermove", (e) => {
+  const prev = pointers.get(e.pointerId);
+  if (!prev) return;
+  const now = { x: e.clientX, y: e.clientY };
+  if (pointers.size === 1) {
+    if (!dragged && pressed && Math.hypot(now.x - pressed.x, now.y - pressed.y) > 4) {
+      dragged = true;
+      mapEl.setPointerCapture(e.pointerId);
+      mapEl.classList.add("dragging");
+    }
+    if (dragged) panBy(now.x - prev.x, now.y - prev.y);
+  } else if (pointers.size === 2) {
+    const other = [...pointers].find(([id]) => id !== e.pointerId)?.[1];
+    if (other) {
+      const r = mapEl.getBoundingClientRect();
+      const before = Math.hypot(prev.x - other.x, prev.y - other.y);
+      const after = Math.hypot(now.x - other.x, now.y - other.y);
+      if (before > 0) zoomAt(after / before, (now.x + other.x) / 2 - r.left, (now.y + other.y) / 2 - r.top);
+      panBy((now.x - prev.x) / 2, (now.y - prev.y) / 2);
+      dragged = true;
+    }
+  }
+  pointers.set(e.pointerId, now);
+});
+const release = (e: PointerEvent): void => {
+  pointers.delete(e.pointerId);
+  if (pointers.size === 0) mapEl.classList.remove("dragging");
+};
+mapEl.addEventListener("pointerup", release);
+mapEl.addEventListener("pointercancel", release);
+mapEl.addEventListener(
+  "click",
+  (e) => {
+    if (!dragged) return;
+    dragged = false;
+    e.stopPropagation();
+    e.preventDefault();
+  },
+  true,
+);
+
+for (const [k, tab] of placeTabs) tab.setAttribute("aria-selected", String(k === activePlace));
+applyCamera();
+window.addEventListener("resize", applyCamera);
+new ResizeObserver(applyCamera).observe(mapEl);
+
+/** Keeps a followed villager in view: moves the camera when they get near the edge. */
 function keepInView(v: VillagerView): void {
   const c = activeCanvas();
-  if (!c || c.id !== v.place) return;
-  const z = c.canvas.clientWidth / c.canvas.width;
-  const px = (v.pos.x + 0.5) * tileset.size * z;
-  const py = (v.pos.y + 0.5) * tileset.size * z;
-  const margin = 3 * tileset.size * z;
-  const { scrollLeft, scrollTop, clientWidth, clientHeight } = mapEl;
-  if (px < scrollLeft + margin || px > scrollLeft + clientWidth - margin) mapEl.scrollLeft = px - clientWidth / 2;
-  if (py < scrollTop + margin || py > scrollTop + clientHeight - margin) mapEl.scrollTop = py - clientHeight / 2;
+  const cam = camera();
+  if (!c || !cam || c.id !== v.place) return;
+  const { w, h } = paneSize();
+  const s = tileset.size * cam.z;
+  const px = cam.x + (v.pos.x + 0.5) * s;
+  const py = cam.y + (v.pos.y + 0.5) * s;
+  const margin = Math.min(3 * s, w / 4, h / 4);
+  let moved = false;
+  if (px < margin || px > w - margin) {
+    cam.x = w / 2 - (v.pos.x + 0.5) * s;
+    moved = true;
+  }
+  if (py < margin || py > h - margin) {
+    cam.y = h / 2 - (v.pos.y + 0.5) * s;
+    moved = true;
+  }
+  if (moved) applyCamera();
 }
 
 /** Place tabs show how many people are in each place. */

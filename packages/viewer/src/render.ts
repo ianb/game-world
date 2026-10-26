@@ -214,12 +214,6 @@ export class PlaceCanvas {
     this.outdoors = place.kind === "Zone";
   }
 
-  /** Shows the place at `zoom` times its pixel size; the height follows the width. */
-  scale(zoom: number): void {
-    this.canvas.style.width = `${this.canvas.width * zoom}px`;
-    this.canvas.style.height = "auto";
-  }
-
   /** The tile under a mouse or touch position on the canvas, or null when off it. */
   tileAt(clientX: number, clientY: number): { x: number; y: number } | null {
     const r = this.canvas.getBoundingClientRect();
