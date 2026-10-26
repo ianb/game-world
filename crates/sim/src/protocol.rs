@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 18;
+pub const PROTOCOL_VERSION: u32 = 19;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -909,6 +909,58 @@ pub struct MindView {
 pub struct ThoughtView {
     pub tick: Tick,
     pub thought: Thought,
+}
+
+/// What a gesture is, for a reader browsing them: how far it carries (in tiles: the words,
+/// the gist, raised voices; 0 for none), how warm it conventionally is, and how warm each
+/// villager with a program of their own takes it.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct GestureView {
+    pub gesture: Gesture,
+    pub words: u16,
+    pub gist: u16,
+    pub noise: u16,
+    pub warmth: i8,
+    pub by: Vec<WarmthView>,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct WarmthView {
+    pub who: VillagerId,
+    pub warmth: i8,
+}
+
+#[must_use]
+pub fn gesture_views<C: CharacterSet>(sim: &Sim<C>) -> Vec<GestureView> {
+    let ctx = sim.ctx();
+    Gesture::ALL
+        .iter()
+        .map(|&g| {
+            let (words, gist, noise) = g.carry().reach();
+            let by = (0..sim.state().villagers.len())
+                .map(|i| VillagerId(u16::try_from(i).expect("few villagers")))
+                .filter_map(|who| {
+                    let mind = sim.state().characters.interlocutor_ref(who, &ctx)?;
+                    Some(WarmthView {
+                        who,
+                        warmth: mind.warmth_of(g),
+                    })
+                })
+                .collect();
+            GestureView {
+                gesture: g,
+                words,
+                gist,
+                noise,
+                warmth: g.warmth(),
+                by,
+            }
+        })
+        .collect()
 }
 
 /// How many recent episodes and heard things a `MindView` carries.

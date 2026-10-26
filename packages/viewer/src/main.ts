@@ -3,6 +3,7 @@
 import * as wasm from "@game-world/sim-wasm";
 import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type DaySummary, type MindView, type Sim, type StockView, type SummaryItem, type Topic, type VillagerView } from "@game-world/protocol";
 import { PlaceCanvas, Tileset, legend } from "./render";
+import { Words, type TopicDef, type Word } from "./words";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const clockEl = $("clock");
@@ -19,10 +20,12 @@ async function loadContent(): Promise<string> {
 let sim: Sim;
 /** Topic glosses by id, from the content. */
 const glosses = new Map<string, string>();
+let topicDefs: TopicDef[] = [];
 try {
   const contentJson = await loadContent();
   sim = LocalSim.create(wasm, 1, contentJson);
-  for (const t of (JSON.parse(contentJson) as { topics?: { id: string; gloss: string }[] }).topics ?? []) glosses.set(t.id, t.gloss);
+  topicDefs = (JSON.parse(contentJson) as { topics?: TopicDef[] }).topics ?? [];
+  for (const t of topicDefs) glosses.set(t.id, t.gloss);
 } catch (e) {
   clockEl.textContent = `failed to start: ${String(e)}`;
   throw e;
@@ -142,14 +145,28 @@ const signed = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
 /** "SmallTalk" as "small talk". */
 const words = (name: string): string => name.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
 
+/** A line of the inspector: text, or text with words that open the words tab. */
+type Seg = string | { word: Word; label: string };
+type Line = string | Seg[];
+
+/** A topic chip from a label as views show it ("money (Mara)"): the topic whose gloss it
+ * starts with. */
+function topicSeg(label: string): Seg {
+  let best: string | null = null;
+  for (const [id, gloss] of glosses) {
+    if (label.startsWith(gloss) && (best === null || gloss.length > (glosses.get(best)?.length ?? 0))) best = id;
+  }
+  return best ? { word: { kind: "topic", key: best }, label } : label;
+}
+
 /** Persona, mood, how they see the people they have talked to, and recent memory. */
-function describeMind(m: MindView, villagers: VillagerView[]): string[] {
+function describeMind(m: MindView, villagers: VillagerView[]): Line[] {
   const name = (id: number): string => villagers[id]?.name ?? "?";
-  const lines = [
+  const lines: Line[] = [
     "",
     `sociable ${signed(m.sociable)}, warmth ${signed(m.warmth)}, charity ${signed(m.charity)}`,
     `skill ${m.skill}/10, rejection sensitivity ${m.rejection_sensitivity}/10`,
-    `mood ${signed(m.mood)}${m.worry ? `; on their mind: ${m.worry}` : ""}`,
+    m.worry ? [`mood ${signed(m.mood)}; on their mind: `, topicSeg(m.worry)] : `mood ${signed(m.mood)}`,
   ];
   for (const r of m.regard) {
     lines.push(`sees ${name(r.with)}: ${r.familiarity} talks, feeling ${signed(r.feeling)}, seemed ${signed(r.last_seemed)} last time`);
@@ -165,20 +182,20 @@ function describeMind(m: MindView, villagers: VillagerView[]): string[] {
       t.blame === "Me" ? "blames themself" : t.blame === "World" ? "blames the world" : t.blame === "Luck" ? "puts it down to luck" : `blames ${name(t.blame.Them)}`;
     const span = [t.lasting ? "for good" : "", t.everywhere ? "for everything" : ""].filter(Boolean).join(" and ");
     const about = topicText(t.about, name);
-    lines.push(`  ${sinceText(tick)} ${blame}${span ? `, ${span}` : ""}: ${about}${t.aloud ? ", aloud" : ""}`);
+    lines.push([`  ${sinceText(tick)} ${blame}${span ? `, ${span}` : ""}: `, { word: { kind: "topic", key: t.about.key }, label: about }, t.aloud ? ", aloud" : ""]);
   }
   if (m.heard.length) lines.push("heard:");
   for (const h of m.heard) {
     const to = h.caught === "Addressed" ? "" : h.to === null ? ", overheard from afar" : ` to ${name(h.to)}, overheard`;
-    const what = h.topic === null ? "" : ` "${h.topic}"`;
-    lines.push(`  ${sinceText(h.tick)} ${name(h.speaker)}${to}: ${words(h.gesture)}${what}${h.about_me ? " (about me)" : ""}`);
+    const what: Seg[] = h.topic === null ? [] : [' "', topicSeg(h.topic), '"'];
+    lines.push([`  ${sinceText(h.tick)} ${name(h.speaker)}${to}: `, { word: { kind: "gesture", name: h.gesture }, label: words(h.gesture) }, ...what, h.about_me ? " (about me)" : ""]);
   }
   return lines;
 }
 
-function describeVillager(v: VillagerView, stock: StockView[]): string[] {
+function describeVillager(v: VillagerView, stock: StockView[]): Line[] {
   const place = world.places.find((p) => p.id === v.place);
-  const lines = [
+  const lines: Line[] = [
     `${v.name}`,
     `${v.activity}${v.heading_for ? ` (heading for ${v.heading_for})` : ""} since ${sinceText(v.since)}`,
     `because: ${causeText(v.cause, sim.villagers())}`,
@@ -192,12 +209,12 @@ function describeVillager(v: VillagerView, stock: StockView[]): string[] {
   return lines;
 }
 
-function describeTile(f: { place: number; x: number; y: number }, villagers: VillagerView[], stock: StockView[]): string[] {
+function describeTile(f: { place: number; x: number; y: number }, villagers: VillagerView[], stock: StockView[]): Line[] {
   const place = world.places.find((p) => p.id === f.place);
   if (!place) return ["?"];
   const i = f.y * place.width + f.x;
   const cell = place.cells[i] ?? "Void";
-  const lines = [`${place.key} (${f.x}, ${f.y})`];
+  const lines: Line[] = [`${place.key} (${f.x}, ${f.y})`];
   if (place.kind === "Zone") {
     const t = sim.terrain(place.key);
     const surface = t.tiles[i];
@@ -221,19 +238,38 @@ function describeTile(f: { place: number; x: number; y: number }, villagers: Vil
 function inspect(villagers: VillagerView[]): void {
   const focus = pinned ?? hover;
   if (!focus) {
+    shownInspect = "";
     inspectEl.textContent = "hover or click a tile; click a name for the person";
     return;
   }
   const stock = sim.economy();
-  const lines =
+  const lines: Line[] =
     focus.kind === "villager"
       ? (() => {
           const v = villagers.find((x) => x.key === focus.key);
           return v ? describeVillager(v, stock) : ["?"];
         })()
       : describeTile(focus, villagers, stock);
-  inspectEl.textContent = (pinned ? "pinned: " : "") + lines.join("\n");
+  lines[0] = [pinned ? "pinned: " : "", ...(typeof lines[0] === "string" ? [lines[0]] : (lines[0] ?? []))];
+  // Rebuilt only when the text changes, so a word can be clicked between redraws.
+  const text = lines.map((l) => (typeof l === "string" ? l : l.map((s) => (typeof s === "string" ? s : s.label)).join(""))).join("\n");
+  if (text === shownInspect) return;
+  shownInspect = text;
+  const frag = document.createDocumentFragment();
+  lines.forEach((l, i) => {
+    if (i > 0) frag.append("\n");
+    for (const s of typeof l === "string" ? [l] : l) {
+      if (typeof s === "string") frag.append(s);
+      else {
+        const b = wordsPanel.chip(s.word, s.label);
+        b.addEventListener("click", () => selectSideTab("words"));
+        frag.append(b);
+      }
+    }
+  });
+  inspectEl.replaceChildren(frag);
 }
+let shownInspect = "";
 
 /** Where to draw the highlight on a place, from the focus. */
 function highlightFor(placeId: number, villagers: VillagerView[]): { x: number; y: number } | null {
@@ -363,15 +399,15 @@ function labelPlaces(villagers: VillagerView[]): void {
 
 // The sidebar's tabs.
 const sideTabs = Array.from(document.querySelectorAll<HTMLButtonElement>("#side-tabs button"));
-for (const b of sideTabs) {
-  b.addEventListener("click", () => {
-    for (const o of sideTabs) {
-      const on = o === b;
-      o.setAttribute("aria-selected", String(on));
-      $(`tab-${o.dataset.tab ?? ""}`).hidden = !on;
-    }
-  });
+function selectSideTab(name: string): void {
+  for (const o of sideTabs) {
+    const on = o.dataset.tab === name;
+    o.setAttribute("aria-selected", String(on));
+    $(`tab-${o.dataset.tab ?? ""}`).hidden = !on;
+  }
+  if (name === "words") wordsPanel.render(true);
 }
+for (const b of sideTabs) b.addEventListener("click", () => selectSideTab(b.dataset.tab ?? "people"));
 
 // Game-minutes per real second. 6 means a day takes four real minutes.
 const SPEEDS = [1, 2, 6, 12, 30, 60, 120, 240];
@@ -383,8 +419,26 @@ for (const [i, s] of SPEEDS.entries()) {
   speedSelect.add(new Option(`${s} min/s, a day in ${length}`, String(i), i === speedIndex, i === speedIndex));
 }
 let paused = false;
+// The words tab, fed by every step the sim takes.
+const DAY_TICKS = 24 * 60 * TICKS_PER_MINUTE;
+const villagerName = (id: number): string => sim.villagers()[id]?.name ?? "?";
+const wordsPanel = new Words({
+  el: $("words"),
+  topics: topicDefs,
+  gestures: sim.gestures(),
+  name: villagerName,
+  topicText: (t) => topicText(t, villagerName),
+  timeText: (tick) => `day ${Math.floor(tick / DAY_TICKS) + 1} ${sinceText(tick)}`,
+  replay: (tick) => replayTo(tick, null),
+});
+let wordsDrawn = 0;
+
 let gameTick = at(0, 6);
-sim.stepUntil(gameTick);
+/** Steps the sim to `gameTick`, indexing what happened. */
+function step(): void {
+  wordsPanel.add(sim.stepUntil(gameTick), gameTick);
+}
+step();
 let drawnTick = -1;
 let drawnPaused = !paused;
 
@@ -414,6 +468,11 @@ function draw(): void {
   if (followed && followed.place !== activePlace) showPlace(followed.place);
   for (const c of canvases) if (c.id === activePlace) c.draw(sim, villagers, highlightFor(c.id, villagers));
   if (followed) keepInView(followed);
+  // The words tab, at most once a second while it is open.
+  if (!$("tab-words").hidden && performance.now() - wordsDrawn > 1000) {
+    wordsDrawn = performance.now();
+    wordsPanel.render();
+  }
   inspect(villagers);
 }
 
@@ -430,7 +489,7 @@ function frame(now: number): void {
     if (whole > 0) {
       carry -= whole;
       gameTick += whole;
-      sim.stepUntil(gameTick);
+      step();
     }
   }
   draw();
@@ -457,7 +516,7 @@ $("morning").addEventListener("click", () => {
   let target = Math.floor(sim.tick / day) * day + 6 * 60 * TICKS_PER_MINUTE;
   if (target <= sim.tick) target += day;
   gameTick = target;
-  sim.stepUntil(gameTick);
+  step();
   paused = false;
   drawnTick = -1;
 });
@@ -506,11 +565,16 @@ function itemButton(item: SummaryItem): HTMLButtonElement {
 }
 
 function goTo(item: SummaryItem): void {
-  sim.rewind(item.tick);
-  gameTick = item.tick;
+  replayTo(item.tick, item.who);
+}
+
+/** Replays the town to `tick`, paused, pinning `who` if given. */
+function replayTo(tick: number, who: number | null): void {
+  sim.rewind(tick);
+  gameTick = tick;
   paused = true;
-  if (item.who !== null) {
-    const v = sim.villagers().find((x) => x.id === item.who);
+  if (who !== null) {
+    const v = sim.villagers().find((x) => x.id === who);
     if (v) pinned = { kind: "villager", key: v.key };
   }
   drawnTick = -1;
@@ -570,7 +634,7 @@ declare global {
 window.__advance = (days: number) => {
   paused = true;
   gameTick += Math.max(0, Math.floor(days)) * 24 * 60 * TICKS_PER_MINUTE;
-  sim.stepUntil(gameTick);
+  step();
   drawnTick = -1;
   draw();
 };

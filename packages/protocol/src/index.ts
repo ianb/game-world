@@ -10,8 +10,9 @@ import type { StockView } from "./generated/StockView";
 import type { RulesView } from "./generated/RulesView";
 import type { DaySummary } from "./generated/DaySummary";
 import type { MindView } from "./generated/MindView";
+import type { GestureView } from "./generated/GestureView";
 
-export type { Emitted, Input, VillagerView, WorldView, ClockView, TerrainView, StockView, RulesView, DaySummary, MindView };
+export type { Emitted, Input, VillagerView, WorldView, ClockView, TerrainView, StockView, RulesView, DaySummary, MindView, GestureView };
 export type { RegardView } from "./generated/RegardView";
 export type { EpisodeView } from "./generated/EpisodeView";
 export type { HeardView } from "./generated/HeardView";
@@ -48,7 +49,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 18;
+export const PROTOCOL_VERSION = 19;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;
@@ -81,6 +82,7 @@ export interface WasmSim {
   rules(): unknown;
   summaries(): unknown;
   mind(key: string): unknown;
+  gestures(): unknown;
   frontier(): number;
   rewind(tick: number): void;
   back_to_now(): void;
@@ -126,6 +128,8 @@ export interface Sim {
   /** A villager's persona, mood, view of others and recent memory; null for one with no
    * program of their own. Throws for an unknown key. */
   mind(key: string): MindView | null;
+  /** Every gesture: how far it carries and how warm each villager takes it. */
+  gestures(): GestureView[];
   /** The furthest tick ever reached. */
   readonly frontier: number;
   /** Replays the past up to `tick`; inputs are refused until `backToNow`. */
@@ -234,6 +238,9 @@ export class LocalSim implements Sim {
   }
   mind(key: string): MindView | null {
     return this.guard(() => (this.inner.mind(key) as MindView | undefined) ?? null);
+  }
+  gestures(): GestureView[] {
+    return this.guard(() => this.inner.gestures() as GestureView[]);
   }
   get frontier(): number {
     return this.guard(() => this.inner.frontier());

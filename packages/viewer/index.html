@@ -50,6 +50,13 @@
       canvas.legend { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
       button { font: inherit; min-height: 44px; min-width: 64px; }
       button:disabled { opacity: 0.4; }
+      #words { display: grid; gap: 8px; align-content: start; }
+      #words h2 { font-size: 13px; color: #999; margin: 8px 0 0; }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+      button.word { min-height: 32px; min-width: 0; padding: 2px 8px; }
+      #inspect button.word { min-height: 0; padding: 0 4px; font: inherit; }
+      .word-head { white-space: pre-wrap; }
+      #words button.moment { grid-template-columns: 11ch 1fr; }
       @media (max-width: 900px) {
         body { height: auto; overflow: auto; }
         #app { grid-template-columns: minmax(0, 1fr); }
@@ -77,6 +84,7 @@
         <nav class="tabs" id="side-tabs" role="tablist" aria-label="Panels">
           <button role="tab" data-tab="people" aria-selected="true">people</button>
           <button role="tab" data-tab="days" aria-selected="false">days</button>
+          <button role="tab" data-tab="words" aria-selected="false">words</button>
           <button role="tab" data-tab="key" aria-selected="false">key</button>
         </nav>
         <div class="tab" id="tab-people" role="tabpanel">
@@ -90,6 +98,9 @@
             <button id="day-next" aria-label="later day">▶</button>
           </div>
           <section id="days" aria-label="What happened that day"></section>
+        </div>
+        <div class="tab" id="tab-words" role="tabpanel" hidden>
+          <div id="words"></div>
         </div>
         <div class="tab" id="tab-key" role="tabpanel" hidden>
           <div id="legend"></div>

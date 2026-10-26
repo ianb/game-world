@@ -75,6 +75,13 @@ const page = `<title>Game World</title>
   a { color: var(--accent); }
   button { font: inherit; min-height: 44px; min-width: 64px; background: var(--bg); color: var(--fg); border: 1px solid var(--rule); border-radius: 4px; }
   button:disabled { opacity: 0.4; }
+  #words { display: grid; gap: 8px; align-content: start; }
+  #words h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 8px 0 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  button.word { min-height: 32px; min-width: 0; padding: 2px 8px; }
+  #inspect button.word { min-height: 0; padding: 0 4px; font: inherit; }
+  .word-head { white-space: pre-wrap; }
+  #words button.moment { grid-template-columns: 11ch 1fr; }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @media (max-width: 900px) {
     body { height: auto; overflow: auto; }

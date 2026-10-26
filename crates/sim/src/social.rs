@@ -105,6 +105,57 @@ impl Frame {
 }
 
 impl Gesture {
+    /// Every gesture, in declaration order. `listed` below has to name each one, so a new
+    /// gesture fails to compile until it is added here too.
+    pub const ALL: [Gesture; 19] = [
+        Gesture::Ask,
+        Gesture::Tell,
+        Gesture::Agree,
+        Gesture::Joke,
+        Gesture::Tease,
+        Gesture::Compliment,
+        Gesture::Complain,
+        Gesture::Request,
+        Gesture::Offer,
+        Gesture::Thank,
+        Gesture::Sympathise,
+        Gesture::Disclose,
+        Gesture::Decline,
+        Gesture::Invite,
+        Gesture::Leave,
+        Gesture::Jab,
+        Gesture::Awkward,
+        Gesture::Rebuff,
+        Gesture::Pry,
+    ];
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    #[cfg(test)]
+    fn listed(self) -> bool {
+        use Gesture as G;
+        match self {
+            G::Ask
+            | G::Tell
+            | G::Agree
+            | G::Joke
+            | G::Tease
+            | G::Compliment
+            | G::Complain
+            | G::Request
+            | G::Offer
+            | G::Thank
+            | G::Sympathise
+            | G::Disclose
+            | G::Decline
+            | G::Invite
+            | G::Leave
+            | G::Jab
+            | G::Awkward
+            | G::Rebuff
+            | G::Pry => Gesture::ALL.contains(&self),
+        }
+    }
+
     /// How warm the move is, from -3 to 2, as conventionally meant.
     #[must_use]
     pub fn warmth(self) -> i8 {
@@ -1182,6 +1233,12 @@ impl Interlocutor for Plain {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn every_gesture_is_in_all() {
+        assert!(Gesture::ALL.iter().all(|g| g.listed()));
+    }
+
     use super::*;
 
     fn episode(with: u16, peak: i8, end: i8) -> Episode {

@@ -48,7 +48,10 @@ not on the page. Hover a tile to see what it is and its numbers, click to
 pin it, or click a name in the people tab to follow that person from place
 to place: activity, why, coins and needs. The days tab pages through
 finished days, what was unusual first; click a line to replay the town to
-that moment, and "back to now" to return. The art is
+that moment, and "back to now" to return. The words tab lists every topic
+and gesture with how often it has come up; open one for who uses it, how
+far a gesture carries and how each villager takes it, and each time it
+came up. Topics and gestures in the inspector open there too. The art is
 Liberated Pixel Cup tiles and villagers (CC-BY-SA), composed into
 `packages/viewer/public/tiles.png` by `scripts/make-tileset.mjs`
 (`just tileset`); sources, credits and how to change an outfit are in

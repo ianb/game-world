@@ -163,6 +163,11 @@ impl Sim {
         to_js(&sim::protocol::mind_view(sim, who))
     }
 
+    /// Every gesture as a `GestureView[]`: its reach and how warm each villager takes it.
+    pub fn gestures(&self) -> Result<JsValue, JsError> {
+        to_js(&sim::protocol::gesture_views(self.history.sim()))
+    }
+
     /// The clock as a `ClockView`.
     pub fn clock(&self) -> Result<JsValue, JsError> {
         to_js(&sim::protocol::clock_view(self.history.sim()))
