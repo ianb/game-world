@@ -772,7 +772,7 @@ backEl.addEventListener("click", () => {
 declare global {
   interface Window {
     __scene: () => { tick: number; clock: string; everyone: string; hash: string; places: string[]; canvases: number; days: number };
-    /** Runs the sim forward by whole days and redraws, for screenshots. */
+    /** Runs the sim forward by days (to the minute) and redraws, for screenshots. */
     __advance: (days: number) => void;
     /** Puts a place on screen and redraws; returns its canvas as a PNG data URL. */
     __show: (key: string) => string | null;
@@ -780,7 +780,7 @@ declare global {
 }
 window.__advance = (days: number) => {
   paused = true;
-  gameTick += Math.max(0, Math.floor(days)) * 24 * 60 * TICKS_PER_MINUTE;
+  gameTick += Math.max(0, Math.round(days * 24 * 60)) * TICKS_PER_MINUTE;
   step();
   drawnTick = -1;
   draw();

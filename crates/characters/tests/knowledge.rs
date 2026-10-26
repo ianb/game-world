@@ -18,7 +18,8 @@ fn weeks(seed: u64, weeks: u32) -> Vec<Emitted> {
 
 #[test]
 fn news_about_someone_is_passed_on_to_someone_else() {
-    let events = weeks(1, 2);
+    // On seed 1 the first is in the third week.
+    let events = weeks(1, 3);
     let passed_on = events
         .iter()
         .filter(|e| {
@@ -34,10 +35,10 @@ fn news_about_someone_is_passed_on_to_someone_else() {
 
 #[test]
 fn a_gift_cites_words_that_were_said_to_the_giver() {
-    // On seed 1, Nell gives Mara coins twice in the fourth week: once after Mara tells her
-    // about her money trouble, once after Pip passes it on.
-    let seed = 1;
-    let events = weeks(seed, 4);
+    // On seed 6, Nell gives Mara coins three times in six weeks: twice after Pip passes on
+    // her money trouble, once after Mara tells her herself.
+    let seed = 6;
+    let events = weeks(seed, 6);
     let gifts: Vec<_> = events
         .iter()
         .filter_map(|e| match e {

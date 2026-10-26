@@ -1120,3 +1120,28 @@ Decided and built:
 Implications: anything we draw by editing LPC art is share-alike too.
 Sleeping villagers are shown by name only, since LPC has no lying-down
 frames. Roofs are still not drawn; interiors stay visible from above.
+
+## 2026-10-26: Conversations need reach
+
+Ian, replaying a moment from the words tab: "I clicked on 'Pip and Mara:
+greeting about a greeting' But they don't seem to be near each other", then
+"Oh wait, maybe Pip and Mara are actually on top of each other in the
+flashback".
+
+Both were true. At the bakery counter Pip and Mara stood on the same tile and
+were drawn as one. Elsewhere, an encounter (same room, or within 6 tiles
+outdoors) started a conversation where it was, so people talked across the
+square.
+
+Decided and built:
+
+- A conversation starts only within `TALK_REACH` (2 tiles, same place).
+  Further than that, the one who started it walks over first and starts it
+  on arrival. Encounters still fire at 6 tiles; reach applies to the talk.
+- Villagers on one tile are drawn side by side, talkers face each other, and
+  their names stack.
+- A conversation whose frame is its own topic is summarized as just the
+  frame ("greeting", not "greeting about a greeting").
+
+Implications: encounter chats take a little walking time, and the walk can
+be interrupted like any other. Snapshot 12.

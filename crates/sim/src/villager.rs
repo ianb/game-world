@@ -1,9 +1,9 @@
 //! Per-villager simulation state: where they are, where they are going, what they are doing.
 use crate::brain::Command;
 use crate::brain::Target;
-use crate::ids::PlaceId;
+use crate::ids::{PlaceId, VillagerId};
 use crate::needs::Needs;
-use crate::protocol::Cause;
+use crate::protocol::{Cause, Frame, Topic};
 use crate::time::Tick;
 use content::Pos;
 use serde::{Deserialize, Serialize};
@@ -75,6 +75,21 @@ pub struct VillagerState {
     pub cause: Cause,
     /// The cause to restore when the walk back from an errand ends.
     pub resume_cause: Option<Cause>,
+    /// A conversation to start on arriving next to someone, walked over to because they
+    /// were too far away to talk to.
+    pub approach: Option<Approach>,
+}
+
+/// A conversation waiting for its starter to reach the other person.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Approach {
+    pub with: VillagerId,
+    pub frame: Frame,
+    pub topic: Topic,
+    pub minutes: u32,
+    pub cause: Cause,
+    /// Ticks left on a `Wait` the walk interrupted, re-armed on arrival.
+    pub wait_left: Option<u32>,
 }
 
 /// An errand that returns the villager to where they were.

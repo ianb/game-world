@@ -475,6 +475,9 @@ pub const ENCOUNTER_COOLDOWN: u32 = 20 * 60;
 
 /// How close two villagers outdoors must be to count as meeting.
 pub const ENCOUNTER_RANGE: u16 = 6;
+/// How close two people must be to talk, in tiles; further, the one who wants to talk
+/// walks over first.
+pub const TALK_REACH: u16 = 2;
 
 /// All characters in a town. Implemented once per town by the `characters` crate with a
 /// typed struct per villager; the sim stays generic over it.

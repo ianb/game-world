@@ -69,8 +69,9 @@ export class Tileset {
     ctx.drawImage(this.image, t.col * s + qx * h, t.row * s + qy * h, h, h, x * s + qx * h, y * s + qy * h, h, h);
   }
 
-  /** A villager standing (frame 0) or mid-step, feet on the bottom of their cell. */
-  drawVillager(ctx: CanvasRenderingContext2D, key: string, facing: Facing, frame: number, x: number, y: number): void {
+  /** A villager standing (frame 0) or mid-step, feet on the bottom of their cell, shifted
+   * `dx` pixels when sharing the cell. */
+  drawVillager(ctx: CanvasRenderingContext2D, key: string, facing: Facing, frame: number, x: number, y: number, dx = 0): void {
     const v = this.atlas.villagers;
     const top = v.top[key] ?? Object.values(v.top)[0];
     if (top === undefined) return;
@@ -78,8 +79,46 @@ export class Tileset {
     const f = v.frame;
     const sx = (frame % v.frames) * f;
     const sy = top + FACING_ROW[facing] * f;
-    ctx.drawImage(this.image, sx, sy, f, f, x * s + s / 2 - f / 2, (y + 1) * s - f + FEET, f, f);
+    ctx.drawImage(this.image, sx, sy, f, f, x * s + s / 2 - f / 2 + dx, (y + 1) * s - f + FEET, f, f);
   }
+}
+
+/** People on the same cell (at a counter, say) stand side by side: pixel shifts by key. */
+function spread(villagers: VillagerView[], tile: number): Map<string, number> {
+  const cells = new Map<string, VillagerView[]>();
+  for (const v of villagers) {
+    if (v.activity === "sleep") continue;
+    const k = `${v.pos.x},${v.pos.y}`;
+    cells.set(k, [...(cells.get(k) ?? []), v]);
+  }
+  const shift = new Map<string, number>();
+  const step = tile * 0.6;
+  for (const group of cells.values()) {
+    group.sort((a, b) => (a.key < b.key ? -1 : 1));
+    group.forEach((v, i) => shift.set(v.key, (i - (group.length - 1) / 2) * step));
+  }
+  return shift;
+}
+
+/** Someone talking faces the nearest other person who is talking. */
+function facePartner(v: VillagerView, here: VillagerView[]): Facing | null {
+  let best: VillagerView | null = null;
+  let bestD = Infinity;
+  for (const o of here) {
+    if (o.key === v.key || o.activity !== "talk") continue;
+    const d = Math.max(Math.abs(o.pos.x - v.pos.x), Math.abs(o.pos.y - v.pos.y));
+    if (d < bestD) {
+      best = o;
+      bestD = d;
+    }
+  }
+  if (!best || bestD > 3) return null;
+  const dx = best.pos.x - v.pos.x;
+  const dy = best.pos.y - v.pos.y;
+  // Side by side on one cell: the one on the left faces right.
+  if (dx === 0 && dy === 0) return v.key < best.key ? "right" : "left";
+  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? "right" : "left";
+  return dy > 0 ? "down" : "up";
 }
 
 /** LPC frames leave a little room under the feet. */
@@ -316,12 +355,15 @@ export class PlaceCanvas {
       const rise = below !== "floor" && below !== "opening";
       sprites.push({ y: o.pos.y, draw: () => tiles.draw(ctx, objectTile(o.kind), o.pos.x, o.pos.y, rise) });
     }
-    for (const v of villagers) {
-      if (v.place !== place.id) continue;
-      const { facing, frame } = this.gait(v);
+    const here = villagers.filter((v) => v.place === place.id);
+    const shift = spread(here, tiles.size);
+    for (const v of here) {
+      const gait = this.gait(v);
       // LPC has no lying-down frames: a sleeper is in their bed, shown by their name.
       if (v.activity === "sleep") continue;
-      sprites.push({ y: v.pos.y + 0.5, draw: () => tiles.drawVillager(ctx, v.key, facing, frame, v.pos.x, v.pos.y) });
+      const facing = v.activity === "talk" ? (facePartner(v, here) ?? gait.facing) : gait.facing;
+      const dx = shift.get(v.key) ?? 0;
+      sprites.push({ y: v.pos.y + 0.5, draw: () => tiles.drawVillager(ctx, v.key, facing, gait.frame, v.pos.x, v.pos.y, dx) });
     }
     sprites.sort((a, b) => a.y - b.y);
     for (const s of sprites) s.draw();
@@ -352,11 +394,15 @@ export class PlaceCanvas {
     ctx.font = "10px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
-    for (const v of villagers) {
-      if (v.place !== place.id) continue;
+    // Names on a shared cell stack upward, since they are wider than the shift between them.
+    const stacked = new Map<string, number>();
+    for (const v of [...here].sort((a, b) => (a.key < b.key ? -1 : 1))) {
       const s = tiles.size;
-      const cx = v.pos.x * s + s / 2;
-      const top = (v.pos.y + 1) * s - 50;
+      const cell = `${v.pos.x},${v.pos.y}`;
+      const row = stacked.get(cell) ?? 0;
+      stacked.set(cell, row + 1);
+      const cx = v.pos.x * s + s / 2 + (shift.get(v.key) ?? 0);
+      const top = (v.pos.y + 1) * s - 50 - row * 12;
       const lw = ctx.measureText(v.name).width + 4;
       ctx.fillStyle = "rgba(0,0,0,0.55)";
       ctx.fillRect(cx - lw / 2, top - 11, lw, 11);

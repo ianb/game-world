@@ -120,6 +120,42 @@ fn how_much_is_overheard_follows_the_gesture_and_the_distance() {
 }
 
 #[test]
+fn conversations_start_within_reach() {
+    // Positions come from the movement events; everyone starts the day in bed, so the
+    // first move puts each villager somewhere known.
+    let mut sim: Sim<Town> = Sim::new(1, town());
+    let start: Vec<_> = sim
+        .state()
+        .villagers
+        .iter()
+        .map(|v| (v.place, v.pos.x, v.pos.y))
+        .collect();
+    let events = sim.step_until(at(14, 0, 0)).unwrap();
+    let mut at_ = start;
+    let mut started = 0;
+    for e in &events {
+        match e {
+            Emitted::Moved {
+                who, place, x, y, ..
+            } => at_[usize::from(who.0)] = (*place, *x, *y),
+            Emitted::ConversationStarted {
+                tick, who, with, ..
+            } => {
+                let (a, b) = (at_[usize::from(who.0)], at_[usize::from(with.0)]);
+                let d = a.1.abs_diff(b.1).max(a.2.abs_diff(b.2));
+                assert!(
+                    a.0 == b.0 && d <= sim::brain::TALK_REACH,
+                    "{tick:?}: {who:?} and {with:?} {d} tiles apart"
+                );
+                started += 1;
+            }
+            _ => {}
+        }
+    }
+    assert!(started > 100, "{started} conversations");
+}
+
+#[test]
 fn a_breach_gets_an_answer() {
     // Whoever Pip steps outside the frame with responds to it on their next turn.
     let mut sim: Sim<Town> = Sim::new(1, town());

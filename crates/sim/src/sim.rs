@@ -1,7 +1,7 @@
 //! The `Sim` handle: step, apply inputs, emit events, snapshot, hash.
 use crate::brain::{
-    CharacterSet, Command, Ctx, ENCOUNTER_COOLDOWN, ENCOUNTER_RANGE, Party, Planned, Target,
-    Trigger,
+    CharacterSet, Command, Ctx, ENCOUNTER_COOLDOWN, ENCOUNTER_RANGE, Party, Planned, TALK_REACH,
+    Target, Trigger,
 };
 use crate::event::Event;
 use crate::hash::{HashParts, hash_of};
@@ -16,7 +16,7 @@ use crate::snapshot::{self, SnapshotError};
 use crate::social::Conversation;
 use crate::terrain::{Surface, Terrain};
 use crate::time::{TICKS_PER_DAY, TICKS_PER_HOUR, TICKS_PER_MINUTE, Tick};
-use crate::villager::{Crossing, Errand, Interlude, Movement, PlannedLeg, VillagerState};
+use crate::villager::{Approach, Crossing, Errand, Interlude, Movement, PlannedLeg, VillagerState};
 use content::{Content, Nav, Pos, Spot, WALK_TICKS_PER_TILE, World, nav};
 use rand::RngExt;
 use serde::{Deserialize, Serialize};
@@ -142,6 +142,7 @@ impl<C: CharacterSet> Sim<C> {
                     resume_wait: None,
                     cause: Cause::Sim,
                     resume_cause: None,
+                    approach: None,
                 }
             })
             .collect();
@@ -631,6 +632,7 @@ impl<C: CharacterSet> Sim<C> {
         v.wait_until = None;
         v.talk_until = None;
         v.resume = None;
+        v.approach = None;
     }
 
     /// Commands that change nothing outside the villager: a reason for what follows, and a
@@ -752,13 +754,18 @@ impl<C: CharacterSet> Sim<C> {
                 frame,
                 topic,
                 minutes,
-            } => self.talk(who, with, frame, topic, minutes, out),
+            } => {
+                self.talk(who, with, frame, topic, minutes, true, out);
+            }
         }
     }
 
     /// Starts a conversation. Neither party's pending plan item or wait is cancelled: a
     /// wait is deferred until the talk ends, and a plan item that fires mid-talk simply ends
-    /// this party's side of it.
+    /// this party's side of it. Someone further than `TALK_REACH` walks over first when
+    /// `approach` is set (and the talk starts on arrival); otherwise the talk does not
+    /// happen. Returns whether it started.
+    #[allow(clippy::too_many_arguments)]
     fn talk(
         &mut self,
         who: VillagerId,
@@ -766,11 +773,12 @@ impl<C: CharacterSet> Sim<C> {
         frame: Frame,
         topic: Topic,
         minutes: u32,
+        approach: bool,
         out: &mut Vec<Emitted>,
-    ) {
+    ) -> bool {
         let tick = self.state.tick;
         if with == who || with.index() >= self.state.villagers.len() {
-            return;
+            return false;
         }
         let reason = {
             let a = &self.state.villagers[who.index()];
@@ -796,7 +804,21 @@ impl<C: CharacterSet> Sim<C> {
                     self.state.villagers[with.index()].name
                 ),
             });
-            return;
+            return false;
+        }
+        if !self.within_reach(who, with) {
+            if approach && self.walk_over(who, with, frame, &topic, minutes, out) {
+                return false;
+            }
+            out.push(Emitted::Decided {
+                tick,
+                who,
+                text: format!(
+                    "wanted to talk with {} but they were too far away",
+                    self.state.villagers[with.index()].name
+                ),
+            });
+            return false;
         }
         let end = tick.plus(minutes.max(2) * TICKS_PER_MINUTE);
         self.open_conversation(who, with, frame, &topic, end, out);
@@ -825,6 +847,84 @@ impl<C: CharacterSet> Sim<C> {
             );
         }
         self.react(with, Trigger::TalkedTo { other: who, topic }, out);
+        true
+    }
+
+    /// Close enough to talk: within `TALK_REACH` tiles in the same place.
+    fn within_reach(&self, a: VillagerId, b: VillagerId) -> bool {
+        let (a, b) = (
+            &self.state.villagers[a.index()],
+            &self.state.villagers[b.index()],
+        );
+        a.place == b.place && a.pos.x.abs_diff(b.pos.x).max(a.pos.y.abs_diff(b.pos.y)) <= TALK_REACH
+    }
+
+    /// Sets `who` walking to a free tile beside `with`, to start the talk there. False when
+    /// there is no such tile.
+    fn walk_over(
+        &mut self,
+        who: VillagerId,
+        with: VillagerId,
+        frame: Frame,
+        topic: &Topic,
+        minutes: u32,
+        out: &mut Vec<Emitted>,
+    ) -> bool {
+        let (place, from, there) = {
+            let a = &self.state.villagers[who.index()];
+            let b = &self.state.villagers[with.index()];
+            (b.place, a.pos, b.pos)
+        };
+        let taken = |pos: Pos| {
+            self.state
+                .villagers
+                .iter()
+                .any(|v| v.place == place && v.pos == pos && v.moving.is_none())
+        };
+        // The free neighbour nearest the walker, in a fixed order for ties.
+        let spot = [
+            (0i32, -1i32),
+            (-1, 0),
+            (1, 0),
+            (0, 1),
+            (-1, -1),
+            (1, -1),
+            (-1, 1),
+            (1, 1),
+        ]
+        .iter()
+        .filter_map(|&(dx, dy)| {
+            let x = u16::try_from(i32::from(there.x) + dx).ok()?;
+            let y = u16::try_from(i32::from(there.y) + dy).ok()?;
+            let pos = Pos { x, y };
+            (self.step_cost(place.index(), pos).is_some() && !taken(pos)).then_some(pos)
+        })
+        .min_by_key(|p| p.x.abs_diff(from.x).max(p.y.abs_diff(from.y)));
+        let Some(spot) = spot else {
+            return false;
+        };
+        let (activity, wait_left) = {
+            let v = &self.state.villagers[who.index()];
+            let now = self.state.tick;
+            (
+                v.activity.clone(),
+                v.wait_until.map(|t| t.0.saturating_sub(now.0)),
+            )
+        };
+        self.go_to(who, &Target::Tile { place, pos: spot }, activity, out);
+        let v = &mut self.state.villagers[who.index()];
+        if v.moving.is_none() {
+            return false;
+        }
+        v.approach = Some(Approach {
+            with,
+            frame,
+            topic: topic.clone(),
+            minutes,
+            cause: self.cause.clone(),
+            wait_left,
+        });
+        true
     }
 
     /// Whether a proximity trigger of `kind` may fire for this pair now; records it if so.
@@ -1342,6 +1442,23 @@ impl<C: CharacterSet> Sim<C> {
             self.react(who, Trigger::Resumed, out);
             self.encounters(who, out);
             return;
+        }
+        // Walked over to talk to someone: talk now, if they are still there and free.
+        if let Some(a) = self.state.villagers[who.index()].approach.take() {
+            // The wait the walk interrupted goes on; a talk that starts defers it.
+            if let Some(left) = a.wait_left {
+                let tick = self.state.tick;
+                let v = &mut self.state.villagers[who.index()];
+                let generation = v.generation;
+                v.wait_until = Some(tick.plus(left));
+                self.state
+                    .queue
+                    .schedule(tick.plus(left), Event::Waited { who, generation });
+            }
+            self.cause = a.cause;
+            if self.talk(who, a.with, a.frame, a.topic, a.minutes, false, out) {
+                return;
+            }
         }
         let errand = self.state.villagers[who.index()]
             .interlude

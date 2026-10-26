@@ -6,7 +6,7 @@ use sim::Sim;
 use sim::ids::VillagerId;
 use sim::protocol::{Act, BidAnswer, Emitted, Frame, Gesture};
 use sim::recall::Record;
-use sim::time::{TICKS_PER_DAY, Tick};
+use sim::time::{TICKS_PER_HOUR, Tick};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
@@ -18,11 +18,27 @@ fn town() -> Content {
 fn the_triangle_runs_on_what_each_of_them_perceives() {
     // On seed 1, Mara learns in the second week, from Hal muttering at the tavern.
     let mut sim: Sim<Town> = Sim::new(1, town());
-    let events = sim.step_until(Tick(21 * TICKS_PER_DAY)).unwrap();
     let ctx = sim.ctx();
     let [hal, mara, tom] = ["hal", "mara", "tom"].map(|v| ctx.villager_id(v).unwrap());
+    // Stepped an hour at a time so each thought is checked against the record while what
+    // led to it is still remembered.
+    let mut events = Vec::new();
+    let mut rivals = Vec::new();
+    for hour in 1..=21 * 24 {
+        let step = sim.step_until(Tick(hour * TICKS_PER_HOUR)).unwrap();
+        rivals.extend(hal_is_jealous_of_what_he_saw(
+            &step,
+            &sim.state().record,
+            hal,
+            mara,
+        ));
+        events.extend(step);
+    }
+    assert!(
+        rivals.iter().any(|aloud| *aloud),
+        "said aloud at least once"
+    );
     let pairs = mara_seeks_out_tom(&events, mara, tom);
-    hal_is_jealous_of_what_he_saw(&events, &sim.state().record, hal, mara);
     mara_keeps_hal_at_a_distance(&events, &pairs, hal, mara);
 
     // Tom hears himself muttered about and holds it against Hal, without knowing why.
@@ -73,14 +89,14 @@ fn mara_seeks_out_tom(events: &[Emitted], mara: VillagerId, tom: VillagerId) -> 
     pairs
 }
 
-/// Every rival thought of Hal's is about someone he saw Mara seek out shortly before, and
-/// at least one is said aloud.
+/// Every rival thought of Hal's is about someone he saw Mara seek out shortly before.
+/// Returns whether each was said aloud.
 fn hal_is_jealous_of_what_he_saw(
     events: &[Emitted],
     record: &Record,
     hal: VillagerId,
     mara: VillagerId,
-) {
+) -> Vec<bool> {
     let rival_thoughts: Vec<_> = events
         .iter()
         .filter_map(|e| match e {
@@ -92,10 +108,6 @@ fn hal_is_jealous_of_what_he_saw(
             _ => None,
         })
         .collect();
-    assert!(
-        rival_thoughts.iter().any(|t| t.2),
-        "said aloud at least once"
-    );
     for (tick, rival, _) in &rival_thoughts {
         let saw = record.recall(hal, tick.minus(30 * 60)).any(|(r, _)| {
             matches!(&r.event, Emitted::ConversationStarted { who, with, .. }
@@ -103,6 +115,7 @@ fn hal_is_jealous_of_what_he_saw(
         });
         assert!(saw, "rival thought at {tick:?} with nothing seen");
     }
+    rival_thoughts.iter().map(|t| t.2).collect()
 }
 
 /// Once Mara knows, she keeps Hal at a distance.

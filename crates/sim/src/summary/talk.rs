@@ -40,7 +40,13 @@ impl Summarizer {
                     tick: *tick,
                     a: *who,
                     b: *with,
-                    frames: vec![format!("{} about {about}", frame.name())],
+                    // A greeting's topic is the greeting itself: "greeting", not
+                    // "greeting about a greeting".
+                    frames: vec![if topic.key == frame.name() {
+                        frame.name().to_string()
+                    } else {
+                        format!("{} about {about}", frame.name())
+                    }],
                     cause: cause.clone(),
                     bid: None,
                     last: None,

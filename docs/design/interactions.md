@@ -20,7 +20,7 @@ decides to.
 | Command | Effect |
 |---|---|
 | `Greet { with }` | Emits `Talked` with topic `greeting` and zero minutes, gives the other a `TalkedTo`. Works while walking. Changes no state. |
-| `Talk { with, topic, minutes }` | Both must be in the same place, standing still, and not already talking. Both switch to the `talk` activity, their previous activity is saved, and a `TalkEnd` event restores it and fires `TalkEnded` to each. The other gets `TalkedTo` at the start. If the conditions fail, a `Decided` line says so and nothing happens. |
+| `Talk { with, topic, minutes }` | Both must be in the same place, standing still, and not already talking. If they are more than `TALK_REACH` (2) tiles apart, the one who started it walks to a free tile beside the other and starts it on arrival, still subject to these conditions; a wait the walk cut short is resumed afterward. Both switch to the `talk` activity, their previous activity is saved, and a `TalkEnd` event restores it and fires `TalkEnded` to each. The other gets `TalkedTo` at the start. If the conditions fail, a `Decided` line says so and nothing happens. |
 
 Rooms come from the compiled content (`World::room_at`), so "together" means
 the bakery shop, not the whole zone the bakery sits in.
