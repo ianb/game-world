@@ -222,10 +222,13 @@ impl CharacterSet for Town {
     }
 
     fn plan_day(&mut self, who: VillagerId, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
-        match self.character(ctx.villager(who).id.as_str()) {
+        let mut plan = match self.character(ctx.villager(who).id.as_str()) {
             Some(c) => c.plan(ctx, rng),
             None => baseline_plan(who, ctx),
-        }
+        };
+        // Shared errands that go into everyone's day.
+        toolbox::shopping_trip(ctx, who, &mut plan);
+        plan
     }
 
     fn react(

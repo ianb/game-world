@@ -717,32 +717,38 @@ fn rail_errands(ctx: &Ctx<'_>, villager: &content::Villager, plan: &mut Vec<Plan
         errands.push((arrive + FETCH_DELAY_MINUTES * 60, &spec.shed, "fetch-goods"));
     }
     for (at, object, activity) in errands {
-        let Some(target) = ctx.object_id(object).map(Target::Object) else {
-            continue;
-        };
-        // What they were doing then, to go back to afterwards.
-        let back = plan
-            .iter()
-            .filter(|p| p.at.seconds() <= at && matches!(p.command, Command::GoTo { .. }))
-            .max_by_key(|p| p.at.seconds())
-            .map(|p| p.command.clone());
-        plan.push(Planned {
-            at: TimeOfDay::from_seconds(at),
-            command: Command::GoTo {
-                target,
-                activity: activity.to_string(),
-            },
-        });
-        let until = at + ERRAND_MINUTES * 60;
-        let busy_until = plan
-            .iter()
-            .any(|p| p.at.seconds() > at && p.at.seconds() <= until);
-        if let (Some(back), false) = (back, busy_until) {
-            plan.push(Planned {
-                at: TimeOfDay::from_seconds(until),
-                command: back,
-            });
+        if let Some(target) = ctx.object_id(object).map(Target::Object) {
+            add_errand(plan, at, target, activity, ERRAND_MINUTES);
         }
+    }
+}
+
+/// Adds a trip to `target` at `at` (seconds into the day) to do `activity`, and a return to
+/// whatever the plan had them doing then after `minutes`, unless the plan already moves
+/// them on before that. Keeps the plan in time order.
+pub fn add_errand(plan: &mut Vec<Planned>, at: u32, target: Target, activity: &str, minutes: u32) {
+    // What they were doing then, to go back to afterwards.
+    let back = plan
+        .iter()
+        .filter(|p| p.at.seconds() <= at && matches!(p.command, Command::GoTo { .. }))
+        .max_by_key(|p| p.at.seconds())
+        .map(|p| p.command.clone());
+    plan.push(Planned {
+        at: TimeOfDay::from_seconds(at),
+        command: Command::GoTo {
+            target,
+            activity: activity.to_string(),
+        },
+    });
+    let until = at + minutes * 60;
+    let busy_until = plan
+        .iter()
+        .any(|p| p.at.seconds() > at && p.at.seconds() <= until);
+    if let (Some(back), false) = (back, busy_until) {
+        plan.push(Planned {
+            at: TimeOfDay::from_seconds(until),
+            command: back,
+        });
     }
     plan.sort_by_key(|p| p.at.seconds());
 }

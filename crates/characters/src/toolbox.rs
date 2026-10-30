@@ -659,6 +659,7 @@ pub fn human(trigger: &Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
         // A drink at whichever bar this is.
         Trigger::Arrived if activity_of(ctx, me) == "send-goods" => send_goods(ctx, me),
         Trigger::Arrived if activity_of(ctx, me) == "fetch-goods" => fetch_goods(ctx, me),
+        Trigger::Arrived if activity_of(ctx, me) == "buy-luxuries" => buy_luxuries(ctx, me),
         Trigger::Arrived if activity_of(ctx, me) == "drink" => buy_ale_nearest(ctx, me)
             .unwrap_or_else(|| vec![Command::Note("no drink to be had".into())]),
         Trigger::Arrived if activity_of(ctx, me) == "sleep" => {
@@ -808,6 +809,73 @@ pub fn seek(
 /// The bars, their kegs and keepers: the tavern in the old town and the alehouse in the
 /// hamlet.
 pub const BARS: [(&str, &str); 2] = [("barrel_tavern", "tom"), ("bar_alehouse", "dot")];
+
+/// The store: its shelf, its counter and who keeps it.
+pub const STORE: (&str, &str, &str) = ("shelf_store", "counter_store", "greta");
+/// What people with money to spare buy at the store for themselves, with the price of
+/// each. All of it gets used up. The store pays the railway the same price for them (in
+/// Greta's `fetches`), so this money leaves the valley.
+pub const LUXURIES: [(&str, u32); 3] = [("tea", 4), ("sugar", 3), ("tobacco", 5)];
+/// Coins people keep by them. Half of anything above this goes on luxuries.
+pub const COMFORT_COINS: u32 = 40;
+/// The most luxuries one person buys on a trip.
+pub const MOST_LUXURIES: u32 = 12;
+/// How long a trip to the store keeps them before they go back to what they were doing.
+const SHOP_MINUTES: u32 = 30;
+
+/// Someone with more than `COMFORT_COINS` goes to the store once a week, on a weekday and
+/// at an hour in the afternoon that follow from who they are. On Saturday the store keeper
+/// is at the market.
+pub fn shopping_trip(ctx: &Ctx<'_>, who: VillagerId, plan: &mut Vec<Planned>) {
+    if ctx.coins(who) <= COMFORT_COINS {
+        return;
+    }
+    let n = usize::from(who.0);
+    if Weekday::ALL[n % 5] != ctx.calendar.weekday {
+        return;
+    }
+    let minutes = 14 * 60 + u32::try_from(n % 5).unwrap_or(0) * 30;
+    let target = Target::Object(object(ctx, STORE.1));
+    sim::brain::add_errand(plan, minutes * 60, target, "buy-luxuries", SHOP_MINUTES);
+}
+
+/// At the store counter: luxuries, one of each in turn, while the shelf has them, the
+/// trip's limit allows, and half their coins above `COMFORT_COINS` covers them. The
+/// keeper takes from her own shelf without paying.
+#[must_use]
+pub fn buy_luxuries(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
+    let (shelf, _, keeper) = STORE;
+    let open = in_building(ctx, villager(ctx, keeper), "store");
+    if me != keeper && !open {
+        return vec![Command::Note("the store was shut".into())];
+    }
+    let mut budget = ctx.coins(villager(ctx, me)).saturating_sub(COMFORT_COINS) / 2;
+    let mut taken = [0u16; LUXURIES.len()];
+    let mut bought = 0;
+    let mut more = true;
+    while more && bought < MOST_LUXURIES {
+        more = false;
+        for (i, (good, price)) in LUXURIES.iter().enumerate() {
+            if bought < MOST_LUXURIES && budget >= *price && stock_of(ctx, shelf, good) > taken[i] {
+                taken[i] += 1;
+                budget -= price;
+                bought += 1;
+                more = true;
+            }
+        }
+    }
+    let mut cmds = Vec::new();
+    for (i, (good, price)) in LUXURIES.iter().enumerate() {
+        if taken[i] == 0 {
+            continue;
+        }
+        cmds.push(stock(ctx, shelf, good, -i32::from(taken[i])));
+        if me != keeper {
+            cmds.push(pay(ctx, me, keeper, price * u32::from(taken[i]), good));
+        }
+    }
+    cmds
+}
 
 /// Pays for a drink at whichever bar is nearer. None when that bar is dry or the buyer is
 /// broke.

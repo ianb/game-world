@@ -111,10 +111,16 @@ Dot brews from the malt when the keg runs low, and buys ale in only when there
 is none. Greta orders candles from outside on Mondays only when the shelf is
 low.
 
-Money: over four weeks (seed 1) the senders gain 40 to 140 coins each. Dot
-gains from brewing, Bram holds at about 6, and Greta drifts down slowly (32 to
-18). There is still nothing for the well-off to
-spend on, so the farmers, Celia and the senders keep accumulating.
+Money comes into the valley from outside (wages, pensions, sales at market and
+by rail) and leaves through the railway: what the store, the smithy and the
+alehouse buy, and luxuries. Anyone with more than 40 coins goes to the store
+once a week, on a weekday afternoon that follows from who they are, and spends
+up to half of what they have above 40 on tea, sugar and tobacco, at most 12
+things a trip. These are used up. The store sells them at what the railway
+charges for them, so this money leaves the valley; Greta's own living is
+candles. Over twelve weeks (seed 1) the best-off level off at around 60 to 120
+coins. Tom's tavern still runs him down to nothing within a month, as before
+the railway.
 
 ## Animals
 

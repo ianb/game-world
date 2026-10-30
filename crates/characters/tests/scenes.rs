@@ -473,3 +473,75 @@ fn lottie_watches_the_train_go() {
         "aloud, after the train has gone"
     );
 }
+
+/// Celia, with money to spare, buys tea, sugar and tobacco at the store on Tuesday
+/// afternoon, after the train has brought them, with at most half of what she has above
+/// what she keeps by her. The shelf goes down by what she took.
+#[test]
+fn money_to_spare_goes_on_luxuries_at_the_store() {
+    use characters::toolbox::{COMFORT_COINS, LUXURIES};
+    let mut s = Scene::new();
+    s.run_until(at(1, 13, 50));
+    let counter = s.sim.ctx().object_id("counter_store").unwrap();
+    let shelf = s.sim.ctx().object_id("shelf_store").unwrap();
+    let before: u16 = LUXURIES
+        .iter()
+        .map(|(g, _)| s.sim.ctx().stock(shelf, g))
+        .sum();
+    s.set_coins("celia", 100)
+        .put_by("greta", "counter_store")
+        .put_by("celia", "shelf_store")
+        .cue(
+            "celia",
+            at(1, 14, 0),
+            sim::brain::Command::GoTo {
+                target: sim::brain::Target::Object(counter),
+                activity: "buy-luxuries".into(),
+            },
+        );
+    let events = s.run_until(at(1, 14, 30)).to_vec();
+    let (celia, greta) = (s.id("celia"), s.id("greta"));
+    let spent: u32 = events
+        .iter()
+        .filter_map(|e| match e {
+            Emitted::Paid {
+                who,
+                to: Some(to),
+                what,
+                amount,
+                ..
+            } if *who == celia && *to == greta && LUXURIES.iter().any(|(g, _)| g == what) => {
+                Some(*amount)
+            }
+            _ => None,
+        })
+        .sum();
+    assert!(spent > 0, "Celia buys something");
+    assert!(spent <= (100 - COMFORT_COINS) / 2, "spent {spent}");
+    let after: u16 = LUXURIES
+        .iter()
+        .map(|(g, _)| s.sim.ctx().stock(shelf, g))
+        .sum();
+    assert!(after < before, "the shelf went down: {before} to {after}");
+}
+
+/// The trip to the store goes into the day's plan only for someone with more than they
+/// keep by them.
+#[test]
+fn only_money_to_spare_sends_someone_shopping() {
+    use characters::toolbox::COMFORT_COINS;
+    let plans_trip = |coins: u32| {
+        let mut s = Scene::new();
+        let celia = s.id("celia");
+        // A weekday in the second week that is Celia's for the store.
+        let day = 7 + u32::from(celia.0) % 5;
+        s.run_until(at(day - 1, 23, 0));
+        s.set_coins("celia", coins);
+        s.run_until(at(day, 0, 30)).iter().any(|e| {
+            matches!(e, Emitted::Planned { who, items, .. } if *who == celia
+                && items.iter().any(|i| i.activity.as_deref() == Some("buy-luxuries")))
+        })
+    };
+    assert!(plans_trip(COMFORT_COINS + 30));
+    assert!(!plans_trip(COMFORT_COINS));
+}

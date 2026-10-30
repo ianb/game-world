@@ -52,8 +52,8 @@
     {
       "good": "tea",
       "to": "shelf_store",
-      "price": 1,
-      "keep": 6
+      "price": 4,
+      "keep": 24
     },
     {
       "good": "salt",
@@ -72,6 +72,18 @@
       "to": "shelf_store",
       "price": 1,
       "keep": 8
+    },
+    {
+      "good": "sugar",
+      "to": "shelf_store",
+      "price": 3,
+      "keep": 24
+    },
+    {
+      "good": "tobacco",
+      "to": "shelf_store",
+      "price": 5,
+      "keep": 24
     }
   ]
 }

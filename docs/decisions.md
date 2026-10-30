@@ -1314,3 +1314,23 @@ Decided and built (see `docs/design/valley.md`):
 Implications: protocol 22, snapshot 15. A new animal kind is an `AnimalKind`
 variant, which every character must then answer for. Trains carry no
 passengers; if they ever do, a train becomes a place villagers can be in.
+
+## 2026-10-30: Money leaves through things that get used up
+
+Ian: "for money, probably something that doesn't last that they can spend
+money on. Rent adds a complexity that could shift the balance again."
+
+Decided and built:
+
+- Anyone with more than 40 coins makes one trip a week to the store and
+  spends up to half of the excess on tea, sugar and tobacco, which are gone
+  once bought. No rent.
+- The store buys these from the railway at the price it sells them for, so
+  the money leaves the valley instead of collecting with the shopkeeper.
+- Fetches carry a `keep` target and the train tops the goods shed up to a
+  fixed stock, so nothing piles up unused.
+
+Implications: wealth now levels off where weekly income matches half the
+excess over 40. Tuning is in `toolbox::{COMFORT_COINS, LUXURIES,
+MOST_LUXURIES}` and the railway's `delivers`. Tom's tavern still loses money,
+which predates this.
