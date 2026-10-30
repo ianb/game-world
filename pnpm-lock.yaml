@@ -41,6 +41,9 @@ importers:
 
   packages/viewer:
     dependencies:
+      '@fontsource-variable/nunito':
+        specifier: 5.2.6
+        version: 5.2.6
       '@game-world/protocol':
         specifier: workspace:*
         version: link:../protocol
@@ -224,6 +227,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fontsource-variable/nunito@5.2.6':
+    resolution: {integrity: sha512-dGYTQ0Hl94jjfMraYefrURHGH8fk/vL/1zYAZGofiPJVs6C0OkM8T87Te5Gwrbe6HG/XEMm5lib8AqasTN3ucw==}
 
   '@jridgewell/sourcemap-codec@1.6.0':
     resolution: {integrity: sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==}
@@ -748,6 +754,8 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.2':
     optional: true
+
+  '@fontsource-variable/nunito@5.2.6': {}
 
   '@jridgewell/sourcemap-codec@1.6.0': {}
 

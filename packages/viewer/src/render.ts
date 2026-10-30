@@ -119,6 +119,47 @@ export class Tileset {
     ctx.drawImage(this.image, t.col * s + qx * h, t.row * s + qy * h, h, h, x * s + qx * h, y * s + qy * h, h, h);
   }
 
+  private readonly portraits = new Map<string, HTMLCanvasElement>();
+
+  /** A villager's head and shoulders, facing out, for cards and lists. Made once per
+   * villager; draw it into other canvases rather than moving the element. */
+  portrait(key: string): HTMLCanvasElement {
+    const cached = this.portraits.get(key);
+    if (cached) return cached;
+    const v = this.atlas.villagers;
+    const f = v.frame;
+    const canvas = document.createElement("canvas");
+    const side = f / 2;
+    canvas.width = side;
+    canvas.height = side;
+    const ctx = canvas.getContext("2d");
+    const top = v.top[key] ?? Object.values(v.top)[0];
+    if (ctx && top !== undefined) {
+      ctx.imageSmoothingEnabled = false;
+      const sx = (v.left?.[key] ?? 0) + f / 4;
+      const sy = top + FACING_ROW.down * f + f / 8;
+      ctx.drawImage(this.image, sx, sy, side, side, 0, 0, side, side);
+    }
+    this.portraits.set(key, canvas);
+    return canvas;
+  }
+
+  /** A tile or sprite on its own canvas, its full size, for cards. */
+  icon(name: string): HTMLCanvasElement {
+    const t = this.atlas.tiles[name] ?? this.atlas.tiles["obj_generic"];
+    const s = this.atlas.tile;
+    const canvas = document.createElement("canvas");
+    canvas.width = (t?.w ?? 1) * s;
+    canvas.height = (t?.h ?? 1) * s;
+    const ctx = canvas.getContext("2d");
+    if (ctx && t) {
+      ctx.imageSmoothingEnabled = false;
+      const col = t.col;
+      ctx.drawImage(this.image, col * s, t.row * s, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+    }
+    return canvas;
+  }
+
   /** A villager standing (frame 0) or mid-step, feet on the bottom of their cell, shifted
    * `dx` pixels when sharing the cell. */
   drawVillager(ctx: CanvasRenderingContext2D, key: string, facing: Facing, frame: number, x: number, y: number, dx = 0): void {
@@ -455,6 +496,9 @@ export interface View {
   dpr: number;
 }
 
+/** The page's typeface, for names drawn on the map. */
+const UI_FONT = '"Nunito Variable", "Nunito", ui-rounded, system-ui, sans-serif';
+
 /** Map cells per side of a cached chunk of the still layer. */
 const CHUNK = 16;
 /** Chunks kept, across all resolutions; the least recently drawn go first. */
@@ -510,6 +554,12 @@ export class PlaceCanvas {
 
   get key(): string {
     return this.place.key;
+  }
+
+  /** Drops the cached chunks, so they are painted again (once the page's font has loaded,
+   * for the building names). */
+  invalidate(): void {
+    this.chunks.clear();
   }
 
   get id(): number {
@@ -622,7 +672,7 @@ export class PlaceCanvas {
       tiles.clip = null;
     }
     // Building names, on the top wall of each footprint.
-    ctx.font = "bold 12px ui-monospace, monospace";
+    ctx.font = `800 13px ${UI_FONT}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     for (const r of this.roofs) {
@@ -739,7 +789,7 @@ export class PlaceCanvas {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     const d = view.dpr;
     const big = view.z * s >= NAMES_FROM;
-    ctx.font = `${11 * d}px ui-monospace, monospace`;
+    ctx.font = `800 ${12 * d}px ${UI_FONT}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
     // Names on a shared cell stack upward, since they are wider than the shift between them.
@@ -797,7 +847,7 @@ export function legend(tiles: Tileset, entries: [name: string, label: string][])
   const ctx = canvas.getContext("2d");
   if (!ctx) return canvas;
   ctx.imageSmoothingEnabled = false;
-  ctx.font = "10px ui-monospace, monospace";
+  ctx.font = `700 11px ${UI_FONT}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
   entries.forEach(([name, label], i) => {

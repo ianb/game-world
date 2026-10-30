@@ -813,21 +813,53 @@ pub const BARS: [(&str, &str); 2] = [("barrel_tavern", "tom"), ("bar_alehouse", 
 /// The store: its shelf, its counter and who keeps it.
 pub const STORE: (&str, &str, &str) = ("shelf_store", "counter_store", "greta");
 /// What people with money to spare buy at the store for themselves, with the price of
-/// each. All of it gets used up. The store pays the railway the same price for them (in
-/// Greta's `fetches`), so this money leaves the valley.
+/// each. All of it gets used up.
 pub const LUXURIES: [(&str, u32); 3] = [("tea", 4), ("sugar", 3), ("tobacco", 5)];
+/// What the store makes on each luxury: it pays the railway this much less (Greta's
+/// `fetches` in content).
+pub const MARKUP: u32 = 1;
 /// Coins people keep by them. Half of anything above this goes on luxuries.
 pub const COMFORT_COINS: u32 = 40;
-/// The most luxuries one person buys on a trip.
+/// What the store keeper holds back besides, to restock the shelves when the train comes.
+pub const KEEPER_RESERVE: u32 = 200;
+
+/// What `who` keeps back before spending on luxuries.
+fn keeps_back(ctx: &Ctx<'_>, who: VillagerId) -> u32 {
+    if ctx.villager(who).id == STORE.2 {
+        COMFORT_COINS + KEEPER_RESERVE
+    } else {
+        COMFORT_COINS
+    }
+}
+/// The most luxuries one person buys on a trip; the store keeper, buying from the shed,
+/// takes up to `KEEPER_MOST_LUXURIES`.
 pub const MOST_LUXURIES: u32 = 12;
+pub const KEEPER_MOST_LUXURIES: u32 = 36;
 /// How long a trip to the store keeps them before they go back to what they were doing.
 const SHOP_MINUTES: u32 = 30;
+/// Minutes after a stopping train arrives that the store keeper buys her own luxuries from
+/// the shed: after the store's fetch and her walk back, so the one errand does not cut the
+/// other short.
+const KEEPER_SHOPS_AFTER_MINUTES: u32 = 60;
 
 /// Someone with more than `COMFORT_COINS` goes to the store once a week, on a weekday and
 /// at an hour in the afternoon that follow from who they are. On Saturday the store keeper
-/// is at the market.
+/// is at the market. The keeper herself buys hers from the railway, at the goods shed
+/// after each stopping train.
 pub fn shopping_trip(ctx: &Ctx<'_>, who: VillagerId, plan: &mut Vec<Planned>) {
-    if ctx.coins(who) <= COMFORT_COINS {
+    if ctx.coins(who) <= keeps_back(ctx, who) {
+        return;
+    }
+    if ctx.villager(who).id == STORE.2 {
+        let (Some(rail), Some(train)) = (
+            ctx.world.rail.as_ref(),
+            trains_today(ctx).into_iter().find(|t| t.stops),
+        ) else {
+            return;
+        };
+        let at = train.arrive.seconds_into_day() + KEEPER_SHOPS_AFTER_MINUTES * 60;
+        let target = Target::Object(ObjectId(u16::try_from(rail.shed).expect("few objects")));
+        sim::brain::add_errand(plan, at, target, "buy-luxuries", SHOP_MINUTES);
         return;
     }
     let n = usize::from(who.0);
@@ -841,22 +873,34 @@ pub fn shopping_trip(ctx: &Ctx<'_>, who: VillagerId, plan: &mut Vec<Planned>) {
 
 /// At the store counter: luxuries, one of each in turn, while the shelf has them, the
 /// trip's limit allows, and half their coins above `COMFORT_COINS` covers them. The
-/// keeper takes from her own shelf without paying.
+/// keeper buys hers at the goods shed instead, at the railway's price.
 #[must_use]
 pub fn buy_luxuries(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
-    let (shelf, _, keeper) = STORE;
+    let (_, _, keeper) = STORE;
+    let keeper_shed = ctx
+        .world
+        .rail
+        .as_ref()
+        .map(|r| ctx.world.objects[r.shed].id.as_str());
+    let (shelf, seller, markup, most) = match (me == keeper, keeper_shed) {
+        (true, Some(shed)) => (shed, "outside", MARKUP, KEEPER_MOST_LUXURIES),
+        (true, None) => return Vec::new(),
+        (false, _) => (STORE.0, keeper, 0, MOST_LUXURIES),
+    };
     let open = in_building(ctx, villager(ctx, keeper), "store");
     if me != keeper && !open {
         return vec![Command::Note("the store was shut".into())];
     }
-    let mut budget = ctx.coins(villager(ctx, me)).saturating_sub(COMFORT_COINS) / 2;
+    let who = villager(ctx, me);
+    let mut budget = ctx.coins(who).saturating_sub(keeps_back(ctx, who)) / 2;
     let mut taken = [0u16; LUXURIES.len()];
     let mut bought = 0;
     let mut more = true;
-    while more && bought < MOST_LUXURIES {
+    while more && bought < most {
         more = false;
         for (i, (good, price)) in LUXURIES.iter().enumerate() {
-            if bought < MOST_LUXURIES && budget >= *price && stock_of(ctx, shelf, good) > taken[i] {
+            let price = price - markup;
+            if bought < most && budget >= price && stock_of(ctx, shelf, good) > taken[i] {
                 taken[i] += 1;
                 budget -= price;
                 bought += 1;
@@ -870,9 +914,13 @@ pub fn buy_luxuries(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
             continue;
         }
         cmds.push(stock(ctx, shelf, good, -i32::from(taken[i])));
-        if me != keeper {
-            cmds.push(pay(ctx, me, keeper, price * u32::from(taken[i]), good));
-        }
+        cmds.push(pay(
+            ctx,
+            me,
+            seller,
+            (price - markup) * u32::from(taken[i]),
+            good,
+        ));
     }
     cmds
 }

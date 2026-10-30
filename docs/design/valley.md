@@ -116,11 +116,12 @@ by rail) and leaves through the railway: what the store, the smithy and the
 alehouse buy, and luxuries. Anyone with more than 40 coins goes to the store
 once a week, on a weekday afternoon that follows from who they are, and spends
 up to half of what they have above 40 on tea, sugar and tobacco, at most 12
-things a trip. These are used up. The store sells them at what the railway
-charges for them, so this money leaves the valley; Greta's own living is
-candles. Over twelve weeks (seed 1) the best-off level off at around 60 to 120
-coins. Tom's tavern still runs him down to nothing within a month, as before
-the railway.
+things a trip. These are used up. The store pays the railway a coin less for
+each than it charges. Greta keeps 200 coins besides to restock with, and
+spends half of anything above that on her own luxuries, bought straight from
+the goods shed an hour after a train. Over twelve weeks (seed 1) the best-off
+level off at around 60 to 130 coins, and Greta at around 330. Tom's tavern
+still runs him down to nothing within a month: he is bad at business.
 
 ## Animals
 

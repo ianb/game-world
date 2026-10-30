@@ -2831,7 +2831,7 @@
     "delivers": [
       {
         "good": "tea",
-        "count": 24
+        "count": 36
       },
       {
         "good": "salt",
@@ -2855,11 +2855,11 @@
       },
       {
         "good": "sugar",
-        "count": 24
+        "count": 36
       },
       {
         "good": "tobacco",
-        "count": 24
+        "count": 36
       }
     ],
     "buys": [

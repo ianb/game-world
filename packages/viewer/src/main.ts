@@ -1,5 +1,6 @@
 // The viewer: the sim advancing in the browser, drawn as tiles, with the text views the
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
+import "@fontsource-variable/nunito";
 import * as wasm from "@game-world/sim-wasm";
 import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type ClockView, type Emitted, type DaySummary, type MindView, type ObjectView, type Sim, type StockView, type SummaryItem, type Topic, type VillagerView } from "@game-world/protocol";
 import { PlaceCanvas, Tileset, legend, objectTile, type View } from "./render";
@@ -9,7 +10,6 @@ import type { Diorama } from "./diorama";
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const clockEl = $("clock");
 const everyoneEl = $("everyone");
-const speedEl = $("speed");
 
 async function loadContent(): Promise<string> {
   const res = await fetch(new URL("content.json", document.baseURI));
@@ -52,18 +52,19 @@ const mapEl = $("map");
 const mapCanvas = $<HTMLCanvasElement>("map-canvas");
 const mapCtx = mapCanvas.getContext("2d") ?? (() => { throw new Error("no 2d canvas"); })();
 const placeTabsEl = $("place-tabs");
-const placeTabs = new Map<number, { tab: HTMLButtonElement; count: HTMLSpanElement }>();
-/** A place's key as a person would say it: "ashby_barn/loft" is "ashby barn loft". */
-const placeName = (key: string): string => key.replace(/[_/]+/g, " ");
+const placeTabs = new Map<number, HTMLButtonElement>();
+/** A place's key as a person would say it: "ashby_barn/loft" is "Ashby barn loft". */
+const placeName = (key: string): string => {
+  const t = key.replace(/[_/]+/g, " ");
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
 let activePlace = (world.places.find((p) => p.key === "town") ?? world.places[0])?.id ?? 0;
 for (const place of world.places) {
   canvases.push(new PlaceCanvas(tileset, place, world));
   const tab = document.createElement("button");
   tab.type = "button";
   tab.setAttribute("role", "tab");
-  const count = document.createElement("span");
-  count.className = "count";
-  tab.append(placeName(place.key), count);
+  tab.textContent = placeName(place.key);
   tab.addEventListener("click", () => {
     // Choosing a place stops following someone who is elsewhere.
     const p = pinned;
@@ -71,7 +72,7 @@ for (const place of world.places) {
     showPlace(place.id);
   });
   placeTabsEl.append(tab);
-  placeTabs.set(place.id, { tab, count });
+  placeTabs.set(place.id, tab);
 }
 
 /** The tile of the shown place under a pointer, or null. */
@@ -141,6 +142,10 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     paused = !paused;
   }
+  if (e.target instanceof HTMLInputElement) return;
+  const n = Number(e.key);
+  if (n >= 1 && n <= SPEEDS.length) setSpeed(n - 1);
+  if (e.key === "j" || e.key === "J") setJournal(document.body.classList.contains("journal-closed"));
 });
 const inspectEl = $("inspect");
 const inspectorEl = $("inspector");
@@ -149,26 +154,6 @@ let hintDone = false;
 if (window.matchMedia("(pointer: coarse)").matches) hintEl.textContent = "tap a person or a thing to follow it";
 
 const rules = sim.rules();
-
-/** One need as a bar: name, ten blocks, the value, and what the sim makes of it. */
-function needBar(name: string, value: number, perHour: number): string {
-  const filled = Math.round((value / rules.need_max) * 10);
-  const bar = "▮".repeat(filled) + "▯".repeat(10 - filled);
-  const word = value >= rules.need_urgent ? "urgent" : value >= rules.need_pressing ? "pressing" : value >= 40 ? "some" : "fine";
-  return `${name.padEnd(8)} ${bar} ${String(value).padStart(3)} ${word.padEnd(8)} +${perHour}/h`;
-}
-
-function describeNeeds(v: VillagerView): string[] {
-  const n = v.needs;
-  return [
-    needBar("hunger", n.hunger, rules.hunger_per_hour),
-    needBar("thirst", n.thirst, rules.thirst_per_hour),
-    needBar("sleep", n.sleep, rules.sleep_per_hour),
-    needBar("bladder", n.bladder, rules.bladder_per_hour),
-    `scale 0 to ${rules.need_max}; acts at ${rules.need_pressing}, urgent at ${rules.need_urgent}`,
-    `+/h is per hour awake, roughly; asleep, sleep repays ${rules.sleep_recovery_per_hour}/h`,
-  ];
-}
 
 /** A topic's gloss and who it concerns: "money (Mara)", "sweet on (Hal, Mara)". */
 function topicText(t: Topic, name: (id: number) => string): string {
@@ -200,10 +185,29 @@ function sinceText(tick: number): string {
 const signed = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
 /** "SmallTalk" as "small talk". */
 const words = (name: string): string => name.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+/** "ashby_barn" as "Ashby barn". */
+const title = (s: string): string => {
+  const t = s.replace(/[_/-]+/g, " ").trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
 
-/** A line of the inspector: text, or text with words that open the words tab. */
-type Seg = string | { word: Word; label: string } | { act: () => void; label: string };
-type Line = string | Seg[];
+/** The inspector shows a card: a picture, a name, a line under it, and blocks of detail.
+ * Text can carry words (topics, gestures) that open the words panel. */
+type Seg = string | { word: Word; label: string };
+type Block =
+  | { kind: "text"; segs: Seg[]; muted?: boolean }
+  | { kind: "meter"; label: string; value: number; level: number; note: string }
+  | { kind: "stats"; items: { label: string; value: string }[] }
+  | { kind: "head"; text: string };
+interface Card {
+  picture: { villager: string } | { tile: string } | null;
+  title: string;
+  sub: string;
+  blocks: Block[];
+}
+const text = (...segs: Seg[]): Block => ({ kind: "text", segs });
+const note = (...segs: Seg[]): Block => ({ kind: "text", segs, muted: true });
+const head = (t: string): Block => ({ kind: "head", text: t });
 
 /** A topic chip from a label as views show it ("money (Mara)"): the topic whose gloss it
  * starts with. */
@@ -215,96 +219,140 @@ function topicSeg(label: string): Seg {
   return best ? { word: { kind: "topic", key: best }, label } : label;
 }
 
-/** Persona, mood, how they see the people they have talked to, and recent memory. */
-function describeMind(m: MindView, villagers: VillagerView[]): Line[] {
-  const name = (id: number): string => villagers[id]?.name ?? "?";
-  const lines: Line[] = [
-    "",
-    `sociable ${signed(m.sociable)}, warmth ${signed(m.warmth)}, charity ${signed(m.charity)}`,
-    `skill ${m.skill}/10, rejection sensitivity ${m.rejection_sensitivity}/10`,
-    m.worry ? [`mood ${signed(m.mood)}; on their mind: `, topicSeg(m.worry)] : `mood ${signed(m.mood)}`,
+/** One need as a meter: 0 fine, 1 some, 2 pressing (they act on it), 3 urgent. */
+function needMeter(label: string, value: number, perHour: number): Block {
+  const level = value >= rules.need_urgent ? 3 : value >= rules.need_pressing ? 2 : value >= 40 ? 1 : 0;
+  return { kind: "meter", label, value, level, note: `+${perHour}/h` };
+}
+
+function describeNeeds(v: VillagerView): Block[] {
+  const n = v.needs;
+  return [
+    head("Needs"),
+    needMeter("Hunger", n.hunger, rules.hunger_per_hour),
+    needMeter("Thirst", n.thirst, rules.thirst_per_hour),
+    needMeter("Sleep", n.sleep, rules.sleep_per_hour),
+    needMeter("Bladder", n.bladder, rules.bladder_per_hour),
+    note(`0 to ${rules.need_max}: they act at ${rules.need_pressing}, urgent at ${rules.need_urgent}. Rises per hour awake; asleep, sleep falls ${rules.sleep_recovery_per_hour}/h.`),
   ];
+}
+
+/** Persona, mood, how they see the people they have talked to, and recent memory. */
+function describeMind(m: MindView, villagers: VillagerView[]): Block[] {
+  const name = (id: number): string => villagers[id]?.name ?? "?";
+  const blocks: Block[] = [
+    head("Character"),
+    {
+      kind: "stats",
+      items: [
+        { label: "sociable", value: signed(m.sociable) },
+        { label: "warmth", value: signed(m.warmth) },
+        { label: "charity", value: signed(m.charity) },
+        { label: "skill", value: `${m.skill}/10` },
+        { label: "touchy", value: `${m.rejection_sensitivity}/10` },
+      ],
+    },
+  ];
+  if (m.worry) blocks.push(text("On their mind: ", topicSeg(m.worry)));
+  if (m.regard.length) blocks.push(head("How they see people"));
   for (const r of m.regard) {
-    lines.push(`sees ${name(r.with)}: ${r.familiarity} talks, feeling ${signed(r.feeling)}, seemed ${signed(r.last_seemed)} last time`);
+    blocks.push(text(`${name(r.with)}: feeling ${signed(r.feeling)} after ${r.familiarity} talks; seemed ${signed(r.last_seemed)} last time`));
   }
-  if (m.episodes.length) lines.push("recent talks:");
+  if (m.episodes.length) blocks.push(head("Recent talks"));
   for (const e of m.episodes) {
     const notes = e.notes.length ? ` (${e.notes.join("; ")})` : "";
-    lines.push(`  ${sinceText(e.tick)} ${name(e.with)}, ${words(e.frame)}: peak ${signed(e.peak)}, end ${signed(e.end)}${notes}`);
+    blocks.push(text(`${sinceText(e.tick)} · ${name(e.with)}, ${words(e.frame)}: peak ${signed(e.peak)}, end ${signed(e.end)}${notes}`));
   }
-  if (m.thoughts.length) lines.push("thought:");
+  if (m.thoughts.length) blocks.push(head("Thoughts"));
   for (const { tick, thought: t } of m.thoughts) {
     const blame =
       t.blame === "Me" ? "blames themself" : t.blame === "World" ? "blames the world" : t.blame === "Luck" ? "puts it down to luck" : `blames ${name(t.blame.Them)}`;
     const span = [t.lasting ? "for good" : "", t.everywhere ? "for everything" : ""].filter(Boolean).join(" and ");
     const about = topicText(t.about, name);
-    lines.push([`  ${sinceText(tick)} ${blame}${span ? `, ${span}` : ""}: `, { word: { kind: "topic", key: t.about.key }, label: about }, t.aloud ? ", aloud" : ""]);
+    blocks.push(text(`${sinceText(tick)} · ${blame}${span ? `, ${span}` : ""}: `, { word: { kind: "topic", key: t.about.key }, label: about }, t.aloud ? ", aloud" : ""));
   }
-  if (m.heard.length) lines.push("heard:");
+  if (m.heard.length) blocks.push(head("Heard"));
   for (const h of m.heard) {
     const to = h.caught === "Addressed" ? "" : h.to === null ? ", overheard from afar" : ` to ${name(h.to)}, overheard`;
-    const what: Seg[] = h.topic === null ? [] : [' "', topicSeg(h.topic), '"'];
-    lines.push([`  ${sinceText(h.tick)} ${name(h.speaker)}${to}: `, { word: { kind: "gesture", name: h.gesture }, label: words(h.gesture) }, ...what, h.about_me ? " (about me)" : ""]);
+    const what: Seg[] = h.topic === null ? [] : [" \u201c", topicSeg(h.topic), "\u201d"];
+    blocks.push(text(`${sinceText(h.tick)} · ${name(h.speaker)}${to}: `, { word: { kind: "gesture", name: h.gesture }, label: words(h.gesture) }, ...what, h.about_me ? " (about me)" : ""));
   }
-  return lines;
+  return blocks;
 }
 
-function describeVillager(v: VillagerView, stock: StockView[]): Line[] {
+function describeVillager(v: VillagerView): Card {
   const place = world.places.find((p) => p.id === v.place);
-  const lines: Line[] = [
-    `${v.name}`,
-    `${v.activity}${v.heading_for ? ` (heading for ${v.heading_for})` : ""} since ${sinceText(v.since)}`,
-    `because: ${causeText(v.cause, sim.villagers())}`,
-    `at ${place?.key ?? "?"} (${v.pos.x}, ${v.pos.y})`,
-    `${v.coins} coins`,
+  const mind = sim.mind(v.key);
+  const blocks: Block[] = [
+    text(`Because: ${causeText(v.cause, sim.villagers())}`),
+    note(`${title(place?.key ?? "?")}, at ${v.pos.x}, ${v.pos.y}`),
+    {
+      kind: "stats",
+      items: [
+        { label: "coins", value: String(v.coins) },
+        ...(mind ? [{ label: "mood", value: signed(mind.mood) }] : []),
+      ],
+    },
     ...describeNeeds(v),
   ];
-  const mind = sim.mind(v.key);
-  if (mind) lines.push(...describeMind(mind, sim.villagers()));
-  void stock;
-  return lines;
+  if (mind) blocks.push(...describeMind(mind, sim.villagers()));
+  return {
+    picture: { villager: v.key },
+    title: v.name,
+    sub: `${v.activity}${v.heading_for ? ` → ${v.heading_for}` : ""} since ${sinceText(v.since)}`,
+    blocks,
+  };
 }
 
-function describeObject(o: ObjectView, villagers: VillagerView[], stock: StockView[]): Line[] {
+function describeObject(o: ObjectView, villagers: VillagerView[], stock: StockView[]): Card {
   const place = world.places.find((p) => p.id === o.place);
   const owner = o.owner ? villagers.find((v) => v.key === o.owner) : undefined;
-  const lines: Line[] = [
-    `${words(o.kind)} (${o.key})`,
-    `in ${o.room ? `${o.building.replace(/_/g, " ")}, ${o.room}` : place?.key ?? "?"} at (${o.pos.x}, ${o.pos.y})`,
-  ];
-  if (owner) lines.push(`belongs to ${owner.name}`);
-  if (o.activity) lines.push(`for: ${o.activity}`);
-  const goods = stock.filter((s) => s.key === o.key && s.count > 0).map((s) => `${s.good} ${s.count}`);
-  if (goods.length) lines.push(`holds ${goods.join(", ")}`);
+  const blocks: Block[] = [];
+  if (owner) blocks.push(text(`Belongs to ${owner.name}`));
+  if (o.activity) blocks.push(text(`For: ${o.activity}`));
+  const goods = stock.filter((s) => s.key === o.key && s.count > 0);
+  if (goods.length) blocks.push(head("Holds"), { kind: "stats", items: goods.map((g) => ({ label: g.good, value: String(g.count) })) });
   const near = villagers.filter((v) => v.place === o.place && Math.abs(v.pos.x - o.pos.x) <= 1 && Math.abs(v.pos.y - o.pos.y) <= 1);
-  for (const v of near) lines.push(`${v.name} is here: ${v.activity}`);
-  return lines;
+  if (near.length) blocks.push(head("Here"));
+  for (const v of near) blocks.push(text(`${v.name}: ${v.activity}`));
+  blocks.push(note(o.key));
+  return {
+    picture: { tile: objectTile(o.kind) },
+    title: title(words(o.kind)),
+    sub: `${o.room ? `${title(o.building)}, ${o.room}` : title(place?.key ?? "?")} · ${o.pos.x}, ${o.pos.y}`,
+    blocks,
+  };
 }
 
-function describeTile(f: { place: number; x: number; y: number }, villagers: VillagerView[], stock: StockView[]): Line[] {
+function describeTile(f: { place: number; x: number; y: number }, villagers: VillagerView[], stock: StockView[]): Card {
   const place = world.places.find((p) => p.id === f.place);
-  if (!place) return ["?"];
+  if (!place) return { picture: null, title: "?", sub: "", blocks: [] };
   const i = f.y * place.width + f.x;
   const cell = place.cells[i] ?? "Void";
-  const lines: Line[] = [`${place.key} (${f.x}, ${f.y})`];
+  const blocks: Block[] = [];
+  let ground: string = cell;
   if (place.kind === "Zone") {
     const t = sim.terrain(place.key);
     const surface = t.tiles[i];
     const cost = t.cost[i] ?? 0;
-    lines.push(`${surface ?? cell}${cost ? `, step cost ${cost}` : ", impassable"}`);
-    if (surface) lines.push(`wear ${t.wear[i] ?? 0}, growth ${t.growth[i] ?? 0}`);
-  } else {
-    lines.push(cell);
+    if (surface) ground = surface;
+    blocks.push({
+      kind: "stats",
+      items: [
+        { label: "step cost", value: cost ? String(cost) : "impassable" },
+        ...(surface ? [{ label: "wear", value: String(t.wear[i] ?? 0) }, { label: "growth", value: String(t.growth[i] ?? 0) }] : []),
+      ],
+    });
   }
   for (const o of world.objects) {
     if (o.place !== f.place || o.pos.x !== f.x || o.pos.y !== f.y) continue;
     const goods = stock.filter((s) => s.key === o.key).map((s) => `${s.good} ${s.count}`);
-    lines.push(`${o.kind} ${o.key}${o.room ? ` in ${o.building}/${o.room}` : ""}${goods.length ? `: ${goods.join(", ")}` : ""}`);
+    blocks.push(text(`${title(words(o.kind))}${o.room ? ` in ${title(o.building)}, ${o.room}` : ""}${goods.length ? `: ${goods.join(", ")}` : ""}`));
   }
-  for (const v of villagers) {
-    if (v.place === f.place && v.pos.x === f.x && v.pos.y === f.y) lines.push(...describeVillager(v, stock));
-  }
-  return lines;
+  const here = villagers.filter((v) => v.place === f.place && v.pos.x === f.x && v.pos.y === f.y);
+  for (const v of here) blocks.push(text(`${v.name}: ${v.activity}`));
+  if (here.length) blocks.push(note("Click to follow."));
+  return { picture: null, title: title(words(ground)), sub: `${title(place.key)} · ${f.x}, ${f.y}`, blocks };
 }
 
 function inspect(villagers: VillagerView[]): void {
@@ -318,57 +366,90 @@ function inspect(villagers: VillagerView[]): void {
   // The hint has done its job once something has been pinned.
   if (pinned) hintDone = true;
   const stock = sim.economy();
-  const lines: Line[] =
-    focus.kind === "villager"
-      ? (() => {
-          const v = villagers.find((x) => x.key === focus.key);
-          return v ? describeVillager(v, stock) : ["?"];
-        })()
-      : focus.kind === "object"
-        ? (() => {
-            const o = world.objects.find((x) => x.key === focus.key);
-            return o ? describeObject(o, villagers, stock) : ["?"];
-          })()
-        : describeTile(focus, villagers, stock);
-  const unpin: Seg[] = pinned
-    ? [
-        {
-          act: () => {
-            pinned = null;
-            drawnTick = -1;
-          },
-          label: "unpin",
-        },
-      ]
-    : [];
-  lines[0] = [...unpin, ...(typeof lines[0] === "string" ? [lines[0]] : (lines[0] ?? []))];
-  // Rebuilt only when the text changes, so a word can be clicked between redraws.
-  const text = lines.map((l) => (typeof l === "string" ? l : l.map((s) => (typeof s === "string" ? s : s.label)).join(""))).join("\n");
-  if (text === shownInspect) return;
-  shownInspect = text;
-  const frag = document.createDocumentFragment();
-  lines.forEach((l, i) => {
-    if (i > 0) frag.append("\n");
-    for (const s of typeof l === "string" ? [l] : l) {
-      if (typeof s === "string") frag.append(s);
-      else if ("act" in s) {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "unpin";
-        b.textContent = s.label;
-        b.title = "or press Escape, or click it again";
-        b.addEventListener("click", s.act);
-        frag.append(b);
-      } else {
-        const b = wordsPanel.chip(s.word, s.label);
-        b.addEventListener("click", () => selectSideTab("words"));
-        frag.append(b);
-      }
-    }
-  });
-  inspectEl.replaceChildren(frag);
+  let card: Card;
+  if (focus.kind === "villager") {
+    const v = villagers.find((x) => x.key === focus.key);
+    card = v ? describeVillager(v) : { picture: null, title: "?", sub: "", blocks: [] };
+  } else if (focus.kind === "object") {
+    const o = world.objects.find((x) => x.key === focus.key);
+    card = o ? describeObject(o, villagers, stock) : { picture: null, title: "?", sub: "", blocks: [] };
+  } else {
+    card = describeTile(focus, villagers, stock);
+  }
+  // Rebuilt only when something on it changes, so a word can be clicked between redraws.
+  const key = `${pinned ? "pinned" : "hover"}${JSON.stringify(card)}`;
+  if (key === shownInspect) return;
+  shownInspect = key;
+  renderCard(card);
 }
 let shownInspect = "";
+
+/** Fills the inspector with a card. */
+function renderCard(card: Card): void {
+  const el = (tag: string, cls: string, content?: string): HTMLElement => {
+    const e = document.createElement(tag);
+    e.className = cls;
+    if (content !== undefined) e.textContent = content;
+    return e;
+  };
+  const top = el("header", "card-top");
+  const pic = document.createElement("canvas");
+  pic.className = "pic";
+  if (card.picture) {
+    const src = "villager" in card.picture ? tileset.portrait(card.picture.villager) : tileset.icon(card.picture.tile);
+    pic.width = src.width;
+    pic.height = src.height;
+    pic.getContext("2d")?.drawImage(src, 0, 0);
+  } else {
+    pic.hidden = true;
+  }
+  const names = el("div", "names");
+  names.append(el("strong", "title", card.title), el("span", "sub", card.sub));
+  top.append(pic, names);
+  if (pinned) {
+    const close = el("button", "close", "×");
+    close.setAttribute("aria-label", "let go");
+    close.title = "let go (Escape)";
+    close.addEventListener("click", () => {
+      pinned = null;
+      drawnTick = -1;
+    });
+    top.append(close);
+  }
+  const body = el("div", "card-body");
+  for (const b of card.blocks) {
+    if (b.kind === "head") body.append(el("h3", "", b.text));
+    else if (b.kind === "stats") {
+      const row = el("div", "stats");
+      for (const it of b.items) {
+        const s = el("span", "stat");
+        s.append(el("b", "", it.value), ` ${it.label}`);
+        row.append(s);
+      }
+      body.append(row);
+    } else if (b.kind === "meter") {
+      const row = el("div", `meter level${b.level}`);
+      const bar = el("span", "bar");
+      const fill = el("span", "fill");
+      fill.style.width = `${Math.min(100, (b.value / rules.need_max) * 100)}%`;
+      bar.append(fill);
+      row.append(el("span", "label", b.label), bar, el("span", "value", String(b.value)), el("span", "rate", b.note));
+      body.append(row);
+    } else {
+      const p = el("p", b.muted ? "muted" : "");
+      for (const s of b.segs) {
+        if (typeof s === "string") p.append(s);
+        else {
+          const chip = wordsPanel.chip(s.word, s.label);
+          chip.addEventListener("click", () => selectSideTab("words"));
+          p.append(chip);
+        }
+      }
+      body.append(p);
+    }
+  }
+  inspectEl.replaceChildren(top, body);
+}
 
 /** Where to draw the highlight on a place, from the focus. */
 function highlightFor(placeId: number, villagers: VillagerView[]): { x: number; y: number } | null {
@@ -386,7 +467,7 @@ function highlightFor(placeId: number, villagers: VillagerView[]): { x: number; 
 /** The who-is-where list as buttons, one per villager, so a name can be clicked. */
 /** One row per villager, made once and updated in place so nothing jumps: a name button,
  * then the activity and the place in fixed columns. */
-const rows = new Map<string, { button: HTMLButtonElement; activity: HTMLSpanElement; place: HTMLSpanElement }>();
+const rows = new Map<string, { face: HTMLCanvasElement; button: HTMLButtonElement; activity: HTMLSpanElement; place: HTMLSpanElement }>();
 let filter = "";
 const filterEl = $<HTMLInputElement>("people-filter");
 filterEl.addEventListener("input", () => {
@@ -405,11 +486,17 @@ function listEveryone(villagers: VillagerView[]): void {
         pinned = pinned?.kind === "villager" && pinned.key === v.key ? null : { kind: "villager", key: v.key };
         drawnTick = -1;
       });
+      const face = document.createElement("canvas");
+      face.className = "face";
+      const src = tileset.portrait(v.key);
+      face.width = src.width;
+      face.height = src.height;
+      face.getContext("2d")?.drawImage(src, 0, 0);
       const activity = document.createElement("span");
       const place = document.createElement("span");
       place.className = "where";
-      everyoneEl.append(button, activity, place);
-      row = { button, activity, place };
+      everyoneEl.append(face, button, activity, place);
+      row = { face, button, activity, place };
       rows.set(v.key, row);
     }
     const where = placeName(world.places.find((p) => p.id === v.place)?.key ?? "?");
@@ -417,7 +504,7 @@ function listEveryone(villagers: VillagerView[]): void {
     if (row.activity.textContent !== activity) row.activity.textContent = activity;
     if (row.place.textContent !== where) row.place.textContent = where;
     const hide = filter !== "" && !`${v.name} ${activity} ${where}`.toLowerCase().includes(filter);
-    if (row.button.hidden !== hide) row.button.hidden = row.activity.hidden = row.place.hidden = hide;
+    if (row.button.hidden !== hide) row.face.hidden = row.button.hidden = row.activity.hidden = row.place.hidden = hide;
     const pressed = pinned?.kind === "villager" && pinned.key === v.key ? "true" : "false";
     if (row.button.getAttribute("aria-pressed") !== pressed) row.button.setAttribute("aria-pressed", pressed);
   }
@@ -442,7 +529,7 @@ legendEl.append(
 
 function showPlace(id: number): void {
   activePlace = id;
-  for (const [k, { tab }] of placeTabs) tab.setAttribute("aria-selected", String(k === id));
+  for (const [k, tab] of placeTabs) tab.setAttribute("aria-selected", String(k === id));
   applyCamera();
   drawnTick = -1;
 }
@@ -524,6 +611,13 @@ function paintMap(): void {
   c.draw(mapCtx, view, sim, lastVillagers, highlightFor(c.id, lastVillagers));
   mapDirty = false;
 }
+
+// Building names are painted into the cached map with whatever font is ready; paint them
+// again once the page's own has loaded.
+void document.fonts.ready.then(() => {
+  for (const c of canvases) c.invalidate();
+  mapDirty = true;
+});
 
 /** Zooms by `f` keeping the pane point (px, py) where it is. */
 function zoomAt(f: number, px: number, py: number): void {
@@ -647,7 +741,7 @@ mapEl.addEventListener(
   true,
 );
 
-for (const [k, { tab }] of placeTabs) tab.setAttribute("aria-selected", String(k === activePlace));
+for (const [k, tab] of placeTabs) tab.setAttribute("aria-selected", String(k === activePlace));
 applyCamera();
 window.addEventListener("resize", applyCamera);
 new ResizeObserver(applyCamera).observe(mapEl);
@@ -678,11 +772,13 @@ function keepInView(v: VillagerView): void {
 function labelPlaces(villagers: VillagerView[]): void {
   for (const place of world.places) {
     const n = villagers.filter((v) => v.place === place.id).length;
-    const t = placeTabs.get(place.id);
-    if (!t) continue;
-    const text = n ? String(n) : "";
-    if (t.count.textContent !== text) t.count.textContent = text;
-    t.count.hidden = n === 0;
+    const tab = placeTabs.get(place.id);
+    if (!tab) continue;
+    const text = `${placeName(place.key)}${n ? "*" : ""}`;
+    if (tab.textContent !== text) {
+      tab.textContent = text;
+      tab.title = n ? `${n} ${n === 1 ? "person" : "people"} here` : "nobody here";
+    }
   }
 }
 
@@ -698,27 +794,38 @@ function selectSideTab(name: string): void {
 }
 for (const b of sideTabs) {
   b.addEventListener("click", () => {
-    const closed = document.body.classList.contains("drawer-closed");
+    const closed = document.body.classList.contains("journal-closed");
     // On a phone the open tab, tapped again, folds the sheet away.
     if (!closed && b.getAttribute("aria-selected") === "true" && window.matchMedia("(max-width: 760px)").matches) {
-      setDrawer(false);
+      setJournal(false);
       return;
     }
     selectSideTab(b.dataset.tab ?? "people");
-    if (closed) setDrawer(true);
+    if (closed) setJournal(true);
   });
 }
 
-// Game-minutes per real second. 6 means a day takes four real minutes.
-const SPEEDS = [1, 2, 6, 12, 30, 60, 120, 240];
-let speedIndex = 2;
-const speedSelect = speedEl as HTMLSelectElement;
-for (const [i, s] of SPEEDS.entries()) {
+// Game-minutes per real second, one button each, as arrows: 6 means a day takes four
+// real minutes. Keys 1 to 4 pick them.
+const SPEEDS = [2, 6, 30, 120];
+let speedIndex = 1;
+const speedButtons = SPEEDS.map((s, i) => {
   const day = (24 * 60) / s;
-  const length = day >= 60 ? `${day / 60}m` : `${day}s`;
-  const option = new Option(`${s}×`, String(i), i === speedIndex, i === speedIndex);
-  option.title = `${s} game minutes a second; a day takes ${length}`;
-  speedSelect.add(option);
+  const length = day >= 60 ? `${day / 60} minutes` : `${day} seconds`;
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = "▶".repeat(i + 1);
+  b.title = `${s} game minutes a second: a day takes ${length} (${i + 1})`;
+  b.setAttribute("aria-label", `speed ${i + 1}`);
+  b.addEventListener("click", () => setSpeed(i));
+  $("speed-buttons").append(b);
+  return b;
+});
+/** Picks a speed, and resumes if paused. */
+function setSpeed(i: number): void {
+  speedIndex = i;
+  paused = false;
+  drawnTick = -1;
 }
 let paused = false;
 // The words tab, fed by every step the sim takes.
@@ -761,6 +868,28 @@ function twelveHour(hour: number, minute: number): string {
   return `${h}:${String(minute).padStart(2, "0")}${hour < 12 ? "am" : "pm"}`;
 }
 
+/** The clock's dial: the sky by the hour, with the sun crossing it by day and the moon by
+ * night, over a strip of ground. */
+const dialEl = document.getElementById("dial");
+let dialHour = -1;
+function drawDial(hour: number): void {
+  if (!dialEl || Math.abs(hour - dialHour) < 0.1) return;
+  dialHour = hour;
+  const day = hour >= 6 && hour < 18;
+  // Where along the arc from the east (left) to the west (right), 0 to 1.
+  const t = day ? (hour - 6) / 12 : ((hour + 6) % 24) / 12;
+  const a = Math.PI * (1 - t);
+  const x = 23 + 15 * Math.cos(a);
+  const y = 30 - 15 * Math.sin(a);
+  const sky = day ? (hour < 7.5 || hour >= 16.5 ? "#e8a160" : "#8cc4e8") : hour >= 18 && hour < 19.5 ? "#4a3a6a" : "#1c2340";
+  const body = day ? '<circle r="5" fill="#ffd968" stroke="#fff3b0" stroke-width="1.5"/>' : '<circle r="4.5" fill="#efe8d0"/><circle r="4" cx="2" cy="-1.5" fill="' + sky + '"/>';
+  dialEl.innerHTML =
+    `<clipPath id="dial-clip"><circle cx="23" cy="23" r="21"/></clipPath>` +
+    `<g clip-path="url(#dial-clip)"><rect width="46" height="46" fill="${sky}"/>` +
+    `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${body}</g>` +
+    `<rect y="30" width="46" height="16" fill="#4f8a3c"/><rect y="30" width="46" height="2" fill="#6aa850"/></g>`;
+}
+
 function draw(): void {
   if (sim.tick === drawnTick && paused === drawnPaused) return;
   drawnTick = sim.tick;
@@ -770,8 +899,10 @@ function draw(): void {
   const cal = clock.calendar;
   clockEl.textContent = `${cal.weekday} ${twelveHour(clock.time.hour, clock.time.minute)}`;
   dateEl.textContent = `${cal.season} ${cal.day_of_season}, year ${cal.year}`;
-  pauseEl.textContent = paused ? "▶" : "❚❚";
   pauseEl.setAttribute("aria-label", paused ? "resume" : "pause");
+  pauseEl.setAttribute("aria-pressed", String(paused));
+  speedButtons.forEach((b, i) => b.setAttribute("aria-pressed", String(!paused && i === speedIndex)));
+  drawDial(clock.time.hour + clock.time.minute / 60);
   const past = sim.tick < sim.frontier;
   backEl.hidden = !past;
   clockEl.classList.toggle("past", past);
@@ -846,16 +977,7 @@ const dateEl = $("date");
 pauseEl.addEventListener("click", () => {
   paused = !paused;
 });
-/** The speed control's tooltip says how long a day takes at the chosen speed. */
-const titleSpeed = (): void => {
-  speedSelect.title = speedSelect.selectedOptions[0]?.title ?? "";
-};
-titleSpeed();
-speedSelect.addEventListener("change", () => {
-  speedIndex = Number(speedSelect.value);
-  titleSpeed();
-  drawnTick = -1;
-});
+
 // Skips to the next 6am: later today if it is still night, else tomorrow.
 $("morning").addEventListener("click", () => {
   const day = 24 * 60 * TICKS_PER_MINUTE;
@@ -1074,28 +1196,29 @@ async function setView3d(on: boolean): Promise<void> {
   if (!on) applyCamera();
 }
 
-// The drawer of panels folds away to give the map the window. On a phone it is a sheet
-// whose tabs stay showing, and choosing a tab opens it.
-const drawerEl = $("drawer");
-function setDrawer(open: boolean): void {
-  document.body.classList.toggle("drawer-closed", !open);
-  drawerEl.setAttribute("aria-pressed", String(open));
+// The journal (people, days, words, key) folds away to give the map the window. On a
+// phone it is a sheet whose tabs stay showing, and choosing a tab opens it.
+const journalEl = $("journal");
+function setJournal(open: boolean): void {
+  document.body.classList.toggle("journal-closed", !open);
+  journalEl.setAttribute("aria-pressed", String(open));
   try {
-    localStorage.setItem("drawer", open ? "open" : "closed");
+    localStorage.setItem("journal", open ? "open" : "closed");
   } catch {
-    // Storage may be unavailable; the drawer just starts open next time.
+    // Storage may be unavailable; the journal just starts open next time.
   }
   applyCamera();
 }
-drawerEl.addEventListener("click", () => setDrawer(document.body.classList.contains("drawer-closed")));
-let drawerStart = !window.matchMedia("(max-width: 760px)").matches;
+journalEl.addEventListener("click", () => setJournal(document.body.classList.contains("journal-closed")));
+$("journal-close").addEventListener("click", () => setJournal(false));
+let journalStart = !window.matchMedia("(max-width: 760px)").matches;
 try {
-  const saved = localStorage.getItem("drawer");
-  if (saved) drawerStart = saved === "open";
+  const saved = localStorage.getItem("journal");
+  if (saved) journalStart = saved === "open";
 } catch {
   // As above.
 }
-setDrawer(drawerStart);
+setJournal(journalStart);
 view3dEl.addEventListener("click", () => void setView3d(!view3d));
 $("turn-left").addEventListener("click", () => diorama?.rotate(-Math.PI / 4));
 $("turn-right").addEventListener("click", () => diorama?.rotate(Math.PI / 4));

@@ -11,6 +11,7 @@
     "test": "node -e \"console.log('viewer: no unit tests; the Playwright smoke is just viewer-smoke')\""
   },
   "dependencies": {
+    "@fontsource-variable/nunito": "5.2.6",
     "@game-world/protocol": "workspace:*",
     "@game-world/sim-wasm": "workspace:*",
     "three": "0.185.1"

@@ -1334,3 +1334,22 @@ Implications: wealth now levels off where weekly income matches half the
 excess over 40. Tuning is in `toolbox::{COMFORT_COINS, LUXURIES,
 MOST_LUXURIES}` and the railway's `delivers`. Tom's tavern still loses money,
 which predates this.
+
+## 2026-10-30: The store takes a markup; Tom stays bad at business
+
+Ian: "sure for a markup. Poor Tom is running a bad business. That's okay in a
+sense, some people are bad at business!"
+
+Decided and built:
+
+- The store makes a coin on each tea, sugar and tobacco (`toolbox::MARKUP`).
+  This corrects the earlier entry, where it sold them at cost.
+- So the shopkeeper does not just accumulate, Greta spends like anyone else,
+  but keeps 200 coins back to restock with and buys her own luxuries from
+  the goods shed an hour after a stopping train, up to 36 a trip. The train
+  brings 36 of each so there is some left after the store's fetch.
+- Tom's tavern losing money is left alone.
+
+Implications: Greta levels off around 330 coins, the richest in the valley.
+The reserve matters: without it she spent her margin on herself and could
+not restock, and the shelves went bare.

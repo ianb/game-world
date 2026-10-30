@@ -41,18 +41,21 @@ pnpm --filter @game-world/viewer dev   # then open the printed localhost URL
 ```
 
 The page shows the map of one place at a time, filling the window, with
-the controls floating over it: the clock, pause (or space) and speed at
-the top left, the places (with how many people are in each) and the 3D
-switch at the top right, zoom at the bottom right. The panels are in a
-drawer on the right that the "panels" button folds away; on a phone they
-are a sheet along the bottom. The sim advances at six game-minutes per
-second. Pan the map with a two-finger scroll or a drag; zoom with a pinch,
-ctrl+scroll or the buttons. Zoomed far out, each person is a dot. The text
-views are in the tools and in `window.__scene()`, not on the page. Hover a
-tile to see what it is and its numbers in the inspector at the bottom left,
-click to pin it, or click a name in the people panel (which filters as you
-type) to follow that person from place to place: activity, why, coins and
-needs. The days tab pages through
+the controls floating over it on wooden panels like a game's: the clock at
+the top left (a dial with the sun or moon, the day, pause and four speeds,
+also on space and the keys 1 to 4), the places across the top (a `*` marks
+one with somebody in it) with the 3D switch, and zoom at the bottom right.
+The journal on the right holds the people, days, words and key pages; the
+"Journal" button or J folds it away to give the map the whole window, and
+on a phone it is a sheet along the bottom. Pan the map with a two-finger
+scroll or a drag; zoom with a pinch, ctrl+scroll or the buttons. Zoomed far
+out, each person is a dot. The text views are in the tools and in
+`window.__scene()`, not on the page. Hover a tile to see what it is in the
+card at the bottom left, click to pin it, or click a person (on the map or
+in the people page, which filters as you type) to follow them from place to
+place: what they are doing and why, coins, needs as bars, character,
+thoughts and what they have heard. The typeface is Nunito (SIL Open Font
+License), bundled from `@fontsource-variable/nunito`. The days tab pages through
 finished days, what was unusual first; click a line to replay the town to
 that moment, and "back to now" to return. The words tab lists every topic
 and gesture with how often it has come up; open one for who uses it, how

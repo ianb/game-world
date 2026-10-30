@@ -6,45 +6,64 @@
     <title>game-world</title>
     <link rel="icon" href="data:," />
     <style>
-      /* Layout: the map fills the window, with the controls floating over it (time at the
-         top left, places and views at the top right, zoom at the bottom right, the
-         inspector at the bottom left) and the panels in a drawer on the right that folds
-         away. On a phone the drawer is a sheet along the bottom. */
+      /* A game's screen: the map fills the window and everything else floats over it on
+         framed wooden panels. The clock is at the top left, the places across the top,
+         zoom at the bottom right, the card for whatever is picked at the bottom left, and
+         the journal (people, days, words, key) on the right, folding away. On a phone the
+         journal is a sheet along the bottom. One dark look, by design. */
       :root {
-        --bg: #0d0c0b;
-        --panel: rgba(26, 24, 21, 0.94);
-        --panel-solid: #1a1815;
-        --raised: #26231f;
-        --hover: #322e28;
-        --line: #3a352e;
-        --text: #ebe4d6;
-        --muted: #9b9284;
-        --accent: #d9a35e;
-        --accent-ink: #1c1307;
-        --past: #e8c76a;
-        --radius: 10px;
+        --bg: #0f0c09;
+        --wood: #2a2018;
+        --wood-hi: #33281e;
+        --wood-lo: #1f1812;
+        --frame: #6b4f36;
+        --frame-hi: #9a7552;
+        --inset: #17120d;
+        --parchment: #f3e8cf;
+        --ink: #2b2014;
+        --text: #f1e6cf;
+        --muted: #b3a385;
+        --gold: #e8b65a;
+        --gold-ink: #2a1a06;
+        --past: #f0c86a;
+        --good: #7fbf5a;
+        --some: #d8c45a;
+        --pressing: #e8913c;
+        --urgent: #e0503a;
+        --radius: 12px;
         --drawer: 400px;
-        --sheet: 46dvh;
+        --sheet: 48dvh;
         --gap: 10px;
-        --ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-        --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        --ui: "Nunito Variable", "Nunito", ui-rounded, "Segoe UI", system-ui, sans-serif;
         color-scheme: dark;
       }
       * { box-sizing: border-box; }
       html, body { height: 100%; }
-      body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.35 var(--ui); height: 100dvh; overflow: hidden; }
+      body { margin: 0; background: var(--bg); color: var(--text); font: 600 14px/1.35 var(--ui); height: 100dvh; overflow: hidden; font-variant-numeric: tabular-nums; }
       button, select, input { font: inherit; color: inherit; }
-      button { background: var(--raised); border: 1px solid var(--line); border-radius: 8px; min-height: 34px; padding: 4px 10px; cursor: pointer; }
-      button:hover { background: var(--hover); }
+      button {
+        background: linear-gradient(var(--wood-hi), var(--wood-lo));
+        border: 2px solid var(--frame); border-radius: 9px; min-height: 36px; padding: 4px 12px; cursor: pointer; font-weight: 800;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 0 rgba(0, 0, 0, 0.35);
+      }
+      button:hover { border-color: var(--frame-hi); }
+      button:active { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); }
       button:disabled { opacity: 0.4; cursor: default; }
-      button[aria-pressed="true"], button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-      select { background: var(--raised); border: 1px solid var(--line); border-radius: 8px; min-height: 34px; padding: 4px 6px; }
-      :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+      button[aria-pressed="true"], button[aria-selected="true"] { background: linear-gradient(#f2c672, #d99f3e); color: var(--gold-ink); border-color: #f6d590; }
+      :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
       .muted { color: var(--muted); }
+      a { color: var(--gold); }
       pre { margin: 0; white-space: pre; overflow-x: auto; }
 
+      /* The wooden frame every floating panel shares. */
+      .panel {
+        background: linear-gradient(var(--wood-hi), var(--wood));
+        border: 2px solid var(--frame); border-radius: var(--radius);
+        box-shadow: inset 0 0 0 2px var(--wood-lo), inset 0 2px 0 2px rgba(255, 255, 255, 0.05), 0 8px 24px rgba(0, 0, 0, 0.5);
+      }
+
       #app { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) var(--drawer); }
-      body.drawer-closed #app { grid-template-columns: minmax(0, 1fr) 0; }
+      body.journal-closed #app { grid-template-columns: minmax(0, 1fr) 0; }
       #stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
 
       /* The map: one canvas the size of the pane, drawn through a camera (main.ts). */
@@ -57,90 +76,122 @@
       .diorama { position: absolute; inset: 0; }
       .diorama canvas { display: block; width: 100%; height: 100%; cursor: grab; }
       .diorama .labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-      .diorama .name, .diorama .speech { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: 11px; padding: 1px 4px; border-radius: 3px; }
-      .diorama .name { background: rgba(0, 0, 0, 0.55); color: #fff; }
-      .diorama .name.focus { outline: 1px solid var(--accent); }
-      .diorama .speech { background: #f4ecd8; color: #222; border-radius: 8px; padding: 2px 7px; }
+      .diorama .name, .diorama .speech { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: 12px; font-weight: 800; padding: 1px 6px; border-radius: 6px; }
+      .diorama .name { background: rgba(20, 14, 8, 0.7); color: var(--parchment); }
+      .diorama .name.focus { outline: 2px solid var(--gold); }
+      .diorama .speech { background: var(--parchment); color: var(--ink); border-radius: 10px; padding: 2px 8px; }
 
-      /* Floating controls. */
-      .hud { position: absolute; z-index: 2; display: flex; gap: 6px; align-items: center; }
-      .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); backdrop-filter: blur(6px); }
-      #timebar { top: calc(var(--gap) + env(safe-area-inset-top, 0px)); left: calc(var(--gap) + env(safe-area-inset-left, 0px)); padding: 6px 8px; flex-wrap: wrap; max-width: calc(100% - 2 * var(--gap)); }
-      #pause { width: 38px; padding: 0; font-size: 15px; }
-      .clock { display: grid; line-height: 1.15; min-width: 15ch; padding: 0 4px; }
-      #clock { font: 600 15px/1.15 var(--mono); font-variant-numeric: tabular-nums; }
+      .hud { position: absolute; z-index: 2; display: flex; gap: 8px; align-items: center; }
+
+      /* The clock: a dial with the sun or moon, the day and time, and the speed. */
+      #timebar { top: calc(var(--gap) + env(safe-area-inset-top, 0px)); left: calc(var(--gap) + env(safe-area-inset-left, 0px)); padding: 6px 10px 6px 6px; gap: 10px; }
+      #dial { width: 46px; height: 46px; flex: none; border-radius: 50%; background: var(--inset); border: 2px solid var(--frame); }
+      .clock { display: grid; line-height: 1.1; min-width: 8.5em; }
+      #clock { font-size: 20px; font-weight: 900; letter-spacing: 0.01em; }
       #clock.past { color: var(--past); }
-      #date { color: var(--muted); font-size: 11px; }
-      #speed { max-width: 14ch; }
-      #back { background: var(--past); color: var(--accent-ink); border-color: var(--past); }
-      #views { top: calc(var(--gap) + env(safe-area-inset-top, 0px)); right: var(--gap); justify-content: flex-end; max-width: calc(100% - 470px); }
-      #place-tabs { display: flex; gap: 2px; padding: 3px; overflow-x: auto; scrollbar-width: none; min-width: 0; flex: 0 1 auto; }
-      .viewbtns { flex: none; }
-      #place-tabs button { border: none; background: none; white-space: nowrap; min-height: 30px; padding: 3px 10px; }
-      #place-tabs button:hover { background: var(--hover); }
-      #place-tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
-      #place-tabs .count { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 9px; background: rgba(0, 0, 0, 0.3); font-size: 11px; text-align: center; }
-      .viewbtns { padding: 3px; display: flex; gap: 3px; }
-      .viewbtns button { border: none; min-height: 30px; }
-      #zoom { right: var(--gap); bottom: calc(var(--gap) + env(safe-area-inset-bottom, 0px)); flex-direction: column; padding: 3px; gap: 3px; }
-      #zoom button { width: 38px; padding: 0; border: none; font-size: 16px; }
-      #turn { display: flex; flex-direction: column; gap: 3px; }
+      #date { color: var(--muted); font-size: 12px; font-weight: 700; }
+      .speeds { display: flex; gap: 3px; padding: 3px; background: var(--inset); border-radius: 10px; }
+      .speeds button { min-width: 38px; padding: 2px 6px; font-size: 12px; letter-spacing: -0.12em; border-width: 1px; }
+      #pause { font-size: 14px; letter-spacing: 0; }
+      #back { background: linear-gradient(#f6d77e, var(--past)); color: var(--gold-ink); border-color: #f8e2a0; }
 
-      /* The inspector: whatever is pinned or under the pointer. */
-      #inspector { left: var(--gap); bottom: calc(var(--gap) + env(safe-area-inset-bottom, 0px)); width: min(440px, calc(100% - 80px)); max-height: 46%; display: flex; flex-direction: column; align-items: stretch; padding: 0; }
-      #inspect { overflow: auto; padding: 10px 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.4 var(--mono); font-variant-numeric: tabular-nums; }
-      #inspect button.word { min-height: 0; padding: 0 5px; font: inherit; border-radius: 5px; }
-      #inspect button.unpin { min-height: 0; padding: 0 7px; font: inherit; border-radius: 5px; float: right; margin-left: 8px; }
-      #hint { left: var(--gap); bottom: calc(var(--gap) + env(safe-area-inset-bottom, 0px)); padding: 7px 12px; color: var(--muted); pointer-events: none; }
+      /* Places across the top, and the view switches. */
+      #views { top: calc(var(--gap) + env(safe-area-inset-top, 0px)); right: var(--gap); justify-content: flex-end; max-width: calc(100% - 560px); }
+      #place-tabs { display: flex; gap: 3px; padding: 4px; overflow-x: auto; scrollbar-width: none; min-width: 0; flex: 0 1 auto; }
+      #place-tabs button { white-space: nowrap; min-height: 32px; padding: 3px 12px; border-width: 1px; }
+      .viewbtns { display: flex; gap: 4px; padding: 4px; flex: none; }
+      .viewbtns button { min-height: 32px; border-width: 1px; }
+      #zoom { right: var(--gap); bottom: calc(var(--gap) + env(safe-area-inset-bottom, 0px)); flex-direction: column; padding: 4px; gap: 4px; }
+      #zoom button { width: 40px; padding: 0; font-size: 18px; border-width: 1px; }
+      #turn { display: flex; flex-direction: column; gap: 4px; }
 
-      /* The drawer of panels. */
-      #side { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--panel-solid); border-left: 1px solid var(--line); overflow: hidden; }
-      body.drawer-closed #side { border-left: none; }
-      #side-tabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--line); }
-      #side-tabs button { flex: 1; border: none; background: none; }
-      #side-tabs button:hover { background: var(--hover); }
-      #side-tabs button[aria-selected="true"] { background: var(--raised); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
-      .tab { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; display: grid; gap: 10px; align-content: start; }
+      /* The card for whatever is picked or under the pointer. */
+      #inspector { left: var(--gap); bottom: calc(var(--gap) + env(safe-area-inset-bottom, 0px)); width: min(400px, calc(100% - 80px)); max-height: 52%; display: flex; flex-direction: column; align-items: stretch; padding: 0; overflow: hidden; }
+      #inspect { display: flex; flex-direction: column; min-height: 0; }
+      .card-top { display: flex; gap: 10px; align-items: center; padding: 10px 10px 8px; border-bottom: 2px solid var(--wood-lo); }
+      .card-top .pic { width: 52px; height: 52px; flex: none; image-rendering: pixelated; background: var(--parchment); border: 2px solid var(--frame); border-radius: 10px; object-fit: contain; }
+      .card-top .names { display: grid; min-width: 0; flex: 1; }
+      .card-top .title { font-size: 18px; font-weight: 900; line-height: 1.15; }
+      .card-top .sub { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .card-top .close { width: 32px; min-height: 32px; padding: 0; font-size: 18px; line-height: 1; border-width: 1px; align-self: flex-start; }
+      .card-body { overflow: auto; padding: 8px 12px 12px; display: grid; gap: 5px; font-size: 13px; font-weight: 600; }
+      .card-body p { margin: 0; }
+      .card-body h3 { margin: 6px 0 0; font-size: 11px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+      .stats { display: flex; flex-wrap: wrap; gap: 5px; }
+      .stat { background: var(--inset); border-radius: 8px; padding: 2px 8px; color: var(--muted); font-size: 12px; }
+      .stat b { color: var(--text); font-weight: 900; }
+      .meter { display: grid; grid-template-columns: 5.2em 1fr 2.2em 3.6em; gap: 8px; align-items: center; }
+      .meter .bar { height: 10px; background: var(--inset); border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); }
+      .meter .fill { display: block; height: 100%; border-radius: 5px; background: var(--good); }
+      .meter.level1 .fill { background: var(--some); }
+      .meter.level2 .fill { background: var(--pressing); }
+      .meter.level3 .fill { background: var(--urgent); }
+      .meter .value { text-align: right; font-weight: 900; }
+      .meter .rate { color: var(--muted); font-size: 12px; }
+      #inspect button.word { min-height: 0; padding: 0 6px; font-size: 12px; border-width: 1px; border-radius: 6px; }
+      #hint { left: var(--gap); bottom: calc(var(--gap) + env(safe-area-inset-bottom, 0px)); padding: 8px 14px; color: var(--muted); pointer-events: none; }
+
+      /* The journal. */
+      #side { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: linear-gradient(var(--wood-hi), var(--wood)); border-left: 3px solid var(--frame); overflow: hidden; }
+      body.journal-closed #side { border-left: none; }
+      .journal-head { display: flex; align-items: center; gap: 8px; padding: 8px 8px 0 12px; }
+      .journal-head h2 { margin: 0; flex: 1; font-size: 15px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+      #journal-close { width: 32px; min-height: 32px; padding: 0; font-size: 18px; border-width: 1px; }
+      #side-tabs { display: flex; gap: 4px; padding: 8px; }
+      #side-tabs button { flex: 1; min-height: 34px; padding: 2px 6px; border-width: 1px; }
+      .tab { flex: 1; min-height: 0; overflow: auto; margin: 0 8px 8px; padding: 10px 12px; display: grid; gap: 10px; align-content: start; background: var(--parchment); color: var(--ink); border-radius: 10px; box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.25); font-weight: 600; }
+      .tab .muted, .tab .when { color: #7a6a52; }
+      .tab a { color: #8a5a20; }
+      .tab button { background: #fff8e8; color: var(--ink); border: 1px solid #cdb994; box-shadow: none; font-weight: 700; }
+      .tab button:hover { border-color: #a8885a; background: #fff3d6; }
+      .tab button[aria-pressed="true"] { background: linear-gradient(#f2c672, #d99f3e); border-color: #b9802c; }
       .tab[hidden], section[hidden] { display: none; }
-      #people-filter { width: 100%; background: var(--raised); border: 1px solid var(--line); border-radius: 8px; min-height: 34px; padding: 4px 10px; }
-      #everyone { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: 2px 10px; align-items: center; align-content: start; }
+      #people-filter { width: 100%; background: #fffaf0; color: var(--ink); border: 1px solid #cdb994; border-radius: 9px; min-height: 36px; padding: 4px 12px; }
+      #everyone { display: grid; grid-template-columns: 28px max-content minmax(0, 1fr) max-content; gap: 3px 10px; align-items: center; align-content: start; }
       #everyone > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      #everyone > .where { color: var(--muted); font-size: 12px; }
+      #everyone > .where { color: #7a6a52; font-size: 12px; }
       #everyone > [hidden] { display: none; }
-      button.name { min-height: 28px; min-width: 0; padding: 2px 8px; text-align: left; border: none; background: none; font-weight: 600; }
-      button.name:hover { background: var(--hover); }
-      button.name[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+      #everyone canvas.face { width: 28px; height: 28px; image-rendering: pixelated; background: #e9dcbd; border-radius: 6px; }
+      #everyone button.name { min-height: 28px; min-width: 0; padding: 2px 8px; text-align: left; border: none; background: none; font-weight: 900; }
+      #everyone button.name:hover { background: #f0e2c2; }
+      #everyone button.name[aria-pressed="true"] { background: linear-gradient(#f2c672, #d99f3e); }
       .daynav { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
-      .daynav strong { text-align: center; }
+      .daynav strong { text-align: center; font-weight: 900; }
       #days { display: grid; gap: 4px; align-content: start; }
-      #days details { border-top: 1px solid var(--line); padding-top: 4px; }
-      #days summary { cursor: pointer; min-height: 30px; display: flex; align-items: center; color: var(--muted); }
-      button.moment { display: grid; grid-template-columns: 6em 1fr; gap: 8px; width: 100%; min-height: 30px; text-align: left; background: none; border: none; border-radius: 6px; padding: 4px 6px; }
-      button.moment:hover { background: var(--hover); }
-      button.moment .when { color: var(--muted); text-align: right; font-family: var(--mono); font-size: 12px; }
-      button.moment img.photo { grid-column: 1 / -1; width: 100%; max-width: 480px; border-radius: 6px; }
+      #days details { border-top: 1px solid #d6c39e; padding-top: 4px; }
+      #days summary { cursor: pointer; min-height: 30px; display: flex; align-items: center; color: #7a6a52; }
+      .tab button.moment { display: grid; grid-template-columns: 5.5em 1fr; gap: 8px; width: 100%; min-height: 30px; text-align: left; background: none; border: none; border-radius: 8px; padding: 4px 6px; font-weight: 600; }
+      .tab button.moment:hover { background: #f0e2c2; }
+      button.moment .when { text-align: right; font-size: 12px; font-weight: 800; }
+      button.moment img.photo { grid-column: 1 / -1; width: 100%; max-width: 480px; border-radius: 8px; }
       #words { display: grid; gap: 8px; align-content: start; }
-      #words h2 { font-size: 12px; color: var(--muted); margin: 8px 0 0; text-transform: uppercase; letter-spacing: 0.06em; }
+      #words h2 { font-size: 12px; color: #8a5a20; margin: 8px 0 0; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 900; }
       .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-      button.word { min-height: 28px; min-width: 0; padding: 2px 8px; }
+      button.word { min-height: 28px; min-width: 0; padding: 2px 10px; border-radius: 14px; }
       .word-head { white-space: pre-wrap; }
-      #words button.moment { grid-template-columns: 11ch 1fr; }
+      #words button.moment { grid-template-columns: 10em 1fr; }
       #legend { overflow-x: auto; }
       canvas.legend { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
-      a { color: var(--accent); }
 
-      /* Phones: the drawer is a sheet along the bottom, its tabs always showing. */
+      /* Phones: the clock across the top, places under it, the journal a sheet below. */
       @media (max-width: 760px) {
         #app { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
-        body.drawer-closed #app { grid-template-columns: minmax(0, 1fr); }
-        #side { border-left: none; border-top: 1px solid var(--line); height: var(--sheet); padding-bottom: env(safe-area-inset-bottom, 0px); }
-        body.drawer-closed #side { height: auto; }
-        body.drawer-closed #side .tab { display: none; }
-        #drawer { display: none; }
-        #timebar { right: var(--gap); flex-wrap: nowrap; }
-        .clock { min-width: 0; flex: 1; }
+        body.journal-closed #app { grid-template-columns: minmax(0, 1fr); }
+        #side { border-left: none; border-top: 3px solid var(--frame); height: var(--sheet); padding-bottom: env(safe-area-inset-bottom, 0px); }
+        body.journal-closed #side { height: auto; }
+        body.journal-closed #side .tab, body.journal-closed .journal-head { display: none; }
+        #journal { display: none; }
+        #timebar { right: var(--gap); gap: 6px; padding: 5px 6px; }
+        .clock { min-width: 0; flex: 1; white-space: nowrap; }
+        #clock { font-size: 15px; }
+        #date { overflow: hidden; text-overflow: ellipsis; }
+        #dial { width: 36px; height: 36px; }
+        .speeds { gap: 2px; padding: 2px; }
+        .speeds button { min-width: 28px; padding: 2px 3px; font-size: 10px; }
+        #morning { padding: 2px 8px; }
+        .wide { display: none; }
         #views { top: calc(var(--gap) + 58px + env(safe-area-inset-top, 0px)); left: var(--gap); right: var(--gap); max-width: none; }
-        #inspector { width: calc(100% - 2 * var(--gap) - 52px); max-height: 42%; }
+        #inspector { width: calc(100% - 2 * var(--gap) - 56px); max-height: 46%; }
       }
     </style>
   </head>
@@ -150,42 +201,46 @@
         <div id="map"><canvas id="map-canvas" role="img" aria-label="map"></canvas></div>
         <div id="map3d" hidden></div>
 
-        <div class="hud card" id="timebar" role="group" aria-label="Time">
-          <button id="pause" aria-label="pause" title="pause (space)">❚❚</button>
+        <div class="hud panel" id="timebar" role="group" aria-label="Time">
+          <svg id="dial" viewBox="0 0 46 46" aria-hidden="true"></svg>
           <div class="clock"><strong id="clock">loading…</strong><span id="date"></span></div>
-          <select id="speed" aria-label="speed" title="game minutes per real second"></select>
-          <button id="morning" title="skip to the next 6am">to 6am</button>
+          <div class="speeds" role="group" aria-label="Speed">
+            <button id="pause" aria-label="pause" title="pause (space)">❚❚</button>
+            <span id="speed-buttons" style="display: contents"></span>
+          </div>
+          <button id="morning" title="skip to the next 6am" aria-label="skip to the next 6am">⏭<span class="wide"> 6am</span></button>
           <button id="back" hidden>back to now</button>
         </div>
 
         <div class="hud" id="views">
-          <nav class="card" id="place-tabs" role="tablist" aria-label="Places"></nav>
-          <div class="card viewbtns">
+          <nav class="panel" id="place-tabs" role="tablist" aria-label="Places"></nav>
+          <div class="panel viewbtns">
             <button id="view3d" aria-pressed="false" title="switch between the map and the 3D view">3D</button>
-            <button id="drawer" aria-pressed="true" title="show or hide the panels">panels</button>
+            <button id="journal" aria-pressed="true" title="show or hide the journal: people, days, words and the key (J)">Journal</button>
           </div>
         </div>
 
-        <div class="hud card" id="zoom" role="group" aria-label="Zoom">
+        <div class="hud panel" id="zoom" role="group" aria-label="Zoom">
           <button id="zoom-in" aria-label="zoom in" title="zoom in">+</button>
           <button id="zoom-fit" aria-label="fit" title="fit the place to the window">⤢</button>
           <button id="zoom-out" aria-label="zoom out" title="zoom out">−</button>
           <span id="turn" hidden><button id="turn-left" aria-label="turn left" title="turn left">⟲</button><button id="turn-right" aria-label="turn right" title="turn right">⟳</button></span>
         </div>
 
-        <section class="hud card" id="inspector" aria-label="Inspector" hidden><pre id="inspect"></pre></section>
-        <div class="hud card" id="hint">click a person or a thing to follow it; Escape lets go</div>
+        <section class="hud panel" id="inspector" aria-label="Inspector" hidden><div id="inspect"></div></section>
+        <div class="hud panel" id="hint">click a person or a thing to follow it</div>
       </main>
 
-      <aside id="side">
-        <nav id="side-tabs" role="tablist" aria-label="Panels">
+      <aside id="side" aria-label="Journal">
+        <div class="journal-head"><h2>Journal</h2><button id="journal-close" aria-label="close the journal" title="close (J)">×</button></div>
+        <nav id="side-tabs" role="tablist" aria-label="Journal pages">
           <button role="tab" data-tab="people" aria-selected="true">People</button>
           <button role="tab" data-tab="days" aria-selected="false">Days</button>
           <button role="tab" data-tab="words" aria-selected="false">Words</button>
           <button role="tab" data-tab="key" aria-selected="false">Key</button>
         </nav>
         <div class="tab" id="tab-people" role="tabpanel">
-          <input id="people-filter" type="search" placeholder="find someone, a place, an activity" aria-label="filter people" />
+          <input id="people-filter" type="search" placeholder="Find someone, a place, an activity" aria-label="filter people" />
           <div id="everyone"></div>
         </div>
         <div class="tab" id="tab-days" role="tabpanel" hidden>
@@ -194,7 +249,7 @@
             <strong id="day-title"></strong>
             <button id="day-next" aria-label="later day">▶</button>
           </div>
-          <button id="day-photos" title="Photographs each unusual moment of this day in 3D.">photograph this day</button>
+          <button id="day-photos" title="Photographs each unusual moment of this day in 3D.">Photograph this day</button>
           <section id="days" aria-label="What happened that day"></section>
         </div>
         <div class="tab" id="tab-words" role="tabpanel" hidden>
@@ -202,7 +257,7 @@
         </div>
         <div class="tab" id="tab-key" role="tabpanel" hidden>
           <div id="legend"></div>
-          <p class="muted">Art: Liberated Pixel Cup contributors, CC-BY-SA 3.0 / GPL 3.0. <a href="https://github.com/ianb/game-world/blob/main/art/lpc/README.md">Credits</a>.</p>
+          <p class="muted">Art: Liberated Pixel Cup contributors, CC-BY-SA 3.0 / GPL 3.0. <a href="https://github.com/ianb/game-world/blob/main/art/lpc/README.md">Credits</a>. Type: Nunito, SIL Open Font License.</p>
         </div>
       </aside>
     </div>
