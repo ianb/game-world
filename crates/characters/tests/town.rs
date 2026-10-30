@@ -537,3 +537,15 @@ fn errands_queue_rather_than_replace_each_other() {
     }
     assert!(checked > 0, "no morning starting with all three errands");
 }
+
+#[test]
+fn rewinding_into_the_first_day() {
+    // The first day's snapshot is taken before the first step, while the events of making
+    // the sim are still waiting to be returned.
+    let mut history: sim::history::History<Town> = sim::history::History::new(1, town());
+    history.step_until(at(1, 6, 0)).unwrap();
+    history.rewind(at(0, 12, 0)).unwrap();
+    let mut fresh: Sim<Town> = Sim::new(1, town());
+    fresh.step_until(at(0, 12, 0)).unwrap();
+    assert_eq!(history.sim().hash(), fresh.hash());
+}

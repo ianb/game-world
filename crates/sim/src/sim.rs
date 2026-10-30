@@ -68,6 +68,7 @@ pub struct SimState<C> {
     pub characters: C,
     /// Events produced while constructing the sim (the first day's plans), returned by the
     /// first `step_until`. Part of the state so a restored sim behaves the same.
+    #[serde(with = "crate::recall::as_json::list")]
     pub pending: Vec<Emitted>,
 }
 

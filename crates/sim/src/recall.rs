@@ -72,7 +72,9 @@ pub struct Recorded {
 
 /// `Emitted` is internally tagged for the viewer, which postcard cannot decode, so in the
 /// snapshot a kept event travels as JSON text.
-mod as_json {
+/// Events kept in the snapshot as JSON text: `Emitted` is internally tagged for the
+/// viewer, and postcard cannot decode that.
+pub(crate) mod as_json {
     use crate::protocol::Emitted;
     use serde::{Deserialize, Deserializer, Serializer, de, ser};
 
@@ -84,6 +86,21 @@ mod as_json {
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Emitted, D::Error> {
         let text = String::deserialize(d)?;
         serde_json::from_str(&text).map_err(de::Error::custom)
+    }
+
+    /// The same for a list of events.
+    pub mod list {
+        use super::{Deserialize, Deserializer, Emitted, Serializer, de, ser};
+
+        pub fn serialize<S: Serializer>(e: &[Emitted], s: S) -> Result<S::Ok, S::Error> {
+            let text = serde_json::to_string(e).map_err(ser::Error::custom)?;
+            s.serialize_str(&text)
+        }
+
+        pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<Emitted>, D::Error> {
+            let text = String::deserialize(d)?;
+            serde_json::from_str(&text).map_err(de::Error::custom)
+        }
     }
 }
 
