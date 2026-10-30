@@ -31,6 +31,9 @@ editor, text-first testing, deploy to the web.
 
 ## Try it
 
+In a browser at <https://ianb.github.io/game-world/>, published by
+`.github/workflows/pages.yml` each time CI passes on main.
+
 Locally, with Rust 1.97, Node 22 and pnpm 10 installed:
 
 ```
