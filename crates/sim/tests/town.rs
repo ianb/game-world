@@ -433,3 +433,25 @@ fn ground_wears_grows_and_is_cleared() {
     assert_eq!(changed, 9, "the 3x3 block around the corner is all grass");
     assert_eq!(terrain.surface(&world, townp, corner), Some(Surface::Grass));
 }
+
+/// From Monday morning the coming trains are Monday's passing train, then Tuesday's
+/// stopping one, each after the one before, and a train on the track is listed first.
+#[test]
+fn upcoming_trains_follow_the_timetable() {
+    let mut sim = new_sim(1);
+    sim.step_until(at(0, 9, 0)).unwrap();
+    let trains = sim.upcoming_trains(7);
+    assert!(trains.windows(2).all(|w| w[0].arrive <= w[1].arrive));
+    let first = trains.first().expect("trains this week");
+    assert_eq!(first.arrive, at(0, 15, 0));
+    assert!(!first.stops);
+    let stopping = trains.iter().find(|t| t.stops).expect("a stopping train");
+    assert_eq!(stopping.arrive, at(1, 10, 0));
+    assert!(stopping.depart > stopping.arrive && stopping.exit > stopping.depart);
+    // While Tuesday's train stands at the station it is still the first to come.
+    sim.step_until(at(1, 10, 5)).unwrap();
+    assert_eq!(
+        sim.upcoming_trains(7).first().map(|t| t.arrive),
+        Some(at(1, 10, 0))
+    );
+}

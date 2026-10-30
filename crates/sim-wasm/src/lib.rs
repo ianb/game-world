@@ -162,6 +162,11 @@ impl Sim {
         to_js(&sim::protocol::train_view(self.history.sim()))
     }
 
+    /// The trains still to come this week as `TrainTimeView[]`, in order.
+    pub fn upcoming_trains(&self) -> Result<JsValue, JsError> {
+        to_js(&sim::protocol::upcoming_train_views(self.history.sim(), 7))
+    }
+
     /// A villager's inner side as a `MindView`, or null for one with no program, by
     /// villager key.
     pub fn mind(&self, key: &str) -> Result<JsValue, JsError> {

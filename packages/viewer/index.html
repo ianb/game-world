@@ -97,6 +97,12 @@
       .speeds { display: flex; gap: 3px; padding: 3px; background: var(--inset); border-radius: 10px; }
       .speeds button { min-width: 38px; padding: 2px 6px; font-size: 12px; letter-spacing: -0.12em; border-width: 1px; }
       #pause { font-size: 14px; letter-spacing: 0; }
+      /* The skip menu hangs under the clock. */
+      #skip-menu { z-index: 4; flex-direction: column; align-items: stretch; gap: 4px; padding: 6px; min-width: 230px; }
+      #skip-menu[hidden] { display: none; }
+      #skip-menu button { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; text-align: left; border-width: 1px; }
+      #skip-menu button span { color: var(--muted); font-weight: 700; font-size: 13px; }
+      #skip-menu button:hover span, #skip-menu button:focus span { color: var(--text); }
       #back { background: linear-gradient(#f6d77e, var(--past)); color: var(--gold-ink); border-color: #f8e2a0; }
 
       /* Places across the top, and the view switches. */
@@ -214,7 +220,7 @@
             <button id="pause" aria-label="pause" title="pause (space)">❚❚</button>
             <span id="speed-buttons" style="display: contents"></span>
           </div>
-          <button id="morning" title="skip to the next 6am" aria-label="skip to the next 6am">⏭<span class="wide"> 6am</span></button>
+          <button id="morning" title="skip ahead: to the morning, or to the next train" aria-label="skip ahead" aria-haspopup="menu" aria-expanded="false">⏭<span class="wide"> Skip</span></button>
           <button id="back" hidden>back to now</button>
         </div>
 
@@ -234,6 +240,7 @@
           <span id="turn" hidden><button id="turn-left" aria-label="turn left" title="turn left">⟲</button><button id="turn-right" aria-label="turn right" title="turn right">⟳</button></span>
         </div>
 
+        <div class="hud panel" id="skip-menu" role="menu" aria-label="Skip to" hidden></div>
         <section class="hud panel" id="inspector" aria-label="Inspector" hidden><div id="inspect"></div></section>
         <div class="hud panel" id="hint">click a person or a thing to follow it</div>
       </main>

@@ -2,8 +2,8 @@
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import "@fontsource-variable/nunito";
 import * as wasm from "@game-world/sim-wasm";
-import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type ClockView, type Emitted, type DaySummary, type MindView, type ObjectView, type Sim, type StockView, type SummaryItem, type Topic, type VillagerView } from "@game-world/protocol";
-import { PlaceCanvas, Tileset, legend, objectTile, type View } from "./render";
+import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type ClockView, type Emitted, type DaySummary, type MindView, type ObjectView, type Sim, type StockView, type SummaryItem, type Topic, type TrainTimeView, type VillagerView } from "@game-world/protocol";
+import { PlaceCanvas, Tileset, legend, objectTile, trainCars, type View } from "./render";
 import { Words, type TopicDef, type Word } from "./words";
 import type { Diorama } from "./diorama";
 
@@ -27,10 +27,20 @@ let shownClock: ClockView | null = null;
 /** Topic glosses by id, from the content. */
 const glosses = new Map<string, string>();
 let topicDefs: TopicDef[] = [];
+/** The railway's timetable and its station objects, from the content, for the station's
+ * card. When the trains come is asked of the sim. */
+interface RailwaySpec {
+  platform: string;
+  shed: string;
+  runs: { days: string; arrive: string; depart?: string; stops?: boolean }[];
+}
+let railway: RailwaySpec | null = null;
 try {
   const contentJson = await loadContent();
   sim = LocalSim.create(wasm, 1, contentJson);
-  topicDefs = (JSON.parse(contentJson) as { topics?: TopicDef[] }).topics ?? [];
+  const parsed = JSON.parse(contentJson) as { topics?: TopicDef[]; zones?: { railway?: RailwaySpec | null }[] };
+  topicDefs = parsed.topics ?? [];
+  railway = parsed.zones?.find((z) => z.railway)?.railway ?? null;
   for (const t of topicDefs) glosses.set(t.id, t.gloss);
 } catch (e) {
   clockEl.textContent = `failed to start: ${String(e)}`;
@@ -177,6 +187,14 @@ function causeText(cause: Cause | null, villagers: VillagerView[]): string {
   return `outside input #${cause.Input.seq}`;
 }
 
+/** A moment in the coming week: "today 3:00pm", "tomorrow 10:00am", "Fri 10:00am". */
+function whenText(tick: number): string {
+  const day = 24 * 60 * TICKS_PER_MINUTE;
+  const days = Math.floor(tick / day) - Math.floor(sim.tick / day);
+  const weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][Math.floor(tick / day) % 7] ?? "";
+  return `${days === 0 ? "today" : days === 1 ? "tomorrow" : weekday} ${sinceText(tick)}`;
+}
+
 function sinceText(tick: number): string {
   const t = (tick % (24 * 60 * TICKS_PER_MINUTE)) / TICKS_PER_MINUTE;
   return twelveHour(Math.floor(t / 60), Math.floor(t % 60));
@@ -312,6 +330,15 @@ function describeObject(o: ObjectView, villagers: VillagerView[], stock: StockVi
   if (o.activity) blocks.push(text(`For: ${o.activity}`));
   const goods = stock.filter((s) => s.key === o.key && s.count > 0);
   if (goods.length) blocks.push(head("Holds"), { kind: "stats", items: goods.map((g) => ({ label: g.good, value: String(g.count) })) });
+  if (railway && (o.key === railway.platform || o.key === railway.shed)) {
+    blocks.push(head("Timetable"));
+    for (const r of railway.runs) {
+      const stops = r.stops ?? true;
+      blocks.push(text(`${title(r.days)}: ${stops ? `stops ${r.arrive}${r.depart ? ` to ${r.depart}` : ""}` : `passes through at ${r.arrive}`}`));
+    }
+    const next = sim.upcomingTrains()[0];
+    if (next) blocks.push(note(`Next: ${whenText(next.arrive)}${next.stops ? "" : ", passing through"}. The ⏭ menu skips to it.`));
+  }
   const near = villagers.filter((v) => v.place === o.place && Math.abs(v.pos.x - o.pos.x) <= 1 && Math.abs(v.pos.y - o.pos.y) <= 1);
   if (near.length) blocks.push(head("Here"));
   for (const v of near) blocks.push(text(`${v.name}: ${v.activity}`));
@@ -635,6 +662,8 @@ function zoomAt(f: number, px: number, py: number): void {
 function panBy(dx: number, dy: number): void {
   const cam = camera();
   if (!cam) return;
+  // Moving the map yourself stops it following a train.
+  if (watching) watching.follow = false;
   cam.x += dx;
   cam.y += dy;
   cam.fitted = false;
@@ -821,11 +850,63 @@ const speedButtons = SPEEDS.map((s, i) => {
   $("speed-buttons").append(b);
   return b;
 });
-/** Picks a speed, and resumes if paused. */
+/** Picks a speed, and resumes if paused. Picking one stops watching a train. */
 function setSpeed(i: number): void {
   speedIndex = i;
   paused = false;
+  watching = null;
   drawnTick = -1;
+}
+
+/** A train being watched: time runs slowly while it moves, at the chosen speed while it
+ * stands at the station, and the map follows it until someone moves the map. */
+let watching: { train: TrainTimeView; follow: boolean } | null = null;
+/** Game minutes per real second while a watched train is moving: about four tiles a second. */
+const WATCH_SPEED = 0.25;
+/** How long before a train reaches the station to skip to, in ticks. */
+const WATCH_LEAD = 90;
+function currentSpeed(): number {
+  const w = watching?.train;
+  if (w && (sim.tick < w.arrive || sim.tick >= w.depart)) return WATCH_SPEED;
+  return SPEEDS[speedIndex]!;
+}
+function watchTrain(t: TrainTimeView): void {
+  pinned = null;
+  if (view3d) void setView3d(false);
+  const rail = world.rail;
+  if (rail && rail.place !== activePlace) showPlace(rail.place);
+  skipTo(Math.max(t.enter + 8, t.arrive - WATCH_LEAD));
+  watching = { train: t, follow: true };
+  // Close enough to see the train, on the station to start with.
+  const cam = camera();
+  const stop = rail?.tiles[rail.stop];
+  if (cam && stop) {
+    const { w, h } = paneSize();
+    cam.z = Math.max(cam.z, 0.75);
+    cam.x = w / 2 - (stop.x + 0.5) * tileset.size * cam.z;
+    cam.y = h / 2 - (stop.y + 0.5) * tileset.size * cam.z;
+    cam.fitted = false;
+    applyCamera();
+  }
+}
+/** Keeps a followed train in the middle of the map, and ends the watch once it is gone. */
+function followTrain(): void {
+  if (!watching) return;
+  if (sim.tick >= watching.train.exit) {
+    watching = null;
+    drawnTick = -1;
+    return;
+  }
+  const train = sim.train();
+  const rail = world.rail;
+  const cam = camera();
+  if (!watching.follow || !train || !rail || !cam || rail.place !== activePlace || view3d) return;
+  const engine = trainCars(train, rail.tiles)[0];
+  if (!engine) return;
+  const { w, h } = paneSize();
+  cam.x = w / 2 - (engine.x + 0.5) * tileset.size * cam.z;
+  cam.y = h / 2 - (engine.y + 0.5) * tileset.size * cam.z;
+  applyCamera();
 }
 let paused = false;
 // The words tab, fed by every step the sim takes.
@@ -898,7 +979,7 @@ function draw(): void {
   shownClock = clock;
   const cal = clock.calendar;
   clockEl.textContent = `${cal.weekday} ${twelveHour(clock.time.hour, clock.time.minute)}`;
-  dateEl.textContent = `${cal.season} ${cal.day_of_season}, year ${cal.year}`;
+  dateEl.textContent = watching ? "watching the train" : `${cal.season} ${cal.day_of_season}, year ${cal.year}`;
   pauseEl.setAttribute("aria-label", paused ? "resume" : "pause");
   pauseEl.setAttribute("aria-pressed", String(paused));
   speedButtons.forEach((b, i) => b.setAttribute("aria-pressed", String(!paused && i === speedIndex)));
@@ -930,6 +1011,7 @@ function draw(): void {
     lastVillagers = villagers;
     mapDirty = true;
     if (followed) keepInView(followed);
+    followTrain();
   }
   // The words tab, at most once a second while it is open.
   if (!$("tab-words").hidden && performance.now() - wordsDrawn > 1000) {
@@ -952,7 +1034,7 @@ function frame(now: number): void {
   const dt = Math.min((now - last) / 1000, 1);
   last = now;
   if (!paused) {
-    carry += dt * SPEEDS[speedIndex]! * TICKS_PER_MINUTE;
+    carry += dt * currentSpeed() * TICKS_PER_MINUTE;
     const whole = Math.min(Math.floor(carry), MAX_TICKS_PER_FRAME);
     if (whole > 0) {
       carry -= whole;
@@ -979,14 +1061,74 @@ pauseEl.addEventListener("click", () => {
 });
 
 // Skips to the next 6am: later today if it is still night, else tomorrow.
-$("morning").addEventListener("click", () => {
+// The skip menu: the next 6am, and the next trains. Skipping to a train jumps to just
+// before it reaches the station, puts the map on it, and slows time while it moves so it
+// can be watched coming in and going out.
+const skipEl = $("morning");
+const skipMenu = $("skip-menu");
+function nextMorning(): number {
   const day = 24 * 60 * TICKS_PER_MINUTE;
   let target = Math.floor(sim.tick / day) * day + 6 * 60 * TICKS_PER_MINUTE;
   if (target <= sim.tick) target += day;
-  gameTick = target;
-  step();
+  return target;
+}
+function skipTo(tick: number): void {
+  if (tick > sim.tick) {
+    gameTick = tick;
+    step();
+  }
   paused = false;
   drawnTick = -1;
+}
+function openSkipMenu(): void {
+  const trains = sim.upcomingTrains();
+  const stopping = trains.find((t) => t.stops);
+  const passing = trains.find((t) => !t.stops);
+  const item = (label: string, when: string, act: () => void): HTMLButtonElement => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("role", "menuitem");
+    const l = document.createElement("strong");
+    l.textContent = label;
+    const w = document.createElement("span");
+    w.textContent = when;
+    b.append(l, w);
+    b.addEventListener("click", () => {
+      closeSkipMenu();
+      act();
+    });
+    return b;
+  };
+  const items = [item("Morning", whenText(nextMorning()), () => skipTo(nextMorning()))];
+  const onTrack = trains[0] && trains[0].enter <= sim.tick ? trains[0] : undefined;
+  if (onTrack) items.push(item("The train now", onTrack.stops && sim.tick < onTrack.depart ? "at the station" : "on the line", () => watchTrain(onTrack)));
+  if (stopping && stopping !== onTrack) items.push(item("Train stopping", whenText(stopping.arrive), () => watchTrain(stopping)));
+  if (passing && passing !== onTrack) items.push(item("Train passing through", whenText(passing.arrive), () => watchTrain(passing)));
+  skipMenu.replaceChildren(...items);
+  skipMenu.hidden = false;
+  // Under the button, kept inside the map.
+  const r = skipEl.getBoundingClientRect();
+  const stage = $("stage").getBoundingClientRect();
+  const left = Math.max(8, Math.min(r.left - stage.left, stage.width - skipMenu.offsetWidth - 8));
+  skipMenu.style.left = `${left}px`;
+  skipMenu.style.top = `${r.bottom - stage.top + 8}px`;
+  skipEl.setAttribute("aria-expanded", "true");
+  items[0]?.focus();
+}
+function closeSkipMenu(): void {
+  skipMenu.hidden = true;
+  skipEl.setAttribute("aria-expanded", "false");
+}
+skipEl.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (skipMenu.hidden) openSkipMenu();
+  else closeSkipMenu();
+});
+document.addEventListener("click", (e) => {
+  if (!skipMenu.hidden && !skipMenu.contains(e.target as Node)) closeSkipMenu();
+});
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !skipMenu.hidden) closeSkipMenu();
 });
 
 // The days panel: one finished day at a time, with buttons to page through, news first and

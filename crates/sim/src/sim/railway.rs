@@ -33,6 +33,23 @@ impl<C: CharacterSet> Sim<C> {
             .find_map(|t| head_at(&t, rail, tick).map(|h| (t, h)))
     }
 
+    /// The trains still to come: one on the track now, then every run over the next `days`
+    /// days, in order.
+    #[must_use]
+    pub fn upcoming_trains(&self, days: u32) -> Vec<Timing> {
+        let (Some(spec), Some(rail)) = (self.railway_spec(), self.world.rail.as_ref()) else {
+            return Vec::new();
+        };
+        let now = self.state.tick;
+        (0..=days)
+            .flat_map(|d| {
+                let day = now.day_start().plus(d * crate::time::TICKS_PER_DAY);
+                timings(spec, rail, day, day.calendar().weekday)
+            })
+            .filter(|t| t.exit > now)
+            .collect()
+    }
+
     /// Queues today's arrivals and departures. Called at the start of each day.
     pub(super) fn schedule_trains(&mut self) {
         let now = self.state.tick;

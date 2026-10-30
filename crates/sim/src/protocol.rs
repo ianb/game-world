@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 23;
+pub const PROTOCOL_VERSION: u32 = 24;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -751,6 +751,19 @@ pub struct TrainView {
     pub stopped: bool,
 }
 
+/// A train on the timetable: when it comes onto the track, reaches the stop, leaves it,
+/// and is gone. A train that does not stop departs as it arrives.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct TrainTimeView {
+    pub enter: Tick,
+    pub arrive: Tick,
+    pub depart: Tick,
+    pub exit: Tick,
+    pub stops: bool,
+}
+
 /// The railway's track, for drawing.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(ts_rs::TS))]
@@ -998,6 +1011,21 @@ pub fn train_view<C: CharacterSet>(sim: &Sim<C>) -> Option<TrainView> {
         length: u16::try_from(crate::railway::TRAIN_TILES).unwrap_or(8),
         stopped: t.stops && sim.tick() >= t.arrive && sim.tick() < t.depart,
     })
+}
+
+/// The trains still to come over the next `days` days, in order.
+#[must_use]
+pub fn upcoming_train_views<C: CharacterSet>(sim: &Sim<C>, days: u32) -> Vec<TrainTimeView> {
+    sim.upcoming_trains(days)
+        .into_iter()
+        .map(|t| TrainTimeView {
+            enter: t.enter,
+            arrive: t.arrive,
+            depart: t.depart,
+            exit: t.exit,
+            stops: t.stops,
+        })
+        .collect()
 }
 
 #[must_use]

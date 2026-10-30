@@ -46,7 +46,9 @@ pnpm --filter @game-world/viewer dev   # then open the printed localhost URL
 The page shows the map of one place at a time, filling the window, with
 the controls floating over it on wooden panels like a game's: the clock at
 the top left (a dial with the sun or moon, the day, pause and four speeds,
-also on space and the keys 1 to 4), the places across the top (a `*` marks
+also on space and the keys 1 to 4, and a skip menu for the next morning or
+the next train: skipping to a train puts the map on it and slows time while
+it comes in and goes out; the station's card has the timetable), the places across the top (a `*` marks
 one with somebody in it) with the 3D switch, and zoom at the bottom right.
 The journal on the right holds the people, days, words and key pages; the
 "Journal" button or J folds it away to give the map the whole window, and
