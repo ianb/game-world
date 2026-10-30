@@ -52,7 +52,14 @@ finished days, what was unusual first; click a line to replay the town to
 that moment, and "back to now" to return. The words tab lists every topic
 and gesture with how often it has come up; open one for who uses it, how
 far a gesture carries and how each villager takes it, and each time it
-came up. Topics and gestures in the inspector open there too. The art is
+came up. Topics and gestures in the inspector open there too. The 3D
+button shows the same place as a lit diorama (three.js): walls raised from
+the map, villagers as upright sprites that walk smoothly, light that
+follows the clock, and speech marks for what is being said. Drag or
+two-finger scroll to pan, pinch to zoom, right-drag or shift-drag (or the
+turn buttons) to turn. Replaying a moment in 3D moves the camera in close,
+and "photograph this day" in the days tab puts a picture beside each
+unusual moment. The art is
 Liberated Pixel Cup tiles and villagers (CC-BY-SA), composed into
 `packages/viewer/public/tiles.png` by `scripts/make-tileset.mjs`
 (`just tileset`); sources, credits and how to change an outfit are in

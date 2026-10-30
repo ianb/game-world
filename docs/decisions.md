@@ -1145,3 +1145,39 @@ Decided and built:
 
 Implications: encounter chats take a little walking time, and the walk can
 be interrupted like any other. Snapshot 12.
+
+## 2026-10-30: A 3D view, as an experiment
+
+Ian: "Is there a way to make this world feel more... embodied? 3D? Camera
+images of events? I'm not sure. I have a bunch of quota to burn, so we can
+try something..."
+
+Built as a trial beside the 2D view, which stays the default:
+
+- `packages/viewer/src/diorama.ts`, loaded only when the 3D button is
+  pressed. three.js, with the same LPC art: the 2D renderer paints the
+  ground onto a plane, walls are raised one tile from it, and objects,
+  trees and villagers are upright sprites turned toward the camera, in the
+  style of "HD-2D" games.
+- Villagers ease between tiles instead of jumping, and pick their facing
+  relative to the camera.
+- Light follows the clock: a sun from east to west, dusk colours, a dim
+  moon, hearths that glow, and a lamp in each building in the evening.
+  The town sits in woods.
+- Speech marks show each gesture and topic over the speaker for a few
+  seconds. They use the sim's own vocabulary, not authored text.
+- Replaying a moment in 3D frames the people involved from the side.
+  "Photograph this day" replays each unusual moment of a day and puts a
+  picture of it beside the line, then returns the town to where it was.
+
+Found on the way: replaying any moment of the first day failed, because
+the first snapshot held the events of making the sim, and postcard cannot
+decode the tagged `Emitted` enum. Those events are now stored as JSON, as
+the record already did. Snapshot 13. The browser smoke test now replays a
+first-day moment and draws the 3D view.
+
+Implications: the renderer choice (see "Stack") now has a working 3D
+candidate to compare against Canvas 2D. Nothing in the sim changed for the
+view; it reads the same views and events as the 2D one. LPC has no
+lying-down or sitting frames, and furniture art is drawn for a fixed
+angle, so turning the camera far from south shows the limits of the art.

@@ -193,7 +193,7 @@ function wallFace(below: string | undefined): string | null {
   return "wall_outside";
 }
 
-function objectTile(kind: string): string {
+export function objectTile(kind: string): string {
   switch (kind) {
     case "bed":
     case "table":
@@ -214,6 +214,70 @@ function objectTile(kind: string): string {
   }
 }
 
+/** The tile name for every cell of a place: its living ground outdoors, else its cells. */
+export function groundNames(sim: Sim, place: PlaceView): string[] {
+  const terrain = place.kind === "Zone" ? sim.terrain(place.key).tiles : null;
+  const names: string[] = new Array<string>(place.width * place.height);
+  for (let i = 0; i < names.length; i++) {
+    const surface = terrain?.[i] ?? null;
+    names[i] = surface ? SURFACE_TILE[surface] : CELL_TILE[place.cells[i] ?? "Void"];
+  }
+  return names;
+}
+
+/** Paints a place's ground: surfaces, water, paths and walls, auto-shaped at their edges.
+ * With `flatWalls` a wall shows only its top and a door is open floor, for a view that
+ * raises the walls itself. */
+export function paintGround(ctx: CanvasRenderingContext2D, tiles: Tileset, place: PlaceView, names: string[], flatWalls: boolean): void {
+  const background = place.kind === "Zone" ? "grass" : "floor";
+  const w = place.width;
+  const h = place.height;
+  const at = (x: number, y: number): string | undefined =>
+    x < 0 || y < 0 || x >= w || y >= h ? undefined : names[y * w + x];
+  const group = (x: number, y: number, self: string): boolean => {
+    const n = at(x, y);
+    if (n === undefined) return RUNS_OFF_MAP.has(self);
+    return FEATURE_GROUP[n] === self;
+  };
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let name = names[y * w + x] ?? "void";
+      if (flatWalls && name === "door") name = place.kind === "Zone" ? "path" : "floor";
+      const g = FEATURE_GROUP[name];
+      if (g === "wall" && !flatWalls) {
+        const face = name === "door" ? null : wallFace(at(x, y + 1));
+        if (face) {
+          tiles.draw(ctx, face, x, y);
+          continue;
+        }
+      }
+      if (!g || !tiles.has(`${g === "wall" ? "wall" : name}_out`)) {
+        tiles.draw(ctx, name, x, y);
+        continue;
+      }
+      const shapeName = g === "wall" ? "wall" : name;
+      if (g !== "wall") tiles.draw(ctx, background, x, y);
+      const n = group(x, y - 1, g), s = group(x, y + 1, g);
+      const e = group(x + 1, y, g), wst = group(x - 1, y, g);
+      const quads: [number, number, boolean, boolean, boolean][] = [
+        [0, 0, n, wst, group(x - 1, y - 1, g)],
+        [1, 0, n, e, group(x + 1, y - 1, g)],
+        [0, 1, s, wst, group(x - 1, y + 1, g)],
+        [1, 1, s, e, group(x + 1, y + 1, g)],
+      ];
+      for (const [qx, qy, vert, side, diag] of quads) {
+        tiles.drawQuadrant(ctx, `${shapeName}_${quadrantShape(side, vert, diag)}`, qx, qy, x, y);
+      }
+      if (name === "door") tiles.draw(ctx, "door", x, y);
+    }
+  }
+}
+
+/** Forest cells that get a tree drawn on them, scattered so they do not line up. */
+export function isTreeCell(names: string[], w: number, x: number, y: number): boolean {
+  return names[y * w + x] === "canopy" && (x + y) % 2 === 0 && variantAt(x, y, 3) === 0;
+}
+
 /** Where a villager was last drawn and which way they were going. */
 interface Gait {
   x: number;
@@ -229,7 +293,6 @@ export class PlaceCanvas {
   private readonly objects: ObjectView[];
   /** Inline buildings' footprints in this place, for their name labels. */
   private readonly roofs: RoofView[];
-  private readonly outdoors: boolean;
   private readonly gaits = new Map<string, Gait>();
 
   constructor(
@@ -250,7 +313,6 @@ export class PlaceCanvas {
     this.ctx = ctx;
     this.objects = objects.filter((o) => o.place === place.id);
     this.roofs = roofs.filter((r) => r.place === place.id);
-    this.outdoors = place.kind === "Zone";
   }
 
   /** The tile under a mouse or touch position on the canvas, or null when off it. */
@@ -292,60 +354,18 @@ export class PlaceCanvas {
 
   draw(sim: Sim, villagers: VillagerView[], highlight: { x: number; y: number } | null = null): void {
     const { ctx, tiles, place } = this;
-    const terrain = this.outdoors ? sim.terrain(place.key).tiles : null;
-    const background = this.outdoors ? "grass" : "floor";
     const w = place.width;
     const h = place.height;
-    // The tile name for every cell, then a second pass shapes the auto-tiled ones.
-    const names: string[] = new Array<string>(w * h);
-    for (let i = 0; i < w * h; i++) {
-      const surface = terrain?.[i] ?? null;
-      names[i] = surface ? SURFACE_TILE[surface] : CELL_TILE[place.cells[i] ?? "Void"];
-    }
+    const names = groundNames(sim, place);
     const at = (x: number, y: number): string | undefined =>
       x < 0 || y < 0 || x >= w || y >= h ? undefined : names[y * w + x];
-    const group = (x: number, y: number, self: string): boolean => {
-      const n = at(x, y);
-      if (n === undefined) return RUNS_OFF_MAP.has(self);
-      return FEATURE_GROUP[n] === self;
-    };
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const name = names[y * w + x] ?? "void";
-        const g = FEATURE_GROUP[name];
-        if (g === "wall") {
-          const face = name === "door" ? null : wallFace(at(x, y + 1));
-          if (face) {
-            tiles.draw(ctx, face, x, y);
-            continue;
-          }
-        }
-        if (!g || !tiles.has(`${g === "wall" ? "wall" : name}_out`)) {
-          tiles.draw(ctx, name, x, y);
-          continue;
-        }
-        const shapeName = g === "wall" ? "wall" : name;
-        if (g !== "wall") tiles.draw(ctx, background, x, y);
-        const n = group(x, y - 1, g), s = group(x, y + 1, g);
-        const e = group(x + 1, y, g), wst = group(x - 1, y, g);
-        const quads: [number, number, boolean, boolean, boolean][] = [
-          [0, 0, n, wst, group(x - 1, y - 1, g)],
-          [1, 0, n, e, group(x + 1, y - 1, g)],
-          [0, 1, s, wst, group(x - 1, y + 1, g)],
-          [1, 1, s, e, group(x + 1, y + 1, g)],
-        ];
-        for (const [qx, qy, vert, side, diag] of quads) {
-          tiles.drawQuadrant(ctx, `${shapeName}_${quadrantShape(side, vert, diag)}`, qx, qy, x, y);
-        }
-        if (name === "door") tiles.draw(ctx, "door", x, y);
-      }
-    }
+    paintGround(ctx, tiles, place, names, false);
     // Objects and people back to front, so whoever is lower on the map is in front.
     const sprites: { y: number; draw: () => void }[] = [];
     // Trees stand in the forest, scattered so they do not line up.
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        if (names[y * w + x] === "canopy" && (x + y) % 2 === 0 && variantAt(x, y, 3) === 0) {
+        if (isTreeCell(names, w, x, y)) {
           sprites.push({ y, draw: () => tiles.draw(ctx, "tree", x, y) });
         }
       }

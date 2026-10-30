@@ -1,9 +1,10 @@
 // The viewer: the sim advancing in the browser, drawn as tiles, with the text views the
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import * as wasm from "@game-world/sim-wasm";
-import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type DaySummary, type MindView, type Sim, type StockView, type SummaryItem, type Topic, type VillagerView } from "@game-world/protocol";
+import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type ClockView, type Emitted, type DaySummary, type MindView, type Sim, type StockView, type SummaryItem, type Topic, type VillagerView } from "@game-world/protocol";
 import { PlaceCanvas, Tileset, legend } from "./render";
 import { Words, type TopicDef, type Word } from "./words";
+import type { Diorama } from "./diorama";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const clockEl = $("clock");
@@ -18,6 +19,12 @@ async function loadContent(): Promise<string> {
 }
 
 let sim: Sim;
+// The 3D view's state; it is built in setView3d.
+let diorama: Diorama | null = null;
+let view3d = false;
+let followedIn3d: string | null = null;
+let pendingShot: string[] | null = null;
+let shownClock: ClockView | null = null;
 /** Topic glosses by id, from the content. */
 const glosses = new Map<string, string>();
 let topicDefs: TopicDef[] = [];
@@ -415,9 +422,13 @@ const paneCentre = (): [number, number] => {
   const { w, h } = paneSize();
   return [w / 2, h / 2];
 };
-$("zoom-in").addEventListener("click", () => zoomAt(1.5, ...paneCentre()));
-$("zoom-out").addEventListener("click", () => zoomAt(1 / 1.5, ...paneCentre()));
+$("zoom-in").addEventListener("click", () => (diorama && view3d ? diorama.zoomBy(1 / 1.5) : zoomAt(1.5, ...paneCentre())));
+$("zoom-out").addEventListener("click", () => (diorama && view3d ? diorama.zoomBy(1.5) : zoomAt(1 / 1.5, ...paneCentre())));
 $("zoom-fit").addEventListener("click", () => {
+  if (diorama && view3d) {
+    diorama.fit();
+    return;
+  }
   const c = activeCanvas();
   if (c) cameras.set(c.id, fitted(c));
   applyCamera();
@@ -583,7 +594,19 @@ let wordsDrawn = 0;
 let gameTick = at(0, 6);
 /** Steps the sim to `gameTick`, indexing what happened. */
 function step(): void {
-  wordsPanel.add(sim.stepUntil(gameTick), gameTick);
+  const events = sim.stepUntil(gameTick);
+  wordsPanel.add(events, gameTick);
+  if (diorama && view3d) diorama.hear(events, gameTick, speechTopic);
+}
+
+/** The topic a speech mark shows: its gloss alone, since the speaker is plain to see. */
+function speechTopic(e: Emitted): string | null {
+  if (e.kind === "Beat") {
+    const t = "Gesture" in e.did ? e.did.Gesture.topic : "Bid" in e.did ? e.did.Bid.topic : null;
+    return t ? topicText(t, villagerName) : null;
+  }
+  if (e.kind === "Thought") return topicText(e.thought.about, villagerName);
+  return null;
 }
 step();
 let drawnTick = -1;
@@ -599,6 +622,7 @@ function draw(): void {
   drawnTick = sim.tick;
   drawnPaused = paused;
   const clock = sim.clock();
+  shownClock = clock;
   const cal = clock.calendar;
   clockEl.textContent = `Y${cal.year} ${cal.season} ${cal.day_of_season} (${cal.weekday}) ${twelveHour(clock.time.hour, clock.time.minute)}`;
   pauseEl.textContent = paused ? "resume" : "pause";
@@ -613,8 +637,22 @@ function draw(): void {
   const p = pinned;
   const followed = p?.kind === "villager" ? villagers.find((v) => v.key === p.key) : undefined;
   if (followed && followed.place !== activePlace) showPlace(followed.place);
-  for (const c of canvases) if (c.id === activePlace) c.draw(sim, villagers, highlightFor(c.id, villagers));
-  if (followed) keepInView(followed);
+  if (diorama && view3d) {
+    diorama.show(sim, activePlace);
+    diorama.sync(sim, villagers, followed?.key ?? null);
+    const key = followed?.key ?? null;
+    if (key !== followedIn3d) {
+      followedIn3d = key;
+      diorama.followVillager(key);
+    }
+    if (pendingShot) {
+      diorama.shot(pendingShot);
+      pendingShot = null;
+    }
+  } else {
+    for (const c of canvases) if (c.id === activePlace) c.draw(sim, villagers, highlightFor(c.id, villagers));
+    if (followed) keepInView(followed);
+  }
   // The words tab, at most once a second while it is open.
   if (!$("tab-words").hidden && performance.now() - wordsDrawn > 1000) {
     wordsDrawn = performance.now();
@@ -628,6 +666,11 @@ const MAX_TICKS_PER_FRAME = 10 * TICKS_PER_MINUTE;
 let last = performance.now();
 let carry = 0;
 function frame(now: number): void {
+  if (photographing) {
+    last = now;
+    requestAnimationFrame(frame);
+    return;
+  }
   const dt = Math.min((now - last) / 1000, 1);
   last = now;
   if (!paused) {
@@ -640,6 +683,7 @@ function frame(now: number): void {
     }
   }
   draw();
+  if (diorama && view3d && shownClock) diorama.render(sim.tick + carry, shownClock);
   requestAnimationFrame(frame);
 }
 
@@ -704,6 +748,17 @@ function itemButton(item: SummaryItem): HTMLButtonElement {
   when.textContent = twelveHour(Math.floor(t / 60), Math.floor(t % 60));
   const what = document.createElement("span");
   what.textContent = item.text;
+  // A run of lines from one moment shares a picture; it goes on the first.
+  const photo = photos.get(photoKey(item));
+  const repeat = photo === lastPhoto;
+  lastPhoto = photo;
+  if (photo && !repeat) {
+    const img = document.createElement("img");
+    img.className = "photo";
+    img.src = photo;
+    img.alt = "";
+    b.append(img);
+  }
   b.append(when, what);
   const why = causeText(item.cause, sim.villagers());
   b.title = why ? `because: ${why}. Click to replay this moment.` : "Click to replay this moment.";
@@ -724,7 +779,21 @@ function replayTo(tick: number, who: number | null): void {
     const v = sim.villagers().find((x) => x.id === who);
     if (v) pinned = { kind: "villager", key: v.key };
   }
+  pendingShot = shotOf(tick, who);
   drawnTick = -1;
+}
+
+/** Who a replayed moment is about, for the 3D camera: the person and whoever they are
+ * talking with, else everyone talking near the moment's speaker. */
+function shotOf(tick: number, who: number | null): string[] | null {
+  const vs = sim.villagers();
+  let v = who === null ? undefined : vs.find((x) => x.id === who);
+  // A moment from the words tab names no one: take whoever was talking then.
+  v ??= vs.find((x) => x.activity === "talk" && x.since <= tick);
+  if (!v) return null;
+  const me = v;
+  const near = vs.filter((o) => o.key !== me.key && o.place === me.place && o.activity === "talk" && Math.max(Math.abs(o.pos.x - me.pos.x), Math.abs(o.pos.y - me.pos.y)) <= 3);
+  return [me.key, ...near.map((o) => o.key)];
 }
 
 function listDays(): void {
@@ -746,6 +815,7 @@ function listDays(): void {
     return;
   }
   dayTitleEl.textContent = `${dayTitle(d)}, day ${i + 1} of ${n}`;
+  lastPhoto = undefined;
   const frag = document.createDocumentFragment();
   const head = document.createElement("p");
   head.className = "muted";
@@ -762,11 +832,91 @@ function listDays(): void {
   daysEl.parentElement?.scrollTo({ top: 0 });
 }
 
+// Photographs of a day's unusual moments: each one replayed and shot in the 3D view, then
+// the town put back where it was.
+const photos = new Map<string, string>();
+let lastPhoto: string | undefined;
+const photoKey = (item: SummaryItem): string => `${item.tick}:${item.who ?? ""}`;
+let photographing = false;
+const dayPhotosEl = $("day-photos") as HTMLButtonElement;
+async function photographDay(): Promise<void> {
+  const days = sim.summaries();
+  const d = days[dayIndex ?? days.length - 1];
+  if (!d || photographing) return;
+  photographing = true;
+  dayPhotosEl.disabled = true;
+  const items = d.news.filter((item) => item.who !== null && !photos.has(photoKey(item)));
+  const back = sim.tick < sim.frontier ? sim.tick : null;
+  try {
+    const dio = await loadDiorama();
+    for (const [i, item] of items.entries()) {
+      dayPhotosEl.textContent = `photographing ${i + 1} of ${items.length}`;
+      sim.rewind(item.tick);
+      const villagers = sim.villagers();
+      const v = villagers.find((x) => x.id === item.who);
+      if (!v) continue;
+      dio.show(sim, v.place);
+      dio.sync(sim, villagers, null, true);
+      const url = dio.photo(shotOf(item.tick, item.who) ?? [v.key], 480, 300, sim.clock());
+      if (url) photos.set(photoKey(item), url);
+      // Let the page breathe between shots.
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  } finally {
+    if (back === null) sim.backToNow();
+    else sim.rewind(back);
+    gameTick = sim.tick;
+    photographing = false;
+    dayPhotosEl.disabled = false;
+    dayPhotosEl.textContent = "photograph this day";
+    shownDays = "";
+    drawnTick = -1;
+  }
+}
+dayPhotosEl.addEventListener("click", () => void photographDay());
+
 backEl.addEventListener("click", () => {
   sim.backToNow();
   gameTick = sim.tick;
   drawnTick = -1;
 });
+
+// The 3D view, loaded the first time it is switched on (its state is declared at the top).
+const map3dEl = $("map3d");
+const view3dEl = $("view3d");
+async function loadDiorama(): Promise<Diorama> {
+  if (!diorama) {
+    const { Diorama } = await import("./diorama");
+    diorama = new Diorama({
+      tiles: tileset,
+      places: world.places,
+      objects: world.objects,
+      roofs: world.roofs,
+      name: villagerName,
+      pick: (place, x, y) => {
+        const v = sim.villagers().find((v) => v.place === place && v.pos.x === x && v.pos.y === y);
+        pinned = v ? { kind: "villager", key: v.key } : { kind: "tile", place, x, y };
+        drawnTick = -1;
+      },
+    });
+    map3dEl.append(diorama.el);
+  }
+  return diorama;
+}
+async function setView3d(on: boolean): Promise<void> {
+  if (on) await loadDiorama();
+  view3d = on;
+  followedIn3d = null;
+  view3dEl.setAttribute("aria-pressed", String(on));
+  map3dEl.hidden = !on;
+  mapEl.hidden = on;
+  $("turn").hidden = !on;
+  drawnTick = -1;
+  if (!on) applyCamera();
+}
+view3dEl.addEventListener("click", () => void setView3d(!view3d));
+$("turn-left").addEventListener("click", () => diorama?.rotate(-Math.PI / 4));
+$("turn-right").addEventListener("click", () => diorama?.rotate(Math.PI / 4));
 
 // For Playwright and the agent: a structured dump of what is on screen.
 declare global {
@@ -774,6 +924,8 @@ declare global {
     __scene: () => { tick: number; clock: string; everyone: string; hash: string; places: string[]; canvases: number; days: number };
     /** Runs the sim forward by days (to the minute) and redraws, for screenshots. */
     __advance: (days: number) => void;
+    /** The 3D view of a place, optionally as a close shot of some villagers, as a PNG data URL. */
+    __show3d: (key: string, shot?: string[]) => Promise<string | null>;
     /** Puts a place on screen and redraws; returns its canvas as a PNG data URL. */
     __show: (key: string) => string | null;
   }
@@ -792,6 +944,21 @@ window.__show = (key: string) => {
   showPlace(place.id);
   draw();
   return activeCanvas()?.canvas.toDataURL("image/png") ?? null;
+};
+window.__show3d = async (key: string, shot?: string[]) => {
+  const place = world.places.find((p) => p.key === key);
+  if (!place) return null;
+  await setView3d(true);
+  pinned = null;
+  showPlace(place.id);
+  drawnTick = -1;
+  draw();
+  if (!diorama || !shownClock) return null;
+  if (shot) diorama.shot(shot);
+  else diorama.fit();
+  diorama.settle();
+  diorama.render(sim.tick, shownClock);
+  return diorama.snapshot();
 };
 window.__scene = () => ({
   tick: sim.tick,

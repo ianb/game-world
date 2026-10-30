@@ -52,6 +52,16 @@ const page = `<title>Game World</title>
   #map { flex: 1; min-height: 320px; position: relative; overflow: hidden; touch-action: none; cursor: grab; background: var(--bar); }
   #map.dragging { cursor: grabbing; }
   #map canvas.place { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  #map3d { flex: 1; min-height: 320px; position: relative; overflow: hidden; background: var(--bar); }
+  #map3d[hidden], #turn[hidden] { display: none; }
+  .diorama { position: absolute; inset: 0; }
+  .diorama canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  .diorama .labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .diorama .name, .diorama .speech { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: 11px; padding: 1px 4px; border-radius: 3px; }
+  .diorama .name { background: rgba(0, 0, 0, 0.55); color: #fff; }
+  .diorama .name.focus { outline: 1px solid #d9a35e; }
+  .diorama .speech { background: #f4ecd8; color: #222; border-radius: 8px; padding: 2px 7px; }
+  #view3d[aria-pressed="true"] { outline: 2px solid var(--accent); }
   .tab { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; display: grid; gap: 12px; align-content: start; }
   .tab[hidden], section[hidden] { display: none; }
   pre { margin: 0; white-space: pre; overflow-x: auto; }
@@ -65,6 +75,7 @@ const page = `<title>Game World</title>
   button.moment { display: grid; grid-template-columns: 6em 1fr; gap: 8px; width: 100%; min-height: 32px; text-align: left; background: none; color: inherit; border: none; border-radius: 4px; padding: 4px 6px; }
   button.moment:hover { background: var(--bar); }
   button.moment .when { color: var(--muted); text-align: right; }
+  button.moment img.photo { grid-column: 1 / -1; width: 100%; max-width: 480px; border-radius: 4px; }
   #clock.past { color: var(--accent); }
   .muted { color: var(--muted); }
   #everyone { display: grid; grid-template-columns: max-content 22ch minmax(0, 1fr); gap: 4px 12px; align-items: center; align-content: start; }
@@ -88,7 +99,7 @@ const page = `<title>Game World</title>
   @media (max-width: 900px) {
     body { height: auto; overflow: auto; }
     #app { grid-template-columns: minmax(0, 1fr); }
-    #map { flex: none; height: 60vh; }
+    #map, #map3d { flex: none; height: 60vh; }
     #side { border-left: none; border-top: 1px solid var(--rule); }
     .tab { max-height: 75vh; }
   }
