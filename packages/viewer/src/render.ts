@@ -45,6 +45,15 @@ export class Tileset {
     return this.atlas.tile;
   }
 
+  /** When set, draws that fall wholly outside this pixel rect are skipped, so a painter can
+   * fill one chunk of a map without the cost of drawing the rest. */
+  clip: { x0: number; y0: number; x1: number; y1: number } | null = null;
+
+  private outside(px: number, py: number, w: number, h: number): boolean {
+    const c = this.clip;
+    return c !== null && (px >= c.x1 || py >= c.y1 || px + w <= c.x0 || py + h <= c.y0);
+  }
+
   has(name: string): boolean {
     return name in this.atlas.tiles;
   }
@@ -59,7 +68,9 @@ export class Tileset {
     const w = (t.w ?? 1) * s;
     const h = (t.h ?? 1) * s;
     const oy = t.oy ?? (rise ? s - h : 0);
-    ctx.drawImage(this.image, col * s, t.row * s, w, h, x * s + (t.ox ?? 0), y * s + oy, w, h);
+    const px = x * s + (t.ox ?? 0);
+    if (this.outside(px, y * s + oy, w, h)) return;
+    ctx.drawImage(this.image, col * s, t.row * s, w, h, px, y * s + oy, w, h);
   }
 
   /** The cells a sprite drawn at (x, y) covers, as an inclusive tile rect. */
@@ -104,6 +115,7 @@ export class Tileset {
     if (!t) return;
     const s = this.atlas.tile;
     const h = s / 2;
+    if (this.outside(x * s + qx * h, y * s + qy * h, h, h)) return;
     ctx.drawImage(this.image, t.col * s + qx * h, t.row * s + qy * h, h, h, x * s + qx * h, y * s + qy * h, h, h);
   }
 
@@ -326,6 +338,20 @@ export function materials(place: PlaceView, rooms: WorldView["rooms"], roofs: Ro
   return { floor, walls };
 }
 
+/** A rectangle of cells, from (x0, y0) up to but not including (x1, y1). */
+export interface TileRect {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+/** `region` clamped to a w by h map, or the whole map when there is none. */
+export function within(region: TileRect | null, w: number, h: number): TileRect {
+  if (!region) return { x0: 0, y0: 0, x1: w, y1: h };
+  return { x0: Math.max(0, region.x0), y0: Math.max(0, region.y0), x1: Math.min(w, region.x1), y1: Math.min(h, region.y1) };
+}
+
 /** The tile name for every cell of a place: its living ground outdoors, else its cells. */
 export function groundNames(sim: Sim, place: PlaceView): string[] {
   const terrain = place.kind === "Zone" ? sim.terrain(place.key).tiles : null;
@@ -347,10 +373,12 @@ export function paintGround(
   names: string[],
   flatWalls: boolean,
   mat: Materials,
+  region: TileRect | null = null,
 ): void {
   const background = place.kind === "Zone" ? "grass" : "floor";
   const w = place.width;
   const h = place.height;
+  const r = within(region, w, h);
   const at = (x: number, y: number): string | undefined =>
     x < 0 || y < 0 || x >= w || y >= h ? undefined : names[y * w + x];
   const group = (x: number, y: number, self: string): boolean => {
@@ -358,8 +386,8 @@ export function paintGround(
     if (n === undefined) return RUNS_OFF_MAP.has(self);
     return FEATURE_GROUP[n] === self;
   };
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
+  for (let y = r.y0; y < r.y1; y++) {
+    for (let x = r.x0; x < r.x1; x++) {
       let name = names[y * w + x] ?? "void";
       if (flatWalls && name === "door") name = place.kind === "Zone" ? "path" : "floor";
       const g = FEATURE_GROUP[name];
@@ -416,10 +444,46 @@ interface Gait {
   steps: number;
 }
 
-/** A canvas showing one place. `draw` repaints it from the current sim state. */
+/** Where the camera is: the place's map pixel (0, 0) sits at (x, y) in a pane w by h CSS
+ * pixels, scaled by z; the pane's canvas has dpr device pixels per CSS pixel. */
+export interface View {
+  x: number;
+  y: number;
+  z: number;
+  w: number;
+  h: number;
+  dpr: number;
+}
+
+/** Map cells per side of a cached chunk of the still layer. */
+const CHUNK = 16;
+/** Chunks kept, across all resolutions; the least recently drawn go first. */
+const MAX_CHUNKS = 96;
+/** Stale chunks repainted per frame, so a refresh is spread out rather than a stall. */
+const REPAINTS_PER_FRAME = 3;
+/** Below this many screen pixels per tile, names give way to a dot per person. */
+const NAMES_FROM = 18;
+
+/** A cached piece of the still layer, at a resolution of `lod` canvas pixels per map pixel. */
+interface Chunk {
+  canvas: HTMLCanvasElement;
+  painted: number;
+}
+
+/** A sprite that never moves, with the pixel rect it covers. */
+interface Still {
+  y: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  draw: (ctx: CanvasRenderingContext2D) => void;
+}
+
+/** One place, drawn into any canvas through a `View`. The ground, trees, furniture and
+ * building names are painted in chunks, at a resolution to suit the zoom, and only where
+ * they are in view; people, animals and the train are drawn over them each frame. */
 export class PlaceCanvas {
-  readonly canvas: HTMLCanvasElement;
-  private readonly ctx: CanvasRenderingContext2D;
   private readonly objects: ObjectView[];
   /** Inline buildings' footprints in this place, for their name labels. */
   private readonly roofs: RoofView[];
@@ -427,41 +491,21 @@ export class PlaceCanvas {
   private readonly dressing: Dressing;
   private readonly rail: WorldView["rail"];
   private readonly gaits = new Map<string, Gait>();
-  /** Canvas pixels per map pixel: 1, or 0.5 for a place too big for the browser's canvas. */
-  private readonly res: number;
+  private readonly chunks = new Map<string, Chunk>();
+  /** The ground's tile names and the still sprites, refreshed every `LAYER_MS`. */
+  private still: { names: string[]; sprites: Still[]; at: number } | null = null;
+  private repaints = 0;
 
   constructor(
     private readonly tiles: Tileset,
     private readonly place: PlaceView,
     world: WorldView,
   ) {
-    this.canvas = document.createElement("canvas");
-    const area = place.width * tiles.size * place.height * tiles.size;
-    this.res = area > MAX_CANVAS_AREA && smallCanvases() ? 0.5 : 1;
-    this.canvas.width = place.width * tiles.size * this.res;
-    this.canvas.height = place.height * tiles.size * this.res;
-    this.canvas.className = "place";
-    this.canvas.setAttribute("role", "img");
-    this.canvas.setAttribute("aria-label", `map of ${place.key}`);
-    const ctx = this.canvas.getContext("2d");
-    if (!ctx) throw new Error("no 2d canvas");
-    ctx.imageSmoothingEnabled = false;
-    this.ctx = ctx;
     this.objects = world.objects.filter((o) => o.place === place.id);
     this.roofs = world.roofs.filter((r) => r.place === place.id);
     this.mat = materials(place, world.rooms, world.roofs);
     this.dressing = dressingFor(world, place);
     this.rail = world.rail && world.rail.place === place.id ? world.rail : null;
-  }
-
-  /** The tile under a mouse or touch position on the canvas, or null when off it. */
-  tileAt(clientX: number, clientY: number): { x: number; y: number } | null {
-    const r = this.canvas.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0) return null;
-    const x = Math.floor(((clientX - r.left) / r.width) * this.place.width);
-    const y = Math.floor(((clientY - r.top) / r.height) * this.place.height);
-    if (x < 0 || y < 0 || x >= this.place.width || y >= this.place.height) return null;
-    return { x, y };
   }
 
   get key(): string {
@@ -470,6 +514,24 @@ export class PlaceCanvas {
 
   get id(): number {
     return this.place.id;
+  }
+
+  /** The place's size in map pixels. */
+  get width(): number {
+    return this.place.width * this.tiles.size;
+  }
+
+  get height(): number {
+    return this.place.height * this.tiles.size;
+  }
+
+  /** The tile under a point in the pane, or null when off the place. */
+  tileAt(px: number, py: number, view: View): { x: number; y: number } | null {
+    const s = this.tiles.size * view.z;
+    const x = Math.floor((px - view.x) / s);
+    const y = Math.floor((py - view.y) / s);
+    if (x < 0 || y < 0 || x >= this.place.width || y >= this.place.height) return null;
+    return { x, y };
   }
 
   /** Which way a villager faces and which step they are on, from how they moved since the
@@ -491,123 +553,234 @@ export class PlaceCanvas {
     return { facing: g.facing, frame };
   }
 
-  /** The ground, trees, furniture and building names: everything that does not move,
-   * painted into its own canvas and repainted every few seconds as the ground changes. */
-  private layer: { canvas: HTMLCanvasElement; at: number } | null = null;
-
-  private paintLayer(sim: Sim): HTMLCanvasElement {
+  /** The ground's names and the trees and furniture, worked out again when they are older
+   * than `LAYER_MS`, which marks every chunk painted before then as stale. */
+  private stillLayer(sim: Sim): { names: string[]; sprites: Still[]; at: number } {
     const now = performance.now();
-    if (this.layer && now - this.layer.at < LAYER_MS) return this.layer.canvas;
-    const canvas = this.layer?.canvas ?? document.createElement("canvas");
-    canvas.width = this.canvas.width;
-    canvas.height = this.canvas.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("no 2d canvas");
-    ctx.imageSmoothingEnabled = false;
-    ctx.setTransform(this.res, 0, 0, this.res, 0, 0);
+    if (this.still && now - this.still.at < LAYER_MS) return this.still;
     const { tiles, place } = this;
     const w = place.width;
     const h = place.height;
     const names = groundNames(sim, place);
     const at = (x: number, y: number): string | undefined =>
       x < 0 || y < 0 || x >= w || y >= h ? undefined : names[y * w + x];
-    paintGround(ctx, tiles, place, names, false, this.mat);
-    paintDressing(ctx, tiles, place, names, this.mat, this.dressing, sim.clock().calendar);
-    // Trees and furniture back to front, so whatever is lower on the map is in front.
-    const sprites: { y: number; draw: () => void }[] = [];
+    const s = tiles.size;
+    const sprites: Still[] = [];
+    const add = (name: string, x: number, y: number, rise: boolean): void => {
+      const c = tiles.covers(name, x, y);
+      // `covers` ignores `rise`, which reaches up instead of down: allow for both.
+      const up = rise ? c.y1 - c.y0 : 0;
+      sprites.push({ y, x0: c.x0 * s, y0: (c.y0 - up) * s, x1: (c.x1 + 1) * s, y1: (c.y1 + 1) * s, draw: (ctx) => tiles.draw(ctx, name, x, y, rise) });
+    };
     // Trees stand in the forest, scattered so they do not line up.
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        if (isTreeCell(names, w, x, y)) {
-          const tree = treeAt(x, y, y > h * SOUTHERN_WOODS);
-          sprites.push({ y, draw: () => tiles.draw(ctx, tree, x, y) });
-        }
+        if (isTreeCell(names, w, x, y)) add(treeAt(x, y, y > h * SOUTHERN_WOODS), x, y, false);
       }
     }
     for (const o of this.objects) {
       const below = at(o.pos.x, o.pos.y + 1);
       const rise = below !== "floor" && below !== "opening";
       const tile = objectTileAt(o, this.objects);
-      if (tile) sprites.push({ y: o.pos.y, draw: () => tiles.draw(ctx, tile, o.pos.x, o.pos.y, rise) });
+      if (tile) add(tile, o.pos.x, o.pos.y, rise);
     }
+    // Back to front, so whatever is lower on the map is in front.
     sprites.sort((a, b) => a.y - b.y);
-    for (const s of sprites) s.draw();
+    this.still = { names, sprites, at: now };
+    return this.still;
+  }
+
+  /** Paints one chunk of the still layer at `lod` canvas pixels per map pixel. */
+  private paintChunk(sim: Sim, cx: number, cy: number, lod: number, into: HTMLCanvasElement | null): HTMLCanvasElement {
+    const { tiles, place } = this;
+    const s = tiles.size;
+    const layer = this.stillLayer(sim);
+    const tw = Math.min(CHUNK, place.width - cx * CHUNK);
+    const th = Math.min(CHUNK, place.height - cy * CHUNK);
+    const canvas = into ?? document.createElement("canvas");
+    canvas.width = Math.ceil(tw * s * lod);
+    canvas.height = Math.ceil(th * s * lod);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no 2d canvas");
+    ctx.imageSmoothingEnabled = false;
+    const px = cx * CHUNK * s;
+    const py = cy * CHUNK * s;
+    ctx.setTransform(lod, 0, 0, lod, -px * lod, -py * lod);
+    const clip = { x0: px, y0: py, x1: px + tw * s, y1: py + th * s };
+    tiles.clip = clip;
+    // Sprites reach a few cells beyond their own, so paint a margin around the chunk and
+    // let the clip drop what lands outside it.
+    const m = 3;
+    const region = { x0: cx * CHUNK - m, y0: cy * CHUNK - m, x1: cx * CHUNK + tw + m, y1: cy * CHUNK + th + m };
+    try {
+      paintGround(ctx, tiles, place, layer.names, false, this.mat, region);
+      paintDressing(ctx, tiles, place, layer.names, this.mat, this.dressing, sim.clock().calendar, region);
+      for (const sp of layer.sprites) {
+        if (sp.x1 > clip.x0 && sp.x0 < clip.x1 && sp.y1 > clip.y0 && sp.y0 < clip.y1) sp.draw(ctx);
+      }
+    } finally {
+      tiles.clip = null;
+    }
     // Building names, on the top wall of each footprint.
     ctx.font = "bold 12px ui-monospace, monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     for (const r of this.roofs) {
-      const s = tiles.size;
       const label = r.building.replace(/[_-]+/g, " ");
-      const cx = (r.rect.x + r.rect.w / 2) * s;
+      const lx = (r.rect.x + r.rect.w / 2) * s;
       const top = r.rect.y * s + 3;
       const lw = ctx.measureText(label).width + 8;
+      if (lx + lw / 2 < clip.x0 || lx - lw / 2 > clip.x1 || top + 16 < clip.y0 || top - 2 > clip.y1) continue;
       ctx.fillStyle = "rgba(20, 16, 10, 0.7)";
-      ctx.fillRect(cx - lw / 2, top - 2, lw, 16);
+      ctx.fillRect(lx - lw / 2, top - 2, lw, 16);
       ctx.fillStyle = "#f4e8c8";
-      ctx.fillText(label, cx, top);
+      ctx.fillText(label, lx, top);
     }
-    this.layer = { canvas, at: now };
     return canvas;
   }
 
-  draw(sim: Sim, villagers: VillagerView[], highlight: { x: number; y: number } | null = null): void {
-    const { ctx, tiles, place } = this;
+  /** A chunk at the resolution asked for: painted now when missing, repainted when stale
+   * if this frame's allowance lasts, else drawn as it was. */
+  private chunk(sim: Sim, cx: number, cy: number, lod: number): HTMLCanvasElement {
+    const key = `${cx},${cy},${lod}`;
+    const layer = this.stillLayer(sim);
+    let c = this.chunks.get(key);
+    if (!c) {
+      c = { canvas: this.paintChunk(sim, cx, cy, lod, null), painted: layer.at };
+    } else {
+      this.chunks.delete(key);
+      if (c.painted < layer.at && this.repaints < REPAINTS_PER_FRAME) {
+        this.repaints += 1;
+        this.paintChunk(sim, cx, cy, lod, c.canvas);
+        c.painted = layer.at;
+      }
+    }
+    // Most recently used last, so the oldest are first to go.
+    this.chunks.set(key, c);
+    while (this.chunks.size > MAX_CHUNKS) {
+      const oldest = this.chunks.keys().next().value;
+      if (oldest === undefined) break;
+      this.chunks.delete(oldest);
+    }
+    return c.canvas;
+  }
+
+  /** Draws what of the place is in view into `ctx`, whose canvas is the pane at `view.dpr`. */
+  draw(ctx: CanvasRenderingContext2D, view: View, sim: Sim, villagers: VillagerView[], highlight: { x: number; y: number } | null = null): void {
+    const { tiles, place } = this;
+    const s = tiles.size;
+    // Device pixels per map pixel.
+    const k = view.z * view.dpr;
+    ctx.imageSmoothingEnabled = false;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(this.paintLayer(sim), 0, 0);
-    ctx.setTransform(this.res, 0, 0, this.res, 0, 0);
+    ctx.fillStyle = "#0b0b0b";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    // The cells in view, with a margin for sprites that reach beyond their own.
+    const x0 = Math.max(0, Math.floor(-view.x / (view.z * s)));
+    const y0 = Math.max(0, Math.floor(-view.y / (view.z * s)));
+    const x1 = Math.min(place.width, Math.ceil((view.w - view.x) / (view.z * s)));
+    const y1 = Math.min(place.height, Math.ceil((view.h - view.y) / (view.z * s)));
+    // Chunks at the coarsest resolution that still gives a pixel of chunk per pixel of
+    // screen; pixel art stays sharp when it is scaled up from there.
+    const lod = k >= 0.75 ? 1 : k >= 0.375 ? 0.5 : 0.25;
+    this.repaints = 0;
+    const ox = view.x * view.dpr;
+    const oy = view.y * view.dpr;
+    for (let cy = Math.floor(y0 / CHUNK); cy * CHUNK < y1; cy++) {
+      for (let cx = Math.floor(x0 / CHUNK); cx * CHUNK < x1; cx++) {
+        const c = this.chunk(sim, cx, cy, lod);
+        // Whole device pixels at both edges, so neighbouring chunks meet without a seam.
+        const dx0 = Math.round(ox + cx * CHUNK * s * k);
+        const dy0 = Math.round(oy + cy * CHUNK * s * k);
+        const dx1 = Math.round(ox + (cx * CHUNK * s + c.width / lod) * k);
+        const dy1 = Math.round(oy + (cy * CHUNK * s + c.height / lod) * k);
+        ctx.drawImage(c, dx0, dy0, dx1 - dx0, dy1 - dy0);
+      }
+    }
+    ctx.setTransform(k, 0, 0, k, ox, oy);
+    const near = (x: number, y: number): boolean => x >= x0 - 2 && x < x1 + 2 && y >= y0 - 1 && y < y1 + 3;
     // Villagers, animals and the train over the still layer, back to front.
     const here = villagers.filter((v) => v.place === place.id);
-    const shift = spread(here, tiles.size);
+    const shift = spread(here, s);
     const sprites: { y: number; draw: () => void }[] = [];
     for (const a of sim.animals()) {
       if (a.place !== place.id || a.roosting) continue;
       const g = this.gait({ key: `animal-${a.id}`, pos: a.pos });
-      sprites.push({ y: a.pos.y + 0.4, draw: () => tiles.drawAnimal(ctx, a, g.facing, g.frame) });
+      if (near(a.pos.x, a.pos.y)) sprites.push({ y: a.pos.y + 0.4, draw: () => tiles.drawAnimal(ctx, a, g.facing, g.frame) });
     }
     const train = this.rail ? sim.train() : null;
     if (train && this.rail) {
       for (const c of trainCars(train, this.rail.tiles)) {
-        sprites.push({ y: c.y + 0.6, draw: () => tiles.drawAt(ctx, c.tile, c.x, c.y) });
+        if (near(c.x, c.y)) sprites.push({ y: c.y + 0.6, draw: () => tiles.drawAt(ctx, c.tile, c.x, c.y) });
       }
     }
+    const shown: VillagerView[] = [];
     for (const v of here) {
       const gait = this.gait(v);
       // LPC has no lying-down frames: a sleeper is in their bed, shown by their name.
+      if (!near(v.pos.x, v.pos.y)) continue;
+      shown.push(v);
       if (v.activity === "sleep") continue;
       const facing = v.activity === "talk" ? (facePartner(v, here) ?? gait.facing) : gait.facing;
       const dx = shift.get(v.key) ?? 0;
       sprites.push({ y: v.pos.y + 0.5, draw: () => tiles.drawVillager(ctx, v.key, facing, gait.frame, v.pos.x, v.pos.y, dx) });
     }
     sprites.sort((a, b) => a.y - b.y);
-    for (const s of sprites) s.draw();
+    for (const sp of sprites) sp.draw();
     if (highlight) {
-      const s = tiles.size;
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 1;
       ctx.strokeRect(highlight.x * s + 0.5, highlight.y * s + 0.5, s - 1, s - 1);
       ctx.strokeStyle = "#000000";
       ctx.strokeRect(highlight.x * s + 1.5, highlight.y * s + 1.5, s - 3, s - 3);
     }
-    // Name labels last, so they sit over everything: above the head.
-    ctx.font = "10px ui-monospace, monospace";
+    // Names last, so they sit over everything, at a fixed size on screen. Zoomed far out
+    // there is no room for them, and each person is a dot.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const d = view.dpr;
+    const big = view.z * s >= NAMES_FROM;
+    ctx.font = `${11 * d}px ui-monospace, monospace`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
     // Names on a shared cell stack upward, since they are wider than the shift between them.
     const stacked = new Map<string, number>();
-    for (const v of [...here].sort((a, b) => (a.key < b.key ? -1 : 1))) {
-      const s = tiles.size;
+    for (const v of [...shown].sort((a, b) => (a.key < b.key ? -1 : 1))) {
+      const cx = ox + (v.pos.x * s + s / 2 + (shift.get(v.key) ?? 0)) * k;
+      if (!big) {
+        const cy = oy + (v.pos.y + 0.5) * s * k;
+        ctx.fillStyle = v.activity === "sleep" ? "#8a8fb8" : "#f4e8c8";
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = d;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 3 * d, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        continue;
+      }
       const cell = `${v.pos.x},${v.pos.y}`;
       const row = stacked.get(cell) ?? 0;
       stacked.set(cell, row + 1);
-      const cx = v.pos.x * s + s / 2 + (shift.get(v.key) ?? 0);
-      const top = (v.pos.y + 1) * s - 50 - row * 12;
-      const lw = ctx.measureText(v.name).width + 4;
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fillRect(cx - lw / 2, top - 11, lw, 11);
+      const top = oy + ((v.pos.y + 1) * s - 50) * k - row * 13 * d;
+      const lw = ctx.measureText(v.name).width + 6 * d;
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      ctx.fillRect(cx - lw / 2, top - 13 * d, lw, 13 * d);
       ctx.fillStyle = "#fff";
-      ctx.fillText(v.name, cx, top);
+      ctx.fillText(v.name, cx, top - d);
     }
+  }
+
+  /** The whole place in one canvas, for screenshots: full size, or half on browsers that
+   * cannot hold a canvas that big. */
+  image(sim: Sim, villagers: VillagerView[]): HTMLCanvasElement {
+    const area = this.width * this.height;
+    const z = area > MAX_CANVAS_AREA && smallCanvases() ? 0.5 : 1;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(this.width * z);
+    canvas.height = Math.round(this.height * z);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no 2d canvas");
+    this.draw(ctx, { x: 0, y: 0, z, w: canvas.width, h: canvas.height, dpr: 1 }, sim, villagers);
+    return canvas;
   }
 }
 

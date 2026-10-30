@@ -40,14 +40,19 @@ just build-wasm                        # the sim as wasm, plus the content bundl
 pnpm --filter @game-world/viewer dev   # then open the printed localhost URL
 ```
 
-The page shows the map of one place at a time (tabs above it, with how
-many people are in each) beside a sidebar, advancing at six game-minutes
-per second. Pick a speed from the list, pause, or skip to the next 6am.
-Pan the map with a two-finger scroll or a drag; zoom with a pinch,
-ctrl+scroll or the buttons. The text views are in the tools and in `window.__scene()`,
-not on the page. Hover a tile to see what it is and its numbers, click to
-pin it, or click a name in the people tab to follow that person from place
-to place: activity, why, coins and needs. The days tab pages through
+The page shows the map of one place at a time, filling the window, with
+the controls floating over it: the clock, pause (or space) and speed at
+the top left, the places (with how many people are in each) and the 3D
+switch at the top right, zoom at the bottom right. The panels are in a
+drawer on the right that the "panels" button folds away; on a phone they
+are a sheet along the bottom. The sim advances at six game-minutes per
+second. Pan the map with a two-finger scroll or a drag; zoom with a pinch,
+ctrl+scroll or the buttons. Zoomed far out, each person is a dot. The text
+views are in the tools and in `window.__scene()`, not on the page. Hover a
+tile to see what it is and its numbers in the inspector at the bottom left,
+click to pin it, or click a name in the people panel (which filters as you
+type) to follow that person from place to place: activity, why, coins and
+needs. The days tab pages through
 finished days, what was unusual first; click a line to replay the town to
 that moment, and "back to now" to return. The words tab lists every topic
 and gesture with how often it has come up; open one for who uses it, how

@@ -21,10 +21,10 @@ try {
   await page.locator("button.name").first().click();
   await page.waitForTimeout(200);
   await page.screenshot({ path: "target/viewer-inspect-villager.png" });
-  const canvas = page.locator("canvas.place").first();
+  const canvas = page.locator("#map-canvas");
   const box = await canvas.boundingBox();
   await page.locator("button.name").first().click(); // unpin
-  await page.mouse.move(box.x + box.width * (31 / 48), box.y + box.height * (21 / 36)); // the pond
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); // the middle of the map
   await page.waitForTimeout(200);
   await page.screenshot({ path: "target/viewer-inspect-tile.png" });
   console.log(await page.locator("#inspect").textContent());

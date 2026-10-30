@@ -2,14 +2,13 @@
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import * as wasm from "@game-world/sim-wasm";
 import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type ClockView, type Emitted, type DaySummary, type MindView, type ObjectView, type Sim, type StockView, type SummaryItem, type Topic, type VillagerView } from "@game-world/protocol";
-import { PlaceCanvas, Tileset, legend, objectTile } from "./render";
+import { PlaceCanvas, Tileset, legend, objectTile, type View } from "./render";
 import { Words, type TopicDef, type Word } from "./words";
 import type { Diorama } from "./diorama";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const clockEl = $("clock");
 const everyoneEl = $("everyone");
-const placesEl = $("places");
 const speedEl = $("speed");
 
 async function loadContent(): Promise<string> {
@@ -50,22 +49,21 @@ const world = sim.world();
 const canvases: PlaceCanvas[] = [];
 // One place on screen at a time, picked by a tab or by following whoever is pinned.
 const mapEl = $("map");
+const mapCanvas = $<HTMLCanvasElement>("map-canvas");
+const mapCtx = mapCanvas.getContext("2d") ?? (() => { throw new Error("no 2d canvas"); })();
 const placeTabsEl = $("place-tabs");
-const sections = new Map<number, HTMLElement>();
-const placeTabs = new Map<number, HTMLButtonElement>();
+const placeTabs = new Map<number, { tab: HTMLButtonElement; count: HTMLSpanElement }>();
+/** A place's key as a person would say it: "ashby_barn/loft" is "ashby barn loft". */
+const placeName = (key: string): string => key.replace(/[_/]+/g, " ");
 let activePlace = (world.places.find((p) => p.key === "town") ?? world.places[0])?.id ?? 0;
 for (const place of world.places) {
-  const section = document.createElement("section");
-  const canvas = new PlaceCanvas(tileset, place, world);
-  section.append(canvas.canvas);
-  section.hidden = place.id !== activePlace;
-  placesEl.appendChild(section);
-  sections.set(place.id, section);
-  canvases.push(canvas);
+  canvases.push(new PlaceCanvas(tileset, place, world));
   const tab = document.createElement("button");
   tab.type = "button";
   tab.setAttribute("role", "tab");
-  tab.textContent = place.key;
+  const count = document.createElement("span");
+  count.className = "count";
+  tab.append(placeName(place.key), count);
   tab.addEventListener("click", () => {
     // Choosing a place stops following someone who is elsewhere.
     const p = pinned;
@@ -73,28 +71,40 @@ for (const place of world.places) {
     showPlace(place.id);
   });
   placeTabsEl.append(tab);
-  placeTabs.set(place.id, tab);
-  canvas.canvas.addEventListener("pointermove", (e) => {
-    const t = canvas.tileAt(e.clientX, e.clientY);
-    hover = t ? { kind: "tile", place: canvas.id, x: t.x, y: t.y } : null;
-    drawnTick = -1;
-  });
-  canvas.canvas.addEventListener("pointerleave", () => {
-    hover = null;
-    drawnTick = -1;
-  });
-  canvas.canvas.addEventListener("click", (e) => {
-    const t = canvas.tileAt(e.clientX, e.clientY);
-    if (!t) return;
-    // Clicking a villager pins the person, an object (anywhere on its sprite) the object,
-    // anything else the tile. Clicking what is already pinned lets it go.
-    const v = sim.villagers().find((v) => v.place === canvas.id && v.pos.x === t.x && v.pos.y === t.y);
-    const o = v ? undefined : objectAt(canvas.id, t.x, t.y);
-    const next: Focus = v ? { kind: "villager", key: v.key } : o ? { kind: "object", key: o.key } : { kind: "tile", place: canvas.id, x: t.x, y: t.y };
-    pinned = samePin(pinned, next) ? null : next;
-    drawnTick = -1;
-  });
+  placeTabs.set(place.id, { tab, count });
 }
+
+/** The tile of the shown place under a pointer, or null. */
+function tileUnder(e: MouseEvent): { canvas: PlaceCanvas; x: number; y: number } | null {
+  const canvas = activeCanvas();
+  const view = currentView();
+  if (!canvas || !view) return null;
+  const r = mapEl.getBoundingClientRect();
+  const t = canvas.tileAt(e.clientX - r.left, e.clientY - r.top, view);
+  return t ? { canvas, ...t } : null;
+}
+mapCanvas.addEventListener("pointermove", (e) => {
+  const t = tileUnder(e);
+  const next: Focus | null = t ? { kind: "tile", place: t.canvas.id, x: t.x, y: t.y } : null;
+  if (next && hover && samePin(hover, next)) return;
+  hover = next;
+  drawnTick = -1;
+});
+mapCanvas.addEventListener("pointerleave", () => {
+  hover = null;
+  drawnTick = -1;
+});
+mapCanvas.addEventListener("click", (e) => {
+  const t = tileUnder(e);
+  if (!t) return;
+  // Clicking a villager pins the person, an object (anywhere on its sprite) the object,
+  // anything else the tile. Clicking what is already pinned lets it go.
+  const v = sim.villagers().find((v) => v.place === t.canvas.id && v.pos.x === t.x && v.pos.y === t.y);
+  const o = v ? undefined : objectAt(t.canvas.id, t.x, t.y);
+  const next: Focus = v ? { kind: "villager", key: v.key } : o ? { kind: "object", key: o.key } : { kind: "tile", place: t.canvas.id, x: t.x, y: t.y };
+  pinned = samePin(pinned, next) ? null : next;
+  drawnTick = -1;
+});
 
 // What the inspector shows: the pinned thing, else whatever the pointer is over.
 type Focus = { kind: "tile"; place: number; x: number; y: number } | { kind: "villager"; key: string } | { kind: "object"; key: string };
@@ -125,8 +135,18 @@ window.addEventListener("keydown", (e) => {
     pinned = null;
     drawnTick = -1;
   }
+  // Space pauses, unless it is typing into a field or pressing a button.
+  const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLButtonElement;
+  if (e.key === " " && !typing) {
+    e.preventDefault();
+    paused = !paused;
+  }
 });
 const inspectEl = $("inspect");
+const inspectorEl = $("inspector");
+const hintEl = $("hint");
+let hintDone = false;
+if (window.matchMedia("(pointer: coarse)").matches) hintEl.textContent = "tap a person or a thing to follow it";
 
 const rules = sim.rules();
 
@@ -289,11 +309,14 @@ function describeTile(f: { place: number; x: number; y: number }, villagers: Vil
 
 function inspect(villagers: VillagerView[]): void {
   const focus = pinned ?? hover;
+  inspectorEl.hidden = !focus;
+  hintEl.hidden = !!focus || hintDone;
   if (!focus) {
     shownInspect = "";
-    inspectEl.textContent = "hover or click a tile or a thing; click a name for the person; click again or press Escape to let go";
     return;
   }
+  // The hint has done its job once something has been pinned.
+  if (pinned) hintDone = true;
   const stock = sim.economy();
   const lines: Line[] =
     focus.kind === "villager"
@@ -316,7 +339,6 @@ function inspect(villagers: VillagerView[]): void {
           },
           label: "unpin",
         },
-        " ",
       ]
     : [];
   lines[0] = [...unpin, ...(typeof lines[0] === "string" ? [lines[0]] : (lines[0] ?? []))];
@@ -365,6 +387,12 @@ function highlightFor(placeId: number, villagers: VillagerView[]): { x: number; 
 /** One row per villager, made once and updated in place so nothing jumps: a name button,
  * then the activity and the place in fixed columns. */
 const rows = new Map<string, { button: HTMLButtonElement; activity: HTMLSpanElement; place: HTMLSpanElement }>();
+let filter = "";
+const filterEl = $<HTMLInputElement>("people-filter");
+filterEl.addEventListener("input", () => {
+  filter = filterEl.value.trim().toLowerCase();
+  drawnTick = -1;
+});
 function listEveryone(villagers: VillagerView[]): void {
   for (const v of villagers) {
     let row = rows.get(v.key);
@@ -379,15 +407,17 @@ function listEveryone(villagers: VillagerView[]): void {
       });
       const activity = document.createElement("span");
       const place = document.createElement("span");
-      place.className = "muted";
+      place.className = "where";
       everyoneEl.append(button, activity, place);
       row = { button, activity, place };
       rows.set(v.key, row);
     }
-    const placeName = world.places.find((p) => p.id === v.place)?.key ?? "?";
+    const where = placeName(world.places.find((p) => p.id === v.place)?.key ?? "?");
     const activity = `${v.activity}${v.heading_for ? ` → ${v.heading_for}` : ""}`;
     if (row.activity.textContent !== activity) row.activity.textContent = activity;
-    if (row.place.textContent !== placeName) row.place.textContent = placeName;
+    if (row.place.textContent !== where) row.place.textContent = where;
+    const hide = filter !== "" && !`${v.name} ${activity} ${where}`.toLowerCase().includes(filter);
+    if (row.button.hidden !== hide) row.button.hidden = row.activity.hidden = row.place.hidden = hide;
     const pressed = pinned?.kind === "villager" && pinned.key === v.key ? "true" : "false";
     if (row.button.getAttribute("aria-pressed") !== pressed) row.button.setAttribute("aria-pressed", pressed);
   }
@@ -412,8 +442,7 @@ legendEl.append(
 
 function showPlace(id: number): void {
   activePlace = id;
-  for (const [k, section] of sections) section.hidden = k !== id;
-  for (const [k, tab] of placeTabs) tab.setAttribute("aria-selected", String(k === id));
+  for (const [k, { tab }] of placeTabs) tab.setAttribute("aria-selected", String(k === id));
   applyCamera();
   drawnTick = -1;
 }
@@ -432,7 +461,7 @@ interface Camera {
   fitted: boolean;
 }
 const cameras = new Map<number, Camera>();
-const MIN_ZOOM = 0.25;
+const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 6;
 const clampZoom = (z: number): number => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
 
@@ -442,8 +471,8 @@ function paneSize(): { w: number; h: number } {
 
 function fitted(c: PlaceCanvas): Camera {
   const { w, h } = paneSize();
-  const z = clampZoom(Math.min(w / c.canvas.width, h / c.canvas.height));
-  return { x: (w - c.canvas.width * z) / 2, y: (h - c.canvas.height * z) / 2, z, fitted: true };
+  const z = clampZoom(Math.min(w / c.width, h / c.height));
+  return { x: (w - c.width * z) / 2, y: (h - c.height * z) / 2, z, fitted: true };
 }
 
 function camera(): Camera | undefined {
@@ -463,11 +492,37 @@ function applyCamera(): void {
   const cam = camera();
   if (!c || !cam) return;
   const { w, h } = paneSize();
-  const cw = c.canvas.width * cam.z;
-  const ch = c.canvas.height * cam.z;
+  const cw = c.width * cam.z;
+  const ch = c.height * cam.z;
   cam.x = Math.min(w / 2, Math.max(w / 2 - cw, cam.x));
   cam.y = Math.min(h / 2, Math.max(h / 2 - ch, cam.y));
-  c.canvas.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})`;
+  mapDirty = true;
+}
+
+/** The camera as the renderer takes it. */
+function currentView(): View | null {
+  const cam = camera();
+  if (!cam) return null;
+  const { w, h } = paneSize();
+  return { x: cam.x, y: cam.y, z: cam.z, w, h, dpr: window.devicePixelRatio || 1 };
+}
+
+/** Set when the map needs drawing again: the camera moved, the pane resized, or the sim or
+ * the focus changed. */
+let mapDirty = true;
+let lastVillagers: VillagerView[] = [];
+function paintMap(): void {
+  const c = activeCanvas();
+  const view = currentView();
+  if (!c || !view) return;
+  const pw = Math.round(view.w * view.dpr);
+  const ph = Math.round(view.h * view.dpr);
+  if (mapCanvas.width !== pw || mapCanvas.height !== ph) {
+    mapCanvas.width = pw;
+    mapCanvas.height = ph;
+  }
+  c.draw(mapCtx, view, sim, lastVillagers, highlightFor(c.id, lastVillagers));
+  mapDirty = false;
 }
 
 /** Zooms by `f` keeping the pane point (px, py) where it is. */
@@ -592,7 +647,7 @@ mapEl.addEventListener(
   true,
 );
 
-for (const [k, tab] of placeTabs) tab.setAttribute("aria-selected", String(k === activePlace));
+for (const [k, { tab }] of placeTabs) tab.setAttribute("aria-selected", String(k === activePlace));
 applyCamera();
 window.addEventListener("resize", applyCamera);
 new ResizeObserver(applyCamera).observe(mapEl);
@@ -623,9 +678,11 @@ function keepInView(v: VillagerView): void {
 function labelPlaces(villagers: VillagerView[]): void {
   for (const place of world.places) {
     const n = villagers.filter((v) => v.place === place.id).length;
-    const text = n ? `${place.key} (${n})` : place.key;
-    const tab = placeTabs.get(place.id);
-    if (tab && tab.textContent !== text) tab.textContent = text;
+    const t = placeTabs.get(place.id);
+    if (!t) continue;
+    const text = n ? String(n) : "";
+    if (t.count.textContent !== text) t.count.textContent = text;
+    t.count.hidden = n === 0;
   }
 }
 
@@ -639,7 +696,18 @@ function selectSideTab(name: string): void {
   }
   if (name === "words") wordsPanel.render(true);
 }
-for (const b of sideTabs) b.addEventListener("click", () => selectSideTab(b.dataset.tab ?? "people"));
+for (const b of sideTabs) {
+  b.addEventListener("click", () => {
+    const closed = document.body.classList.contains("drawer-closed");
+    // On a phone the open tab, tapped again, folds the sheet away.
+    if (!closed && b.getAttribute("aria-selected") === "true" && window.matchMedia("(max-width: 760px)").matches) {
+      setDrawer(false);
+      return;
+    }
+    selectSideTab(b.dataset.tab ?? "people");
+    if (closed) setDrawer(true);
+  });
+}
 
 // Game-minutes per real second. 6 means a day takes four real minutes.
 const SPEEDS = [1, 2, 6, 12, 30, 60, 120, 240];
@@ -648,7 +716,9 @@ const speedSelect = speedEl as HTMLSelectElement;
 for (const [i, s] of SPEEDS.entries()) {
   const day = (24 * 60) / s;
   const length = day >= 60 ? `${day / 60}m` : `${day}s`;
-  speedSelect.add(new Option(`${s} min/s, a day in ${length}`, String(i), i === speedIndex, i === speedIndex));
+  const option = new Option(`${s}×`, String(i), i === speedIndex, i === speedIndex);
+  option.title = `${s} game minutes a second; a day takes ${length}`;
+  speedSelect.add(option);
 }
 let paused = false;
 // The words tab, fed by every step the sim takes.
@@ -698,8 +768,10 @@ function draw(): void {
   const clock = sim.clock();
   shownClock = clock;
   const cal = clock.calendar;
-  clockEl.textContent = `Y${cal.year} ${cal.season} ${cal.day_of_season} (${cal.weekday}) ${twelveHour(clock.time.hour, clock.time.minute)}`;
-  pauseEl.textContent = paused ? "resume" : "pause";
+  clockEl.textContent = `${cal.weekday} ${twelveHour(clock.time.hour, clock.time.minute)}`;
+  dateEl.textContent = `${cal.season} ${cal.day_of_season}, year ${cal.year}`;
+  pauseEl.textContent = paused ? "▶" : "❚❚";
+  pauseEl.setAttribute("aria-label", paused ? "resume" : "pause");
   const past = sim.tick < sim.frontier;
   backEl.hidden = !past;
   clockEl.classList.toggle("past", past);
@@ -724,7 +796,8 @@ function draw(): void {
       pendingShot = null;
     }
   } else {
-    for (const c of canvases) if (c.id === activePlace) c.draw(sim, villagers, highlightFor(c.id, villagers));
+    lastVillagers = villagers;
+    mapDirty = true;
     if (followed) keepInView(followed);
   }
   // The words tab, at most once a second while it is open.
@@ -758,6 +831,7 @@ function frame(now: number): void {
   }
   draw();
   if (diorama && view3d && shownClock) diorama.render(sim.tick + carry, shownClock);
+  else if (mapDirty) paintMap();
   requestAnimationFrame(frame);
 }
 
@@ -768,11 +842,18 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 const pauseEl = $("pause");
+const dateEl = $("date");
 pauseEl.addEventListener("click", () => {
   paused = !paused;
 });
+/** The speed control's tooltip says how long a day takes at the chosen speed. */
+const titleSpeed = (): void => {
+  speedSelect.title = speedSelect.selectedOptions[0]?.title ?? "";
+};
+titleSpeed();
 speedSelect.addEventListener("change", () => {
   speedIndex = Number(speedSelect.value);
+  titleSpeed();
   drawnTick = -1;
 });
 // Skips to the next 6am: later today if it is still night, else tomorrow.
@@ -992,6 +1073,29 @@ async function setView3d(on: boolean): Promise<void> {
   drawnTick = -1;
   if (!on) applyCamera();
 }
+
+// The drawer of panels folds away to give the map the window. On a phone it is a sheet
+// whose tabs stay showing, and choosing a tab opens it.
+const drawerEl = $("drawer");
+function setDrawer(open: boolean): void {
+  document.body.classList.toggle("drawer-closed", !open);
+  drawerEl.setAttribute("aria-pressed", String(open));
+  try {
+    localStorage.setItem("drawer", open ? "open" : "closed");
+  } catch {
+    // Storage may be unavailable; the drawer just starts open next time.
+  }
+  applyCamera();
+}
+drawerEl.addEventListener("click", () => setDrawer(document.body.classList.contains("drawer-closed")));
+let drawerStart = !window.matchMedia("(max-width: 760px)").matches;
+try {
+  const saved = localStorage.getItem("drawer");
+  if (saved) drawerStart = saved === "open";
+} catch {
+  // As above.
+}
+setDrawer(drawerStart);
 view3dEl.addEventListener("click", () => void setView3d(!view3d));
 $("turn-left").addEventListener("click", () => diorama?.rotate(-Math.PI / 4));
 $("turn-right").addEventListener("click", () => diorama?.rotate(Math.PI / 4));
@@ -1021,7 +1125,7 @@ window.__show = (key: string) => {
   pinned = null;
   showPlace(place.id);
   draw();
-  return activeCanvas()?.canvas.toDataURL("image/png") ?? null;
+  return activeCanvas()?.image(sim, sim.villagers()).toDataURL("image/png") ?? null;
 };
 window.__show3d = async (key: string, shot?: string[]) => {
   const place = world.places.find((p) => p.key === key);
@@ -1040,11 +1144,15 @@ window.__show3d = async (key: string, shot?: string[]) => {
 };
 window.__scene = () => ({
   tick: sim.tick,
-  clock: clockEl.textContent ?? "",
+  clock: (() => {
+    const c = sim.clock();
+    const cal = c.calendar;
+    return `Y${cal.year} ${cal.season} ${cal.day_of_season} (${cal.weekday}) ${twelveHour(c.time.hour, c.time.minute)}`;
+  })(),
   everyone: sim.whereIsEveryone(),
   hash: sim.hash(),
   places: sim.placeIds().map((id) => sim.renderPlace(id)),
-  canvases: canvases.filter((c) => c.canvas.width > 0).length,
+  canvases: canvases.filter((c) => c.width > 0).length,
   days: sim.summaries().length,
 });
 

@@ -3,7 +3,7 @@
 // reeds scattered over the ground. All of it lies flat, so the 2D map and the 3D ground
 // share it. Also which tree stands where.
 import type { Calendar, DoorView, PlaceView, PlotView, Crop, WorldView } from "@game-world/protocol";
-import { type Materials, type Tileset, variantAt } from "./render";
+import { type Materials, type TileRect, type Tileset, variantAt, within } from "./render";
 
 export interface Dressing {
   plots: PlotView[];
@@ -71,15 +71,17 @@ export function paintDressing(
   mat: Materials,
   dressing: Dressing,
   calendar: Calendar | null,
+  region: TileRect | null = null,
 ): void {
   const w = place.width;
   const h = place.height;
+  const r = within(region, w, h);
   const cell = (x: number, y: number): string | undefined => (x < 0 || y < 0 || x >= w || y >= h ? undefined : place.cells[y * w + x]);
   const name = (x: number, y: number): string | undefined => (x < 0 || y < 0 || x >= w || y >= h ? undefined : names[y * w + x]);
   const waterAt = (x: number, y: number): boolean => cell(x, y) === "Water";
   // Bridges: a path cell with water on both sides across it.
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
+  for (let y = r.y0; y < r.y1; y++) {
+    for (let x = r.x0; x < r.x1; x++) {
       if (cell(x, y) !== "Path") continue;
       const across = waterAt(x, y - 1) && waterAt(x, y + 1);
       const along = waterAt(x - 1, y) && waterAt(x + 1, y);
@@ -112,8 +114,8 @@ export function paintDressing(
   }
   // Doorways: a sill of the building's material, and ladders to the loft.
   const doors: [number, number, string][] = [];
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
+  for (let y = r.y0; y < r.y1; y++) {
+    for (let x = r.x0; x < r.x1; x++) {
       const i = y * w + x;
       if (dressing.ladders.has(i)) {
         tiles.draw(ctx, "ladder", x, y);
@@ -136,8 +138,8 @@ export function paintDressing(
     for (let y = p.rect.y; y < p.rect.y + p.rect.h; y++) for (let x = p.rect.x; x < p.rect.x + p.rect.w; x++) plotted.add(y * w + x);
   }
   const railed = new Set(dressing.rails.map((r) => r.y * w + r.x));
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
+  for (let y = r.y0; y < r.y1; y++) {
+    for (let x = r.x0; x < r.x1; x++) {
       const i = y * w + x;
       if (plotted.has(i) || railed.has(i)) continue;
       const n = name(x, y);
