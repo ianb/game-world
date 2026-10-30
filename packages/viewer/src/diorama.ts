@@ -2,11 +2,18 @@
 // a plane, walls are raised from it, and objects, trees and villagers are upright LPC sprites
 // that turn to face the camera. Light follows the clock. Loaded only when switched on.
 import * as THREE from "three";
-import type { ClockView, Emitted, ObjectView, PlaceView, RoofView, Sim, VillagerView } from "@game-world/protocol";
+import type { ClockView, Emitted, ObjectView, PlaceView, Rect, RoofView, Sim, VillagerView } from "@game-world/protocol";
 import { type Facing, type Tileset, groundNames, isTreeCell, objectTile, paintGround } from "./render";
 
-/** Wall height, in tiles. Low enough to see into rooms from the usual angle. */
-const WALL_H = 1;
+/** Wall height, in tiles: the LPC tall walls are three tiles of art. */
+const WALL_H = 3;
+/** What is left of a wall cut away so the camera can see past it. */
+const STUB_H = 0.3;
+/** Doorways are open to this height, with wall above. */
+const DOOR_H = 2;
+/** Closer than this the camera is looking at someone, and only walls in the way are cut;
+ * further out every wall with a room behind it is cut, as in a dollhouse. */
+const CLOSE = 16;
 /** Objects drawn flat on the floor rather than standing up. */
 const LYING = new Set(["bed"]);
 /** Objects that glow after dark. */
@@ -77,6 +84,7 @@ export class Diorama {
   private hearths: THREE.PointLight[] = [];
   /** Lamps inside buildings, lit in the evening. */
   private lamps: THREE.PointLight[] = [];
+  private walls: Walls | null = null;
   private ground: { canvas: HTMLCanvasElement; texture: THREE.CanvasTexture; painted: number } | null = null;
   private place: PlaceView | null = null;
   private readonly walkers = new Map<string, Walker>();
@@ -128,6 +136,8 @@ export class Diorama {
     });
     this.placeGroup = new THREE.Group();
     this.scene.add(this.placeGroup);
+    this.walls?.dispose();
+    this.walls = null;
     this.sprites = [];
     this.trees = [];
     this.hearths = [];
@@ -219,7 +229,36 @@ export class Diorama {
       if (yaw > Math.PI / 2) yaw -= Math.PI;
       if (yaw < -Math.PI / 2) yaw += Math.PI;
     }
-    return { x, z, yaw, pitch: 0.42, dist: 13 };
+    // From the other side only if much more stands in the way from the south, since from
+    // the north people are seen from behind. Never end on, which would stand one in front
+    // of the other. What is left in the way is hidden in `aim`.
+    const view = { x, z, yaw, pitch: 0.42, dist: 13 };
+    let best = view;
+    let fewest = Infinity;
+    for (const turn of [0, Math.PI]) {
+      const v = { ...view, yaw: yaw + turn };
+      const n = this.occluders(v).length + (turn === 0 ? 0 : 2.5);
+      if (n < fewest) {
+        best = v;
+        fewest = n;
+      }
+    }
+    return best;
+  }
+
+  /** Objects and trees that would hide the middle of a close view. */
+  private occluders(v: View): THREE.Mesh[] {
+    const back = { x: Math.sin(v.yaw), z: Math.cos(v.yaw) };
+    const reach = v.dist * Math.cos(v.pitch);
+    const tan = Math.tan(v.pitch);
+    return [...this.sprites, ...this.trees].filter((m) => {
+      const dx = m.position.x - v.x;
+      const dz = m.position.z - v.z;
+      const along = dx * back.x + dz * back.z;
+      const across = Math.abs(dx * back.z - dz * back.x);
+      const width = Number(m.userData.w ?? 1) / 2 + 0.8;
+      return along > 0.6 && along < reach && across < width && Number(m.userData.h ?? 1) / along > tan;
+    });
   }
 
   rotate(by: number): void {
@@ -383,19 +422,15 @@ export class Diorama {
     );
     this.camera.lookAt(v.x, lookY, v.z);
     for (const s of this.sprites) s.rotation.y = v.yaw;
-    // Toward the camera along the ground, and across.
-    const back = { x: Math.sin(v.yaw), z: Math.cos(v.yaw) };
-    const reach = v.dist * Math.cos(v.pitch);
+    // Close up, whatever stands between the camera and what it looks at steps aside.
     for (const t of this.trees) {
       t.rotation.y = v.yaw;
-      const dx = t.position.x - v.x;
-      const dz = t.position.z - v.z;
-      const along = dx * back.x + dz * back.z;
-      const across = Math.abs(dx * back.z - dz * back.x);
-      // A tree four tiles tall hides what is behind it from a low camera.
-      t.visible = !(along > 0.8 && along < reach && across < 2.5 && 4 / along > Math.tan(v.pitch));
+      t.visible = true;
     }
+    for (const s of this.sprites) s.visible = true;
+    if (v.dist < CLOSE) for (const m of this.occluders(v)) m.visible = false;
     for (const w of this.walkers.values()) w.mesh.rotation.y = v.yaw;
+    this.walls?.cutFor(v);
   }
 
   /** The canvas as a PNG, drawn fresh. */
@@ -451,64 +486,13 @@ export class Diorama {
     g.painted = performance.now();
   }
 
-  /** Walls as one mesh of side faces from the atlas, topped with the ground's own painting
-   * of the wall so the tops join up the way the 2D view shapes them. */
   private buildWalls(place: PlaceView, names: string[]): void {
-    const w = place.width;
-    const h = place.height;
-    const isWall = (x: number, y: number): boolean => names[y * w + x] === "wall";
-    const at = (x: number, y: number): string | undefined => (x < 0 || y < 0 || x >= w || y >= h ? undefined : names[y * w + x]);
-    const sides: number[] = [];
-    const sideUv: number[] = [];
-    const tops: number[] = [];
-    const topUv: number[] = [];
-    const quad = (out: number[], uvOut: number[], a: number[], b: number[], c: number[], d: number[], uv: [number, number, number, number]): void => {
-      // a b on top, c d below, wound to face outward.
-      out.push(...a, ...c, ...b, ...b, ...c, ...d);
-      const [u0, v0, u1, v1] = uv;
-      uvOut.push(u0, v1, u0, v0, u1, v1, u1, v1, u0, v0, u1, v0);
-    };
-    const tile = (name: string): [number, number, number, number] => {
-      const t = this.o.tiles.atlas.tiles[name];
-      const iw = this.o.tiles.image.width;
-      const ih = this.o.tiles.image.height;
-      const s = this.o.tiles.size;
-      if (!t) return [0, 0, 0, 0];
-      return [(t.col * s) / iw, 1 - ((t.row + 1) * s) / ih, ((t.col + 1) * s) / iw, 1 - (t.row * s) / ih];
-    };
-    const faceFor = (n: string | undefined): [number, number, number, number] => tile(n === "floor" || n === "opening" ? "wall_face" : "wall_outside");
-    const H = WALL_H;
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        if (!isWall(x, y)) continue;
-        // Top: this cell of the ground painting, raised.
-        const u0 = x / w, u1 = (x + 1) / w, v0 = 1 - (y + 1) / h, v1 = 1 - y / h;
-        tops.push(x, H, y, x, H, y + 1, x + 1, H, y, x + 1, H, y, x, H, y + 1, x + 1, H, y + 1);
-        topUv.push(u0, v1, u0, v0, u1, v1, u1, v1, u0, v0, u1, v0);
-        const south = at(x, y + 1);
-        if (south !== "wall") quad(sides, sideUv, [x, H, y + 1], [x + 1, H, y + 1], [x, 0, y + 1], [x + 1, 0, y + 1], faceFor(south));
-        const north = at(x, y - 1);
-        if (north !== "wall") quad(sides, sideUv, [x + 1, H, y], [x, H, y], [x + 1, 0, y], [x, 0, y], faceFor(north));
-        const east = at(x + 1, y);
-        if (east !== "wall") quad(sides, sideUv, [x + 1, H, y + 1], [x + 1, H, y], [x + 1, 0, y + 1], [x + 1, 0, y], faceFor(east));
-        const west = at(x - 1, y);
-        if (west !== "wall") quad(sides, sideUv, [x, H, y], [x, H, y + 1], [x, 0, y], [x, 0, y + 1], faceFor(west));
-      }
-    }
-    const mesh = (pos: number[], uv: number[], material: THREE.Material): void => {
-      if (!pos.length) return;
-      const g = new THREE.BufferGeometry();
-      g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-      g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
-      g.computeVertexNormals();
-      const m = new THREE.Mesh(g, material);
-      m.castShadow = true;
-      m.receiveShadow = true;
-      this.placeGroup.add(m);
-    };
-    const wallMaterial = new THREE.MeshStandardMaterial({ map: this.atlas, roughness: 1, side: THREE.DoubleSide });
-    mesh(sides, sideUv, wallMaterial);
-    if (this.ground) mesh(tops, topUv, new THREE.MeshStandardMaterial({ map: this.ground.texture, roughness: 1 }));
+    if (!this.ground) return;
+    // The buildings the camera can look into: inline ones by their footprint, or the whole
+    // place when it is an interior.
+    const rooms = place.kind === "Zone" ? this.o.roofs.filter((r) => r.place === place.id).map((r) => r.rect) : [{ x: 0, y: 0, w: place.width, h: place.height }];
+    this.walls = new Walls(this.o.tiles, this.atlas, this.ground.texture, place, names, rooms);
+    this.placeGroup.add(this.walls.group);
   }
 
   private buildObjects(place: PlaceView): void {
@@ -537,8 +521,8 @@ export class Diorama {
 
   /** A lamp in each inline building, over its middle. */
   private buildLamps(place: PlaceView): void {
-    for (const r of this.o.roofs) {
-      if (r.place !== place.id) continue;
+    const rooms = place.kind === "Zone" ? this.o.roofs.filter((r) => r.place === place.id) : [{ rect: { x: 0, y: 0, w: place.width, h: place.height } }];
+    for (const r of rooms) {
       const lamp = new THREE.PointLight(0xffc27a, 0, Math.max(r.rect.w, r.rect.h) * 1.1, 1.4);
       lamp.position.set(r.rect.x + r.rect.w / 2, 2.2, r.rect.y + r.rect.h / 2);
       this.placeGroup.add(lamp);
@@ -591,6 +575,8 @@ export class Diorama {
     const cx = x + ox / s + tw / 2;
     const foot = y + (oy + th * s) / s;
     m.position.set(cx, 0, foot - 0.45);
+    m.userData.w = tw;
+    m.userData.h = th;
     this.placeGroup.add(m);
     return m;
   }
@@ -670,7 +656,8 @@ export class Diorama {
     const skyNight = new THREE.Color(0x24305a);
     this.sky.color.copy(skyDay.clone().lerp(skyNight, this.night).lerp(new THREE.Color(0xffb37a), dusk * 0.4));
     this.sky.groundColor.set(0x4a3b2a).lerp(new THREE.Color(0x10121c), this.night);
-    this.sky.intensity = 1.1 - this.night * 0.6;
+    // Interiors are never as dark as the night outside.
+    this.sky.intensity = Math.max(1.1 - this.night * 0.6, p && p.kind !== "Zone" ? 0.75 : 0);
     const bg = new THREE.Color(0x9fc4e8).lerp(new THREE.Color(0x141a30), this.night).lerp(new THREE.Color(0xe8a070), dusk * 0.5);
     this.scene.background = bg;
     const d = this.view.dist;
@@ -680,6 +667,7 @@ export class Diorama {
     // Lamps go on at dusk and out late at night.
     const lit = hour >= 18.5 || hour < 0.5 ? Math.min(1, this.night * 1.5) : 0;
     for (const lamp of this.lamps) lamp.intensity = lit * 6;
+    this.walls?.glow(lit);
   }
 
   // Labels.
@@ -830,5 +818,222 @@ export class Diorama {
     const x = Math.floor(p.x);
     const y = Math.floor(p.z);
     if (x >= 0 && y >= 0 && x < place.width && y < place.height) this.o.pick(place.id, x, y);
+  }
+}
+
+/** One wall cell: a full wall, or a doorway with wall above it. */
+interface WallCell {
+  x: number;
+  y: number;
+  door: boolean;
+}
+
+/** Atlas coordinates of a tile: left, bottom, right, top in texture space. */
+type Uv = [number, number, number, number];
+
+/** The walls of a place, raised to full height. Walls that stand between the camera and
+ * what it looks at are cut down to a stub; the geometry is rebuilt when that set changes. */
+class Walls {
+  readonly group = new THREE.Group();
+  private readonly cells: WallCell[] = [];
+  private readonly index = new Map<string, number>();
+  private readonly sideMaterial: THREE.MeshStandardMaterial;
+  private readonly topMaterial: THREE.MeshStandardMaterial;
+  private readonly glowMaterial: THREE.MeshBasicMaterial;
+  private readonly windows: { cell: number; meshes: THREE.Mesh[] }[] = [];
+  private meshes: THREE.Mesh[] = [];
+  private cutKey: string | null = null;
+  private cut = new Set<number>();
+
+  constructor(
+    private readonly tiles: Tileset,
+    atlas: THREE.Texture,
+    ground: THREE.Texture,
+    private readonly place: PlaceView,
+    private readonly names: string[],
+    private readonly rooms: Rect[],
+  ) {
+    this.sideMaterial = new THREE.MeshStandardMaterial({ map: atlas, roughness: 1, side: THREE.DoubleSide });
+    this.topMaterial = new THREE.MeshStandardMaterial({ map: ground, roughness: 1, side: THREE.DoubleSide });
+    this.glowMaterial = new THREE.MeshBasicMaterial({ map: atlas, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    for (let y = 0; y < place.height; y++) {
+      for (let x = 0; x < place.width; x++) {
+        const n = names[y * place.width + x];
+        if (n !== "wall" && n !== "door") continue;
+        this.index.set(`${x},${y}`, this.cells.length);
+        this.cells.push({ x, y, door: n === "door" });
+      }
+    }
+    this.buildWindows(atlas);
+    this.rebuild();
+  }
+
+  private at(x: number, y: number): string | undefined {
+    const { width: w, height: h } = this.place;
+    return x < 0 || y < 0 || x >= w || y >= h ? undefined : this.names[y * w + x];
+  }
+
+  private uv(name: string, rows = 1): Uv {
+    const t = this.tiles.atlas.tiles[name];
+    const iw = this.tiles.image.width;
+    const ih = this.tiles.image.height;
+    const s = this.tiles.size;
+    if (!t) return [0, 0, 0, 0];
+    return [(t.col * s) / iw, 1 - ((t.row + rows) * s) / ih, ((t.col + 1) * s) / iw, 1 - (t.row * s) / ih];
+  }
+
+  /** Outside walls get a window on some cells, away from doors. */
+  private buildWindows(atlas: THREE.Texture): void {
+    const pane = new THREE.MeshStandardMaterial({ map: atlas, alphaTest: 0.5, roughness: 1 });
+    const sides: [number, number, number][] = [
+      [0, 1, 0],
+      [0, -1, Math.PI],
+      [1, 0, Math.PI / 2],
+      [-1, 0, -Math.PI / 2],
+    ];
+    this.cells.forEach((c, i) => {
+      if (c.door) return;
+      for (const [dx, dy, turn] of sides) {
+        const out = this.at(c.x + dx, c.y + dy);
+        if (out === undefined || out === "wall" || out === "door" || out === "floor" || out === "opening") continue;
+        // Not beside a door along the wall, and only on some cells.
+        if (this.at(c.x + dy, c.y + dx) === "door" || this.at(c.x - dy, c.y - dx) === "door") continue;
+        if ((c.x * 7 + c.y * 13 + dx * 3 + dy * 5) % 3 !== 0) continue;
+        const meshes = [pane, this.glowMaterial].map((material, k) => {
+          const g = new THREE.PlaneGeometry(1, 1);
+          const [u0, v0, u1, v1] = this.uv(k === 0 ? "window" : "window_glow");
+          g.setAttribute("uv", new THREE.Float32BufferAttribute([u0, v1, u1, v1, u0, v0, u1, v0], 2));
+          const m = new THREE.Mesh(g, material);
+          const lift = 0.01 + k * 0.01;
+          m.position.set(c.x + 0.5 + dx * (0.5 + lift), 1.6, c.y + 0.5 + dy * (0.5 + lift));
+          m.rotation.y = turn;
+          if (k === 0) m.receiveShadow = true;
+          this.group.add(m);
+          return m;
+        });
+        this.windows.push({ cell: i, meshes });
+      }
+    });
+  }
+
+  /** Lights the windows from inside, 0 to 1. */
+  glow(lit: number): void {
+    this.glowMaterial.opacity = lit;
+  }
+
+  /** Chooses which walls to cut for a view, and rebuilds if that changed. */
+  cutFor(v: View): void {
+    const back = { x: Math.sin(v.yaw), z: Math.cos(v.yaw) };
+    const reach = v.dist * Math.cos(v.pitch);
+    const tan = Math.tan(v.pitch);
+    const cut = new Set<number>();
+    const inside = (r: Rect, x: number, y: number): boolean => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
+    const close = v.dist < CLOSE;
+    const room = close ? this.rooms.find((r) => inside(r, v.x, v.z)) : undefined;
+    // One step away from the camera, along whichever axis it mostly looks.
+    const away = Math.abs(back.x) > Math.abs(back.z) ? [-Math.sign(back.x), 0] : [0, -Math.sign(back.z)];
+    this.cells.forEach((c, i) => {
+      const dx = c.x + 0.5 - v.x;
+      const dz = c.y + 0.5 - v.z;
+      const along = dx * back.x + dz * back.z;
+      const across = Math.abs(dx * back.z - dz * back.x);
+      if (close) {
+        // The near walls of the building in view come away, and any other wall that the
+        // line of sight to the middle of the view would have to pass through.
+        if (room && inside(room, c.x, c.y) && along > 0.3) cut.add(i);
+        else if (along > 0.3 && along < reach && across < 4 && 0.2 + along * tan < WALL_H) cut.add(i);
+      } else {
+        // A room behind it, looking past walls more than one cell thick.
+        for (let k = 1; k <= 3; k++) {
+          const behind = this.at(c.x + (away[0] ?? 0) * k, c.y + (away[1] ?? 0) * k);
+          if (behind === "wall" || behind === "door") continue;
+          if (behind === "floor" || behind === "opening") cut.add(i);
+          break;
+        }
+      }
+    });
+    const key = [...cut].join(",");
+    if (key === this.cutKey) return;
+    this.cutKey = key;
+    this.cut = cut;
+    this.rebuild();
+  }
+
+  private rebuild(): void {
+    for (const m of this.meshes) {
+      m.geometry.dispose();
+      m.removeFromParent();
+    }
+    this.meshes = [];
+    const sides: number[] = [];
+    const sideUv: number[] = [];
+    const tops: number[] = [];
+    const topUv: number[] = [];
+    const { width: w, height: h } = this.place;
+    const span = (i: number): [number, number] => {
+      const c = this.cells[i];
+      if (!c) return [0, 0];
+      return [c.door ? DOOR_H : 0, this.cut.has(i) ? STUB_H : WALL_H];
+    };
+    // A vertical quad from (x0, z0) to (x1, z1), from height lo to hi, showing that part of
+    // a three-tile wall strip.
+    const face = (x0: number, z0: number, x1: number, z1: number, lo: number, hi: number, strip: Uv): void => {
+      const [u0, vb, u1, vt] = strip;
+      const v = (y: number): number => vb + ((vt - vb) * y) / WALL_H;
+      sides.push(x0, hi, z0, x0, lo, z0, x1, hi, z1, x1, hi, z1, x0, lo, z0, x1, lo, z1);
+      sideUv.push(u0, v(hi), u0, v(lo), u1, v(hi), u1, v(hi), u0, v(lo), u1, v(lo));
+    };
+    const inside = this.uv("wall_tall_inside", 3);
+    const outside = this.uv("wall_tall_outside", 3);
+    this.cells.forEach((c, i) => {
+      const [lo, hi] = span(i);
+      if (hi <= lo) return;
+      const { x, y } = c;
+      // Top: this cell of the ground painting, raised.
+      const u0 = x / w, u1 = (x + 1) / w, v0 = 1 - (y + 1) / h, v1 = 1 - y / h;
+      tops.push(x, hi, y, x, hi, y + 1, x + 1, hi, y, x + 1, hi, y, x, hi, y + 1, x + 1, hi, y + 1);
+      topUv.push(u0, v1, u0, v0, u1, v1, u1, v1, u0, v0, u1, v0);
+      if (c.door) {
+        // The underside of the lintel.
+        tops.push(x, lo, y, x + 1, lo, y, x, lo, y + 1, x + 1, lo, y, x + 1, lo, y + 1, x, lo, y + 1);
+        topUv.push(u0, v1, u1, v1, u0, v0, u1, v1, u1, v0, u0, v0);
+      }
+      const side = (nx: number, ny: number, x0: number, z0: number, x1: number, z1: number): void => {
+        const j = this.index.get(`${nx},${ny}`);
+        if (j !== undefined) {
+          // Against another wall: only what rises above it, or what a doorway leaves open.
+          const [nlo, nhi] = span(j);
+          if (nlo <= lo && nhi >= hi) return;
+        }
+        const n = this.at(nx, ny);
+        // Rooms and the ends that a cut or a doorway leaves show the inside of the wall.
+        face(x0, z0, x1, z1, lo, hi, j !== undefined || n === "floor" || n === "opening" ? inside : outside);
+      };
+      side(x, y + 1, x, y + 1, x + 1, y + 1);
+      side(x, y - 1, x + 1, y, x, y);
+      side(x + 1, y, x + 1, y + 1, x + 1, y);
+      side(x - 1, y, x, y, x, y + 1);
+    });
+    const mesh = (pos: number[], uv: number[], material: THREE.Material): void => {
+      if (!pos.length) return;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+      g.computeVertexNormals();
+      const m = new THREE.Mesh(g, material);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      this.group.add(m);
+      this.meshes.push(m);
+    };
+    mesh(sides, sideUv, this.sideMaterial);
+    mesh(tops, topUv, this.topMaterial);
+    for (const win of this.windows) for (const m of win.meshes) m.visible = !this.cut.has(win.cell);
+  }
+
+  dispose(): void {
+    for (const m of this.meshes) m.geometry.dispose();
+    for (const win of this.windows) for (const m of win.meshes) m.geometry.dispose();
+    this.group.removeFromParent();
   }
 }

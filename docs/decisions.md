@@ -1181,3 +1181,24 @@ candidate to compare against Canvas 2D. Nothing in the sim changed for the
 view; it reads the same views and events as the 2D one. LPC has no
 lying-down or sitting frames, and furniture art is drawn for a fixed
 angle, so turning the camera far from south shows the limits of the art.
+
+## 2026-10-30: Full-height walls in the 3D view, cut away where they block
+
+Ian, on the 3D view: "The viewer is not great, but the actual images are
+surprisingly good! The cut-off walls are a bit distracting, though I can
+see why it'd be very hard to make these shots without them".
+
+Changed: walls are three tiles high, from the LPC tall wall art (wood
+panelling inside, half-timbered brick outside), and only walls that block
+the view are cut down to a stub:
+
+- In a close shot, the near walls of the building being looked into come
+  away, as on a stage set, along with any other wall the line of sight
+  would pass through. Other buildings keep their walls.
+- Further out, every wall with a room behind it, as seen from the camera,
+  is cut, as in a dollhouse.
+- Doorways have wall above them. Outside walls have windows on some cells,
+  lit in the evening.
+- A shot is taken from the south side of the people in it unless much
+  more stands in the way there, never end on. Objects and trees still in
+  the way are hidden.

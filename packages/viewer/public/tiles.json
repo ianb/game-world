@@ -3,112 +3,112 @@
  "columns": 18,
  "tiles": {
   "brush": {
-   "col": 13,
+   "col": 15,
    "row": 0
   },
   "brush_full": {
-   "col": 14,
-   "row": 0
-  },
-  "brush_h": {
-   "col": 15,
-   "row": 0
-  },
-  "brush_in": {
    "col": 16,
    "row": 0
   },
-  "brush_out": {
+  "brush_h": {
    "col": 17,
    "row": 0
   },
-  "brush_v": {
+  "brush_in": {
    "col": 0,
    "row": 4
   },
-  "canopy": {
+  "brush_out": {
    "col": 1,
    "row": 4
   },
-  "canopy_full": {
+  "brush_v": {
    "col": 2,
    "row": 4
   },
-  "canopy_h": {
+  "canopy": {
    "col": 3,
    "row": 4
   },
-  "canopy_in": {
+  "canopy_full": {
    "col": 4,
    "row": 4
   },
-  "canopy_out": {
+  "canopy_h": {
    "col": 5,
    "row": 4
   },
-  "canopy_v": {
+  "canopy_in": {
    "col": 6,
    "row": 4
   },
-  "cowpath": {
+  "canopy_out": {
    "col": 7,
    "row": 4
   },
-  "cowpath_full": {
+  "canopy_v": {
    "col": 8,
    "row": 4
   },
-  "cowpath_h": {
+  "cowpath": {
    "col": 9,
    "row": 4
   },
-  "cowpath_in": {
+  "cowpath_full": {
    "col": 10,
    "row": 4
   },
-  "cowpath_out": {
+  "cowpath_h": {
    "col": 11,
    "row": 4
   },
-  "cowpath_v": {
+  "cowpath_in": {
    "col": 12,
    "row": 4
   },
-  "door": {
+  "cowpath_out": {
    "col": 13,
    "row": 4
   },
-  "floor": {
+  "cowpath_v": {
    "col": 14,
    "row": 4
   },
-  "grass": {
+  "door": {
    "col": 15,
-   "row": 4,
+   "row": 4
+  },
+  "floor": {
+   "col": 16,
+   "row": 4
+  },
+  "grass": {
+   "col": 0,
+   "row": 5,
    "variants": 3
   },
   "obj_barrel": {
-   "col": 3,
+   "col": 5,
    "row": 0,
    "w": 1,
    "h": 2,
    "oy": -32
   },
   "obj_bed": {
-   "col": 4,
+   "col": 6,
    "row": 0,
    "w": 1,
    "h": 2
   },
   "obj_bench": {
-   "col": 0,
+   "col": 3,
    "row": 5,
    "w": 2,
    "h": 1,
    "ox": -16
   },
   "obj_cart": {
-   "col": 5,
+   "col": 7,
    "row": 0,
    "w": 2,
    "h": 2,
@@ -116,30 +116,30 @@
    "oy": -32
   },
   "obj_chair": {
-   "col": 2,
+   "col": 5,
    "row": 5
   },
   "obj_counter": {
-   "col": 7,
+   "col": 9,
    "row": 0,
    "w": 1,
    "h": 2,
    "oy": -32
   },
   "obj_generic": {
-   "col": 3,
+   "col": 6,
    "row": 5
   },
   "obj_oven": {
-   "col": 4,
+   "col": 7,
    "row": 5
   },
   "obj_pantry": {
-   "col": 5,
+   "col": 8,
    "row": 5
   },
   "obj_privy": {
-   "col": 8,
+   "col": 10,
    "row": 0,
    "w": 2,
    "h": 2,
@@ -147,22 +147,22 @@
    "oy": -32
   },
   "obj_shelf": {
-   "col": 10,
+   "col": 12,
    "row": 0,
    "w": 1,
    "h": 2,
    "oy": -32
   },
   "obj_stove": {
-   "col": 6,
+   "col": 9,
    "row": 5
   },
   "obj_table": {
-   "col": 7,
+   "col": 10,
    "row": 5
   },
   "obj_well": {
-   "col": 11,
+   "col": 13,
    "row": 0,
    "w": 2,
    "h": 2,
@@ -170,103 +170,103 @@
    "oy": -32
   },
   "opening": {
-   "col": 8,
+   "col": 11,
    "row": 5
   },
   "overgrown_path": {
-   "col": 9,
+   "col": 12,
    "row": 5
   },
   "overgrown_path_full": {
-   "col": 10,
+   "col": 13,
    "row": 5
   },
   "overgrown_path_h": {
-   "col": 11,
+   "col": 14,
    "row": 5
   },
   "overgrown_path_in": {
-   "col": 12,
-   "row": 5
-  },
-  "overgrown_path_out": {
-   "col": 13,
-   "row": 5
-  },
-  "overgrown_path_v": {
-   "col": 14,
-   "row": 5
-  },
-  "path": {
    "col": 15,
    "row": 5
   },
-  "path_full": {
+  "overgrown_path_out": {
    "col": 16,
    "row": 5
   },
-  "path_h": {
+  "overgrown_path_v": {
    "col": 17,
    "row": 5
   },
-  "path_in": {
+  "path": {
    "col": 0,
    "row": 6
   },
-  "path_out": {
+  "path_full": {
    "col": 1,
    "row": 6
   },
-  "path_v": {
+  "path_h": {
    "col": 2,
    "row": 6
   },
-  "tall_grass": {
+  "path_in": {
    "col": 3,
    "row": 6
   },
-  "tall_grass_full": {
+  "path_out": {
    "col": 4,
    "row": 6
   },
-  "tall_grass_h": {
+  "path_v": {
    "col": 5,
    "row": 6
   },
-  "tall_grass_in": {
+  "tall_grass": {
    "col": 6,
    "row": 6
   },
-  "tall_grass_out": {
+  "tall_grass_full": {
    "col": 7,
    "row": 6
   },
-  "tall_grass_v": {
+  "tall_grass_h": {
    "col": 8,
    "row": 6
   },
-  "track": {
+  "tall_grass_in": {
    "col": 9,
    "row": 6
   },
-  "track_full": {
+  "tall_grass_out": {
    "col": 10,
    "row": 6
   },
-  "track_h": {
+  "tall_grass_v": {
    "col": 11,
    "row": 6
   },
-  "track_in": {
+  "track": {
    "col": 12,
    "row": 6
   },
-  "track_out": {
+  "track_full": {
    "col": 13,
    "row": 6
   },
-  "track_v": {
+  "track_h": {
    "col": 14,
+   "row": 6
+  },
+  "track_in": {
+   "col": 15,
+   "row": 6
+  },
+  "track_out": {
+   "col": 16,
+   "row": 6
+  },
+  "track_v": {
+   "col": 17,
    "row": 6
   },
   "tree": {
@@ -278,99 +278,119 @@
    "oy": -96
   },
   "void": {
-   "col": 15,
-   "row": 6
-  },
-  "wall": {
-   "col": 16,
-   "row": 6
-  },
-  "wall_face": {
-   "col": 17,
-   "row": 6
-  },
-  "wall_full": {
    "col": 0,
    "row": 7
   },
-  "wall_h": {
+  "wall": {
    "col": 1,
    "row": 7
   },
-  "wall_in": {
+  "wall_face": {
    "col": 2,
    "row": 7
   },
-  "wall_out": {
+  "wall_full": {
    "col": 3,
    "row": 7
   },
-  "wall_outside": {
+  "wall_h": {
    "col": 4,
    "row": 7
   },
-  "wall_v": {
+  "wall_in": {
    "col": 5,
    "row": 7
   },
-  "water": {
+  "wall_out": {
    "col": 6,
    "row": 7
   },
-  "water_full": {
+  "wall_outside": {
    "col": 7,
    "row": 7
   },
-  "water_h": {
+  "wall_tall_inside": {
+   "col": 3,
+   "row": 0,
+   "w": 1,
+   "h": 3
+  },
+  "wall_tall_outside": {
+   "col": 4,
+   "row": 0,
+   "w": 1,
+   "h": 3
+  },
+  "wall_v": {
    "col": 8,
    "row": 7
   },
-  "water_in": {
+  "water": {
    "col": 9,
    "row": 7
   },
-  "water_out": {
+  "water_full": {
    "col": 10,
    "row": 7
   },
-  "water_v": {
+  "water_h": {
    "col": 11,
    "row": 7
   },
-  "weedy_path": {
+  "water_in": {
    "col": 12,
    "row": 7
   },
-  "weedy_path_full": {
+  "water_out": {
    "col": 13,
    "row": 7
   },
-  "weedy_path_h": {
+  "water_v": {
    "col": 14,
    "row": 7
   },
-  "weedy_path_in": {
+  "weedy_path": {
    "col": 15,
    "row": 7
   },
-  "weedy_path_out": {
+  "weedy_path_full": {
    "col": 16,
    "row": 7
   },
-  "weedy_path_v": {
+  "weedy_path_h": {
    "col": 17,
    "row": 7
+  },
+  "weedy_path_in": {
+   "col": 0,
+   "row": 8
+  },
+  "weedy_path_out": {
+   "col": 1,
+   "row": 8
+  },
+  "weedy_path_v": {
+   "col": 2,
+   "row": 8
+  },
+  "window": {
+   "col": 3,
+   "row": 8
+  },
+  "window_glow": {
+   "col": 4,
+   "row": 8
   }
  },
  "villagers": {
   "frame": 64,
   "frames": 9,
   "top": {
-   "mara": 256,
-   "tom": 512,
-   "pip": 768,
-   "nell": 1024,
-   "hal": 1280
+   "mara": 288,
+   "tom": 544,
+   "pip": 800,
+   "nell": 1056,
+   "hal": 1312
   }
  }
 }

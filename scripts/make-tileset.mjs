@@ -179,6 +179,21 @@ put("wall_face", face(1, 61));
 // The outside of a building's south wall, seen from the street.
 put("wall_outside", face(53, 67));
 
+// Full-height walls for the 3D view, three tiles tall: wood panelling inside, half-timbered
+// brick outside.
+put("wall_tall_inside", tiles(WALL, 1, 59, 1, 3));
+put("wall_tall_outside", tiles(WALL, 53, 65, 1, 3));
+// A window for outside walls, and its dark panes alone, which the 3D view lights at night.
+put("window", tiles("tiles/windows-doors/windows-doors.png", 21, 6));
+put("window_glow", (() => {
+  const t = tiles("tiles/windows-doors/windows-doors.png", 21, 6);
+  for (let i = 0; i < t.data.length; i += 4) {
+    const dark = t.data[i + 3] > 0 && t.data[i] + t.data[i + 1] + t.data[i + 2] < 90;
+    t.data.set(dark ? [255, 196, 120, 255] : [0, 0, 0, 0], i);
+  }
+  return t;
+})());
+
 put("floor", tiles("tiles/house-interior/interior.png", 0, 3));
 put("opening", tiles("tiles/house-interior/interior.png", 0, 3));
 put("door", tiles("tiles/windows-doors/windows-doors.png", 4, 26));

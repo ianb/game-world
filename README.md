@@ -53,8 +53,8 @@ that moment, and "back to now" to return. The words tab lists every topic
 and gesture with how often it has come up; open one for who uses it, how
 far a gesture carries and how each villager takes it, and each time it
 came up. Topics and gestures in the inspector open there too. The 3D
-button shows the same place as a lit diorama (three.js): walls raised from
-the map, villagers as upright sprites that walk smoothly, light that
+button shows the same place as a lit diorama (three.js): full-height walls,
+cut away where they would block the view, villagers as upright sprites that walk smoothly, light that
 follows the clock, and speech marks for what is being said. Drag or
 two-finger scroll to pan, pinch to zoom, right-drag or shift-drag (or the
 turn buttons) to turn. Replaying a moment in 3D moves the camera in close,
