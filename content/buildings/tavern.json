@@ -2,8 +2,8 @@
   "id": "tavern",
   "zone": "town",
   "at": {
-    "x": 4,
-    "y": 14
+    "x": 44,
+    "y": 50
   },
   "floors": [
     {
@@ -17,7 +17,8 @@
             "y": 1,
             "w": 10,
             "h": 6
-          }
+          },
+          "flooring": "darkplanks"
         }
       ],
       "openings": [
@@ -85,6 +86,24 @@
           },
           "stock": {
             "ale": 6
+          }
+        },
+        {
+          "id": "hearth_tavern",
+          "kind": "hearth",
+          "room": "hall",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        },
+        {
+          "id": "barrels_tavern",
+          "kind": "barrels",
+          "room": "hall",
+          "at": {
+            "x": 6,
+            "y": 1
           }
         }
       ],

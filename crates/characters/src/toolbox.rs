@@ -98,6 +98,25 @@ pub fn go_tile(ctx: &Ctx<'_>, place: &str, x: u16, y: u16, activity: &str) -> Co
     }
 }
 
+/// Walk to a random spot in a declared area and do `activity` there. `None` when the area
+/// has no free tile.
+#[must_use]
+pub fn go_area(ctx: &Ctx<'_>, area: &str, activity: &str, rng: &mut Pcg32) -> Option<Command> {
+    ctx.random_tile_in(area, rng)
+        .map(|(place, pos)| Command::GoTo {
+            target: Target::Tile { place, pos },
+            activity: activity.to_string(),
+        })
+}
+
+/// Whether a villager is standing in a declared area.
+#[must_use]
+pub fn in_area(ctx: &Ctx<'_>, who: VillagerId, area: &str) -> bool {
+    let (place, rect) = ctx.area(area);
+    let v = ctx.villager(who);
+    v.place == place && rect.contains(v.pos.x, v.pos.y)
+}
+
 #[must_use]
 pub fn wait_minutes(minutes: u32, activity: &str) -> Command {
     Command::Wait {
@@ -501,6 +520,9 @@ pub fn human(trigger: &Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
             false,
             -1,
         )],
+        // A drink at whichever bar this is.
+        Trigger::Arrived if activity_of(ctx, me) == "drink" => buy_ale_nearest(ctx, me)
+            .unwrap_or_else(|| vec![Command::Note("no drink to be had".into())]),
         Trigger::Arrived if activity_of(ctx, me) == "sleep" => {
             let hunger = ctx.needs(villager(ctx, me)).hunger;
             if hunger < BEDTIME_HUNGER {
@@ -533,4 +555,192 @@ pub fn meal_soon(ctx: &Ctx<'_>, me: &str, minutes: u32) -> bool {
             matches!(c, Command::GoTo { activity, .. } | Command::Wait { activity, .. } | Command::Interlude { activity, .. } if activity == "eat")
         })
     })
+}
+
+// ---- Helpers for the valley's villagers ---------------------------------------------
+
+/// The hour of the day, 0 to 23.
+#[must_use]
+pub fn hour(ctx: &Ctx<'_>) -> u32 {
+    u32::from(ctx.calendar.time.hour)
+}
+
+/// Minutes since midnight.
+#[must_use]
+pub fn minute_of_day(ctx: &Ctx<'_>) -> u32 {
+    u32::from(ctx.calendar.time.hour) * 60 + u32::from(ctx.calendar.time.minute)
+}
+
+/// Whether the clock is in `[from, to)`, as (hour, minute) pairs on the same day.
+#[must_use]
+pub fn between(ctx: &Ctx<'_>, from: (u32, u32), to: (u32, u32)) -> bool {
+    let now = minute_of_day(ctx);
+    now >= from.0 * 60 + from.1 && now < to.0 * 60 + to.1
+}
+
+/// Days since the start of the run.
+#[must_use]
+pub fn day_number(ctx: &Ctx<'_>) -> u32 {
+    ctx.calendar.day_index
+}
+
+/// Whether two villagers are in the same place within `tiles` of each other (the larger of
+/// the two axis distances).
+#[must_use]
+pub fn near(ctx: &Ctx<'_>, a: VillagerId, b: VillagerId, tiles: u16) -> bool {
+    let (va, vb) = (ctx.villager(a), ctx.villager(b));
+    va.place == vb.place && va.pos.x.abs_diff(vb.pos.x).max(va.pos.y.abs_diff(vb.pos.y)) <= tiles
+}
+
+/// Everyone awake in the same place within `tiles`, nearest first, ties by id.
+#[must_use]
+pub fn around(ctx: &Ctx<'_>, me: VillagerId, tiles: u16) -> Vec<VillagerId> {
+    let here = ctx.villager(me);
+    let mut out: Vec<(u16, VillagerId)> = ctx
+        .villagers
+        .iter()
+        .enumerate()
+        .filter(|(i, v)| *i != me.index() && v.place == here.place && v.activity != "sleep")
+        .map(|(i, v)| {
+            let d = v
+                .pos
+                .x
+                .abs_diff(here.pos.x)
+                .max(v.pos.y.abs_diff(here.pos.y));
+            (d, VillagerId(u16::try_from(i).expect("few villagers")))
+        })
+        .filter(|(d, _)| *d <= tiles)
+        .collect();
+    out.sort();
+    out.into_iter().map(|(_, v)| v).collect()
+}
+
+/// Whether a villager stands inside a building's footprint (its walls included).
+#[must_use]
+pub fn in_building(ctx: &Ctx<'_>, who: VillagerId, building: &str) -> bool {
+    let v = ctx.villager(who);
+    ctx.world.roofs.iter().any(|r| {
+        r.building == building && r.place == v.place.index() && r.rect.contains(v.pos.x, v.pos.y)
+    })
+}
+
+/// Who `me` could have seen doing anything since `since`, most recent first, once each.
+#[must_use]
+pub fn seen_since(ctx: &Ctx<'_>, me: VillagerId, since: Tick) -> Vec<VillagerId> {
+    let mut out: Vec<VillagerId> = Vec::new();
+    let mut seen: Vec<(Tick, VillagerId)> = ctx
+        .recall(me, since)
+        .filter(|(_, p)| *p == Perceived::Saw)
+        .filter_map(|(r, _)| r.event.who().map(|w| (r.event.tick(), w)))
+        .filter(|(_, w)| *w != me)
+        .collect();
+    seen.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
+    for (_, w) in seen {
+        if !out.contains(&w) {
+            out.push(w);
+        }
+    }
+    out
+}
+
+/// A conversation with `other` wherever they are in the same place: the sim walks `me`
+/// over first when they are out of reach. `None` when they are asleep, talking, or
+/// somewhere else.
+#[must_use]
+pub fn seek(
+    ctx: &Ctx<'_>,
+    me: VillagerId,
+    other: VillagerId,
+    frame: Frame,
+    topic: Topic,
+    minutes: u32,
+) -> Option<Command> {
+    let (mine, theirs) = (ctx.villager(me), ctx.villager(other));
+    let free = me != other
+        && theirs.place == mine.place
+        && !matches!(theirs.activity.as_str(), "talk" | "sleep");
+    free.then_some(Command::Talk {
+        with: other,
+        frame,
+        topic,
+        minutes,
+    })
+}
+
+/// The bars, their kegs and keepers: the tavern in the old town and the alehouse in the
+/// hamlet.
+pub const BARS: [(&str, &str); 2] = [("barrel_tavern", "tom"), ("bar_alehouse", "dot")];
+
+/// Pays for a drink at whichever bar is nearer. None when that bar is dry or the buyer is
+/// broke.
+#[must_use]
+pub fn buy_ale_nearest(ctx: &Ctx<'_>, me: &str) -> Option<Vec<Command>> {
+    let v = ctx.villager(villager(ctx, me));
+    let (keg, keeper) = BARS.iter().copied().min_by_key(|(keg, _)| {
+        let o = &ctx.world.objects[object(ctx, keg).index()];
+        o.at.x.abs_diff(v.pos.x) + o.at.y.abs_diff(v.pos.y)
+    })?;
+    if stock_of(ctx, keg, "ale") == 0 || ctx.coins(villager(ctx, me)) < ALE_PRICE {
+        return None;
+    }
+    let mut cmds = vec![stock(ctx, keg, "ale", -1)];
+    if me != keeper {
+        cmds.push(pay(ctx, me, keeper, ALE_PRICE, "ale"));
+    }
+    Some(cmds)
+}
+
+/// Loop of work over an area: go to a random spot in it, do `activity` there for
+/// `minutes`, clearing within `clear` tiles if it is more than zero, and go on to another
+/// spot when the wait is over. Call on `Arrived` and `Waited` for that activity; arriving
+/// for it somewhere outside the area (at the object the schedule names) sets off for it.
+#[must_use]
+#[allow(clippy::too_many_arguments)]
+pub fn work_area(
+    ctx: &Ctx<'_>,
+    me: &str,
+    trigger: &Trigger,
+    area: &str,
+    activity: &str,
+    minutes: u32,
+    clear: u16,
+    rng: &mut Pcg32,
+) -> Vec<Command> {
+    match trigger {
+        Trigger::Arrived if in_area(ctx, villager(ctx, me), area) => {
+            let mut cmds = Vec::new();
+            let v = ctx.villager(villager(ctx, me));
+            let weeds = clear > 0
+                && ctx
+                    .overgrown_tiles(v.place)
+                    .iter()
+                    .any(|p| p.x.abs_diff(v.pos.x) <= clear && p.y.abs_diff(v.pos.y) <= clear);
+            if weeds {
+                cmds.push(Command::Clear { radius: clear });
+            }
+            cmds.push(wait_minutes(minutes, activity));
+            cmds
+        }
+        _ => vec![
+            go_area(ctx, area, activity, rng).unwrap_or_else(|| wait_minutes(minutes, activity)),
+        ],
+    }
+}
+
+/// Whether `from` said something on `topic` within earshot of `mind`'s owner, catching the
+/// words, in the last `days` days.
+#[must_use]
+pub fn heard_lately(
+    ctx: &Ctx<'_>,
+    mind: &sim::social::Memory,
+    from: &str,
+    topic: &str,
+    days: u32,
+) -> bool {
+    mind.heard()
+        .from(villager(ctx, from))
+        .topic(topic)
+        .since(ctx.tick.minus(days * sim::time::TICKS_PER_DAY))
+        .words()
+        .any()
 }

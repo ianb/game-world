@@ -1,0 +1,57 @@
+{
+  "id": "martha",
+  "name": "Martha",
+  "home": "ashby",
+  "bed": "bed_martha",
+  "coins": 20,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_ashby",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_ashby",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_ashby",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "hive_1",
+      "activity": "tend-bees"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "jars_martha",
+      "activity": "jar-honey"
+    },
+    {
+      "days": "sun",
+      "at": "9:20am",
+      "object": "pew_3",
+      "activity": "service"
+    },
+    {
+      "days": "daily",
+      "at": "9:00pm",
+      "object": "bed_martha",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "8:00am",
+      "object": "stall_martha",
+      "activity": "sell"
+    }
+  ]
+}

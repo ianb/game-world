@@ -1,0 +1,51 @@
+{
+  "id": "sal",
+  "name": "Sal",
+  "home": "cooper",
+  "bed": "bed_sal",
+  "coins": 3,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "weekday",
+      "at": "7:20am",
+      "object": "anvil_smithy",
+      "activity": "smith"
+    },
+    {
+      "days": "weekday",
+      "at": "1:00pm",
+      "object": "anvil_smithy",
+      "activity": "smith"
+    },
+    {
+      "days": "weekend",
+      "at": "9:00am",
+      "object": "workbench_cooper",
+      "activity": "help"
+    },
+    {
+      "days": "daily",
+      "at": "9:30pm",
+      "object": "bed_sal",
+      "activity": "sleep"
+    }
+  ]
+}

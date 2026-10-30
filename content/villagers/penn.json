@@ -1,0 +1,59 @@
+{
+  "id": "penn",
+  "name": "Penn",
+  "home": "dory",
+  "bed": "bed_penn",
+  "coins": 12,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_dory",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_dory",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_dory",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "wheel_dory",
+      "activity": "throw-pots"
+    },
+    {
+      "days": "daily",
+      "at": "1:30pm",
+      "object": "kiln_dory",
+      "activity": "fire-pots"
+    },
+    {
+      "days": "daily",
+      "at": "10:00pm",
+      "object": "bed_penn",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "8:00am",
+      "object": "stall_penn",
+      "activity": "sell"
+    }
+  ],
+  "income": [
+    {
+      "days": "sat",
+      "at": "11:00am",
+      "amount": 10,
+      "what": "pots"
+    }
+  ]
+}

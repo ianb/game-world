@@ -1,9 +1,9 @@
-//! Knowledge moving through the town and turning into action: news about someone passed
-//! on in conversation, and a gift that cites who said what.
+//! Knowledge turning into action: a gift cites who said what. The chains that lead to
+//! gifts are set up as scenes in `tests/scenes.rs`.
 use characters::Town;
 use content::{Content, load_dir};
 use sim::Sim;
-use sim::protocol::{Act, Caught, Cause, Emitted, Gesture};
+use sim::protocol::{Act, Caught, Cause, Emitted};
 use sim::time::{TICKS_PER_DAY, Tick};
 use std::path::PathBuf;
 
@@ -17,33 +17,15 @@ fn weeks(seed: u64, weeks: u32) -> Vec<Emitted> {
 }
 
 #[test]
-fn news_about_someone_is_passed_on_to_someone_else() {
-    // On seed 1 the first is in the third week.
-    let events = weeks(1, 3);
-    let passed_on = events
-        .iter()
-        .filter(|e| {
-            matches!(e, Emitted::Beat {
-                who,
-                did: Act::Gesture { gesture: Gesture::Tell, topic },
-                ..
-            } if topic.about.is_some_and(|a| a != *who))
-        })
-        .count();
-    assert!(passed_on > 0);
+fn every_gift_cites_words_the_giver_caught() {
+    // Whether gifts happen at all is the scenes' business (`tests/scenes.rs`); this checks
+    // that any gift in an ordinary month is backed by what was said.
+    gifts_on(1);
 }
 
-#[test]
-fn a_gift_cites_words_that_were_said_to_the_giver() {
-    // Gifts are rare and which seeds have them moves with any change to the town, so look
-    // across several. Every gift found must cite what was said.
-    let found: usize = (1..=8).map(gifts_on).sum();
-    assert!(found > 0, "someone acts on what they heard");
-}
-
-/// Checks every gift in six weeks of `seed` and returns how many there were.
-fn gifts_on(seed: u64) -> usize {
-    let events = weeks(seed, 6);
+/// Checks every gift in four weeks of `seed`.
+fn gifts_on(seed: u64) {
+    let events = weeks(seed, 4);
     let gifts: Vec<_> = events
         .iter()
         .filter_map(|e| match e {
@@ -92,5 +74,4 @@ fn gifts_on(seed: u64) -> usize {
     let n = once.len();
     once.dedup();
     assert_eq!(once.len(), n, "seed {seed}");
-    gifts.len()
 }

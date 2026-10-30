@@ -1,0 +1,311 @@
+//! Scenes: the town set up at a moment so that one behavior has what it needs, with the
+//! chances that would decide it forced. Each states its preconditions instead of relying
+//! on a seed that happens to produce them.
+use characters::scene::{Scene, at};
+use characters::{benny, kit, penn};
+use sim::needs::Need;
+use sim::protocol::{Act, BidAnswer, Cause, Emitted, Frame, Gesture};
+use sim::social::chances;
+use sim::time::TICKS_PER_MINUTE;
+
+/// Nell, short of money, confides it to Elias in her cottage; he takes the bid, hears it,
+/// and helps her when the talk ends, citing what she said.
+#[test]
+fn a_worry_confided_in_private_is_taken_up_and_acted_on() {
+    let mut s = Scene::new();
+    s.run_until(at(0, 14, 0));
+    s.force_for(chances::CONFIDE, "nell", true)
+        .force(chances::MISFIRE, false)
+        .force(chances::READ_WORSE, false)
+        .set_coins("nell", 1)
+        .acquaint("nell", "elias", 3)
+        .acquaint("elias", "nell", 3)
+        .put_by("nell", "chair_nell")
+        .put_beside("elias", "nell")
+        .talk("nell", "elias", Frame::SmallTalk, "day", 20);
+    let events = s.run_until(at(0, 15, 0)).to_vec();
+    let (nell, elias) = (s.id("nell"), s.id("elias"));
+
+    let bid = events.iter().find_map(|e| match e {
+        Emitted::Beat {
+            tick,
+            who,
+            did:
+                Act::Bid {
+                    frame: Frame::Confiding,
+                    topic,
+                },
+            ..
+        } if *who == nell => Some((*tick, topic.clone())),
+        _ => None,
+    });
+    let (bid_at, worry) = bid.expect("Nell bids to confide");
+    assert!(worry.is("money") && worry.about == Some(nell));
+    assert!(events.iter().any(|e| matches!(e,
+        Emitted::Beat { tick, who, did: Act::Answer { answer: BidAnswer::Toward }, .. }
+            if *who == elias && *tick > bid_at)));
+    assert!(
+        events.iter().any(|e| matches!(e,
+            Emitted::Beat { who, did: Act::Gesture { gesture: Gesture::Disclose, topic }, .. }
+                if *who == nell && topic.is("money"))),
+        "Nell tells him"
+    );
+    // Every time she said it, by gesture or bid.
+    let said: Vec<_> = events
+        .iter()
+        .filter_map(|e| match e {
+            Emitted::Beat {
+                tick,
+                who,
+                did: Act::Gesture { topic, .. } | Act::Bid { topic, .. },
+                ..
+            } if *who == nell && topic.is("money") => Some(*tick),
+            _ => None,
+        })
+        .collect();
+    let help = events.iter().find_map(|e| match e {
+        Emitted::Paid {
+            who,
+            to: Some(to),
+            cause: Cause::Knew { from, heard_at, .. },
+            ..
+        } if *who == elias && *to == nell => Some((*from, *heard_at)),
+        _ => None,
+    });
+    let (from, heard_at) = help.expect("Elias helps her");
+    assert_eq!(from, nell);
+    assert!(
+        said.contains(&heard_at),
+        "the help cites something she said"
+    );
+}
+
+/// Without the chance, the same set-up has Nell keep it to herself.
+#[test]
+fn without_the_chance_she_keeps_it_to_herself() {
+    let mut s = Scene::new();
+    s.run_until(at(0, 14, 0));
+    s.force_for(chances::CONFIDE, "nell", false)
+        .set_coins("nell", 1)
+        .acquaint("nell", "elias", 3)
+        .acquaint("elias", "nell", 3)
+        .put_by("nell", "chair_nell")
+        .put_beside("elias", "nell")
+        .talk("nell", "elias", Frame::SmallTalk, "day", 20);
+    let nell = s.id("nell");
+    let events = s.run_until(at(0, 15, 0));
+    assert!(!events.iter().any(|e| matches!(e,
+        Emitted::Beat { who, did: Act::Bid { frame: Frame::Confiding, .. }, .. } if *who == nell)));
+}
+
+/// Nell confides in Hester, who keeps nothing to herself; Hester tells Elias; Elias, who
+/// never heard it from Nell, helps her when he sees her, citing Hester.
+#[test]
+fn news_passed_on_reaches_someone_who_acts_on_it() {
+    let mut s = Scene::new();
+    s.run_until(at(0, 14, 0));
+    s.force_for(chances::CONFIDE, "nell", true)
+        .force_for(chances::GOSSIP, "hester", true)
+        .force(chances::MISFIRE, false)
+        .force(chances::READ_WORSE, false)
+        .set_coins("nell", 1)
+        .acquaint("nell", "hester", 3)
+        .acquaint("hester", "nell", 3)
+        .acquaint("hester", "elias", 3)
+        .acquaint("elias", "hester", 3)
+        .acquaint("elias", "nell", 3)
+        .put_by("nell", "chair_nell")
+        .put_beside("hester", "nell")
+        .talk("nell", "hester", Frame::SmallTalk, "day", 20);
+    s.run_until(at(0, 14, 30));
+    s.put_by("hester", "altar_chapel")
+        .put_beside("elias", "hester")
+        .talk("hester", "elias", Frame::SmallTalk, "day", 20);
+    s.run_until(at(0, 15, 0));
+    s.put_by("nell", "table_vicarage")
+        .put_beside("elias", "nell")
+        .talk("elias", "nell", Frame::SmallTalk, "day", 10);
+    s.run_until(at(0, 15, 30));
+    let (nell, hester, elias) = (s.id("nell"), s.id("hester"), s.id("elias"));
+
+    let passed_on: Vec<_> = s
+        .events
+        .iter()
+        .filter_map(|e| match e {
+            Emitted::Beat {
+                tick,
+                who,
+                did:
+                    Act::Gesture {
+                        gesture: Gesture::Tell,
+                        topic,
+                    },
+                ..
+            } if *who == hester && topic.about == Some(nell) && *tick >= at(0, 14, 30) => {
+                Some(*tick)
+            }
+            _ => None,
+        })
+        .collect();
+    assert!(!passed_on.is_empty(), "Hester passes it on");
+    let help = s.events.iter().find_map(|e| match e {
+        Emitted::Paid {
+            who,
+            to: Some(to),
+            cause: Cause::Knew { from, heard_at, .. },
+            ..
+        } if *who == elias && *to == nell => Some((*from, *heard_at)),
+        _ => None,
+    });
+    let (from, heard_at) = help.expect("Elias helps her");
+    assert_eq!(from, hester, "citing Hester");
+    assert!(passed_on.contains(&heard_at), "citing what Hester told him");
+}
+
+/// Two needs pressing at the same moment each get their errand in turn, rather than the
+/// second replacing the first.
+#[test]
+fn errands_queue_rather_than_replace_each_other() {
+    let mut s = Scene::new();
+    s.run_until(at(0, 9, 30));
+    let elias = s.id("elias");
+    let needs = s.needs("elias");
+    needs.bladder = sim::needs::PRESSING - 1;
+    needs.thirst = sim::needs::PRESSING - 1;
+    let events = s.run_until(at(0, 11, 0));
+    let pressed = events
+        .iter()
+        .find_map(|e| match e {
+            Emitted::Need {
+                tick,
+                who,
+                need: Need::Bladder,
+                ..
+            } if *who == elias => Some(*tick),
+            _ => None,
+        })
+        .expect("his bladder presses");
+    assert!(events.iter().any(|e| matches!(e,
+        Emitted::Need { tick, who, need: Need::Thirst, .. } if *who == elias && *tick == pressed)));
+    let within = pressed.plus(45 * TICKS_PER_MINUTE);
+    let done: Vec<&str> = events
+        .iter()
+        .filter(|e| e.tick() >= pressed && e.tick() < within)
+        .filter_map(|e| match e {
+            Emitted::Activity { who, activity, .. } if *who == elias => Some(activity.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        done.contains(&"relieve") && done.contains(&"drink-water"),
+        "{done:?}"
+    );
+}
+
+/// Kit looks for Pip before school two mornings running; Agnes notes him missing at half
+/// past nine both days, and tells his mother when she next meets her.
+#[test]
+fn agnes_tells_a_parent_when_a_pupil_keeps_coming_late() {
+    let mut s = Scene::new();
+    s.force_for(kit::DAWDLES, "kit", true);
+    let (kit, agnes, jenna) = (s.id("kit"), s.id("agnes"), s.id("jenna"));
+    s.run_until(at(2, 17, 0));
+    let mut looked: Vec<u32> = s
+        .events
+        .iter()
+        .filter_map(|e| match e {
+            Emitted::Activity {
+                tick,
+                who,
+                activity,
+                ..
+            } if *who == kit
+                && activity == "look-for-pip"
+                && *tick < at(tick.day_index(), 9, 30) =>
+            {
+                Some(tick.day_index())
+            }
+            _ => None,
+        })
+        .collect();
+    looked.dedup();
+    assert_eq!(looked, [1, 2], "Kit dawdles both mornings");
+    let noted = s
+        .events
+        .iter()
+        .filter(|e| matches!(e, Emitted::Noted { who, text, .. } if *who == agnes && text == "Kit is not at their desk"))
+        .count();
+    assert_eq!(noted, 2, "Agnes notes it both mornings");
+
+    s.put_by("jenna", "table_cooper")
+        .put_beside("agnes", "jenna");
+    let events = s.run_until(at(2, 17, 30));
+    assert!(
+        events.iter().any(|e| matches!(e,
+            Emitted::Beat { who, did: Act::Gesture { topic, .. } | Act::Bid { topic, .. }, .. }
+                if *who == agnes && topic.is("being-late") && topic.about == Some(kit))
+            || matches!(e, Emitted::Talked { who, with, topic, .. }
+                if *who == agnes && *with == jenna && topic.starts_with("being-late"))),
+        "Agnes tells Jenna about Kit"
+    );
+}
+
+/// Without the chance he goes straight to school, and Agnes has nothing to note.
+#[test]
+fn kit_on_time_gives_agnes_nothing_to_note() {
+    let mut s = Scene::new();
+    s.force_for(kit::DAWDLES, "kit", false);
+    let agnes = s.id("agnes");
+    let events = s.run_until(at(1, 12, 0));
+    assert!(!events.iter().any(|e| matches!(e,
+        Emitted::Noted { who, text, .. } if *who == agnes && text == "Kit is not at their desk")));
+}
+
+/// Benny hides at bedtime; after seven Rosa goes looking, finds him, and he goes to bed.
+#[test]
+fn rosa_finds_benny_when_he_hides_at_bedtime() {
+    let mut s = Scene::new();
+    s.force_for(benny::HIDES, "benny", true);
+    let (benny, rosa) = (s.id("benny"), s.id("rosa"));
+    let events = s.run_until(at(0, 23, 0));
+    let hid = events
+        .iter()
+        .find_map(|e| match e {
+            Emitted::Activity {
+                tick,
+                who,
+                activity,
+                ..
+            } if *who == benny && activity == "hiding" => Some(*tick),
+            _ => None,
+        })
+        .expect("Benny hides");
+    let found = events
+        .iter()
+        .find_map(|e| match e {
+            Emitted::Beat {
+                tick,
+                who,
+                did: Act::Gesture { topic, .. } | Act::Bid { topic, .. },
+                ..
+            } if *who == rosa && topic.is("hiding") && *tick > hid => Some(*tick),
+            _ => None,
+        })
+        .expect("Rosa finds him");
+    assert!(events.iter().any(|e| matches!(e,
+        Emitted::Activity { tick, who, activity, .. } if *who == benny && activity == "sleep" && *tick > found)));
+}
+
+/// Penn forgets at the kiln: he blames himself and goes back to the wheel, and no pots
+/// leave the wheel.
+#[test]
+fn penn_forgets_at_the_kiln() {
+    let mut s = Scene::new();
+    s.force_for(penn::FORGETS, "penn", true);
+    let penn = s.id("penn");
+    let events = s.run_until(at(1, 0, 0));
+    assert!(events.iter().any(|e| matches!(e,
+        Emitted::Thought { who, thought, .. } if *who == penn && thought.about.is("forgetting"))));
+    assert!(!events.iter().any(|e| matches!(e,
+        Emitted::Stocked { who, delta, .. } if *who == penn && *delta < 0)));
+}

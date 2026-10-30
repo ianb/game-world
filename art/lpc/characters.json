@@ -5,58 +5,1253 @@
       "body": "female",
       "skin": "light",
       "items": [
-        ["head/heads/human/heads_human_female.json"],
-        ["hair/bob/hair_bob.json", "chestnut"],
-        ["torso/shirts/torso_clothes_blouse.json", "tan"],
-        ["legs/skirts/legs_skirts_plain.json", "brown"],
-        ["torso/aprons/torso_aprons_apron_full.json", "white"],
-        ["feet/shoes/feet_shoes_basic.json", "brown"]
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/bob/hair_bob.json",
+          "chestnut"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse.json",
+          "tan"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "brown"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron_full.json",
+          "white"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "brown"
+        ]
       ]
     },
     "tom": {
       "body": "male",
       "skin": "amber",
       "items": [
-        ["head/heads/human/heads_human_male_plump.json"],
-        ["hair/short/hair_messy1.json", "dark_brown"],
-        ["torso/shirts/longsleeve/torso_clothes_longsleeve.json", "white"],
-        ["legs/pants/legs_pants.json", "brown"],
-        ["torso/aprons/torso_aprons_apron.json", "leather"],
-        ["feet/boots/feet_boots_basic.json", "black"]
+        [
+          "head/heads/human/heads_human_male_plump.json"
+        ],
+        [
+          "hair/short/hair_messy1.json",
+          "dark_brown"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "white"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "brown"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "leather"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "black"
+        ]
       ]
     },
     "pip": {
       "body": "child",
       "skin": "light",
       "items": [
-        ["head/heads/human/heads_human_child.json"],
-        ["hair/bob/hair_relm_short.json", "carrot"],
-        ["torso/shirts/torso_clothes_child_shirt.json", "green"],
-        ["legs/pants/legs_childpants.json", "brown"]
+        [
+          "head/heads/human/heads_human_child.json"
+        ],
+        [
+          "hair/bob/hair_relm_short.json",
+          "carrot"
+        ],
+        [
+          "torso/shirts/torso_clothes_child_shirt.json",
+          "green"
+        ],
+        [
+          "legs/pants/legs_childpants.json",
+          "brown"
+        ]
       ]
     },
     "nell": {
       "body": "female",
       "skin": "light",
       "items": [
-        ["head/heads/human/heads_human_female_elderly.json"],
-        ["hair/braids/hair_bangs_bun.json", "white"],
-        ["torso/shirts/torso_clothes_blouse_longsleeve.json", "lavender"],
-        ["legs/skirts/legs_skirt_straight.json", "navy"],
-        ["feet/shoes/feet_shoes_basic.json", "black"]
+        [
+          "head/heads/human/heads_human_female_elderly.json"
+        ],
+        [
+          "hair/braids/hair_bangs_bun.json",
+          "white"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse_longsleeve.json",
+          "lavender"
+        ],
+        [
+          "legs/skirts/legs_skirt_straight.json",
+          "navy"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "black"
+        ]
       ]
     },
     "hal": {
       "body": "male",
       "skin": "bronze",
       "items": [
-        ["head/heads/human/heads_human_male.json"],
-        ["hair/short/hair_plain.json", "light_brown"],
-        ["hair/beards/beards_beard.json", "light_brown"],
-        ["torso/shirts/longsleeve/torso_clothes_longsleeve.json", "forest"],
-        ["legs/pants/legs_pants.json", "charcoal"],
-        ["torso/waist/belt_leather.json", "brown"],
-        ["feet/boots/feet_boots_basic.json", "brown"]
+        [
+          "head/heads/human/heads_human_male.json"
+        ],
+        [
+          "hair/short/hair_plain.json",
+          "light_brown"
+        ],
+        [
+          "hair/beards/beards_beard.json",
+          "light_brown"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "forest"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "charcoal"
+        ],
+        [
+          "torso/waist/belt_leather.json",
+          "brown"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "agnes": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/braids/hair_bangs_bun.json",
+          "dark_gray"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse_longsleeve.json",
+          "navy"
+        ],
+        [
+          "legs/skirts/legs_skirt_straight.json",
+          "black"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "black"
+        ]
+      ]
+    },
+    "elias": {
+      "body": "male",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_gaunt.json"
+        ],
+        [
+          "hair/short/hair_parted.json",
+          "gray"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "black"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "black"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "black"
+        ]
+      ]
+    },
+    "bess": {
+      "body": "female",
+      "skin": "taupe",
+      "items": [
+        [
+          "head/heads/human/heads_human_female_elderly.json"
+        ],
+        [
+          "hair/braids/hair_bangs_bun.json",
+          "gray"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse_longsleeve.json",
+          "gray"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "charcoal"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "black"
+        ]
+      ]
+    },
+    "wynn": {
+      "body": "female",
+      "skin": "olive",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/long/hair_long.json",
+          "raven"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse_longsleeve.json",
+          "forest"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "brown"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "tan"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "rob": {
+      "body": "male",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_male.json"
+        ],
+        [
+          "hair/short/hair_messy2.json",
+          "redhead"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "tan"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "brown"
+        ],
+        [
+          "hair/beards/beards_beard.json",
+          "redhead"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "leather"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "jenna": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/braids/hair_ponytail.json",
+          "blonde"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse.json",
+          "pink"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "navy"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron_full.json",
+          "white"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "kit": {
+      "body": "child",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_child.json"
+        ],
+        [
+          "hair/bob/hair_relm_short.json",
+          "redhead"
+        ],
+        [
+          "torso/shirts/torso_clothes_child_shirt.json",
+          "blue"
+        ],
+        [
+          "legs/pants/legs_childpants.json",
+          "brown"
+        ]
+      ]
+    },
+    "sal": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female_small.json"
+        ],
+        [
+          "hair/braids/hair_ponytail.json",
+          "redhead"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse.json",
+          "gray"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "charcoal"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "leather"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "ned": {
+      "body": "male",
+      "skin": "taupe",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_gaunt.json"
+        ],
+        [
+          "hair/short/hair_unkempt.json",
+          "dark_gray"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "slate"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "charcoal"
+        ],
+        [
+          "hair/beards/beards_5oclock_shadow.json",
+          "dark_gray"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "hester": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female_elderly.json"
+        ],
+        [
+          "hair/braids/hair_bangs_bun.json",
+          "white"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse_longsleeve.json",
+          "maroon"
+        ],
+        [
+          "legs/skirts/legs_skirt_straight.json",
+          "black"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "black"
+        ]
+      ]
+    },
+    "lottie": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/long/hair_wavy.json",
+          "chestnut"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse.json",
+          "sky"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "lavender"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "will": {
+      "body": "male",
+      "skin": "amber",
+      "items": [
+        [
+          "head/heads/human/heads_human_male.json"
+        ],
+        [
+          "hair/short/hair_plain.json",
+          "sandy"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "green"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "brown"
+        ],
+        [
+          "hair/beards/beards_beard.json",
+          "sandy"
+        ],
+        [
+          "torso/waist/belt_leather.json",
+          "brown"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "ada": {
+      "body": "female",
+      "skin": "amber",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/braids/hair_braid.json",
+          "light_brown"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse.json",
+          "yellow"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "brown"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron_full.json",
+          "white"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "jory": {
+      "body": "male",
+      "skin": "amber",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_small.json"
+        ],
+        [
+          "hair/short/hair_mop.json",
+          "sandy"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "white"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "navy"
+        ],
+        [
+          "torso/waist/belt_leather.json",
+          "brown"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "tilly": {
+      "body": "child",
+      "skin": "amber",
+      "items": [
+        [
+          "head/heads/human/heads_human_child.json"
+        ],
+        [
+          "hair/bob/hair_relm_short.json",
+          "blonde"
+        ],
+        [
+          "torso/shirts/torso_clothes_child_shirt.json",
+          "white"
+        ],
+        [
+          "legs/skirts/legs_childskirts.json",
+          "red"
+        ]
+      ]
+    },
+    "silas": {
+      "body": "male",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_elderly.json"
+        ],
+        [
+          "hair/short/hair_plain.json",
+          "gray"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "charcoal"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "black"
+        ],
+        [
+          "torso/vest/torso_clothes_vest.json",
+          "brown"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "martha": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/braids/hair_bangs_bun.json",
+          "ash"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse_longsleeve.json",
+          "yellow"
+        ],
+        [
+          "legs/skirts/legs_skirt_straight.json",
+          "walnut"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "white"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "dan": {
+      "body": "male",
+      "skin": "brown",
+      "items": [
+        [
+          "head/heads/human/heads_human_male.json"
+        ],
+        [
+          "hair/short/hair_bedhead.json",
+          "black"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "red"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "tan"
+        ],
+        [
+          "torso/waist/belt_leather.json",
+          "charcoal"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "gid": {
+      "body": "male",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_plump.json"
+        ],
+        [
+          "hair/short/hair_parted2.json",
+          "light_brown"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "white"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "gray"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "white"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "nan": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female_elderly.json"
+        ],
+        [
+          "hair/braids/hair_bangs_bun.json",
+          "platinum"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse_longsleeve.json",
+          "blue"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "gray"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "black"
+        ]
+      ]
+    },
+    "moss": {
+      "body": "male",
+      "skin": "bronze",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_elderly.json"
+        ],
+        [
+          "hair/short/hair_unkempt.json",
+          "white"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "walnut"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "brown"
+        ],
+        [
+          "hair/beards/beards_winter.json",
+          "white"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "abel": {
+      "body": "male",
+      "skin": "bronze",
+      "items": [
+        [
+          "head/heads/human/heads_human_male.json"
+        ],
+        [
+          "hair/short/hair_messy1.json",
+          "black"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "red"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "charcoal"
+        ],
+        [
+          "hair/beards/beards_beard.json",
+          "black"
+        ],
+        [
+          "torso/waist/belt_leather.json",
+          "brown"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "rook": {
+      "body": "male",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_gaunt.json"
+        ],
+        [
+          "hair/short/hair_messy3.json",
+          "black"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "black"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "charcoal"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "ivo": {
+      "body": "male",
+      "skin": "olive",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_elderly.json"
+        ],
+        [
+          "hair/long/hair_long_messy.json",
+          "gray"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "walnut"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "brown"
+        ],
+        [
+          "hair/beards/beards_medium.json",
+          "gray"
+        ]
+      ]
+    },
+    "fen": {
+      "body": "male",
+      "skin": "amber",
+      "items": [
+        [
+          "head/heads/human/heads_human_male.json"
+        ],
+        [
+          "hair/short/hair_swoop.json",
+          "ginger"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "teal"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "navy"
+        ],
+        [
+          "hair/beards/beards_trimmed.json",
+          "ginger"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "ottilie": {
+      "body": "female",
+      "skin": "amber",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/curly/hair_curly_long.json",
+          "dark_brown"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse.json",
+          "teal"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "navy"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "bram": {
+      "body": "male",
+      "skin": "brown",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_plump.json"
+        ],
+        [
+          "hair/short/hair_plain.json",
+          "black"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "gray"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "black"
+        ],
+        [
+          "hair/beards/beards_beard.json",
+          "black"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "leather"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "greta": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/braids/hair_braid2.json",
+          "strawberry"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse_longsleeve.json",
+          "green"
+        ],
+        [
+          "legs/skirts/legs_skirt_straight.json",
+          "brown"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "white"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "amos": {
+      "body": "male",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_elderly.json"
+        ],
+        [
+          "hair/short/hair_plain.json",
+          "white"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "navy"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "gray"
+        ],
+        [
+          "hair/mustaches/beards_walrus.json",
+          "white"
+        ],
+        [
+          "torso/waist/belt_leather.json",
+          "walnut"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "iris": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/long/hair_long_straight.json",
+          "black"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse_longsleeve.json",
+          "purple"
+        ],
+        [
+          "legs/skirts/legs_skirt_straight.json",
+          "lavender"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "black"
+        ]
+      ]
+    },
+    "penn": {
+      "body": "male",
+      "skin": "olive",
+      "items": [
+        [
+          "head/heads/human/heads_human_male.json"
+        ],
+        [
+          "hair/curly/hair_curly_short.json",
+          "chestnut"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "orange"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "brown"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "tan"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "rosa": {
+      "body": "female",
+      "skin": "olive",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/braids/hair_half_up.json",
+          "chestnut"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse.json",
+          "red"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "teal"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "benny": {
+      "body": "child",
+      "skin": "olive",
+      "items": [
+        [
+          "head/heads/human/heads_human_child.json"
+        ],
+        [
+          "hair/bob/hair_relm_short.json",
+          "chestnut"
+        ],
+        [
+          "torso/shirts/torso_clothes_child_shirt.json",
+          "lightblue"
+        ],
+        [
+          "legs/pants/legs_childpants.json",
+          "darkblue"
+        ]
+      ]
+    },
+    "dot": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/curly/hair_curly_short.json",
+          "red"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse.json",
+          "white"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "maroon"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron_full.json",
+          "tan"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "wat": {
+      "body": "male",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_plump.json"
+        ],
+        [
+          "hair/short/hair_messy2.json",
+          "gray"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "maroon"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "brown"
+        ],
+        [
+          "hair/beards/beards_medium.json",
+          "gray"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "clem": {
+      "body": "male",
+      "skin": "taupe",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_small.json"
+        ],
+        [
+          "hair/short/hair_cowlick.json",
+          "light_brown"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "sky"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "tan"
+        ],
+        [
+          "torso/waist/belt_leather.json",
+          "brown"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
+      ]
+    },
+    "celia": {
+      "body": "female",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_female.json"
+        ],
+        [
+          "hair/braids/hair_high_ponytail.json",
+          "platinum"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse_longsleeve.json",
+          "purple"
+        ],
+        [
+          "legs/skirts/legs_skirt_belle.json",
+          "purple"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "black"
+        ]
+      ]
+    },
+    "pell": {
+      "body": "male",
+      "skin": "light",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_gaunt.json"
+        ],
+        [
+          "hair/short/hair_parted3.json",
+          "dark_gray"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "white"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "black"
+        ],
+        [
+          "torso/vest/torso_clothes_vest.json",
+          "black"
+        ],
+        [
+          "hair/mustaches/beards_mustache.json",
+          "dark_gray"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "black"
+        ]
+      ]
+    },
+    "josie": {
+      "body": "female",
+      "skin": "amber",
+      "items": [
+        [
+          "head/heads/human/heads_human_female_small.json"
+        ],
+        [
+          "hair/bob/hair_bob.json",
+          "black"
+        ],
+        [
+          "torso/shirts/torso_clothes_blouse.json",
+          "black"
+        ],
+        [
+          "legs/skirts/legs_skirts_plain.json",
+          "black"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "white"
+        ],
+        [
+          "feet/shoes/feet_shoes_basic.json",
+          "black"
+        ]
+      ]
+    },
+    "thorn": {
+      "body": "male",
+      "skin": "bronze",
+      "items": [
+        [
+          "head/heads/human/heads_human_male_elderly.json"
+        ],
+        [
+          "hair/short/hair_plain.json",
+          "dark_gray"
+        ],
+        [
+          "torso/shirts/longsleeve/torso_clothes_longsleeve.json",
+          "forest"
+        ],
+        [
+          "legs/pants/legs_pants.json",
+          "walnut"
+        ],
+        [
+          "hair/beards/beards_trimmed.json",
+          "dark_gray"
+        ],
+        [
+          "torso/aprons/torso_aprons_apron.json",
+          "leather"
+        ],
+        [
+          "feet/boots/feet_boots_basic.json",
+          "brown"
+        ]
       ]
     }
   }

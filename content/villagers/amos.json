@@ -1,0 +1,77 @@
+{
+  "id": "amos",
+  "name": "Amos",
+  "home": "reed",
+  "bed": "bed_amos",
+  "coins": 20,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_reed",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_reed",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_reed",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "9:00am",
+      "object": "bench_green",
+      "activity": "rest"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "chair_amos",
+      "activity": "rest"
+    },
+    {
+      "days": "wed",
+      "at": "7:00pm",
+      "object": "table_alehouse_2",
+      "activity": "drink"
+    },
+    {
+      "days": "mon",
+      "at": "10:30am",
+      "object": "counter_store",
+      "activity": "shop"
+    },
+    {
+      "days": "daily",
+      "at": "9:00pm",
+      "object": "bed_amos",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "10:30am",
+      "object": "bench_townhall_2",
+      "activity": "meeting"
+    },
+    {
+      "days": "sat",
+      "at": "11:30am",
+      "object": "bench_green",
+      "activity": "rest"
+    }
+  ],
+  "income": [
+    {
+      "days": "mon",
+      "at": "9:00am",
+      "amount": 15,
+      "what": "soldier's pension"
+    }
+  ]
+}

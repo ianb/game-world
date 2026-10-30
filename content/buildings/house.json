@@ -2,8 +2,8 @@
   "id": "house",
   "zone": "town",
   "at": {
-    "x": 4,
-    "y": 4
+    "x": 44,
+    "y": 40
   },
   "floors": [
     {
@@ -17,7 +17,8 @@
             "y": 1,
             "w": 5,
             "h": 4
-          }
+          },
+          "flooring": "flagstone"
         },
         {
           "id": "parlor",
@@ -26,7 +27,8 @@
             "y": 1,
             "w": 5,
             "h": 4
-          }
+          },
+          "flooring": "darkplanks"
         }
       ],
       "openings": [
@@ -71,6 +73,24 @@
           },
           "activity": "eat",
           "capacity": 2
+        },
+        {
+          "id": "clock_house",
+          "kind": "clock",
+          "room": "parlor",
+          "at": {
+            "x": 8,
+            "y": 1
+          }
+        },
+        {
+          "id": "bookshelf_house",
+          "kind": "bookshelf",
+          "room": "parlor",
+          "at": {
+            "x": 11,
+            "y": 1
+          }
         }
       ],
       "arrival": {

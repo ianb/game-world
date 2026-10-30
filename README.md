@@ -93,6 +93,8 @@ renderer spike (see [docs/design/what-remains.md](docs/design/what-remains.md)).
 
 ## What is here
 
+- [docs/testing.md](docs/testing.md): how behavior tests set up scenes and
+  force named chances instead of relying on seeds.
 - [docs/decisions.md](docs/decisions.md): design calls made so far and what
   they imply. Read this before proposing architecture.
 - [docs/research/living-world-game-research.md](docs/research/living-world-game-research.md):

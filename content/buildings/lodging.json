@@ -1,0 +1,63 @@
+{
+  "id": "lodging",
+  "zone": "town",
+  "at": {
+    "x": 126,
+    "y": 64
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 4,
+            "h": 3
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 0,
+            "y": 2
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_clem",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 4,
+            "y": 1
+          },
+          "owner": "clem",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_clem",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 4,
+            "y": 3
+          },
+          "activity": "eat"
+        }
+      ],
+      "arrival": {
+        "x": 2,
+        "y": 2
+      }
+    }
+  ]
+}

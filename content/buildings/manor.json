@@ -1,0 +1,317 @@
+{
+  "id": "manor",
+  "zone": "town",
+  "at": {
+    "x": 118,
+    "y": 4
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "kitchen",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 6,
+            "h": 4
+          },
+          "flooring": "flagstone"
+        },
+        {
+          "id": "pell",
+          "rect": {
+            "x": 8,
+            "y": 1,
+            "w": 4,
+            "h": 4
+          }
+        },
+        {
+          "id": "josie",
+          "rect": {
+            "x": 13,
+            "y": 1,
+            "w": 4,
+            "h": 4
+          }
+        },
+        {
+          "id": "celia",
+          "rect": {
+            "x": 18,
+            "y": 1,
+            "w": 4,
+            "h": 4
+          }
+        },
+        {
+          "id": "hall",
+          "rect": {
+            "x": 1,
+            "y": 6,
+            "w": 10,
+            "h": 6
+          },
+          "flooring": "checker"
+        },
+        {
+          "id": "parlour",
+          "rect": {
+            "x": 12,
+            "y": 6,
+            "w": 10,
+            "h": 6
+          },
+          "flooring": "darkplanks"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 5,
+            "y": 12
+          },
+          "between": [
+            "hall"
+          ]
+        },
+        {
+          "at": {
+            "x": 3,
+            "y": 5
+          },
+          "between": [
+            "hall",
+            "kitchen"
+          ]
+        },
+        {
+          "at": {
+            "x": 9,
+            "y": 5
+          },
+          "between": [
+            "hall",
+            "pell"
+          ]
+        },
+        {
+          "at": {
+            "x": 14,
+            "y": 5
+          },
+          "between": [
+            "parlour",
+            "josie"
+          ]
+        },
+        {
+          "at": {
+            "x": 19,
+            "y": 5
+          },
+          "between": [
+            "parlour",
+            "celia"
+          ]
+        },
+        {
+          "at": {
+            "x": 11,
+            "y": 8
+          },
+          "between": [
+            "hall",
+            "parlour"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "table_manor",
+          "kind": "table",
+          "room": "kitchen",
+          "at": {
+            "x": 3,
+            "y": 3
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "stove_manor",
+          "kind": "stove",
+          "room": "kitchen",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "activity": "cook"
+        },
+        {
+          "id": "bed_pell",
+          "kind": "bed",
+          "room": "pell",
+          "at": {
+            "x": 8,
+            "y": 1
+          },
+          "owner": "pell",
+          "activity": "sleep"
+        },
+        {
+          "id": "desk_pell",
+          "kind": "desk",
+          "room": "pell",
+          "at": {
+            "x": 11,
+            "y": 4
+          },
+          "activity": "accounts"
+        },
+        {
+          "id": "bed_josie",
+          "kind": "bed",
+          "room": "josie",
+          "at": {
+            "x": 16,
+            "y": 1
+          },
+          "owner": "josie",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_celia",
+          "kind": "bed",
+          "room": "celia",
+          "at": {
+            "x": 21,
+            "y": 1
+          },
+          "owner": "celia",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_parlour",
+          "kind": "table",
+          "room": "parlour",
+          "at": {
+            "x": 16,
+            "y": 8
+          },
+          "activity": "tea"
+        },
+        {
+          "id": "chair_parlour_1",
+          "kind": "chair",
+          "room": "parlour",
+          "at": {
+            "x": 14,
+            "y": 8
+          },
+          "activity": "tea"
+        },
+        {
+          "id": "chair_parlour_2",
+          "kind": "chair",
+          "room": "parlour",
+          "at": {
+            "x": 18,
+            "y": 8
+          },
+          "activity": "tea"
+        },
+        {
+          "id": "chair_celia",
+          "kind": "chair",
+          "room": "parlour",
+          "at": {
+            "x": 21,
+            "y": 6
+          },
+          "activity": "rest"
+        },
+        {
+          "id": "table_hall",
+          "kind": "table",
+          "room": "hall",
+          "at": {
+            "x": 4,
+            "y": 8
+          },
+          "activity": "dine"
+        },
+        {
+          "id": "clock_manor",
+          "kind": "clock",
+          "room": "hall",
+          "at": {
+            "x": 1,
+            "y": 6
+          }
+        },
+        {
+          "id": "banner_manor",
+          "kind": "banner",
+          "room": "hall",
+          "at": {
+            "x": 5,
+            "y": 6
+          }
+        },
+        {
+          "id": "banner_manor_2",
+          "kind": "banner",
+          "room": "hall",
+          "at": {
+            "x": 7,
+            "y": 6
+          }
+        },
+        {
+          "id": "bookshelf_manor",
+          "kind": "bookshelf",
+          "room": "parlour",
+          "at": {
+            "x": 12,
+            "y": 6
+          }
+        },
+        {
+          "id": "bookshelf_manor_2",
+          "kind": "bookshelf",
+          "room": "parlour",
+          "at": {
+            "x": 16,
+            "y": 6
+          }
+        },
+        {
+          "id": "hearth_manor",
+          "kind": "hearth",
+          "room": "kitchen",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        },
+        {
+          "id": "sacks_manor",
+          "kind": "sacks",
+          "room": "kitchen",
+          "at": {
+            "x": 5,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 5,
+        "y": 10
+      }
+    }
+  ],
+  "walls": "brick"
+}

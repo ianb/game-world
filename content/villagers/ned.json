@@ -1,0 +1,45 @@
+{
+  "id": "ned",
+  "name": "Ned",
+  "home": "shack",
+  "bed": "bed_ned",
+  "coins": 3,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "9:00am",
+      "object": "table_ned",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_ned",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_ned",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "10:00am",
+      "object": "bench_square",
+      "activity": "idle"
+    },
+    {
+      "days": "daily",
+      "at": "7:00pm",
+      "object": "table_tavern_1",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "11:30pm",
+      "object": "bed_ned",
+      "activity": "sleep"
+    }
+  ]
+}

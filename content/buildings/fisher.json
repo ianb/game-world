@@ -1,0 +1,98 @@
+{
+  "id": "fisher",
+  "zone": "town",
+  "at": {
+    "x": 106,
+    "y": 86
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 5,
+            "h": 4
+          },
+          "flooring": "earth"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 0,
+            "y": 3
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_fen",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 4,
+            "y": 1
+          },
+          "owner": "fen",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_ottilie",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 5,
+            "y": 1
+          },
+          "owner": "ottilie",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_fisher",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 3,
+            "y": 4
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "creel_fisher",
+          "kind": "barrel",
+          "room": "room",
+          "at": {
+            "x": 5,
+            "y": 4
+          },
+          "activity": "store-fish",
+          "stock": {
+            "fish": 2
+          }
+        },
+        {
+          "id": "bucket_fisher",
+          "kind": "bucket",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 2,
+        "y": 2
+      }
+    }
+  ],
+  "walls": "boards"
+}

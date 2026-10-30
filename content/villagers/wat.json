@@ -1,0 +1,45 @@
+{
+  "id": "wat",
+  "name": "Wat",
+  "home": "alehouse",
+  "bed": "bed_wat",
+  "coins": 5,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_lowe",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_lowe",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_lowe",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "10:00am",
+      "object": "keg_alehouse",
+      "activity": "tap"
+    },
+    {
+      "days": "daily",
+      "at": "3:00pm",
+      "object": "table_alehouse_2",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "11:00pm",
+      "object": "bed_wat",
+      "activity": "sleep"
+    }
+  ]
+}

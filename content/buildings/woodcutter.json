@@ -1,0 +1,74 @@
+{
+  "id": "woodcutter",
+  "zone": "town",
+  "at": {
+    "x": 44,
+    "y": 90
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 5,
+            "h": 4
+          },
+          "flooring": "earth"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 0
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_abel",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 3
+          },
+          "owner": "abel",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_abel",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 5,
+            "y": 4
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "logs_woodcutter",
+          "kind": "logs",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 2
+      }
+    }
+  ],
+  "walls": "boards"
+}

@@ -135,3 +135,18 @@ impl Interlocutor for Nell {
         }
     }
 }
+
+impl crate::Character for Nell {
+    const ID: &'static str = "nell";
+    fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
+        Nell::plan_day(self, ctx, rng)
+    }
+    fn react(
+        &mut self,
+        trigger: &Trigger,
+        ctx: &Ctx<'_>,
+        _rng: &mut Pcg32,
+    ) -> Option<Vec<Command>> {
+        Nell::react(self, trigger, ctx)
+    }
+}

@@ -56,7 +56,7 @@ const placeTabs = new Map<number, HTMLButtonElement>();
 let activePlace = (world.places.find((p) => p.key === "town") ?? world.places[0])?.id ?? 0;
 for (const place of world.places) {
   const section = document.createElement("section");
-  const canvas = new PlaceCanvas(tileset, place, world.objects, world.roofs);
+  const canvas = new PlaceCanvas(tileset, place, world.objects, world.roofs, world.rooms);
   section.append(canvas.canvas);
   section.hidden = place.id !== activePlace;
   placesEl.appendChild(section);
@@ -892,6 +892,7 @@ async function loadDiorama(): Promise<Diorama> {
       places: world.places,
       objects: world.objects,
       roofs: world.roofs,
+      rooms: world.rooms,
       name: villagerName,
       pick: (place, x, y) => {
         const v = sim.villagers().find((v) => v.place === place && v.pos.x === x && v.pos.y === y);

@@ -1,0 +1,151 @@
+{
+  "id": "school",
+  "zone": "town",
+  "at": {
+    "x": 28,
+    "y": 38
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "schoolroom",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 7,
+            "h": 5
+          }
+        },
+        {
+          "id": "room",
+          "rect": {
+            "x": 9,
+            "y": 1,
+            "w": 4,
+            "h": 5
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 4,
+            "y": 6
+          },
+          "between": [
+            "schoolroom"
+          ]
+        },
+        {
+          "at": {
+            "x": 8,
+            "y": 3
+          },
+          "between": [
+            "schoolroom",
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "lectern_school",
+          "kind": "lectern",
+          "room": "schoolroom",
+          "at": {
+            "x": 4,
+            "y": 1
+          },
+          "activity": "teach"
+        },
+        {
+          "id": "desk_1",
+          "kind": "desk",
+          "room": "schoolroom",
+          "at": {
+            "x": 2,
+            "y": 3
+          },
+          "activity": "school"
+        },
+        {
+          "id": "desk_2",
+          "kind": "desk",
+          "room": "schoolroom",
+          "at": {
+            "x": 4,
+            "y": 3
+          },
+          "activity": "school"
+        },
+        {
+          "id": "desk_3",
+          "kind": "desk",
+          "room": "schoolroom",
+          "at": {
+            "x": 6,
+            "y": 3
+          },
+          "activity": "school"
+        },
+        {
+          "id": "desk_4",
+          "kind": "desk",
+          "room": "schoolroom",
+          "at": {
+            "x": 2,
+            "y": 5
+          },
+          "activity": "school"
+        },
+        {
+          "id": "bed_agnes",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 12,
+            "y": 1
+          },
+          "owner": "agnes",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_agnes",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 10,
+            "y": 4
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "bookshelf_school",
+          "kind": "bookshelf",
+          "room": "schoolroom",
+          "at": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "id": "clock_school",
+          "kind": "clock",
+          "room": "schoolroom",
+          "at": {
+            "x": 6,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 4,
+        "y": 4
+      }
+    }
+  ],
+  "walls": "stone"
+}

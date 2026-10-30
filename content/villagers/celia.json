@@ -1,0 +1,59 @@
+{
+  "id": "celia",
+  "name": "Celia",
+  "home": "manor",
+  "bed": "bed_celia",
+  "coins": 80,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "8:30am",
+      "object": "table_hall",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "table_hall",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00pm",
+      "object": "table_hall",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "10:00am",
+      "object": "chair_celia",
+      "activity": "rest"
+    },
+    {
+      "days": "daily",
+      "at": "2:30pm",
+      "object": "chair_celia",
+      "activity": "rest"
+    },
+    {
+      "days": "sun",
+      "at": "9:15am",
+      "object": "pew_1",
+      "activity": "service"
+    },
+    {
+      "days": "daily",
+      "at": "10:30pm",
+      "object": "bed_celia",
+      "activity": "sleep"
+    }
+  ],
+  "income": [
+    {
+      "days": "mon",
+      "at": "9:00am",
+      "amount": 30,
+      "what": "annuity"
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "id": "hester",
+  "name": "Hester",
+  "home": "pike",
+  "bed": "bed_hester",
+  "coins": 25,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_pike",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_pike",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_pike",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "chair_window",
+      "activity": "watch"
+    },
+    {
+      "days": "daily",
+      "at": "1:30pm",
+      "object": "chair_window",
+      "activity": "watch"
+    },
+    {
+      "days": "sun",
+      "at": "9:35am",
+      "object": "pew_4",
+      "activity": "service"
+    },
+    {
+      "days": "daily",
+      "at": "9:00pm",
+      "object": "bed_hester",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "10:30am",
+      "object": "bench_townhall_3",
+      "activity": "meeting"
+    },
+    {
+      "days": "sat",
+      "at": "11:30am",
+      "object": "chair_window",
+      "activity": "watch"
+    }
+  ],
+  "income": [
+    {
+      "days": "mon",
+      "at": "9:00am",
+      "amount": 15,
+      "what": "widow's pension"
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "id": "ashby",
+  "zone": "town",
+  "at": {
+    "x": 64,
+    "y": 6
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "kitchen",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 6,
+            "h": 5
+          },
+          "flooring": "flagstone"
+        },
+        {
+          "id": "silas",
+          "rect": {
+            "x": 8,
+            "y": 1,
+            "w": 4,
+            "h": 5
+          }
+        },
+        {
+          "id": "martha",
+          "rect": {
+            "x": 13,
+            "y": 1,
+            "w": 4,
+            "h": 5
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 6
+          },
+          "between": [
+            "kitchen"
+          ]
+        },
+        {
+          "at": {
+            "x": 7,
+            "y": 3
+          },
+          "between": [
+            "kitchen",
+            "silas"
+          ]
+        },
+        {
+          "at": {
+            "x": 12,
+            "y": 3
+          },
+          "between": [
+            "silas",
+            "martha"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "table_ashby",
+          "kind": "table",
+          "room": "kitchen",
+          "at": {
+            "x": 3,
+            "y": 3
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "strongbox_ashby",
+          "kind": "chest",
+          "room": "silas",
+          "at": {
+            "x": 11,
+            "y": 5
+          },
+          "activity": "count-coins"
+        },
+        {
+          "id": "bed_silas",
+          "kind": "bed",
+          "room": "silas",
+          "at": {
+            "x": 8,
+            "y": 1
+          },
+          "owner": "silas",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_martha",
+          "kind": "bed",
+          "room": "martha",
+          "at": {
+            "x": 16,
+            "y": 1
+          },
+          "owner": "martha",
+          "activity": "sleep"
+        },
+        {
+          "id": "jars_martha",
+          "kind": "shelf",
+          "room": "martha",
+          "at": {
+            "x": 13,
+            "y": 5
+          },
+          "activity": "jar-honey",
+          "stock": {
+            "honey": 2
+          }
+        },
+        {
+          "id": "hearth_ashby",
+          "kind": "hearth",
+          "room": "kitchen",
+          "at": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "id": "sacks_ashby",
+          "kind": "sacks",
+          "room": "kitchen",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 3
+      }
+    }
+  ]
+}

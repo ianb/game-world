@@ -1,0 +1,47 @@
+{
+  "id": "clem",
+  "name": "Clem",
+  "home": "lodging",
+  "bed": "bed_clem",
+  "coins": 8,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_clem",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "table_clem",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00pm",
+      "object": "table_clem",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_clem",
+      "activity": "carry"
+    },
+    {
+      "days": "daily",
+      "at": "9:30pm",
+      "object": "bed_clem",
+      "activity": "sleep"
+    }
+  ],
+  "income": [
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "amount": 2,
+      "what": "carrier's fees"
+    }
+  ]
+}

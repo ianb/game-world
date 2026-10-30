@@ -1,0 +1,59 @@
+{
+  "id": "fen",
+  "name": "Fen",
+  "home": "fisher",
+  "bed": "bed_fen",
+  "coins": 12,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:00am",
+      "object": "table_fisher",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_fisher",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_fisher",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "nets_fen",
+      "activity": "fish"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "nets_fen",
+      "activity": "fish"
+    },
+    {
+      "days": "tue",
+      "at": "7:30pm",
+      "object": "table_alehouse_1",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "9:30pm",
+      "object": "bed_fen",
+      "activity": "sleep"
+    }
+  ],
+  "income": [
+    {
+      "days": "tue",
+      "at": "11:00am",
+      "amount": 10,
+      "what": "fish to market"
+    }
+  ]
+}

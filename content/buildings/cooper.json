@@ -1,0 +1,185 @@
+{
+  "id": "cooper",
+  "zone": "town",
+  "at": {
+    "x": 56,
+    "y": 73
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 6,
+            "h": 4
+          }
+        },
+        {
+          "id": "beds",
+          "rect": {
+            "x": 8,
+            "y": 1,
+            "w": 5,
+            "h": 4
+          }
+        },
+        {
+          "id": "workshop",
+          "rect": {
+            "x": 14,
+            "y": 1,
+            "w": 5,
+            "h": 4
+          },
+          "flooring": "cobbles"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 0
+          },
+          "between": [
+            "room"
+          ]
+        },
+        {
+          "at": {
+            "x": 7,
+            "y": 2
+          },
+          "between": [
+            "room",
+            "beds"
+          ]
+        },
+        {
+          "at": {
+            "x": 13,
+            "y": 2
+          },
+          "between": [
+            "beds",
+            "workshop"
+          ]
+        },
+        {
+          "at": {
+            "x": 16,
+            "y": 0
+          },
+          "between": [
+            "workshop"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "table_cooper",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 3,
+            "y": 3
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "stove_cooper",
+          "kind": "stove",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "activity": "cook"
+        },
+        {
+          "id": "bed_rob",
+          "kind": "bed",
+          "room": "beds",
+          "at": {
+            "x": 8,
+            "y": 1
+          },
+          "owner": "rob",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_jenna",
+          "kind": "bed",
+          "room": "beds",
+          "at": {
+            "x": 9,
+            "y": 1
+          },
+          "owner": "jenna",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_kit",
+          "kind": "bed",
+          "room": "beds",
+          "at": {
+            "x": 12,
+            "y": 1
+          },
+          "owner": "kit",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_sal",
+          "kind": "bed",
+          "room": "beds",
+          "at": {
+            "x": 12,
+            "y": 4
+          },
+          "owner": "sal",
+          "activity": "sleep"
+        },
+        {
+          "id": "workbench_cooper",
+          "kind": "workbench",
+          "room": "workshop",
+          "at": {
+            "x": 15,
+            "y": 4
+          },
+          "activity": "make-barrels",
+          "stock": {
+            "barrel": 2
+          }
+        },
+        {
+          "id": "barrel_cooper",
+          "kind": "barrel",
+          "room": "workshop",
+          "at": {
+            "x": 18,
+            "y": 1
+          }
+        },
+        {
+          "id": "barrels_cooper",
+          "kind": "barrels",
+          "room": "workshop",
+          "at": {
+            "x": 18,
+            "y": 3
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 2
+      }
+    }
+  ]
+}

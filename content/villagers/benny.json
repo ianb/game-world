@@ -1,0 +1,57 @@
+{
+  "id": "benny",
+  "name": "Benny",
+  "home": "dory",
+  "bed": "bed_benny",
+  "coins": 0,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_dory",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_dory",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_dory",
+      "activity": "eat"
+    },
+    {
+      "days": "weekday",
+      "at": "8:00am",
+      "object": "desk_3",
+      "activity": "school"
+    },
+    {
+      "days": "weekday",
+      "at": "1:00pm",
+      "object": "desk_3",
+      "activity": "school"
+    },
+    {
+      "days": "weekday",
+      "at": "3:30pm",
+      "object": "bench_green",
+      "activity": "play"
+    },
+    {
+      "days": "weekend",
+      "at": "9:00am",
+      "object": "bench_green",
+      "activity": "play"
+    },
+    {
+      "days": "daily",
+      "at": "7:30pm",
+      "object": "bed_benny",
+      "activity": "sleep"
+    }
+  ]
+}

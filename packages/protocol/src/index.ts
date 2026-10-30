@@ -42,6 +42,9 @@ export type { PlaceView } from "./generated/PlaceView";
 export type { ObjectView } from "./generated/ObjectView";
 export type { DoorView } from "./generated/DoorView";
 export type { RoofView } from "./generated/RoofView";
+export type { RoomView } from "./generated/RoomView";
+export type { Flooring } from "./generated/Flooring";
+export type { Walling } from "./generated/Walling";
 export type { Pos } from "./generated/Pos";
 export type { Rect } from "./generated/Rect";
 export type { Tick } from "./generated/Tick";
@@ -49,7 +52,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 19;
+export const PROTOCOL_VERSION = 20;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;

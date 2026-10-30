@@ -1,0 +1,65 @@
+{
+  "id": "hermitage",
+  "zone": "town",
+  "at": {
+    "x": 10,
+    "y": 100
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 4,
+            "h": 3
+          },
+          "flooring": "earth"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 2,
+            "y": 0
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_ivo",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 4,
+            "y": 3
+          },
+          "owner": "ivo",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_ivo",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 3
+          },
+          "activity": "eat"
+        }
+      ],
+      "arrival": {
+        "x": 2,
+        "y": 2
+      }
+    }
+  ],
+  "walls": "boards"
+}

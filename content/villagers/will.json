@@ -1,0 +1,65 @@
+{
+  "id": "will",
+  "name": "Will",
+  "home": "hollins",
+  "bed": "bed_will",
+  "coins": 30,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_hollins",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_hollins",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_hollins",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "hay_hollins",
+      "activity": "fork-hay"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "hay_hollins",
+      "activity": "farm"
+    },
+    {
+      "days": "daily",
+      "at": "9:00pm",
+      "object": "bed_will",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "10:30am",
+      "object": "bench_townhall_1",
+      "activity": "meeting"
+    },
+    {
+      "days": "sat",
+      "at": "11:30am",
+      "object": "hay_hollins",
+      "activity": "farm"
+    }
+  ],
+  "income": [
+    {
+      "days": "sat",
+      "at": "5:00pm",
+      "amount": 26,
+      "what": "grain and wool"
+    }
+  ]
+}

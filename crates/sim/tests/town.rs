@@ -91,7 +91,8 @@ fn mara_reaches_the_bakery_counter_and_everyone_sleeps_at_night() {
         "nobody got stuck"
     );
 
-    sim.step_until(at(0, 23, 30)).unwrap();
+    // Half past midnight: the latest bedtime is half past eleven.
+    sim.step_until(at(1, 0, 30)).unwrap();
     for v in &sim.state().villagers {
         assert_eq!(v.activity, "sleep", "{}", views::where_is_everyone(&sim));
         // Everyone is in the place their bed is in.
@@ -405,7 +406,7 @@ fn ground_wears_grows_and_is_cleared() {
     let mut sim = new_sim(7);
     let townp = sim.world().place_index["town"];
     // A corner nobody visits: grass goes tall after a week and to brush after four.
-    let corner = Pos { x: 45, y: 2 };
+    let corner = Pos { x: 45, y: 3 };
     assert_eq!(sim.surface(townp, corner), Some(Surface::Grass));
     sim.step_until(Tick(u32::from(GROWTH_TALL) * TICKS_PER_DAY))
         .unwrap();
@@ -415,7 +416,7 @@ fn ground_wears_grows_and_is_cleared() {
     assert_eq!(sim.surface(townp, corner), Some(Surface::Brush));
     // The street outside the bakery is walked every day and stays a clean path.
     assert_eq!(
-        sim.surface(townp, Pos { x: 22, y: 11 }),
+        sim.surface(townp, Pos { x: 62, y: 47 }),
         Some(Surface::Path)
     );
     // Indoors has no surface.

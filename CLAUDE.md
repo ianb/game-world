@@ -26,6 +26,9 @@ conversation transcripts, `render`, `route`, `travel-matrix`, `where`,
 tiles as drawn, build the viewer and run `node scripts/viewer-shot.mjs
 --days 20 --place town`, then read the PNG it writes.
 
+Behavior tests set up a scene and force named chances rather than looking
+for a seed where something happens; see [docs/testing.md](./docs/testing.md).
+
 Snapshots: run `just snap` (which is `cargo insta test --accept`) locally,
 read the `.snap` diff, and commit it with a reason in the message. CI never
 writes snapshots and fails on a mismatch or a stale file.

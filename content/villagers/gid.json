@@ -1,0 +1,77 @@
+{
+  "id": "gid",
+  "name": "Gid",
+  "home": "mill",
+  "bed": "bed_gid",
+  "coins": 25,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_mill",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_mill",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_mill",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:30am",
+      "object": "millstone",
+      "activity": "mill"
+    },
+    {
+      "days": "daily",
+      "at": "1:30pm",
+      "object": "millstone",
+      "activity": "mill"
+    },
+    {
+      "days": "fri",
+      "at": "8:00am",
+      "object": "table_mill",
+      "activity": "rest"
+    },
+    {
+      "days": "fri",
+      "at": "1:30pm",
+      "object": "table_mill",
+      "activity": "rest"
+    },
+    {
+      "days": "daily",
+      "at": "9:30pm",
+      "object": "bed_gid",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "10:30am",
+      "object": "bench_townhall_1",
+      "activity": "meeting"
+    },
+    {
+      "days": "sat",
+      "at": "11:30am",
+      "object": "millstone",
+      "activity": "mill"
+    }
+  ],
+  "income": [
+    {
+      "days": "thu",
+      "at": "4:00pm",
+      "amount": 18,
+      "what": "flour to market"
+    }
+  ]
+}

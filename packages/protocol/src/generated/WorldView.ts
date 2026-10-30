@@ -3,8 +3,9 @@ import type { DoorView } from "./DoorView";
 import type { ObjectView } from "./ObjectView";
 import type { PlaceView } from "./PlaceView";
 import type { RoofView } from "./RoofView";
+import type { RoomView } from "./RoomView";
 
 /**
  * The compiled world as the viewer needs it: static for the life of a town.
  */
-export type WorldView = { places: Array<PlaceView>, objects: Array<ObjectView>, doors: Array<DoorView>, roofs: Array<RoofView>, };
+export type WorldView = { places: Array<PlaceView>, objects: Array<ObjectView>, doors: Array<DoorView>, roofs: Array<RoofView>, rooms: Array<RoomView>, };

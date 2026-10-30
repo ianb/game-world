@@ -1,0 +1,77 @@
+{
+  "id": "bram",
+  "name": "Bram",
+  "home": "smithy",
+  "bed": "bed_bram",
+  "coins": 35,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_smithy",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_smithy",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_smithy",
+      "activity": "eat"
+    },
+    {
+      "days": "weekday",
+      "at": "7:30am",
+      "object": "anvil_smithy",
+      "activity": "smith"
+    },
+    {
+      "days": "weekday",
+      "at": "1:00pm",
+      "object": "anvil_smithy",
+      "activity": "smith"
+    },
+    {
+      "days": "sat",
+      "at": "8:00am",
+      "object": "anvil_smithy",
+      "activity": "smith"
+    },
+    {
+      "days": "daily",
+      "at": "7:30pm",
+      "object": "table_alehouse_1",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "10:30pm",
+      "object": "bed_bram",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "10:30am",
+      "object": "bench_townhall_4",
+      "activity": "meeting"
+    },
+    {
+      "days": "sat",
+      "at": "11:30am",
+      "object": "anvil_smithy",
+      "activity": "smith"
+    }
+  ],
+  "income": [
+    {
+      "days": "fri",
+      "at": "5:00pm",
+      "amount": 20,
+      "what": "ironwork"
+    }
+  ]
+}

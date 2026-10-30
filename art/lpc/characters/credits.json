@@ -527,5 +527,582 @@
    "https://opengameart.org/content/lpc-combat-armor-for-women",
    "https://opengameart.org/content/lpc-pirates"
   ]
+ },
+ {
+  "file": "head/heads/human/male_gaunt",
+  "notes": "original head by Redshrike, gaunt version by bluecarrot16",
+  "authors": [
+   "Stephen Challener (Redshrike)",
+   "bluecarrot16"
+  ],
+  "licenses": [
+   "OGA-BY 3.0",
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://opengameart.org/content/lpc-folk"
+  ]
+ },
+ {
+  "file": "hair/parted",
+  "notes": "down 4 and 5 added by JaidynReiman; recolors by Joe White; original by Manuel Riecke (MrBeast)",
+  "authors": [
+   "JaidynReiman",
+   "Joe White",
+   "Manuel Riecke (MrBeast)"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://github.com/jrconway3/Universal-LPC-spritesheet/commit/46ddcf05a0e43e7aa6ffd47d350eef0eb529ac24",
+   "https://opengameart.org/content/lpc-expanded-hair"
+  ]
+ },
+ {
+  "file": "hair/long",
+  "notes": "",
+  "authors": [
+   "JaidynReiman",
+   "Manuel Riecke (MrBeast)"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://opengameart.org/content/lpc-expanded-hair"
+  ]
+ },
+ {
+  "file": "hair/messy2",
+  "notes": "",
+  "authors": [
+   "JaidynReiman",
+   "Manuel Riecke (MrBeast)"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://opengameart.org/content/lpc-expanded-hair"
+  ]
+ },
+ {
+  "file": "hair/ponytail",
+  "notes": "",
+  "authors": [
+   "JaidynReiman",
+   "Manuel Riecke (MrBeast)"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://opengameart.org/content/lpc-expanded-hair"
+  ]
+ },
+ {
+  "file": "head/heads/human/female_small",
+  "notes": "original head by Redshrike, reduced size head by ElizaWy",
+  "authors": [
+   "ElizaWy",
+   "Stephen Challener (Redshrike)"
+  ],
+  "licenses": [
+   "OGA-BY 3.0",
+   "CC-BY"
+  ],
+  "urls": []
+ },
+ {
+  "file": "legs/pants/thin",
+  "notes": "original male pants by wulax, edited for female by Joe White, recolors and edits to v3 base by bluecarrot16, teen legs by ElizaWy derived from base, climb/jump/run/sit/emotes/revised combat by JaidynReiman based on ElizaWy's LPC Revised",
+  "authors": [
+   "bluecarrot16",
+   "JaidynReiman",
+   "ElizaWy",
+   "Joe White",
+   "Matthew Krohn (makrohn)",
+   "Johannes Sjölund (wulax)",
+   "Stephen Challener (Redshrike)"
+  ],
+  "licenses": [
+   "OGA-BY 3.0",
+   "GPL 3.0",
+   "CC-BY-SA 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+   "http://opengameart.org/content/lpc-clothing-updates",
+   "https://opengameart.org/content/lpc-expanded-pants"
+  ]
+ },
+ {
+  "file": "feet/boots/basic/thin",
+  "notes": "original by Nila122, edited for v3 bases by bluecarrot16, Jump/Sit/Emote/Run/Revised Combat by JaidynReiman",
+  "authors": [
+   "JaidynReiman",
+   "bluecarrot16",
+   "Nila122"
+  ],
+  "licenses": [
+   "OGA-BY 3.0",
+   "CC-BY-SA 3.0",
+   "GPL 2.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-clothes-and-hair",
+   "https://opengameart.org/content/lpc-expanded-socks-shoes"
+  ]
+ },
+ {
+  "file": "hair/unkempt",
+  "notes": "",
+  "authors": [
+   "JaidynReiman",
+   "Manuel Riecke (MrBeast)"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://opengameart.org/content/lpc-expanded-hair"
+  ]
+ },
+ {
+  "file": "beards/beard/5oclock_shadow",
+  "notes": "Original by Pennomi, repositioning by JaidynReiman.",
+  "authors": [
+   "JaidynReiman",
+   "Thane Brimhall (pennomi)",
+   "laetissima"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-base-character-expressions"
+  ]
+ },
+ {
+  "file": "hair/wavy",
+  "notes": "",
+  "authors": [
+   "JaidynReiman",
+   "Nila122"
+  ],
+  "licenses": [
+   "OGA-BY 3.0",
+   "CC-BY-SA 3.0",
+   "GPL 2.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/3-hairs-for-lpc",
+   "https://opengameart.org/content/lpc-expanded-hair"
+  ]
+ },
+ {
+  "file": "hair/braid",
+  "notes": "",
+  "authors": [
+   "Nila122",
+   "ElizaWy"
+  ],
+  "licenses": [
+   "OGA-BY 3.0",
+   "CC-BY-SA 3.0",
+   "GPL 3.0",
+   "GPL 2.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/3-hairs-for-lpc",
+   "https://opengameart.org/content/lpc-hair"
+  ]
+ },
+ {
+  "file": "head/heads/human/male_small",
+  "notes": "original head by Redshrike, reduced size head by ElizaWy",
+  "authors": [
+   "ElizaWy",
+   "Stephen Challener (Redshrike)"
+  ],
+  "licenses": [
+   "OGA-BY 3.0",
+   "CC-BY"
+  ],
+  "urls": []
+ },
+ {
+  "file": "hair/mop",
+  "notes": "(george)",
+  "authors": [
+   "Radomir Dopieralski",
+   "bluecarrot16"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/alternate-lpc-character-sprites-george",
+   "https://opengameart.org/content/lpc-hair"
+  ]
+ },
+ {
+  "file": "legs/skirts/child",
+  "notes": "",
+  "authors": [
+   "Nila122"
+  ],
+  "licenses": [
+   "OGA-BY 3.0",
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-clothes-for-children"
+  ]
+ },
+ {
+  "file": "head/heads/human/male_elderly",
+  "notes": "",
+  "authors": [
+   "Benjamin K. Smith (BenCreating)",
+   "Eliza Wyatt (ElizaWy)",
+   "Stephen Challener (Redshrike)"
+  ],
+  "licenses": [
+   "OGA-BY 3.0",
+   "CC-BY 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://opengameart.org/content/lpc-revised-elders",
+   "https://opengameart.org/content/lpc-character-bases"
+  ]
+ },
+ {
+  "file": "torso/clothes/vest",
+  "notes": "",
+  "authors": [
+   "bluecarrot16",
+   "Thane Brimhall (pennomi)",
+   "laetissima",
+   "Stephen Challener (Redshrike)",
+   "Johannes Sjölund (wulax)"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-2-characters",
+   "https://opengameart.org/content/lpc-gentleman",
+   "https://opengameart.org/content/lpc-pirates"
+  ]
+ },
+ {
+  "file": "hair/bedhead",
+  "notes": "",
+  "authors": [
+   "JaidynReiman",
+   "Manuel Riecke (MrBeast)"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://opengameart.org/content/lpc-expanded-hair"
+  ]
+ },
+ {
+  "file": "hair/parted2",
+  "notes": "",
+  "authors": [
+   "Skorpio",
+   "bluecarrot16"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-skorpios-scifi-sprite-pack",
+   "https://opengameart.org/content/lpc-hair"
+  ]
+ },
+ {
+  "file": "beards/beard/winter",
+  "notes": "",
+  "authors": [
+   "bluecarrot16"
+  ],
+  "licenses": [
+   "CC0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-santa"
+  ]
+ },
+ {
+  "file": "hair/messy3",
+  "notes": "",
+  "authors": [
+   "Fabzy",
+   "bluecarrot16"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/the-revolution-hair",
+   "https://opengameart.org/content/lpc-hair"
+  ]
+ },
+ {
+  "file": "hair/long_messy",
+  "notes": "(puck)",
+  "authors": [
+   "Mandi Paugh",
+   "bluecarrot16"
+  ],
+  "licenses": [
+   "GPL 2.0",
+   "GPL 3.0",
+   "CC-BY 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/puck-overland",
+   "https://opengameart.org/content/lpc-hair"
+  ]
+ },
+ {
+  "file": "beards/beard/medium",
+  "notes": "",
+  "authors": [
+   "ElizaWy"
+  ],
+  "licenses": [
+   "OGA-BY 3.0"
+  ],
+  "urls": [
+   "https://github.com/ElizaWy/LPC/tree/main/Characters/Hair",
+   "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+  ]
+ },
+ {
+  "file": "hair/swoop",
+  "notes": "",
+  "authors": [
+   "JaidynReiman",
+   "Manuel Riecke (MrBeast)"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://opengameart.org/content/lpc-expanded-hair"
+  ]
+ },
+ {
+  "file": "beards/beard/trimmed",
+  "notes": "",
+  "authors": [
+   "ElizaWy"
+  ],
+  "licenses": [
+   "OGA-BY 3.0"
+  ],
+  "urls": [
+   "https://github.com/ElizaWy/LPC/tree/main/Characters/Hair",
+   "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+  ]
+ },
+ {
+  "file": "hair/curly_long",
+  "notes": "",
+  "authors": [
+   "ElizaWy"
+  ],
+  "licenses": [
+   "OGA-BY 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-hair"
+  ]
+ },
+ {
+  "file": "hair/braid2",
+  "notes": "(lidia)",
+  "authors": [
+   "Yamilian",
+   "bluecarrot16"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-heroine",
+   "https://opengameart.org/content/lpc-hair"
+  ]
+ },
+ {
+  "file": "beards/mustache/walrus",
+  "notes": "",
+  "authors": [
+   "ElizaWy"
+  ],
+  "licenses": [
+   "OGA-BY 3.0"
+  ],
+  "urls": [
+   "https://github.com/ElizaWy/LPC/tree/main/Characters/Hair",
+   "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+  ]
+ },
+ {
+  "file": "hair/long_straight",
+  "notes": "",
+  "authors": [
+   "JaidynReiman",
+   "thecilekli",
+   "bluecarrot16"
+  ],
+  "licenses": [
+   "CC0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-long-straight-hair-with-12-colors",
+   "https://opengameart.org/content/lpc-hair",
+   "https://opengameart.org/content/lpc-expanded-hair"
+  ]
+ },
+ {
+  "file": "hair/curly_short",
+  "notes": "",
+  "authors": [
+   "ElizaWy"
+  ],
+  "licenses": [
+   "OGA-BY 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-hair",
+   "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+  ]
+ },
+ {
+  "file": "hair/half_up",
+  "notes": "",
+  "authors": [
+   "ElizaWy"
+  ],
+  "licenses": [
+   "OGA-BY 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-hair"
+  ]
+ },
+ {
+  "file": "hair/cowlick",
+  "notes": "Original by bluecarrot16, animated by ElizaWy.",
+  "authors": [
+   "ElizaWy",
+   "bluecarrot16"
+  ],
+  "licenses": [
+   "CC0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-hair",
+   "https://github.com/ElizaWy/LPC/blob/main/Characters/Hair",
+   "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+  ]
+ },
+ {
+  "file": "hair/high_ponytail",
+  "notes": "",
+  "authors": [
+   "JaidynReiman",
+   "ElizaWy",
+   "bluecarrot16"
+  ],
+  "licenses": [
+   "OGA-BY 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-hair",
+   "https://opengameart.org/content/lpc-expanded-hair"
+  ]
+ },
+ {
+  "file": "legs/skirts/belle",
+  "notes": "extended to all poses by makrohn, edited to v3 bases and animation cleanup by bluecarrot16",
+  "authors": [
+   "bluecarrot16",
+   "Matthew Krohn (makrohn)",
+   "Lanea Zimmerman (Sharm)"
+  ],
+  "licenses": [
+   "OGA-BY 3.0",
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+   "https://opengameart.org/content/lpc-dress-in-combat-poses",
+   "http://opengameart.org/content/lpc-clothing-updates"
+  ]
+ },
+ {
+  "file": "hair/parted3",
+  "notes": "",
+  "authors": [
+   "ElizaWy"
+  ],
+  "licenses": [
+   "OGA-BY 3.0"
+  ],
+  "urls": [
+   "https://github.com/ElizaWy/LPC/tree/main/Characters/Hair",
+   "https://opengameart.org/content/lpc-expanded-sit-run-jump-more"
+  ]
+ },
+ {
+  "file": "beards/mustache/basic",
+  "notes": "Original by Nemisys, repositioning by JaidynReiman.",
+  "authors": [
+   "JaidynReiman",
+   "Carlo Enrico Victoria (Nemisys)"
+  ],
+  "licenses": [
+   "CC-BY-SA 3.0",
+   "GPL 3.0"
+  ],
+  "urls": [
+   "https://opengameart.org/content/lpc-brunet-mustache"
+  ]
  }
 ]

@@ -18,7 +18,6 @@ use crate::terrain::{Surface, Terrain};
 use crate::time::{TICKS_PER_DAY, TICKS_PER_HOUR, TICKS_PER_MINUTE, Tick};
 use crate::villager::{Approach, Crossing, Errand, Interlude, Movement, PlannedLeg, VillagerState};
 use content::{Content, Nav, Pos, Spot, WALK_TICKS_PER_TILE, World, nav};
-use rand::RngExt;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use thiserror::Error;
@@ -29,6 +28,8 @@ const MAX_REACT_DEPTH: u8 = 4;
 const LOOK_TICKS: u32 = 15 * TICKS_PER_MINUTE;
 /// Chance per thousand steps of tripping in brush or an overgrown path, and in long grass
 /// or a weedy path.
+/// The chance label for tripping in long grass or brush.
+pub const TRIPS: &str = "trips";
 const TRIP_OVERGROWN: u32 = 150;
 const TRIP_LONG_GRASS: u32 = 40;
 
@@ -64,6 +65,8 @@ pub struct SimState<C> {
     pub markers: Vec<(Tick, String)>,
     /// Recent events worth knowing, with who could perceive them.
     pub record: Record,
+    /// Chances a test has forced; empty in a normal run.
+    pub odds: crate::odds::Odds,
     /// Character private state.
     pub characters: C,
     /// Events produced while constructing the sim (the first day's plans), returned by the
@@ -181,6 +184,7 @@ impl<C: CharacterSet> Sim<C> {
                 day_rollovers: 0,
                 markers: Vec::new(),
                 record: Record::default(),
+                odds: crate::odds::Odds::default(),
                 characters,
                 pending: Vec::new(),
             },
@@ -204,6 +208,28 @@ impl<C: CharacterSet> Sim<C> {
     #[must_use]
     pub fn state(&self) -> &SimState<C> {
         &self.state
+    }
+
+    /// The state, for tests that set up a scene (needs, coins, memories, forced odds)
+    /// before running. Changes made here are not inputs and are not replayed.
+    pub fn state_mut(&mut self) -> &mut SimState<C> {
+        &mut self.state
+    }
+
+    /// For test scenes: adds `command` to `who`'s plan at `at`, as if their own code had
+    /// planned it. Today's plan is replaced at the start of each day, so `at` must fall
+    /// before then.
+    pub fn cue(&mut self, who: VillagerId, at: Tick, command: Command) {
+        assert!(at >= self.state.tick, "a cue at {at} is in the past");
+        let v = &mut self.state.villagers[who.index()];
+        let slot = v.plan.entry(at).or_default();
+        if slot.is_empty() {
+            let generation = v.plan_generation;
+            self.state
+                .queue
+                .schedule(at, Event::WakeUp { who, generation });
+        }
+        slot.push((Cause::Plan, command));
     }
 
     #[must_use]
@@ -233,6 +259,7 @@ impl<C: CharacterSet> Sim<C> {
             terrain: &self.state.terrain,
             stock: &self.state.stock,
             record: &self.state.record,
+            odds: &self.state.odds,
         }
     }
 
@@ -474,6 +501,12 @@ impl<C: CharacterSet> Sim<C> {
             }
         };
         out.push(Emitted::InputApplied { tick, summary });
+        // A teleported villager has come to rest where they landed.
+        if let InputKind::Teleport { who, .. } = &input.kind
+            && input.source == Source::System
+        {
+            self.encounters(*who, out);
+        }
     }
 
     /// Asks every character for today's plan and schedules the wake-ups. Items already in
@@ -495,6 +528,7 @@ impl<C: CharacterSet> Sim<C> {
                     terrain: &self.state.terrain,
                     stock: &self.state.stock,
                     record: &self.state.record,
+                    odds: &self.state.odds,
                 };
                 let baseline = crate::brain::baseline_plan(who, &ctx);
                 let mut planned = self.state.characters.plan_day(
@@ -588,6 +622,7 @@ impl<C: CharacterSet> Sim<C> {
                 terrain: &self.state.terrain,
                 stock: &self.state.stock,
                 record: &self.state.record,
+                odds: &self.state.odds,
             };
             let label = trigger.label(&ctx);
             let commands = self.state.characters.react(
@@ -1489,7 +1524,13 @@ impl<C: CharacterSet> Sim<C> {
             _ => return,
         };
         let body = &mut self.state.rng.villagers[who.index()].body;
-        if body.random_range(0..1000u32) < per_mille {
+        if self.state.odds.chance_in(
+            body,
+            who,
+            TRIPS,
+            1000,
+            i32::try_from(per_mille).unwrap_or(0),
+        ) {
             self.state
                 .queue
                 .schedule(self.state.tick, Event::Tripped { who });

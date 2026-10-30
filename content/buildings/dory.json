@@ -1,0 +1,127 @@
+{
+  "id": "dory",
+  "zone": "town",
+  "at": {
+    "x": 106,
+    "y": 64
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 6,
+            "h": 4
+          },
+          "flooring": "cobbles"
+        },
+        {
+          "id": "beds",
+          "rect": {
+            "x": 8,
+            "y": 1,
+            "w": 5,
+            "h": 4
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 0
+          },
+          "between": [
+            "room"
+          ]
+        },
+        {
+          "at": {
+            "x": 7,
+            "y": 2
+          },
+          "between": [
+            "room",
+            "beds"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "table_dory",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 3,
+            "y": 3
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "wheel_dory",
+          "kind": "wheel",
+          "room": "room",
+          "at": {
+            "x": 6,
+            "y": 4
+          },
+          "activity": "throw-pots",
+          "stock": {
+            "pots": 1
+          }
+        },
+        {
+          "id": "bed_penn",
+          "kind": "bed",
+          "room": "beds",
+          "at": {
+            "x": 8,
+            "y": 1
+          },
+          "owner": "penn",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_rosa",
+          "kind": "bed",
+          "room": "beds",
+          "at": {
+            "x": 9,
+            "y": 1
+          },
+          "owner": "rosa",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_benny",
+          "kind": "bed",
+          "room": "beds",
+          "at": {
+            "x": 12,
+            "y": 4
+          },
+          "owner": "benny",
+          "activity": "sleep"
+        },
+        {
+          "id": "bucket_dory",
+          "kind": "bucket",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 2
+      }
+    }
+  ]
+}

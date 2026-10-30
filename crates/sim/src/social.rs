@@ -702,9 +702,22 @@ pub fn needs_mood(ctx: &Ctx<'_>, me: VillagerId) -> i8 {
     }
 }
 
-/// A percentile roll, 0 to 99.
-pub fn roll(rng: &mut Pcg32) -> i16 {
-    i16::try_from(rng.random_range(0..100u32)).unwrap_or(0)
+/// Labels for the conversation's chances, for tests to force with `Odds`.
+pub mod chances {
+    /// They want the conversation to go on past its business.
+    pub const WANTS_MORE: &str = "wants-more";
+    /// They pass on a piece of news.
+    pub const GOSSIP: &str = "gossip";
+    /// They bid to confide what is on their mind.
+    pub const CONFIDE: &str = "confide";
+    /// A hard gesture comes out wrong, or a refusal comes out curt.
+    pub const MISFIRE: &str = "misfire";
+    /// What they hear is taken worse than it was meant.
+    pub const READ_WORSE: &str = "read-worse";
+    /// What they hear is taken better than it was meant (rolled only if not worse).
+    pub const READ_BETTER: &str = "read-better";
+    /// A bad reading is put down to the speaker's character rather than the situation.
+    pub const BLAME_CHARACTER: &str = "blame-character";
 }
 
 /// A gesture about `topic`.
@@ -831,7 +844,7 @@ fn wants_more<I: Interlocutor + ?Sized>(me: &I, s: &Situation<'_>, rng: &mut Pcg
     if me.worry(s.ctx, s.me).is_some() && r.familiarity >= 2 {
         chance += 30;
     }
-    roll(rng) < chance
+    s.ctx.chance(rng, s.me, chances::WANTS_MORE, chance)
 }
 
 /// The default turn: the frame's business first, then talk shaped by stance, mood and
@@ -921,7 +934,10 @@ pub fn default_gossip<I: Interlocutor + ?Sized>(
         })
         .last()?
         .clone();
-    (roll(rng) < 10 * (10 - i16::from(p.discretion.min(10)))).then_some(news)
+    let percent = 10 * (10 - i16::from(p.discretion.min(10)));
+    s.ctx
+        .chance(rng, s.me, chances::GOSSIP, percent)
+        .then_some(news)
 }
 
 /// Days before someone tells the same person the same worry again.
@@ -951,7 +967,7 @@ fn small_talk_act<I: Interlocutor + ?Sized>(me: &I, s: &Situation<'_>, rng: &mut
             &worry,
             s.ctx.tick.minus(RETELL_DAYS * crate::time::TICKS_PER_DAY),
         )
-        && roll(rng) < 60
+        && s.ctx.chance(rng, s.me, chances::CONFIDE, 60)
     {
         return Act::Bid {
             frame: Frame::Confiding,
@@ -1090,7 +1106,9 @@ pub fn default_perform<I: Interlocutor + ?Sized>(
         chance += 10;
     }
     match meant {
-        Act::Gesture { gesture, topic } if gesture.hard() && roll(rng) < chance => {
+        Act::Gesture { gesture, topic }
+            if gesture.hard() && s.ctx.chance(rng, s.me, chances::MISFIRE, chance) =>
+        {
             let came_out = match gesture {
                 Gesture::Tease => Gesture::Jab,
                 _ => Gesture::Awkward,
@@ -1099,7 +1117,7 @@ pub fn default_perform<I: Interlocutor + ?Sized>(
         }
         Act::Answer {
             answer: BidAnswer::Away { account: true },
-        } if p.skill < 5 && roll(rng) < chance => Act::Answer {
+        } if p.skill < 5 && s.ctx.chance(rng, s.me, chances::MISFIRE, chance) => Act::Answer {
             answer: BidAnswer::Away { account: false },
         },
         other => other.clone(),
@@ -1144,10 +1162,12 @@ pub fn default_take_up<I: Interlocutor + ?Sized>(
     }
     let better = (5 + 4 * i16::from(p.charity) + 4 * i16::from(r.feeling.max(0))).clamp(0, 40);
     let worse = worse.clamp(0, 80);
-    let x = roll(rng);
-    let taken_as = if x < worse {
+    // Better is rolled only when not worse, so its odds are scaled to keep the overall
+    // chance of a better reading at `better` percent.
+    let better_given = (100 * better) / (100 - worse).max(1);
+    let taken_as = if s.ctx.chance(rng, s.me, chances::READ_WORSE, worse) {
         base.worse()
-    } else if x >= 100 - better {
+    } else if s.ctx.chance(rng, s.me, chances::READ_BETTER, better_given) {
         base.better()
     } else {
         base
@@ -1175,7 +1195,9 @@ pub fn default_take_up<I: Interlocutor + ?Sized>(
         if !s.bystanders.is_empty() {
             character -= 15;
         }
-        if roll(rng) < character.clamp(10, 95) {
+        if s.ctx
+            .chance(rng, s.me, chances::BLAME_CHARACTER, character.clamp(10, 95))
+        {
             Attribution::Character
         } else {
             Attribution::Situation

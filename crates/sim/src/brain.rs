@@ -28,9 +28,17 @@ pub struct Ctx<'a> {
     pub stock: &'a BTreeMap<u16, BTreeMap<String, u16>>,
     /// What the town keeps of recent events, with who could perceive each.
     pub record: &'a Record,
+    /// Chances a test has forced.
+    pub odds: &'a crate::odds::Odds,
 }
 
 impl Ctx<'_> {
+    /// Whether something with a `percent` chance happens to `who`, unless a test forced
+    /// `label`. Every roll that decides whether something happens goes through here.
+    pub fn chance(&self, rng: &mut Pcg32, who: VillagerId, label: &str, percent: i16) -> bool {
+        self.odds.chance(rng, who, label, percent)
+    }
+
     /// The topic `key`, which must be declared in the content (`content/topics/`). Panics
     /// on an undeclared key, so a typo fails the first test that reaches it.
     #[must_use]
@@ -80,6 +88,32 @@ impl Ctx<'_> {
             .place_index
             .get(id)
             .map(|&i| PlaceId(u16::try_from(i).expect("few places")))
+    }
+
+    /// A declared area: its place and rect. Panics on an undeclared id, like `topic`.
+    #[must_use]
+    pub fn area(&self, id: &str) -> (PlaceId, content::Rect) {
+        let a = self
+            .world
+            .area(id)
+            .unwrap_or_else(|| panic!("area {id} is not declared in content"));
+        (PlaceId(u16::try_from(a.place).expect("few places")), a.rect)
+    }
+
+    /// A random passable tile inside a declared area, if it has one.
+    #[must_use]
+    pub fn random_tile_in(&self, area: &str, rng: &mut Pcg32) -> Option<(PlaceId, Pos)> {
+        use rand::RngExt;
+        let (place, r) = self.area(area);
+        let candidates: Vec<Pos> = (r.y..r.bottom())
+            .flat_map(|y| (r.x..r.right()).map(move |x| Pos { x, y }))
+            .filter(|p| self.world.passable(place.index(), p.x, p.y))
+            .collect();
+        if candidates.is_empty() {
+            return None;
+        }
+        let n = u32::try_from(candidates.len()).expect("small area");
+        Some((place, candidates[rng.random_range(0..n) as usize]))
     }
 
     /// A random passable tile of the given cell kind in a place, for wandering.

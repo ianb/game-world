@@ -1,0 +1,53 @@
+{
+  "id": "abel",
+  "name": "Abel",
+  "home": "woodcutter",
+  "bed": "bed_abel",
+  "coins": 14,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_abel",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_abel",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_abel",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "block_abel",
+      "activity": "chop"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "block_abel",
+      "activity": "chop"
+    },
+    {
+      "days": "daily",
+      "at": "9:00pm",
+      "object": "bed_abel",
+      "activity": "sleep"
+    }
+  ],
+  "income": [
+    {
+      "days": "mon",
+      "at": "12:00pm",
+      "amount": 12,
+      "what": "timber"
+    }
+  ]
+}

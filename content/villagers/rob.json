@@ -1,0 +1,77 @@
+{
+  "id": "rob",
+  "name": "Rob",
+  "home": "cooper",
+  "bed": "bed_rob",
+  "coins": 22,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "weekday",
+      "at": "7:45am",
+      "object": "workbench_cooper",
+      "activity": "make-barrels"
+    },
+    {
+      "days": "weekday",
+      "at": "1:15pm",
+      "object": "workbench_cooper",
+      "activity": "make-barrels"
+    },
+    {
+      "days": "sat",
+      "at": "8:00am",
+      "object": "workbench_cooper",
+      "activity": "make-barrels"
+    },
+    {
+      "days": "weekday",
+      "at": "7:30pm",
+      "object": "table_tavern_3",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "10:30pm",
+      "object": "bed_rob",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "10:30am",
+      "object": "bench_townhall_3",
+      "activity": "meeting"
+    },
+    {
+      "days": "sat",
+      "at": "11:30am",
+      "object": "workbench_cooper",
+      "activity": "make-barrels"
+    }
+  ],
+  "income": [
+    {
+      "days": "fri",
+      "at": "4:00pm",
+      "amount": 14,
+      "what": "barrels to market"
+    }
+  ]
+}

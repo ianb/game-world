@@ -1,0 +1,73 @@
+{
+  "id": "lodge",
+  "zone": "town",
+  "at": {
+    "x": 106,
+    "y": 18
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 5,
+            "h": 4
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 6,
+            "y": 2
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_thorn",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "owner": "thorn",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_thorn",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 4
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "chest_lodge",
+          "kind": "chest",
+          "room": "room",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 2
+      }
+    }
+  ],
+  "walls": "brick"
+}

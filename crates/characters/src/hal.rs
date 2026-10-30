@@ -13,8 +13,8 @@
 //! neither of them.
 use crate::tom::YARD;
 use crate::toolbox::{
-    Plan, activity_of, buy_ale, counter_talk, go, go_tile, pay, pick, seen_seeking_out, stock,
-    think, think_aloud, villager, wait_minutes, weekday,
+    Plan, activity_of, buy_ale, counter_talk, go, go_area, in_area, pay, pick, seen_seeking_out,
+    stock, think, think_aloud, villager, wait_minutes, weekday,
 };
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
@@ -23,11 +23,9 @@ use sim::ids::VillagerId;
 use sim::protocol::{Act, Blame, Frame, Mishap};
 use sim::protocol::{Gesture, Topic};
 use sim::recall::SIGHT;
-use sim::social::{Episode, Interlocutor, Memory, Persona, Situation, act, default_next_act, roll};
+use sim::social::{Episode, Interlocutor, Memory, Persona, Situation, act, default_next_act};
 use sim::time::{TICKS_PER_DAY, Tick, Weekday};
 
-/// The east end of the street, where the road leaves the town.
-pub const ROAD_OUT: (u16, u16) = (46, 11);
 pub const FLOUR_PER_TRIP: i32 = 8;
 pub const ALE_PER_TRIP: i32 = 6;
 /// What the market charges him for a load, and what he charges in town.
@@ -54,6 +52,12 @@ pub const JEALOUSY_EASED: u8 = 2;
 pub const JEALOUS: u8 = 4;
 /// Out of 100: the chance of an afternoon call at the bakery on a day off the road.
 pub const CALL_CHANCE: u32 = 50;
+
+/// Chance labels, for tests to force.
+pub const CALLS: &str = "hal-calls";
+pub const COMPLIMENTS: &str = "hal-compliments";
+pub const JABS: &str = "hal-jabs";
+pub const CONFIDES_JEALOUSY: &str = "hal-confides-jealousy";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Hal {
@@ -173,12 +177,9 @@ impl Hal {
                         .max(v.pos.y.abs_diff(here.pos.y))
                         <= SIGHT
             });
-        let town = ctx.place_id("town");
         match near {
             Some(o) => Blame::Them(o),
-            None if Some(here.place) == town && YARD.contains(here.pos.x, here.pos.y) => {
-                Blame::Them(villager(ctx, "tom"))
-            }
+            None if in_area(ctx, villager(ctx, "hal"), YARD) => Blame::Them(villager(ctx, "tom")),
             None => Blame::World,
         }
     }
@@ -201,18 +202,16 @@ impl Hal {
             );
             self.noted_sensitivity = now;
         }
-        if matches!(weekday(ctx), Weekday::Mon | Weekday::Thu) {
-            plan.at(
-                7,
-                30,
-                go_tile(ctx, "town", ROAD_OUT.0, ROAD_OUT.1, "to-market"),
-            );
+        if matches!(weekday(ctx), Weekday::Mon | Weekday::Thu)
+            && let Some(go) = go_area(ctx, "road-out", "to-market", rng)
+        {
+            plan.at(7, 30, go);
             plan.at(
                 7,
                 30,
                 Command::Note("market day: out along the road".into()),
             );
-        } else if roll(rng) < i16::try_from(CALL_CHANCE).unwrap_or(0) {
+        } else if ctx.chance(rng, me, CALLS, i16::try_from(CALL_CHANCE).unwrap_or(0)) {
             plan.at(15, 30, go(ctx, "counter_bakery", "call-at-bakery"));
         }
         plan.build()
@@ -381,10 +380,13 @@ impl Interlocutor for Hal {
             return act(Gesture::Disclose, s.topic);
         }
         if s.turn >= 1 && s.frame != Frame::Confiding {
-            if s.other == mara && s.frame == Frame::SmallTalk && roll(rng) < 35 {
+            if s.other == mara
+                && s.frame == Frame::SmallTalk
+                && s.ctx.chance(rng, s.me, COMPLIMENTS, 35)
+            {
                 return act(Gesture::Compliment, s.topic);
             }
-            if jealous && Some(s.other) == self.rival && roll(rng) < 40 {
+            if jealous && Some(s.other) == self.rival && s.ctx.chance(rng, s.me, JABS, 40) {
                 return act(Gesture::Jab, s.topic);
             }
             if jealous
@@ -394,7 +396,7 @@ impl Interlocutor for Hal {
                 && self.mind.regard(s.other).familiarity >= 1
                 && !s.i_bid(Frame::Confiding)
                 && !self.mind.told_since(s.other, &sweet, week)
-                && roll(rng) < 50
+                && s.ctx.chance(rng, s.me, CONFIDES_JEALOUSY, 50)
             {
                 return Act::Bid {
                     frame: Frame::Confiding,
@@ -423,6 +425,16 @@ impl Interlocutor for Hal {
             .clamp(i16::from(TOUCHINESS_MIN), i16::from(TOUCHINESS_MAX));
         self.touchiness = u8::try_from(t).unwrap_or(TOUCHINESS_START);
         self.mind.remember(e);
+    }
+}
+
+impl crate::Character for Hal {
+    const ID: &'static str = "hal";
+    fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
+        Hal::plan_day(self, ctx, rng)
+    }
+    fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {
+        Hal::react(self, trigger, ctx, rng)
     }
 }
 

@@ -55,6 +55,7 @@ pub fn validate(content: &Content) -> Vec<ContentError> {
     let mut r = Report { errors: Vec::new() };
     check_ids(content, &mut r);
     check_topics(content, &mut r);
+    check_areas(content, &mut r);
     check_buildings(content, &mut r);
     if r.errors.iter().any(|e| e.severity == Severity::Error) {
         // Compilation assumes references resolve; stop here with the referential errors.
@@ -94,6 +95,25 @@ fn check_topics(content: &Content, r: &mut Report) {
         }
         if t.gloss.trim().is_empty() {
             r.error(format!("topic {}", t.id), "gloss is empty");
+        }
+    }
+}
+
+fn check_areas(content: &Content, r: &mut Report) {
+    let mut seen = BTreeSet::new();
+    for z in &content.zones {
+        for a in &z.areas {
+            let subject = format!("zones/{} area {}", z.id, a.id);
+            if !seen.insert(&a.id) {
+                r.error(&subject, "declared twice");
+            }
+            if a.rect.w == 0
+                || a.rect.h == 0
+                || a.rect.right() > z.width
+                || a.rect.bottom() > z.height
+            {
+                r.error(&subject, "rect is empty or outside the zone");
+            }
         }
     }
 }

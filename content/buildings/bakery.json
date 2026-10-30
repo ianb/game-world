@@ -2,8 +2,8 @@
   "id": "bakery",
   "zone": "town",
   "at": {
-    "x": 18,
-    "y": 4
+    "x": 58,
+    "y": 40
   },
   "floors": [
     {
@@ -26,7 +26,8 @@
             "y": 1,
             "w": 4,
             "h": 5
-          }
+          },
+          "flooring": "flagstone"
         }
       ],
       "openings": [
@@ -91,6 +92,15 @@
           },
           "stock": {
             "flour": 6
+          }
+        },
+        {
+          "id": "sacks_bakery",
+          "kind": "sacks",
+          "room": "kitchen",
+          "at": {
+            "x": 12,
+            "y": 3
           }
         }
       ],

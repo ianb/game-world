@@ -1,0 +1,51 @@
+{
+  "id": "jory",
+  "name": "Jory",
+  "home": "hollins",
+  "bed": "bed_jory",
+  "coins": 5,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_hollins",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_hollins",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_hollins",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "hay_hollins",
+      "activity": "farm"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "hay_hollins",
+      "activity": "farm"
+    },
+    {
+      "days": "sat",
+      "at": "7:30pm",
+      "object": "table_tavern_3",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "10:30pm",
+      "object": "bed_jory",
+      "activity": "sleep"
+    }
+  ]
+}

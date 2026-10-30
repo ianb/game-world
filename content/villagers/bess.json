@@ -1,0 +1,59 @@
+{
+  "id": "bess",
+  "name": "Bess",
+  "home": "sexton",
+  "bed": "bed_bess",
+  "coins": 12,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_bess",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_bess",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_bess",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "grave_1",
+      "activity": "tend-graves"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "chair_bess",
+      "activity": "rest"
+    },
+    {
+      "days": "sun",
+      "at": "9:40am",
+      "object": "pew_3",
+      "activity": "service"
+    },
+    {
+      "days": "daily",
+      "at": "8:00pm",
+      "object": "bed_bess",
+      "activity": "sleep"
+    }
+  ],
+  "income": [
+    {
+      "days": "mon",
+      "at": "9:00am",
+      "amount": 8,
+      "what": "sexton's wage"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "id": "moss",
+  "name": "Moss",
+  "home": "shepherd",
+  "bed": "bed_moss",
+  "coins": 10,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "5:30am",
+      "object": "table_moss",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_moss",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_moss",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00am",
+      "object": "pen_moss",
+      "activity": "shepherd"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "pen_moss",
+      "activity": "shepherd"
+    },
+    {
+      "days": "sat",
+      "at": "6:30pm",
+      "object": "table_tavern_2",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "8:30pm",
+      "object": "bed_moss",
+      "activity": "sleep"
+    }
+  ],
+  "income": [
+    {
+      "days": "sat",
+      "at": "5:00pm",
+      "amount": 9,
+      "what": "wool"
+    }
+  ]
+}

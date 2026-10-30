@@ -1,0 +1,63 @@
+{
+  "id": "jenna",
+  "name": "Jenna",
+  "home": "cooper",
+  "bed": "bed_jenna",
+  "coins": 10,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "stove_cooper",
+      "activity": "keep-house"
+    },
+    {
+      "days": "mon",
+      "at": "9:00am",
+      "object": "washtub_pond",
+      "activity": "wash"
+    },
+    {
+      "days": "thu",
+      "at": "9:00am",
+      "object": "washtub_pond",
+      "activity": "wash"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "stove_cooper",
+      "activity": "keep-house"
+    },
+    {
+      "days": "sun",
+      "at": "9:35am",
+      "object": "pew_2",
+      "activity": "service"
+    },
+    {
+      "days": "daily",
+      "at": "10:00pm",
+      "object": "bed_jenna",
+      "activity": "sleep"
+    }
+  ]
+}

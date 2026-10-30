@@ -1,0 +1,51 @@
+{
+  "id": "rosa",
+  "name": "Rosa",
+  "home": "dory",
+  "bed": "bed_rosa",
+  "coins": 8,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_dory",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_dory",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_dory",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "table_dory",
+      "activity": "keep-house"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "bench_green",
+      "activity": "keep-geese"
+    },
+    {
+      "days": "tue",
+      "at": "10:00am",
+      "object": "counter_store",
+      "activity": "shop"
+    },
+    {
+      "days": "daily",
+      "at": "9:30pm",
+      "object": "bed_rosa",
+      "activity": "sleep"
+    }
+  ]
+}

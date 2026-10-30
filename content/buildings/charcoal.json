@@ -1,0 +1,74 @@
+{
+  "id": "charcoal",
+  "zone": "town",
+  "at": {
+    "x": 68,
+    "y": 98
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 4,
+            "h": 3
+          },
+          "flooring": "earth"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 5,
+            "y": 2
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_rook",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "owner": "rook",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_rook",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 3
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "logs_charcoal",
+          "kind": "logs",
+          "room": "room",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 2
+      }
+    }
+  ],
+  "walls": "boards"
+}

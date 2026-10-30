@@ -1,0 +1,65 @@
+{
+  "id": "shack",
+  "zone": "town",
+  "at": {
+    "x": 36,
+    "y": 58
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 4,
+            "h": 3
+          },
+          "flooring": "earth"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 5,
+            "y": 2
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_ned",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "owner": "ned",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_ned",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 3
+          },
+          "activity": "eat"
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 2
+      }
+    }
+  ],
+  "walls": "boards"
+}

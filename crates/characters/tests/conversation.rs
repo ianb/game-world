@@ -3,7 +3,7 @@
 use characters::Town;
 use content::{Content, load_dir};
 use sim::Sim;
-use sim::protocol::{Act, BidAnswer, Caught, Emitted, Frame};
+use sim::protocol::{Act, BidAnswer, Caught, Emitted};
 use sim::time::{TICKS_PER_DAY, Tick};
 use std::path::PathBuf;
 
@@ -17,8 +17,7 @@ fn at(day: u32, hour: u32, minute: u32) -> Tick {
 
 #[test]
 fn four_weeks_of_talk_hold_misfires_misreadings_breaches_and_refusals() {
-    // Seed 2: on seed 1 nobody's bid to confide is taken up in these four weeks.
-    let mut sim: Sim<Town> = Sim::new(2, town());
+    let mut sim: Sim<Town> = Sim::new(1, town());
     let events = sim.step_until(at(28, 0, 0)).unwrap();
     let pip = sim.ctx().villager_id("pip").unwrap();
     let misfires = events
@@ -53,25 +52,14 @@ fn four_weeks_of_talk_hold_misfires_misreadings_breaches_and_refusals() {
             )
         })
         .count();
-    let confidings = events
-        .iter()
-        .filter(|e| {
-            matches!(
-                e,
-                Emitted::FrameChanged {
-                    to: Frame::Confiding,
-                    ..
-                }
-            )
-        })
-        .count();
     let counts = format!(
         "misfires {misfires}, misreadings {misreadings}, Pip's breaches {pip_breaches}, \
-         refusals {refusals}, overheard {overheard}, confidings {confidings}"
+         refusals {refusals}, overheard {overheard}"
     );
     assert!(misfires > 0 && misreadings > 0, "{counts}");
     assert!(pip_breaches > 0 && refusals > 0, "{counts}");
-    assert!(overheard > 0 && confidings > 0, "{counts}");
+    // Confiding is set up as a scene in `tests/scenes.rs`.
+    assert!(overheard > 0, "{counts}");
     // The bulk of conversations still go as meant and as taken.
     let turns = events
         .iter()

@@ -16,7 +16,6 @@ fn town() -> Content {
 
 #[test]
 fn the_triangle_runs_on_what_each_of_them_perceives() {
-    // On seed 1, Mara learns in the second week, from Hal muttering at the tavern.
     let mut sim: Sim<Town> = Sim::new(1, town());
     let ctx = sim.ctx();
     let [hal, mara, tom] = ["hal", "mara", "tom"].map(|v| ctx.villager_id(v).unwrap());

@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 19;
+pub const PROTOCOL_VERSION: u32 = 20;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -733,6 +733,19 @@ pub struct RoofView {
     pub building: String,
     pub place: PlaceId,
     pub rect: Rect,
+    pub walls: content::Walling,
+}
+
+/// A room, for drawing its floor.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct RoomView {
+    pub building: String,
+    pub room: String,
+    pub place: PlaceId,
+    pub rect: Rect,
+    pub flooring: content::Flooring,
 }
 
 /// The compiled world as the viewer needs it: static for the life of a town.
@@ -744,6 +757,7 @@ pub struct WorldView {
     pub objects: Vec<ObjectView>,
     pub doors: Vec<DoorView>,
     pub roofs: Vec<RoofView>,
+    pub rooms: Vec<RoomView>,
 }
 
 /// Snapshot of the clock, for the viewer's header.
@@ -810,6 +824,18 @@ pub fn world_view<C: CharacterSet>(sim: &Sim<C>) -> WorldView {
                 building: r.building.clone(),
                 place: place_id(r.place),
                 rect: r.rect,
+                walls: r.walls,
+            })
+            .collect(),
+        rooms: w
+            .rooms
+            .iter()
+            .map(|r| RoomView {
+                building: r.building.clone(),
+                room: r.room.clone(),
+                place: place_id(r.place),
+                rect: r.rect,
+                flooring: r.flooring,
             })
             .collect(),
     }

@@ -1,0 +1,51 @@
+{
+  "id": "lottie",
+  "name": "Lottie",
+  "home": "pike",
+  "bed": "bed_lottie",
+  "coins": 6,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_pike",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_pike",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_pike",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "table_pike",
+      "activity": "chores"
+    },
+    {
+      "days": "daily",
+      "at": "1:30pm",
+      "object": "table_pike",
+      "activity": "chores"
+    },
+    {
+      "days": "sun",
+      "at": "9:35am",
+      "object": "pew_4",
+      "activity": "service"
+    },
+    {
+      "days": "daily",
+      "at": "10:30pm",
+      "object": "bed_lottie",
+      "activity": "sleep"
+    }
+  ]
+}

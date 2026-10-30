@@ -1,7 +1,7 @@
 //! From authored rooms and openings to tile grids. Inline floors are composited into their
 //! zone; detached floors become places of their own. Output is what the sim and the views
 //! consume.
-use crate::model::{Building, Content, Floor, Pos, Rect};
+use crate::model::{Building, Content, Floor, Flooring, Pos, Rect, Walling};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -107,6 +107,7 @@ pub struct CompiledRoom {
     pub room: String,
     pub place: usize,
     pub rect: Rect,
+    pub flooring: Flooring,
 }
 
 /// The roof over an inline floor: hidden when the player is inside.
@@ -115,6 +116,7 @@ pub struct Roof {
     pub building: String,
     pub place: usize,
     pub rect: Rect,
+    pub walls: Walling,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -163,11 +165,26 @@ pub struct World {
     pub objects: Vec<CompiledObject>,
     pub doors: Vec<CompiledDoor>,
     pub roofs: Vec<Roof>,
+    pub areas: Vec<Area>,
     /// place id -> index
     pub place_index: BTreeMap<String, usize>,
 }
 
+/// A named stretch of ground in a place.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub struct Area {
+    pub id: String,
+    pub place: usize,
+    pub rect: Rect,
+}
+
 impl World {
+    /// The area with this id, if declared.
+    #[must_use]
+    pub fn area(&self, id: &str) -> Option<&Area> {
+        self.areas.iter().find(|a| a.id == id)
+    }
+
     #[must_use]
     pub fn place(&self, id: &str) -> Option<&Place> {
         self.place_index.get(id).map(|&i| &self.places[i])
@@ -231,16 +248,24 @@ pub fn compile(content: &Content) -> World {
             arrival: z.arrival,
             passable: Vec::new(),
         };
-        for r in &z.paths {
-            fill(&mut place, *r, Cell::Path);
-        }
         for r in &z.blocked {
             fill(&mut place, *r, Cell::Blocked);
         }
         for r in &z.water {
             fill(&mut place, *r, Cell::Water);
         }
+        // Paths last: a road across water is a bridge, and a track through woods is cut.
+        for r in &z.paths {
+            fill(&mut place, *r, Cell::Path);
+        }
         let idx = add_place(&mut world, place);
+        for a in &z.areas {
+            world.areas.push(Area {
+                id: a.id.clone(),
+                place: idx,
+                rect: a.rect,
+            });
+        }
         for o in &z.objects {
             world.objects.push(CompiledObject {
                 id: o.id.clone(),
@@ -346,6 +371,7 @@ fn paint_floor(world: &mut World, place_idx: usize, b: &Building, f: &Floor, off
             room: room.id.clone(),
             place: place_idx,
             rect,
+            flooring: room.flooring,
         });
     }
     for o in &f.openings {
@@ -383,6 +409,7 @@ fn compile_inline(world: &mut World, b: &Building, f: &Floor) {
                 w: bbox.w,
                 h: bbox.h,
             },
+            walls: b.walls,
         });
     }
 }

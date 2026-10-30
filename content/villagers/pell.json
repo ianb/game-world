@@ -1,0 +1,57 @@
+{
+  "id": "pell",
+  "name": "Pell",
+  "home": "manor",
+  "bed": "bed_pell",
+  "coins": 30,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_manor",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_manor",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_manor",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:30am",
+      "object": "desk_pell",
+      "activity": "accounts"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "desk_pell",
+      "activity": "accounts"
+    },
+    {
+      "days": "daily",
+      "at": "10:00pm",
+      "object": "bed_pell",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "10:30am",
+      "object": "lectern_townhall",
+      "activity": "meeting"
+    },
+    {
+      "days": "sat",
+      "at": "11:30am",
+      "object": "desk_townhall",
+      "activity": "accounts"
+    }
+  ]
+}

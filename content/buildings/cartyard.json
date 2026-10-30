@@ -2,8 +2,8 @@
   "id": "cartyard",
   "zone": "town",
   "at": {
-    "x": 3,
-    "y": 25
+    "x": 43,
+    "y": 61
   },
   "floors": [
     {
@@ -17,7 +17,8 @@
             "y": 1,
             "w": 8,
             "h": 4
-          }
+          },
+          "flooring": "earth"
         }
       ],
       "openings": [
@@ -63,6 +64,24 @@
             "y": 4
           },
           "activity": "eat"
+        },
+        {
+          "id": "bucket_cartyard",
+          "kind": "bucket",
+          "room": "shed",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        },
+        {
+          "id": "logs_cartyard",
+          "kind": "logs",
+          "room": "shed",
+          "at": {
+            "x": 7,
+            "y": 1
+          }
         }
       ],
       "arrival": {
@@ -70,5 +89,6 @@
         "y": 2
       }
     }
-  ]
+  ],
+  "walls": "boards"
 }

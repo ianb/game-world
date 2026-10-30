@@ -1,0 +1,86 @@
+{
+  "id": "herbalist",
+  "zone": "town",
+  "at": {
+    "x": 30,
+    "y": 74
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 6,
+            "h": 4
+          },
+          "flooring": "earth"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 0
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_wynn",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 3
+          },
+          "owner": "wynn",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_wynn",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 5,
+            "y": 3
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "shelf_wynn",
+          "kind": "shelf",
+          "room": "room",
+          "at": {
+            "x": 6,
+            "y": 1
+          },
+          "activity": "mix",
+          "stock": {
+            "remedy": 3
+          }
+        },
+        {
+          "id": "hearth_herbalist",
+          "kind": "hearth",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 2
+      }
+    }
+  ]
+}

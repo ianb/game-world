@@ -1,0 +1,71 @@
+{
+  "id": "silas",
+  "name": "Silas",
+  "home": "ashby",
+  "bed": "bed_silas",
+  "coins": 60,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_ashby",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_ashby",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_ashby",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_ashby",
+      "activity": "farm"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "table_ashby",
+      "activity": "farm"
+    },
+    {
+      "days": "daily",
+      "at": "8:30pm",
+      "object": "strongbox_ashby",
+      "activity": "count-coins"
+    },
+    {
+      "days": "daily",
+      "at": "9:15pm",
+      "object": "bed_silas",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "10:30am",
+      "object": "bench_townhall_2",
+      "activity": "meeting"
+    },
+    {
+      "days": "sat",
+      "at": "11:30am",
+      "object": "table_ashby",
+      "activity": "farm"
+    }
+  ],
+  "income": [
+    {
+      "days": "sat",
+      "at": "5:00pm",
+      "amount": 26,
+      "what": "grain"
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "id": "smithy",
+  "zone": "town",
+  "at": {
+    "x": 106,
+    "y": 38
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "forge",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 6,
+            "h": 5
+          },
+          "flooring": "cobbles"
+        },
+        {
+          "id": "home",
+          "rect": {
+            "x": 8,
+            "y": 1,
+            "w": 5,
+            "h": 5
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 4,
+            "y": 6
+          },
+          "between": [
+            "forge"
+          ]
+        },
+        {
+          "at": {
+            "x": 7,
+            "y": 3
+          },
+          "between": [
+            "forge",
+            "home"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "forge_smithy",
+          "kind": "stove",
+          "room": "forge",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "activity": "forge",
+          "stock": {
+            "charcoal": 10
+          }
+        },
+        {
+          "id": "anvil_smithy",
+          "kind": "anvil",
+          "room": "forge",
+          "at": {
+            "x": 3,
+            "y": 3
+          },
+          "activity": "smith"
+        },
+        {
+          "id": "bed_bram",
+          "kind": "bed",
+          "room": "home",
+          "at": {
+            "x": 8,
+            "y": 1
+          },
+          "owner": "bram",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_greta",
+          "kind": "bed",
+          "room": "home",
+          "at": {
+            "x": 9,
+            "y": 1
+          },
+          "owner": "greta",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_smithy",
+          "kind": "table",
+          "room": "home",
+          "at": {
+            "x": 11,
+            "y": 4
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "weaponrack_smithy",
+          "kind": "weaponrack",
+          "room": "forge",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        },
+        {
+          "id": "bucket_smithy",
+          "kind": "bucket",
+          "room": "forge",
+          "at": {
+            "x": 5,
+            "y": 1
+          }
+        },
+        {
+          "id": "logs_smithy",
+          "kind": "logs",
+          "room": "forge",
+          "at": {
+            "x": 1,
+            "y": 3
+          }
+        }
+      ],
+      "arrival": {
+        "x": 4,
+        "y": 4
+      }
+    }
+  ],
+  "walls": "stone"
+}

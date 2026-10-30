@@ -1,0 +1,45 @@
+{
+  "id": "ivo",
+  "name": "Ivo",
+  "home": "hermitage",
+  "bed": "bed_ivo",
+  "coins": 5,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:00am",
+      "object": "table_ivo",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:00pm",
+      "object": "table_ivo",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "5:30pm",
+      "object": "table_ivo",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "spring_hermit",
+      "activity": "forage"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "spring_hermit",
+      "activity": "forage"
+    },
+    {
+      "days": "daily",
+      "at": "8:00pm",
+      "object": "bed_ivo",
+      "activity": "sleep"
+    }
+  ]
+}

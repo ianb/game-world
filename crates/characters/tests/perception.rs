@@ -45,7 +45,7 @@ fn the_town_keeps_what_is_worth_knowing_with_who_could_perceive_it() {
 
 #[test]
 fn tom_blames_the_town_and_it_boils_over() {
-    let mut sim: Sim<Town> = Sim::new(2, town());
+    let mut sim: Sim<Town> = Sim::new(1, town());
     let events = sim.step_until(Tick(28 * TICKS_PER_DAY)).unwrap();
     let tom = sim.ctx().villager_id("tom").unwrap();
     let blamed_world = events

@@ -37,6 +37,22 @@
     "villagers"
   ],
   "$defs": {
+    "AreaSpec": {
+      "description": "A named stretch of ground in a zone.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "rect": {
+          "$ref": "#/$defs/Rect"
+        }
+      },
+      "required": [
+        "id",
+        "rect"
+      ]
+    },
     "Building": {
       "type": "object",
       "properties": {
@@ -59,6 +75,10 @@
         },
         "id": {
           "type": "string"
+        },
+        "walls": {
+          "$ref": "#/$defs/Walling",
+          "default": "timber"
         },
         "zone": {
           "type": "string"
@@ -204,6 +224,41 @@
         "level",
         "rooms",
         "arrival"
+      ]
+    },
+    "Flooring": {
+      "description": "What a room's floor is made of. Only the views read it.",
+      "oneOf": [
+        {
+          "description": "Light boards: houses and shops.",
+          "type": "string",
+          "const": "planks"
+        },
+        {
+          "description": "Dark boards: halls, the manor, the tavern.",
+          "type": "string",
+          "const": "darkplanks"
+        },
+        {
+          "description": "Large stone slabs: the chapel, the town hall.",
+          "type": "string",
+          "const": "flagstone"
+        },
+        {
+          "description": "Rough stones: workshops, the smithy, barns.",
+          "type": "string",
+          "const": "cobbles"
+        },
+        {
+          "description": "Black and white tiles: the manor's best rooms.",
+          "type": "string",
+          "const": "checker"
+        },
+        {
+          "description": "Beaten earth: huts and sheds.",
+          "type": "string",
+          "const": "earth"
+        }
       ]
     },
     "Income": {
@@ -379,6 +434,10 @@
     "Room": {
       "type": "object",
       "properties": {
+        "flooring": {
+          "$ref": "#/$defs/Flooring",
+          "default": "planks"
+        },
         "id": {
           "type": "string"
         },
@@ -515,10 +574,40 @@
         "bed"
       ]
     },
+    "Walling": {
+      "description": "What a building's outside walls are made of. Only the views read it.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "stone",
+            "brick"
+          ]
+        },
+        {
+          "description": "Half-timbered plaster.",
+          "type": "string",
+          "const": "timber"
+        },
+        {
+          "description": "Rough boards: huts, barns, sheds.",
+          "type": "string",
+          "const": "boards"
+        }
+      ]
+    },
     "Zone": {
       "description": "An outdoor place. One continuous grid at the same scale as interiors.",
       "type": "object",
       "properties": {
+        "areas": {
+          "description": "Named stretches of ground that character code refers to: a yard to weed, a field to\nwork, a bank to fish from. In zone coordinates.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AreaSpec"
+          }
+        },
         "arrival": {
           "description": "Where a debug warp lands.",
           "$ref": "#/$defs/Pos"

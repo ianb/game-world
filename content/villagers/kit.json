@@ -1,0 +1,63 @@
+{
+  "id": "kit",
+  "name": "Kit",
+  "home": "cooper",
+  "bed": "bed_kit",
+  "coins": 1,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_cooper",
+      "activity": "eat"
+    },
+    {
+      "days": "weekday",
+      "at": "8:40am",
+      "object": "desk_1",
+      "activity": "school"
+    },
+    {
+      "days": "weekday",
+      "at": "1:00pm",
+      "object": "desk_1",
+      "activity": "school"
+    },
+    {
+      "days": "weekday",
+      "at": "3:30pm",
+      "object": "stove_cooper",
+      "activity": "play"
+    },
+    {
+      "days": "weekend",
+      "at": "9:00am",
+      "object": "stove_cooper",
+      "activity": "play"
+    },
+    {
+      "days": "sun",
+      "at": "9:35am",
+      "object": "pew_2",
+      "activity": "service"
+    },
+    {
+      "days": "daily",
+      "at": "8:00pm",
+      "object": "bed_kit",
+      "activity": "sleep"
+    }
+  ]
+}

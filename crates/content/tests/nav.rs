@@ -100,9 +100,9 @@ fn door_filter_can_close_the_stairs() {
 fn grid_path_walks_adjacent_passable_tiles() {
     let world = compile::compile(&town());
     let town = world.place_index["town"];
-    let path = nav::grid_path(&world, town, Pos { x: 2, y: 2 }, Pos { x: 37, y: 27 }).unwrap();
-    assert_eq!(path.first(), Some(&Pos { x: 2, y: 2 }));
-    assert_eq!(path.last(), Some(&Pos { x: 37, y: 27 }));
+    let path = nav::grid_path(&world, town, Pos { x: 42, y: 38 }, Pos { x: 77, y: 63 }).unwrap();
+    assert_eq!(path.first(), Some(&Pos { x: 42, y: 38 }));
+    assert_eq!(path.last(), Some(&Pos { x: 77, y: 63 }));
     for w in path.windows(2) {
         let (a, b) = (w[0], w[1]);
         assert_eq!(a.x.abs_diff(b.x) + a.y.abs_diff(b.y), 1);
@@ -128,9 +128,9 @@ fn routes_prefer_the_road_over_grass() {
     // so the route follows the street, the lane and the plaza round the tavern instead of
     // cutting across the green.
     let route = nav
-        .route(&world, Spot::new(townp, 13, 11), Spot::new(townp, 9, 22))
+        .route(&world, Spot::new(townp, 53, 47), Spot::new(townp, 49, 58))
         .unwrap();
-    let path = nav::grid_path(&world, townp, Pos { x: 13, y: 11 }, Pos { x: 9, y: 22 }).unwrap();
+    let path = nav::grid_path(&world, townp, Pos { x: 53, y: 47 }, Pos { x: 49, y: 58 }).unwrap();
     let on_road = path
         .iter()
         .filter(|p| world.places[townp].cell(p.x, p.y) == content::Cell::Path)

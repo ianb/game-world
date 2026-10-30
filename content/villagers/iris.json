@@ -1,0 +1,65 @@
+{
+  "id": "iris",
+  "name": "Iris",
+  "home": "reed",
+  "bed": "bed_iris",
+  "coins": 10,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_reed",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_reed",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_reed",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "loom_reed",
+      "activity": "weave"
+    },
+    {
+      "days": "daily",
+      "at": "1:30pm",
+      "object": "loom_reed",
+      "activity": "weave"
+    },
+    {
+      "days": "thu",
+      "at": "11:00am",
+      "object": "counter_store",
+      "activity": "shop"
+    },
+    {
+      "days": "daily",
+      "at": "10:00pm",
+      "object": "bed_iris",
+      "activity": "sleep"
+    },
+    {
+      "days": "sat",
+      "at": "8:00am",
+      "object": "stall_iris",
+      "activity": "sell"
+    }
+  ],
+  "income": [
+    {
+      "days": "sat",
+      "at": "10:00am",
+      "amount": 10,
+      "what": "cloth"
+    }
+  ]
+}

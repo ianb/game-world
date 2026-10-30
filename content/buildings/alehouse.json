@@ -1,0 +1,157 @@
+{
+  "id": "alehouse",
+  "zone": "town",
+  "at": {
+    "x": 124,
+    "y": 50
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "bar",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 8,
+            "h": 6
+          },
+          "flooring": "darkplanks"
+        },
+        {
+          "id": "back",
+          "rect": {
+            "x": 10,
+            "y": 1,
+            "w": 4,
+            "h": 6
+          },
+          "flooring": "cobbles"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 4,
+            "y": 0
+          },
+          "between": [
+            "bar"
+          ]
+        },
+        {
+          "at": {
+            "x": 9,
+            "y": 5
+          },
+          "between": [
+            "bar",
+            "back"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bar_alehouse",
+          "kind": "counter",
+          "room": "bar",
+          "at": {
+            "x": 4,
+            "y": 2
+          },
+          "activity": "keep-bar",
+          "stock": {
+            "ale": 8
+          }
+        },
+        {
+          "id": "table_alehouse_1",
+          "kind": "table",
+          "room": "bar",
+          "at": {
+            "x": 2,
+            "y": 5
+          },
+          "activity": "drink"
+        },
+        {
+          "id": "table_alehouse_2",
+          "kind": "table",
+          "room": "bar",
+          "at": {
+            "x": 7,
+            "y": 5
+          },
+          "activity": "drink"
+        },
+        {
+          "id": "keg_alehouse",
+          "kind": "barrel",
+          "room": "bar",
+          "at": {
+            "x": 8,
+            "y": 1
+          },
+          "activity": "tap"
+        },
+        {
+          "id": "bed_dot",
+          "kind": "bed",
+          "room": "back",
+          "at": {
+            "x": 10,
+            "y": 1
+          },
+          "owner": "dot",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_wat",
+          "kind": "bed",
+          "room": "back",
+          "at": {
+            "x": 13,
+            "y": 1
+          },
+          "owner": "wat",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_lowe",
+          "kind": "table",
+          "room": "back",
+          "at": {
+            "x": 12,
+            "y": 5
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "copper_alehouse",
+          "kind": "copper",
+          "room": "back",
+          "at": {
+            "x": 10,
+            "y": 3
+          },
+          "activity": "brew"
+        },
+        {
+          "id": "barrels_alehouse",
+          "kind": "barrels",
+          "room": "back",
+          "at": {
+            "x": 13,
+            "y": 3
+          }
+        }
+      ],
+      "arrival": {
+        "x": 5,
+        "y": 3
+      }
+    }
+  ]
+}

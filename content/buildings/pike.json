@@ -1,0 +1,93 @@
+{
+  "id": "pike",
+  "zone": "town",
+  "at": {
+    "x": 74,
+    "y": 38
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 7,
+            "h": 5
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 4,
+            "y": 6
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_hester",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "owner": "hester",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_lottie",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 7,
+            "y": 1
+          },
+          "owner": "lottie",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_pike",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 4,
+            "y": 2
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "chair_window",
+          "kind": "chair",
+          "room": "room",
+          "at": {
+            "x": 6,
+            "y": 5
+          },
+          "activity": "watch"
+        },
+        {
+          "id": "clock_pike",
+          "kind": "clock",
+          "room": "room",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 3
+      }
+    }
+  ]
+}

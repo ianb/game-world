@@ -1,95 +1,383 @@
 {
   "id": "town",
-  "width": 48,
-  "height": 36,
+  "width": 150,
+  "height": 115,
   "blocked": [
     {
       "x": 0,
       "y": 0,
-      "w": 48,
-      "h": 1
+      "w": 150,
+      "h": 2
     },
     {
       "x": 0,
-      "y": 0,
-      "w": 1,
-      "h": 36
+      "y": 2,
+      "w": 2,
+      "h": 84
     },
     {
-      "x": 47,
-      "y": 0,
-      "w": 1,
-      "h": 36
+      "x": 148,
+      "y": 2,
+      "w": 2,
+      "h": 16
     },
     {
-      "x": 0,
-      "y": 35,
-      "w": 48,
-      "h": 1
+      "x": 142,
+      "y": 18,
+      "w": 8,
+      "h": 14
     },
     {
-      "x": 38,
+      "x": 40,
       "y": 27,
+      "w": 8,
+      "h": 6
+    },
+    {
+      "x": 104,
+      "y": 28,
+      "w": 12,
+      "h": 6
+    },
+    {
+      "x": 148,
+      "y": 32,
+      "w": 2,
+      "h": 64
+    },
+    {
+      "x": 78,
+      "y": 63,
       "w": 6,
       "h": 5
-    }
-  ],
-  "water": [
+    },
     {
-      "x": 30,
-      "y": 20,
-      "w": 6,
-      "h": 5
-    }
-  ],
-  "paths": [
+      "x": 0,
+      "y": 86,
+      "w": 96,
+      "h": 2
+    },
     {
-      "x": 13,
-      "y": 10,
-      "w": 1,
+      "x": 0,
+      "y": 88,
+      "w": 40,
+      "h": 10
+    },
+    {
+      "x": 62,
+      "y": 88,
+      "w": 34,
+      "h": 8
+    },
+    {
+      "x": 62,
+      "y": 96,
+      "w": 4,
+      "h": 4
+    },
+    {
+      "x": 80,
+      "y": 96,
+      "w": 16,
+      "h": 10
+    },
+    {
+      "x": 104,
+      "y": 96,
+      "w": 46,
+      "h": 17
+    },
+    {
+      "x": 0,
+      "y": 98,
+      "w": 8,
+      "h": 10
+    },
+    {
+      "x": 22,
+      "y": 98,
+      "w": 18,
       "h": 2
     },
     {
       "x": 22,
-      "y": 11,
+      "y": 100,
+      "w": 44,
+      "h": 6
+    },
+    {
+      "x": 22,
+      "y": 106,
+      "w": 74,
+      "h": 2
+    },
+    {
+      "x": 0,
+      "y": 108,
+      "w": 96,
+      "h": 5
+    },
+    {
+      "x": 0,
+      "y": 113,
+      "w": 150,
+      "h": 2
+    }
+  ],
+  "water": [
+    {
+      "x": 70,
+      "y": 56,
+      "w": 6,
+      "h": 5
+    },
+    {
+      "x": 100,
+      "y": 2,
+      "w": 3,
+      "h": 111
+    }
+  ],
+  "paths": [
+    {
+      "x": 53,
+      "y": 46,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "x": 62,
+      "y": 47,
       "w": 1,
       "h": 1
     },
     {
-      "x": 8,
-      "y": 11,
+      "x": 48,
+      "y": 47,
       "w": 39,
       "h": 1
     },
     {
-      "x": 20,
-      "y": 12,
+      "x": 60,
+      "y": 48,
       "w": 1,
       "h": 9
     },
     {
-      "x": 17,
-      "y": 19,
+      "x": 57,
+      "y": 55,
       "w": 7,
       "h": 3
     },
     {
-      "x": 9,
-      "y": 22,
+      "x": 49,
+      "y": 58,
       "w": 9,
       "h": 1
     },
     {
-      "x": 37,
-      "y": 12,
+      "x": 77,
+      "y": 48,
       "w": 1,
       "h": 1
     },
     {
-      "x": 8,
-      "y": 22,
+      "x": 48,
+      "y": 58,
       "w": 1,
       "h": 3
+    },
+    {
+      "x": 2,
+      "y": 47,
+      "w": 146,
+      "h": 1
+    },
+    {
+      "x": 60,
+      "y": 13,
+      "w": 1,
+      "h": 34
+    },
+    {
+      "x": 5,
+      "y": 14,
+      "w": 93,
+      "h": 1
+    },
+    {
+      "x": 91,
+      "y": 15,
+      "w": 1,
+      "h": 5
+    },
+    {
+      "x": 5,
+      "y": 9,
+      "w": 1,
+      "h": 5
+    },
+    {
+      "x": 12,
+      "y": 44,
+      "w": 1,
+      "h": 3
+    },
+    {
+      "x": 23,
+      "y": 42,
+      "w": 1,
+      "h": 5
+    },
+    {
+      "x": 32,
+      "y": 45,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "x": 7,
+      "y": 48,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "x": 33,
+      "y": 48,
+      "w": 1,
+      "h": 26
+    },
+    {
+      "x": 42,
+      "y": 60,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "x": 54,
+      "y": 58,
+      "w": 1,
+      "h": 13
+    },
+    {
+      "x": 48,
+      "y": 71,
+      "w": 43,
+      "h": 1
+    },
+    {
+      "x": 59,
+      "y": 72,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "x": 72,
+      "y": 72,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "x": 48,
+      "y": 72,
+      "w": 1,
+      "h": 17
+    },
+    {
+      "x": 61,
+      "y": 97,
+      "w": 6,
+      "h": 1
+    },
+    {
+      "x": 22,
+      "y": 96,
+      "w": 18,
+      "h": 1
+    },
+    {
+      "x": 22,
+      "y": 97,
+      "w": 1,
+      "h": 4
+    },
+    {
+      "x": 90,
+      "y": 72,
+      "w": 1,
+      "h": 17
+    },
+    {
+      "x": 90,
+      "y": 89,
+      "w": 16,
+      "h": 1
+    },
+    {
+      "x": 122,
+      "y": 17,
+      "w": 1,
+      "h": 66
+    },
+    {
+      "x": 123,
+      "y": 17,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "x": 113,
+      "y": 20,
+      "w": 9,
+      "h": 1
+    },
+    {
+      "x": 110,
+      "y": 45,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "x": 127,
+      "y": 46,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "x": 140,
+      "y": 45,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "x": 128,
+      "y": 48,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "x": 109,
+      "y": 61,
+      "w": 13,
+      "h": 1
+    },
+    {
+      "x": 109,
+      "y": 62,
+      "w": 1,
+      "h": 2
+    },
+    {
+      "x": 123,
+      "y": 66,
+      "w": 3,
+      "h": 1
+    },
+    {
+      "x": 78,
+      "y": 45,
+      "w": 1,
+      "h": 2
     }
   ],
   "objects": [
@@ -97,8 +385,8 @@
       "id": "well_square",
       "kind": "well",
       "at": {
-        "x": 22,
-        "y": 16
+        "x": 62,
+        "y": 52
       },
       "activity": "drink"
     },
@@ -106,8 +394,8 @@
       "id": "privy_house",
       "kind": "privy",
       "at": {
-        "x": 2,
-        "y": 8
+        "x": 42,
+        "y": 44
       },
       "activity": "relieve"
     },
@@ -115,8 +403,8 @@
       "id": "privy_tavern",
       "kind": "privy",
       "at": {
-        "x": 17,
-        "y": 15
+        "x": 57,
+        "y": 51
       },
       "activity": "relieve"
     },
@@ -124,8 +412,8 @@
       "id": "privy_cottage",
       "kind": "privy",
       "at": {
-        "x": 44,
-        "y": 15
+        "x": 84,
+        "y": 51
       },
       "activity": "relieve"
     },
@@ -133,14 +421,651 @@
       "id": "bench_square",
       "kind": "bench",
       "at": {
-        "x": 24,
-        "y": 19
+        "x": 64,
+        "y": 55
       },
       "activity": "rest"
+    },
+    {
+      "id": "well_chapel",
+      "kind": "well",
+      "at": {
+        "x": 14,
+        "y": 49
+      },
+      "activity": "drink"
+    },
+    {
+      "id": "well_hollins",
+      "kind": "well",
+      "at": {
+        "x": 25,
+        "y": 15
+      },
+      "activity": "drink"
+    },
+    {
+      "id": "well_ashby",
+      "kind": "well",
+      "at": {
+        "x": 70,
+        "y": 15
+      },
+      "activity": "drink"
+    },
+    {
+      "id": "well_hamlet",
+      "kind": "well",
+      "at": {
+        "x": 115,
+        "y": 55
+      },
+      "activity": "drink"
+    },
+    {
+      "id": "well_manor",
+      "kind": "well",
+      "at": {
+        "x": 130,
+        "y": 19
+      },
+      "activity": "drink"
+    },
+    {
+      "id": "spring_woods",
+      "kind": "well",
+      "at": {
+        "x": 56,
+        "y": 92
+      },
+      "activity": "drink"
+    },
+    {
+      "id": "spring_hermit",
+      "kind": "well",
+      "at": {
+        "x": 17,
+        "y": 101
+      },
+      "activity": "drink"
+    },
+    {
+      "id": "well_mill",
+      "kind": "well",
+      "at": {
+        "x": 95,
+        "y": 16
+      },
+      "activity": "drink"
+    },
+    {
+      "id": "spring_shepherd",
+      "kind": "well",
+      "at": {
+        "x": 9,
+        "y": 10
+      },
+      "activity": "drink"
+    },
+    {
+      "id": "privy_chapel",
+      "kind": "privy",
+      "at": {
+        "x": 18,
+        "y": 45
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_hollins",
+      "kind": "privy",
+      "at": {
+        "x": 36,
+        "y": 15
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_ashby",
+      "kind": "privy",
+      "at": {
+        "x": 82,
+        "y": 13
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_hamlet",
+      "kind": "privy",
+      "at": {
+        "x": 119,
+        "y": 58
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_manor",
+      "kind": "privy",
+      "at": {
+        "x": 117,
+        "y": 13
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_woods",
+      "kind": "privy",
+      "at": {
+        "x": 58,
+        "y": 96
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_south",
+      "kind": "privy",
+      "at": {
+        "x": 77,
+        "y": 74
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_fisher",
+      "kind": "privy",
+      "at": {
+        "x": 113,
+        "y": 88
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_west",
+      "kind": "privy",
+      "at": {
+        "x": 38,
+        "y": 66
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_shepherd",
+      "kind": "privy",
+      "at": {
+        "x": 10,
+        "y": 6
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "privy_store",
+      "kind": "privy",
+      "at": {
+        "x": 135,
+        "y": 47
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "grave_1",
+      "kind": "grave",
+      "at": {
+        "x": 17,
+        "y": 28
+      }
+    },
+    {
+      "id": "grave_2",
+      "kind": "grave",
+      "at": {
+        "x": 19,
+        "y": 28
+      }
+    },
+    {
+      "id": "grave_3",
+      "kind": "grave",
+      "at": {
+        "x": 21,
+        "y": 28
+      }
+    },
+    {
+      "id": "grave_4",
+      "kind": "grave",
+      "at": {
+        "x": 23,
+        "y": 28
+      }
+    },
+    {
+      "id": "grave_5",
+      "kind": "grave",
+      "at": {
+        "x": 17,
+        "y": 31
+      }
+    },
+    {
+      "id": "grave_6",
+      "kind": "grave",
+      "at": {
+        "x": 19,
+        "y": 31
+      }
+    },
+    {
+      "id": "grave_7",
+      "kind": "grave",
+      "at": {
+        "x": 21,
+        "y": 31
+      }
+    },
+    {
+      "id": "grave_8",
+      "kind": "grave",
+      "at": {
+        "x": 25,
+        "y": 31
+      }
+    },
+    {
+      "id": "hive_1",
+      "kind": "hive",
+      "at": {
+        "x": 85,
+        "y": 16
+      },
+      "activity": "tend-bees"
+    },
+    {
+      "id": "hive_2",
+      "kind": "hive",
+      "at": {
+        "x": 87,
+        "y": 16
+      },
+      "activity": "tend-bees"
+    },
+    {
+      "id": "hive_3",
+      "kind": "hive",
+      "at": {
+        "x": 89,
+        "y": 16
+      },
+      "activity": "tend-bees"
+    },
+    {
+      "id": "clamp_rook",
+      "kind": "clamp",
+      "at": {
+        "x": 76,
+        "y": 100
+      },
+      "activity": "burn"
+    },
+    {
+      "id": "woodpile_abel",
+      "kind": "woodpile",
+      "at": {
+        "x": 53,
+        "y": 92
+      },
+      "activity": "chop",
+      "stock": {
+        "wood": 10
+      }
+    },
+    {
+      "id": "block_abel",
+      "kind": "block",
+      "at": {
+        "x": 55,
+        "y": 95
+      },
+      "activity": "chop"
+    },
+    {
+      "id": "nets_fen",
+      "kind": "nets",
+      "at": {
+        "x": 105,
+        "y": 84
+      },
+      "activity": "mend-nets"
+    },
+    {
+      "id": "kiln_dory",
+      "kind": "kiln",
+      "at": {
+        "x": 114,
+        "y": 62
+      },
+      "activity": "fire-pots"
+    },
+    {
+      "id": "washtub_pond",
+      "kind": "washtub",
+      "at": {
+        "x": 69,
+        "y": 62
+      },
+      "activity": "wash"
+    },
+    {
+      "id": "stall_square",
+      "kind": "stall",
+      "at": {
+        "x": 66,
+        "y": 52
+      },
+      "activity": "market"
+    },
+    {
+      "id": "bench_green",
+      "kind": "bench",
+      "at": {
+        "x": 112,
+        "y": 52
+      },
+      "activity": "rest"
+    },
+    {
+      "id": "bench_mill",
+      "kind": "bench",
+      "at": {
+        "x": 95,
+        "y": 18
+      },
+      "activity": "sit"
+    },
+    {
+      "id": "bench_road",
+      "kind": "bench",
+      "at": {
+        "x": 145,
+        "y": 49
+      },
+      "activity": "rest"
+    },
+    {
+      "id": "pen_moss",
+      "kind": "pen",
+      "at": {
+        "x": 6,
+        "y": 20
+      },
+      "activity": "shepherd"
+    },
+    {
+      "id": "haystack_hollins",
+      "kind": "haystack",
+      "at": {
+        "x": 48,
+        "y": 9
+      },
+      "activity": "fork-hay"
+    },
+    {
+      "id": "stall_martha",
+      "kind": "stall",
+      "at": {
+        "x": 65,
+        "y": 49
+      },
+      "activity": "sell"
+    },
+    {
+      "id": "stall_penn",
+      "kind": "stall",
+      "at": {
+        "x": 68,
+        "y": 49
+      },
+      "activity": "sell"
+    },
+    {
+      "id": "stall_iris",
+      "kind": "stall",
+      "at": {
+        "x": 71,
+        "y": 49
+      },
+      "activity": "sell"
+    },
+    {
+      "id": "scarecrow_hollins",
+      "kind": "scarecrow",
+      "at": {
+        "x": 29,
+        "y": 20
+      }
+    },
+    {
+      "id": "scarecrow_ashby",
+      "kind": "scarecrow",
+      "at": {
+        "x": 67,
+        "y": 21
+      }
+    },
+    {
+      "id": "lamp_road_50",
+      "kind": "lantern",
+      "at": {
+        "x": 50,
+        "y": 46
+      }
+    },
+    {
+      "id": "lamp_road_82",
+      "kind": "lantern",
+      "at": {
+        "x": 82,
+        "y": 46
+      }
+    },
+    {
+      "id": "lamp_road_112",
+      "kind": "lantern",
+      "at": {
+        "x": 112,
+        "y": 46
+      }
+    },
+    {
+      "id": "lamp_road_126",
+      "kind": "lantern",
+      "at": {
+        "x": 126,
+        "y": 46
+      }
+    },
+    {
+      "id": "lamp_road_84",
+      "kind": "lantern",
+      "at": {
+        "x": 84,
+        "y": 46
+      }
+    },
+    {
+      "id": "lamp_road_74",
+      "kind": "lantern",
+      "at": {
+        "x": 74,
+        "y": 46
+      }
+    }
+  ],
+  "areas": [
+    {
+      "id": "square",
+      "rect": {
+        "x": 52,
+        "y": 46,
+        "w": 24,
+        "h": 14
+      }
+    },
+    {
+      "id": "tavern-yard",
+      "rect": {
+        "x": 42,
+        "y": 48,
+        "w": 17,
+        "h": 13
+      }
+    },
+    {
+      "id": "pond-bank",
+      "rect": {
+        "x": 69,
+        "y": 57,
+        "w": 1,
+        "h": 3
+      }
+    },
+    {
+      "id": "road-out",
+      "rect": {
+        "x": 147,
+        "y": 47,
+        "w": 1,
+        "h": 1
+      }
+    },
+    {
+      "id": "graveyard",
+      "rect": {
+        "x": 16,
+        "y": 27,
+        "w": 12,
+        "h": 7
+      }
+    },
+    {
+      "id": "pasture",
+      "rect": {
+        "x": 2,
+        "y": 12,
+        "w": 9,
+        "h": 20
+      }
+    },
+    {
+      "id": "hollins-fields",
+      "rect": {
+        "x": 12,
+        "y": 16,
+        "w": 34,
+        "h": 9
+      }
+    },
+    {
+      "id": "boundary",
+      "rect": {
+        "x": 48,
+        "y": 15,
+        "w": 3,
+        "h": 14
+      }
+    },
+    {
+      "id": "ashby-fields",
+      "rect": {
+        "x": 52,
+        "y": 16,
+        "w": 30,
+        "h": 10
+      }
+    },
+    {
+      "id": "herb-garden",
+      "rect": {
+        "x": 30,
+        "y": 70,
+        "w": 8,
+        "h": 3
+      }
+    },
+    {
+      "id": "wood-edge",
+      "rect": {
+        "x": 20,
+        "y": 82,
+        "w": 60,
+        "h": 3
+      }
+    },
+    {
+      "id": "abel-clearing",
+      "rect": {
+        "x": 40,
+        "y": 88,
+        "w": 22,
+        "h": 12
+      }
+    },
+    {
+      "id": "rook-clearing",
+      "rect": {
+        "x": 66,
+        "y": 96,
+        "w": 14,
+        "h": 10
+      }
+    },
+    {
+      "id": "hermit-wood",
+      "rect": {
+        "x": 8,
+        "y": 98,
+        "w": 14,
+        "h": 10
+      }
+    },
+    {
+      "id": "riverbank",
+      "rect": {
+        "x": 103,
+        "y": 76,
+        "w": 3,
+        "h": 12
+      }
+    },
+    {
+      "id": "manor-garden",
+      "rect": {
+        "x": 124,
+        "y": 18,
+        "w": 16,
+        "h": 8
+      }
+    },
+    {
+      "id": "hamlet-green",
+      "rect": {
+        "x": 108,
+        "y": 50,
+        "w": 13,
+        "h": 10
+      }
+    },
+    {
+      "id": "hiding-spots",
+      "rect": {
+        "x": 104,
+        "y": 34,
+        "w": 12,
+        "h": 3
+      }
     }
   ],
   "arrival": {
-    "x": 20,
-    "y": 20
+    "x": 60,
+    "y": 56
   }
 }

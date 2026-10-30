@@ -79,8 +79,20 @@ pub struct Zone {
     /// Things standing outdoors (a well, a privy, a bench), in zone coordinates.
     #[serde(default)]
     pub objects: Vec<ObjectSpec>,
+    /// Named stretches of ground that character code refers to: a yard to weed, a field to
+    /// work, a bank to fish from. In zone coordinates.
+    #[serde(default)]
+    pub areas: Vec<AreaSpec>,
     /// Where a debug warp lands.
     pub arrival: Pos,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+/// A named stretch of ground in a zone.
+pub struct AreaSpec {
+    pub id: String,
+    pub rect: Rect,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -88,6 +100,44 @@ pub struct Zone {
 pub struct Room {
     pub id: String,
     pub rect: Rect,
+    #[serde(default)]
+    pub flooring: Flooring,
+}
+
+/// What a room's floor is made of. Only the views read it.
+#[derive(Copy, Clone, Default, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+#[serde(rename_all = "lowercase")]
+pub enum Flooring {
+    /// Light boards: houses and shops.
+    #[default]
+    Planks,
+    /// Dark boards: halls, the manor, the tavern.
+    DarkPlanks,
+    /// Large stone slabs: the chapel, the town hall.
+    Flagstone,
+    /// Rough stones: workshops, the smithy, barns.
+    Cobbles,
+    /// Black and white tiles: the manor's best rooms.
+    Checker,
+    /// Beaten earth: huts and sheds.
+    Earth,
+}
+
+/// What a building's outside walls are made of. Only the views read it.
+#[derive(Copy, Clone, Default, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+#[serde(rename_all = "lowercase")]
+pub enum Walling {
+    /// Half-timbered plaster.
+    #[default]
+    Timber,
+    Stone,
+    Brick,
+    /// Rough boards: huts, barns, sheds.
+    Boards,
 }
 
 /// A walkable gap in a wall between two rooms of the same floor, or between a ground-floor
@@ -185,6 +235,8 @@ pub struct Building {
     pub floors: Vec<Floor>,
     #[serde(default)]
     pub doors: Vec<DoorSpec>,
+    #[serde(default)]
+    pub walls: Walling,
 }
 
 /// Which days a schedule entry applies to. More specific patterns win over `daily`.

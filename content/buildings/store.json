@@ -1,0 +1,125 @@
+{
+  "id": "store",
+  "zone": "town",
+  "at": {
+    "x": 124,
+    "y": 39
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "shop",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 5,
+            "h": 5
+          }
+        },
+        {
+          "id": "storeroom",
+          "rect": {
+            "x": 7,
+            "y": 1,
+            "w": 3,
+            "h": 5
+          },
+          "flooring": "cobbles"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 6
+          },
+          "between": [
+            "shop"
+          ]
+        },
+        {
+          "at": {
+            "x": 6,
+            "y": 3
+          },
+          "between": [
+            "shop",
+            "storeroom"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "counter_store",
+          "kind": "counter",
+          "room": "shop",
+          "at": {
+            "x": 3,
+            "y": 2
+          },
+          "activity": "keep-shop"
+        },
+        {
+          "id": "shelf_store",
+          "kind": "shelf",
+          "room": "shop",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "activity": "stock-shelf",
+          "stock": {
+            "candles": 6,
+            "thread": 6,
+            "salt": 6
+          }
+        },
+        {
+          "id": "crates_store",
+          "kind": "barrel",
+          "room": "storeroom",
+          "at": {
+            "x": 9,
+            "y": 5
+          },
+          "activity": "unpack"
+        },
+        {
+          "id": "barrels_store",
+          "kind": "barrels",
+          "room": "shop",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        },
+        {
+          "id": "sacks_store",
+          "kind": "sacks",
+          "room": "storeroom",
+          "at": {
+            "x": 7,
+            "y": 1
+          }
+        },
+        {
+          "id": "chest_store",
+          "kind": "chest",
+          "room": "storeroom",
+          "at": {
+            "x": 9,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 4
+      }
+    }
+  ],
+  "walls": "brick"
+}

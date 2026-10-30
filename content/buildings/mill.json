@@ -1,0 +1,127 @@
+{
+  "id": "mill",
+  "zone": "town",
+  "at": {
+    "x": 88,
+    "y": 20
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "millroom",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 5,
+            "h": 5
+          },
+          "flooring": "cobbles"
+        },
+        {
+          "id": "house",
+          "rect": {
+            "x": 7,
+            "y": 1,
+            "w": 4,
+            "h": 5
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 0
+          },
+          "between": [
+            "millroom"
+          ]
+        },
+        {
+          "at": {
+            "x": 6,
+            "y": 3
+          },
+          "between": [
+            "millroom",
+            "house"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "millstone",
+          "kind": "millstone",
+          "room": "millroom",
+          "at": {
+            "x": 3,
+            "y": 3
+          },
+          "activity": "mill",
+          "stock": {
+            "flour": 4
+          }
+        },
+        {
+          "id": "sacks_mill",
+          "kind": "shelf",
+          "room": "millroom",
+          "at": {
+            "x": 1,
+            "y": 5
+          },
+          "activity": "bag-flour"
+        },
+        {
+          "id": "bed_gid",
+          "kind": "bed",
+          "room": "house",
+          "at": {
+            "x": 7,
+            "y": 1
+          },
+          "owner": "gid",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_nan",
+          "kind": "bed",
+          "room": "house",
+          "at": {
+            "x": 10,
+            "y": 1
+          },
+          "owner": "nan",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_mill",
+          "kind": "table",
+          "room": "house",
+          "at": {
+            "x": 9,
+            "y": 4
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "sacks_mill_2",
+          "kind": "sacks",
+          "room": "millroom",
+          "at": {
+            "x": 1,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 1
+      }
+    }
+  ],
+  "walls": "stone"
+}

@@ -1,0 +1,84 @@
+{
+  "id": "vicarage",
+  "zone": "town",
+  "at": {
+    "x": 20,
+    "y": 36
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 6,
+            "h": 4
+          },
+          "flooring": "darkplanks"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 5
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_elias",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "owner": "elias",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_vicarage",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 5,
+            "y": 2
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "chair_vicarage",
+          "kind": "chair",
+          "room": "room",
+          "at": {
+            "x": 6,
+            "y": 1
+          },
+          "activity": "rest"
+        },
+        {
+          "id": "bookshelf_vicarage",
+          "kind": "bookshelf",
+          "room": "room",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 3
+      }
+    }
+  ],
+  "walls": "stone"
+}

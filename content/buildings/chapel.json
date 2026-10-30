@@ -1,0 +1,112 @@
+{
+  "id": "chapel",
+  "zone": "town",
+  "at": {
+    "x": 6,
+    "y": 36
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "nave",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 10,
+            "h": 6
+          },
+          "flooring": "flagstone"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 6,
+            "y": 7
+          },
+          "between": [
+            "nave"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "altar_chapel",
+          "kind": "altar",
+          "room": "nave",
+          "at": {
+            "x": 5,
+            "y": 1
+          },
+          "activity": "pray"
+        },
+        {
+          "id": "pew_1",
+          "kind": "bench",
+          "room": "nave",
+          "at": {
+            "x": 3,
+            "y": 3
+          },
+          "activity": "service"
+        },
+        {
+          "id": "pew_2",
+          "kind": "bench",
+          "room": "nave",
+          "at": {
+            "x": 7,
+            "y": 3
+          },
+          "activity": "service"
+        },
+        {
+          "id": "pew_3",
+          "kind": "bench",
+          "room": "nave",
+          "at": {
+            "x": 3,
+            "y": 5
+          },
+          "activity": "service"
+        },
+        {
+          "id": "pew_4",
+          "kind": "bench",
+          "room": "nave",
+          "at": {
+            "x": 8,
+            "y": 5
+          },
+          "activity": "service"
+        },
+        {
+          "id": "lantern_chapel",
+          "kind": "lantern",
+          "room": "nave",
+          "at": {
+            "x": 1,
+            "y": 1
+          }
+        },
+        {
+          "id": "banner_chapel",
+          "kind": "banner",
+          "room": "nave",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 6,
+        "y": 6
+      }
+    }
+  ],
+  "walls": "stone"
+}

@@ -2,7 +2,7 @@
 // in public/tiles.png (built by scripts/make-tileset.mjs). Pixel art at native size, scaled
 // by CSS at an integer factor. The text views stay the source of truth for tests; this is
 // for eyes.
-import type { Cell, ObjectView, PlaceView, RoofView, Sim, Surface, VillagerView } from "@game-world/protocol";
+import type { Cell, ObjectView, PlaceView, RoofView, RoomView, Sim, Surface, VillagerView, Walling } from "@game-world/protocol";
 
 interface AtlasTile {
   col: number;
@@ -21,8 +21,9 @@ interface Atlas {
   tile: number;
   columns: number;
   tiles: Record<string, AtlasTile>;
-  /** Each villager's walk sheet: `frames` frames of `frame` px; rows face up, left, down, right. */
-  villagers: { frame: number; frames: number; top: Record<string, number> };
+  /** Each villager's walk sheet: `frames` frames of `frame` px; rows face up, left, down,
+   * right; at `left`, `top` in the atlas. */
+  villagers: { frame: number; frames: number; top: Record<string, number>; left?: Record<string, number> };
 }
 
 export class Tileset {
@@ -77,7 +78,7 @@ export class Tileset {
     if (top === undefined) return;
     const s = this.atlas.tile;
     const f = v.frame;
-    const sx = (frame % v.frames) * f;
+    const sx = (v.left?.[key] ?? 0) + (frame % v.frames) * f;
     const sy = top + FACING_ROW[facing] * f;
     ctx.drawImage(this.image, sx, sy, f, f, x * s + s / 2 - f / 2 + dx, (y + 1) * s - f + FEET, f, f);
   }
@@ -120,6 +121,9 @@ function facePartner(v: VillagerView, here: VillagerView[]): Facing | null {
   if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? "right" : "left";
   return dy > 0 ? "down" : "up";
 }
+
+/** How often the still layer (ground, trees, furniture) is repainted, in milliseconds. */
+const LAYER_MS = 3000;
 
 /** LPC frames leave a little room under the feet. */
 const FEET = 2;
@@ -187,31 +191,78 @@ const SURFACE_TILE: Record<Surface, string> = {
 };
 
 /** What a wall shows from the south: the room's panelling, the street side, or its top. */
-function wallFace(below: string | undefined): string | null {
-  if (below === "floor" || below === "opening") return "wall_face";
+function wallFace(below: string | undefined, walls: Walling): string | null {
+  if (below === "floor" || below === "opening") return `wall_face_${walls}`;
   if (below === undefined || below === "void" || FEATURE_GROUP[below] === "wall") return null;
-  return "wall_outside";
+  return `wall_outside_${walls}`;
 }
 
+/** Object kinds with a sprite of their own; anything else is drawn as a crate. */
+const OBJECT_TILES = new Set([
+  "bed", "table", "counter", "oven", "stove", "shelf", "pantry", "barrel", "cart", "privy", "well", "bench", "chair",
+  "anvil", "sacks", "millstone", "altar", "workbench", "desk", "loom", "lectern", "bookshelf", "chest", "weaponrack",
+  "clock", "hearth", "barrels", "haystack", "firewood", "logs", "bucket", "trough", "churn", "wheel", "grave", "cross",
+  "scarecrow", "banner", "lantern", "stall", "hive", "clamp", "fence",
+]);
+
+/** Kinds drawn with another kind's sprite. */
+const OBJECT_ALIASES: Record<string, string> = {
+  woodpile: "firewood",
+  block: "logs",
+  kiln: "hearth",
+  washtub: "trough",
+  pen: "fence",
+  strongbox: "chest",
+  jars: "sacks",
+  copper: "hearth",
+};
+
 export function objectTile(kind: string): string {
-  switch (kind) {
-    case "bed":
-    case "table":
-    case "counter":
-    case "oven":
-    case "stove":
-    case "shelf":
-    case "pantry":
-    case "barrel":
-    case "cart":
-    case "privy":
-    case "well":
-    case "bench":
-    case "chair":
-      return `obj_${kind}`;
-    default:
-      return "obj_generic";
+  const k = OBJECT_ALIASES[kind] ?? kind;
+  return OBJECT_TILES.has(k) ? `obj_${k}` : "obj_generic";
+}
+
+/** What each cell of a place is made of: the floor tile of the room it is in, and the
+ * material of the building whose wall it is. */
+export interface Materials {
+  floor: (string | undefined)[];
+  walls: (Walling | undefined)[];
+}
+
+export function materials(place: PlaceView, rooms: RoomView[], roofs: RoofView[]): Materials {
+  const w = place.width;
+  const n = w * place.height;
+  const floor = new Array<string | undefined>(n).fill(undefined);
+  const walls = new Array<Walling | undefined>(n).fill(undefined);
+  const byBuilding = new Map(roofs.map((r) => [r.building, r.walls]));
+  const inside = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < place.height;
+  for (const r of rooms) {
+    if (r.place !== place.id) continue;
+    const material = byBuilding.get(r.building) ?? "timber";
+    // The room's own cells, and its walls one tile out.
+    for (let y = r.rect.y - 1; y <= r.rect.y + r.rect.h; y++) {
+      for (let x = r.rect.x - 1; x <= r.rect.x + r.rect.w; x++) {
+        if (!inside(x, y)) continue;
+        const i = y * w + x;
+        const edge = x < r.rect.x || y < r.rect.y || x >= r.rect.x + r.rect.w || y >= r.rect.y + r.rect.h;
+        if (!edge) floor[i] = `floor_${r.flooring}`;
+        else walls[i] ??= material;
+      }
+    }
   }
+  // Openings and doors take the floor of a room beside them.
+  for (let i = 0; i < n; i++) {
+    const c = place.cells[i];
+    if (floor[i] || (c !== "Opening" && c !== "Door")) continue;
+    const x = i % w, y = Math.floor(i / w);
+    for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]] as const) {
+      if (inside(x + dx, y + dy) && floor[(y + dy) * w + x + dx]) {
+        floor[i] = floor[(y + dy) * w + x + dx];
+        break;
+      }
+    }
+  }
+  return { floor, walls };
 }
 
 /** The tile name for every cell of a place: its living ground outdoors, else its cells. */
@@ -228,7 +279,14 @@ export function groundNames(sim: Sim, place: PlaceView): string[] {
 /** Paints a place's ground: surfaces, water, paths and walls, auto-shaped at their edges.
  * With `flatWalls` a wall shows only its top and a door is open floor, for a view that
  * raises the walls itself. */
-export function paintGround(ctx: CanvasRenderingContext2D, tiles: Tileset, place: PlaceView, names: string[], flatWalls: boolean): void {
+export function paintGround(
+  ctx: CanvasRenderingContext2D,
+  tiles: Tileset,
+  place: PlaceView,
+  names: string[],
+  flatWalls: boolean,
+  mat: Materials,
+): void {
   const background = place.kind === "Zone" ? "grass" : "floor";
   const w = place.width;
   const h = place.height;
@@ -244,15 +302,17 @@ export function paintGround(ctx: CanvasRenderingContext2D, tiles: Tileset, place
       let name = names[y * w + x] ?? "void";
       if (flatWalls && name === "door") name = place.kind === "Zone" ? "path" : "floor";
       const g = FEATURE_GROUP[name];
+      const i = y * w + x;
       if (g === "wall" && !flatWalls) {
-        const face = name === "door" ? null : wallFace(at(x, y + 1));
+        const face = name === "door" ? null : wallFace(at(x, y + 1), mat.walls[i] ?? "timber");
         if (face) {
           tiles.draw(ctx, face, x, y);
           continue;
         }
       }
       if (!g || !tiles.has(`${g === "wall" ? "wall" : name}_out`)) {
-        tiles.draw(ctx, name, x, y);
+        const floor = mat.floor[i];
+        tiles.draw(ctx, floor && (name === "floor" || name === "opening") ? floor : name, x, y);
         continue;
       }
       const shapeName = g === "wall" ? "wall" : name;
@@ -293,6 +353,7 @@ export class PlaceCanvas {
   private readonly objects: ObjectView[];
   /** Inline buildings' footprints in this place, for their name labels. */
   private readonly roofs: RoofView[];
+  private readonly mat: Materials;
   private readonly gaits = new Map<string, Gait>();
 
   constructor(
@@ -300,6 +361,7 @@ export class PlaceCanvas {
     private readonly place: PlaceView,
     objects: ObjectView[],
     roofs: RoofView[] = [],
+    rooms: RoomView[] = [],
   ) {
     this.canvas = document.createElement("canvas");
     this.canvas.width = place.width * tiles.size;
@@ -313,6 +375,7 @@ export class PlaceCanvas {
     this.ctx = ctx;
     this.objects = objects.filter((o) => o.place === place.id);
     this.roofs = roofs.filter((r) => r.place === place.id);
+    this.mat = materials(place, rooms, roofs);
   }
 
   /** The tile under a mouse or touch position on the canvas, or null when off it. */
@@ -352,15 +415,27 @@ export class PlaceCanvas {
     return { facing: g.facing, frame };
   }
 
-  draw(sim: Sim, villagers: VillagerView[], highlight: { x: number; y: number } | null = null): void {
-    const { ctx, tiles, place } = this;
+  /** The ground, trees, furniture and building names: everything that does not move,
+   * painted into its own canvas and repainted every few seconds as the ground changes. */
+  private layer: { canvas: HTMLCanvasElement; at: number } | null = null;
+
+  private paintLayer(sim: Sim): HTMLCanvasElement {
+    const now = performance.now();
+    if (this.layer && now - this.layer.at < LAYER_MS) return this.layer.canvas;
+    const canvas = this.layer?.canvas ?? document.createElement("canvas");
+    canvas.width = this.canvas.width;
+    canvas.height = this.canvas.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no 2d canvas");
+    ctx.imageSmoothingEnabled = false;
+    const { tiles, place } = this;
     const w = place.width;
     const h = place.height;
     const names = groundNames(sim, place);
     const at = (x: number, y: number): string | undefined =>
       x < 0 || y < 0 || x >= w || y >= h ? undefined : names[y * w + x];
-    paintGround(ctx, tiles, place, names, false);
-    // Objects and people back to front, so whoever is lower on the map is in front.
+    paintGround(ctx, tiles, place, names, false, this.mat);
+    // Trees and furniture back to front, so whatever is lower on the map is in front.
     const sprites: { y: number; draw: () => void }[] = [];
     // Trees stand in the forest, scattered so they do not line up.
     for (let y = 0; y < h; y++) {
@@ -374,16 +449,6 @@ export class PlaceCanvas {
       const below = at(o.pos.x, o.pos.y + 1);
       const rise = below !== "floor" && below !== "opening";
       sprites.push({ y: o.pos.y, draw: () => tiles.draw(ctx, objectTile(o.kind), o.pos.x, o.pos.y, rise) });
-    }
-    const here = villagers.filter((v) => v.place === place.id);
-    const shift = spread(here, tiles.size);
-    for (const v of here) {
-      const gait = this.gait(v);
-      // LPC has no lying-down frames: a sleeper is in their bed, shown by their name.
-      if (v.activity === "sleep") continue;
-      const facing = v.activity === "talk" ? (facePartner(v, here) ?? gait.facing) : gait.facing;
-      const dx = shift.get(v.key) ?? 0;
-      sprites.push({ y: v.pos.y + 0.5, draw: () => tiles.drawVillager(ctx, v.key, facing, gait.frame, v.pos.x, v.pos.y, dx) });
     }
     sprites.sort((a, b) => a.y - b.y);
     for (const s of sprites) s.draw();
@@ -402,6 +467,27 @@ export class PlaceCanvas {
       ctx.fillStyle = "#f4e8c8";
       ctx.fillText(label, cx, top);
     }
+    this.layer = { canvas, at: now };
+    return canvas;
+  }
+
+  draw(sim: Sim, villagers: VillagerView[], highlight: { x: number; y: number } | null = null): void {
+    const { ctx, tiles, place } = this;
+    ctx.drawImage(this.paintLayer(sim), 0, 0);
+    // Villagers over the still layer, back to front.
+    const here = villagers.filter((v) => v.place === place.id);
+    const shift = spread(here, tiles.size);
+    const sprites: { y: number; draw: () => void }[] = [];
+    for (const v of here) {
+      const gait = this.gait(v);
+      // LPC has no lying-down frames: a sleeper is in their bed, shown by their name.
+      if (v.activity === "sleep") continue;
+      const facing = v.activity === "talk" ? (facePartner(v, here) ?? gait.facing) : gait.facing;
+      const dx = shift.get(v.key) ?? 0;
+      sprites.push({ y: v.pos.y + 0.5, draw: () => tiles.drawVillager(ctx, v.key, facing, gait.frame, v.pos.x, v.pos.y, dx) });
+    }
+    sprites.sort((a, b) => a.y - b.y);
+    for (const s of sprites) s.draw();
     if (highlight) {
       const s = tiles.size;
       ctx.strokeStyle = "#ffffff";

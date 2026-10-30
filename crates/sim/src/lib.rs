@@ -11,6 +11,7 @@ pub mod history;
 pub mod ids;
 pub mod input;
 pub mod needs;
+pub mod odds;
 pub mod protocol;
 pub mod queue;
 pub mod recall;

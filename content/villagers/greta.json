@@ -1,0 +1,51 @@
+{
+  "id": "greta",
+  "name": "Greta",
+  "home": "smithy",
+  "bed": "bed_greta",
+  "coins": 30,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_smithy",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_smithy",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_smithy",
+      "activity": "eat"
+    },
+    {
+      "days": "weekday",
+      "at": "8:00am",
+      "object": "counter_store",
+      "activity": "keep-shop"
+    },
+    {
+      "days": "weekday",
+      "at": "1:00pm",
+      "object": "counter_store",
+      "activity": "keep-shop"
+    },
+    {
+      "days": "sat",
+      "at": "8:00am",
+      "object": "counter_store",
+      "activity": "keep-shop"
+    },
+    {
+      "days": "daily",
+      "at": "10:00pm",
+      "object": "bed_greta",
+      "activity": "sleep"
+    }
+  ]
+}

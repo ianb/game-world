@@ -1,0 +1,57 @@
+{
+  "id": "ada",
+  "name": "Ada",
+  "home": "hollins",
+  "bed": "bed_ada",
+  "coins": 15,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_hollins",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_hollins",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_hollins",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "churn_hollins",
+      "activity": "dairy"
+    },
+    {
+      "days": "wed",
+      "at": "9:00am",
+      "object": "stall_square",
+      "activity": "market"
+    },
+    {
+      "days": "sat",
+      "at": "9:00am",
+      "object": "stall_square",
+      "activity": "market"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "churn_hollins",
+      "activity": "dairy"
+    },
+    {
+      "days": "daily",
+      "at": "9:00pm",
+      "object": "bed_ada",
+      "activity": "sleep"
+    }
+  ]
+}

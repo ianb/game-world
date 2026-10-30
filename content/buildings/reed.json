@@ -1,0 +1,134 @@
+{
+  "id": "reed",
+  "zone": "town",
+  "at": {
+    "x": 136,
+    "y": 38
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 4,
+            "h": 5
+          }
+        },
+        {
+          "id": "loomroom",
+          "rect": {
+            "x": 6,
+            "y": 1,
+            "w": 4,
+            "h": 5
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 4,
+            "y": 6
+          },
+          "between": [
+            "room"
+          ]
+        },
+        {
+          "at": {
+            "x": 5,
+            "y": 3
+          },
+          "between": [
+            "room",
+            "loomroom"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_amos",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "owner": "amos",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_iris",
+          "kind": "bed",
+          "room": "loomroom",
+          "at": {
+            "x": 9,
+            "y": 1
+          },
+          "owner": "iris",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_reed",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 2,
+            "y": 4
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "chair_amos",
+          "kind": "chair",
+          "room": "room",
+          "at": {
+            "x": 4,
+            "y": 1
+          },
+          "activity": "rest"
+        },
+        {
+          "id": "loom_reed",
+          "kind": "loom",
+          "room": "loomroom",
+          "at": {
+            "x": 7,
+            "y": 3
+          },
+          "activity": "weave",
+          "stock": {
+            "cloth": 1
+          }
+        },
+        {
+          "id": "weaponrack_reed",
+          "kind": "weaponrack",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 3
+          }
+        },
+        {
+          "id": "chest_reed",
+          "kind": "chest",
+          "room": "loomroom",
+          "at": {
+            "x": 6,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 2,
+        "y": 3
+      }
+    }
+  ]
+}

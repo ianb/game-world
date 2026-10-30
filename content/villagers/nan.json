@@ -1,0 +1,45 @@
+{
+  "id": "nan",
+  "name": "Nan",
+  "home": "mill",
+  "bed": "bed_nan",
+  "coins": 8,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_mill",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_mill",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_mill",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "9:00am",
+      "object": "bench_mill",
+      "activity": "sit"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "bench_mill",
+      "activity": "sit"
+    },
+    {
+      "days": "daily",
+      "at": "8:30pm",
+      "object": "bed_nan",
+      "activity": "sleep"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "hollins_barn",
+  "zone": "town",
+  "at": {
+    "x": 38,
+    "y": 6
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "barn",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 8,
+            "h": 5
+          },
+          "flooring": "earth"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 4,
+            "y": 6
+          },
+          "between": [
+            "barn"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "trough_hollins",
+          "kind": "trough",
+          "room": "barn",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "activity": "feed"
+        },
+        {
+          "id": "hay_hollins",
+          "kind": "haystack",
+          "room": "barn",
+          "at": {
+            "x": 8,
+            "y": 1
+          },
+          "activity": "fork-hay"
+        },
+        {
+          "id": "bucket_hollins_barn",
+          "kind": "bucket",
+          "room": "barn",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 4,
+        "y": 3
+      }
+    }
+  ],
+  "walls": "boards"
+}

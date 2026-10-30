@@ -2,8 +2,8 @@
 // a plane, walls are raised from it, and objects, trees and villagers are upright LPC sprites
 // that turn to face the camera. Light follows the clock. Loaded only when switched on.
 import * as THREE from "three";
-import type { ClockView, Emitted, ObjectView, PlaceView, Rect, RoofView, Sim, VillagerView } from "@game-world/protocol";
-import { type Facing, type Tileset, groundNames, isTreeCell, objectTile, paintGround } from "./render";
+import type { ClockView, Emitted, ObjectView, PlaceView, Rect, RoofView, RoomView, Sim, VillagerView, Walling } from "@game-world/protocol";
+import { type Facing, type Materials, type Tileset, groundNames, isTreeCell, materials, objectTile, paintGround } from "./render";
 
 /** Wall height, in tiles: the LPC tall walls are three tiles of art. */
 const WALL_H = 3;
@@ -17,7 +17,7 @@ const CLOSE = 16;
 /** Objects drawn flat on the floor rather than standing up. */
 const LYING = new Set(["bed"]);
 /** Objects that glow after dark. */
-const HEARTHS = new Set(["oven", "stove"]);
+const HEARTHS = new Set(["oven", "stove", "hearth", "kiln", "copper"]);
 /** How long a speech mark stays up, in real milliseconds. */
 const SPEECH_MS = 3500;
 
@@ -27,6 +27,8 @@ export interface DioramaOptions {
   objects: ObjectView[];
   /** Inline buildings' footprints, lit from inside after dark. */
   roofs: RoofView[];
+  /** Rooms, for their floors and the material of their walls. */
+  rooms: RoomView[];
   name: (id: number) => string;
   /** A tile was clicked (not dragged). */
   pick: (place: number, x: number, y: number) => void;
@@ -80,13 +82,16 @@ export class Diorama {
   private placeGroup = new THREE.Group();
   private sprites: THREE.Mesh[] = [];
   /** Trees, which step aside when they stand between the camera and what it looks at. */
-  private trees: THREE.Mesh[] = [];
+  private trees: Trees | null = null;
+  /** Where trees stand while a place is being built, before they become one mesh. */
+  private treeSpots: { x: number; z: number }[] = [];
   private hearths: THREE.PointLight[] = [];
   /** Lamps inside buildings, lit in the evening. */
   private lamps: THREE.PointLight[] = [];
   private walls: Walls | null = null;
   private ground: { canvas: HTMLCanvasElement; texture: THREE.CanvasTexture; painted: number } | null = null;
   private place: PlaceView | null = null;
+  private mat: Materials | null = null;
   private readonly walkers = new Map<string, Walker>();
   private view: View = { x: 0, z: 0, yaw: 0, pitch: 0.75, dist: 40 };
   private goal: View = { ...this.view };
@@ -130,6 +135,7 @@ export class Diorama {
     const place = this.o.places.find((p) => p.id === placeId);
     if (!place) return;
     this.place = place;
+    this.mat = materials(place, this.o.rooms, this.o.roofs);
     this.scene.remove(this.placeGroup);
     this.placeGroup.traverse((o) => {
       if (o instanceof THREE.Mesh && o.geometry) o.geometry.dispose();
@@ -139,7 +145,8 @@ export class Diorama {
     this.walls?.dispose();
     this.walls = null;
     this.sprites = [];
-    this.trees = [];
+    this.trees = null;
+    this.treeSpots = [];
     this.hearths = [];
     this.lamps = [];
     this.ground?.texture.dispose();
@@ -157,6 +164,7 @@ export class Diorama {
     this.buildTrees(place, names);
     this.buildLamps(place);
     this.buildWoods(place);
+    this.trees = this.makeTrees();
     // The sun's shadow covers the whole place.
     const s = this.sun.shadow.camera;
     const r = Math.hypot(place.width, place.height) / 2 + 4;
@@ -237,7 +245,7 @@ export class Diorama {
     let fewest = Infinity;
     for (const turn of [0, Math.PI]) {
       const v = { ...view, yaw: yaw + turn };
-      const n = this.occluders(v).length + (turn === 0 ? 0 : 2.5);
+      const n = this.occluders(v).length + this.treesInTheWay(v).size + (turn === 0 ? 0 : 2.5);
       if (n < fewest) {
         best = v;
         fewest = n;
@@ -246,19 +254,20 @@ export class Diorama {
     return best;
   }
 
-  /** Objects and trees that would hide the middle of a close view. */
+  /** Objects that would hide the middle of a close view. */
   private occluders(v: View): THREE.Mesh[] {
-    const back = { x: Math.sin(v.yaw), z: Math.cos(v.yaw) };
-    const reach = v.dist * Math.cos(v.pitch);
-    const tan = Math.tan(v.pitch);
-    return [...this.sprites, ...this.trees].filter((m) => {
-      const dx = m.position.x - v.x;
-      const dz = m.position.z - v.z;
-      const along = dx * back.x + dz * back.z;
-      const across = Math.abs(dx * back.z - dz * back.x);
-      const width = Number(m.userData.w ?? 1) / 2 + 0.8;
-      return along > 0.6 && along < reach && across < width && Number(m.userData.h ?? 1) / along > tan;
+    return this.sprites.filter((m) => inTheWay(v, m.position.x, m.position.z, Number(m.userData.w ?? 1), Number(m.userData.h ?? 1)));
+  }
+
+  /** Trees, by index, that would hide the middle of a close view. */
+  private treesInTheWay(v: View): Set<number> {
+    const out = new Set<number>();
+    const t = this.trees;
+    if (!t) return out;
+    t.at.forEach((p, i) => {
+      if (inTheWay(v, p.x, p.z, t.w, t.h)) out.add(i);
     });
+    return out;
   }
 
   rotate(by: number): void {
@@ -423,12 +432,21 @@ export class Diorama {
     this.camera.lookAt(v.x, lookY, v.z);
     for (const s of this.sprites) s.rotation.y = v.yaw;
     // Close up, whatever stands between the camera and what it looks at steps aside.
-    for (const t of this.trees) {
-      t.rotation.y = v.yaw;
-      t.visible = true;
-    }
     for (const s of this.sprites) s.visible = true;
     if (v.dist < CLOSE) for (const m of this.occluders(v)) m.visible = false;
+    const t = this.trees;
+    if (t) {
+      const hidden = v.dist < CLOSE ? this.treesInTheWay(v) : new Set<number>();
+      const o = new THREE.Object3D();
+      o.rotation.y = v.yaw;
+      t.at.forEach((p, i) => {
+        o.position.set(p.x, 0, p.z);
+        o.scale.setScalar(hidden.has(i) ? 0 : 1);
+        o.updateMatrix();
+        t.mesh.setMatrixAt(i, o.matrix);
+      });
+      t.mesh.instanceMatrix.needsUpdate = true;
+    }
     for (const w of this.walkers.values()) w.mesh.rotation.y = v.yaw;
     this.walls?.cutFor(v);
   }
@@ -477,7 +495,7 @@ export class Diorama {
     const ctx = g.canvas.getContext("2d");
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
-    paintGround(ctx, this.o.tiles, place, names, true);
+    paintGround(ctx, this.o.tiles, place, names, true, this.mat ?? materials(place, this.o.rooms, this.o.roofs));
     // Things that lie flat, like beds, are part of the floor.
     for (const o of this.o.objects) {
       if (o.place === place.id && LYING.has(o.kind)) this.o.tiles.draw(ctx, objectTile(o.kind), o.pos.x, o.pos.y);
@@ -491,7 +509,8 @@ export class Diorama {
     // The buildings the camera can look into: inline ones by their footprint, or the whole
     // place when it is an interior.
     const rooms = place.kind === "Zone" ? this.o.roofs.filter((r) => r.place === place.id).map((r) => r.rect) : [{ x: 0, y: 0, w: place.width, h: place.height }];
-    this.walls = new Walls(this.o.tiles, this.atlas, this.ground.texture, place, names, rooms);
+    const walls = (this.mat ?? materials(place, this.o.rooms, this.o.roofs)).walls;
+    this.walls = new Walls(this.o.tiles, this.atlas, this.ground.texture, place, names, rooms, walls);
     this.placeGroup.add(this.walls.group);
   }
 
@@ -512,9 +531,7 @@ export class Diorama {
   private buildTrees(place: PlaceView, names: string[]): void {
     for (let y = 0; y < place.height; y++) {
       for (let x = 0; x < place.width; x++) {
-        if (!isTreeCell(names, place.width, x, y)) continue;
-        const m = this.sprite("tree", x, y);
-        if (m) this.trees.push(m);
+        if (isTreeCell(names, place.width, x, y)) this.treeSpots.push(this.spriteFoot("tree", x, y));
       }
     }
   }
@@ -546,10 +563,41 @@ export class Diorama {
         const r = ((h ^ (h >>> 16)) >>> 0) / 4294967296;
         // Thicker further out; none right on the edge, where the canopy tiles are.
         if (edge < 2 || r > 0.12 + edge * 0.02) continue;
-        const m = this.sprite("tree", x, y);
-        if (m) this.trees.push(m);
+        this.treeSpots.push(this.spriteFoot("tree", x, y));
       }
     }
+  }
+
+  /** Where a sprite's foot stands, in tiles, as the 2D view places it. */
+  private spriteFoot(name: string, x: number, y: number): { x: number; z: number } {
+    const t = this.o.tiles.atlas.tiles[name] ?? this.o.tiles.atlas.tiles["obj_generic"];
+    const s = this.o.tiles.size;
+    const tw = t?.w ?? 1;
+    const th = t?.h ?? 1;
+    const ox = t?.ox ?? 0;
+    const oy = t?.oy ?? (th > 1 ? s - th * s : 0);
+    return { x: x + ox / s + tw / 2, z: y + (oy + th * s) / s - 0.45 };
+  }
+
+  /** Every tree as one instanced mesh, each turned to the camera in `aim`. */
+  private makeTrees(): Trees | null {
+    const t = this.o.tiles.atlas.tiles["tree"];
+    if (!t || !this.treeSpots.length) return null;
+    const s = this.o.tiles.size;
+    const tw = t.w ?? 1;
+    const th = t.h ?? 1;
+    const iw = this.o.tiles.image.width;
+    const ih = this.o.tiles.image.height;
+    const g = new THREE.PlaneGeometry(tw, th);
+    g.translate(0, th / 2, 0);
+    const u0 = (t.col * s) / iw, u1 = ((t.col + tw) * s) / iw;
+    const v0 = 1 - ((t.row + th) * s) / ih, v1 = 1 - (t.row * s) / ih;
+    g.setAttribute("uv", new THREE.Float32BufferAttribute([u0, v1, u1, v1, u0, v0, u1, v0], 2));
+    const mesh = new THREE.InstancedMesh(g, this.spriteMaterial, this.treeSpots.length);
+    mesh.customDepthMaterial = this.spriteDepth;
+    mesh.castShadow = true;
+    this.placeGroup.add(mesh);
+    return { mesh, at: this.treeSpots, w: tw, h: th };
   }
 
   /** An upright sprite standing where the 2D view would draw it, its foot in its cell. */
@@ -619,7 +667,7 @@ export class Diorama {
     const iw = this.o.tiles.image.width;
     const ih = this.o.tiles.image.height;
     const f = vs.frame;
-    const sx = (frame % vs.frames) * f;
+    const sx = (vs.left?.[String(w.mesh.userData.key)] ?? 0) + (frame % vs.frames) * f;
     const sy = top + row * f;
     const u0 = sx / iw, u1 = (sx + f) / iw, v0 = 1 - (sy + f) / ih, v1 = 1 - sy / ih;
     w.uv.set([u0, v1, u1, v1, u0, v0, u1, v0]);
@@ -852,6 +900,7 @@ class Walls {
     private readonly place: PlaceView,
     private readonly names: string[],
     private readonly rooms: Rect[],
+    private readonly walling: (Walling | undefined)[],
   ) {
     this.sideMaterial = new THREE.MeshStandardMaterial({ map: atlas, roughness: 1, side: THREE.DoubleSide });
     this.topMaterial = new THREE.MeshStandardMaterial({ map: ground, roughness: 1, side: THREE.DoubleSide });
@@ -983,12 +1032,22 @@ class Walls {
       sides.push(x0, hi, z0, x0, lo, z0, x1, hi, z1, x1, hi, z1, x0, lo, z0, x1, lo, z1);
       sideUv.push(u0, v(hi), u0, v(lo), u1, v(hi), u1, v(hi), u0, v(lo), u1, v(lo));
     };
-    const inside = this.uv("wall_tall_inside", 3);
-    const outside = this.uv("wall_tall_outside", 3);
+    const strips = new Map<string, Uv>();
+    const strip = (name: string): Uv => {
+      let uv = strips.get(name);
+      if (!uv) {
+        uv = this.uv(name, 3);
+        strips.set(name, uv);
+      }
+      return uv;
+    };
     this.cells.forEach((c, i) => {
       const [lo, hi] = span(i);
       if (hi <= lo) return;
       const { x, y } = c;
+      const material = this.walling[y * w + x] ?? "timber";
+      const inside = strip(`wall_tall_inside_${material}`);
+      const outside = strip(`wall_tall_outside_${material}`);
       // Top: this cell of the ground painting, raised.
       const u0 = x / w, u1 = (x + 1) / w, v0 = 1 - (y + 1) / h, v1 = 1 - y / h;
       tops.push(x, hi, y, x, hi, y + 1, x + 1, hi, y, x + 1, hi, y, x, hi, y + 1, x + 1, hi, y + 1);
@@ -1036,4 +1095,24 @@ class Walls {
     for (const win of this.windows) for (const m of win.meshes) m.geometry.dispose();
     this.group.removeFromParent();
   }
+}
+
+/** The trees of a place: one mesh, an instance per tree, all the same size. */
+interface Trees {
+  mesh: THREE.InstancedMesh;
+  at: { x: number; z: number }[];
+  w: number;
+  h: number;
+}
+
+/** Whether something `w` wide and `h` tall standing at (`x`, `z`) hides the middle of a
+ * close view from its camera. */
+function inTheWay(v: View, x: number, z: number, w: number, h: number): boolean {
+  const back = { x: Math.sin(v.yaw), z: Math.cos(v.yaw) };
+  const reach = v.dist * Math.cos(v.pitch);
+  const dx = x - v.x;
+  const dz = z - v.z;
+  const along = dx * back.x + dz * back.z;
+  const across = Math.abs(dx * back.z - dz * back.x);
+  return along > 0.6 && along < reach && across < w / 2 + 0.8 && h / along > Math.tan(v.pitch);
 }

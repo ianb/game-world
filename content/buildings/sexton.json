@@ -1,0 +1,83 @@
+{
+  "id": "sexton",
+  "zone": "town",
+  "at": {
+    "x": 4,
+    "y": 50
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 6,
+            "h": 4
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 0
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_bess",
+          "kind": "bed",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 3
+          },
+          "owner": "bess",
+          "activity": "sleep"
+        },
+        {
+          "id": "table_bess",
+          "kind": "table",
+          "room": "room",
+          "at": {
+            "x": 5,
+            "y": 3
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "chair_bess",
+          "kind": "chair",
+          "room": "room",
+          "at": {
+            "x": 6,
+            "y": 1
+          },
+          "activity": "rest"
+        },
+        {
+          "id": "lantern_sexton",
+          "kind": "lantern",
+          "room": "room",
+          "at": {
+            "x": 1,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 2
+      }
+    }
+  ],
+  "walls": "stone"
+}

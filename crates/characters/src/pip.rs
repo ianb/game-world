@@ -3,19 +3,21 @@
 //! wandering, greetings and conversations. In talk he ignores the frame: he tells anyone
 //! anything, wherever they are, and never minds when others do the same.
 use crate::toolbox::{
-    Plan, activity_of, chat, counter_talk, go_tile, pick, stock, stock_of, villager, wait_minutes,
+    Plan, activity_of, chat, counter_talk, go_area, pick, stock, stock_of, villager, wait_minutes,
 };
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::protocol::{Act, Frame, Gesture};
 use sim::social::{
-    Interlocutor, Memory, Persona, Situation, act, default_gossip, default_next_act, roll,
+    Interlocutor, Memory, Persona, Situation, act, default_gossip, default_next_act,
 };
 use sim::time::Tick;
 
 /// How long he stops to chat.
 const CHAT_MINUTES: u32 = 8;
+/// The chance label for telling what is on his mind, whatever the frame.
+pub const BLURTS: &str = "pip-blurts";
 
 const NEWS: [&str; 4] = ["frog", "loose-tooth", "secret-den", "dead-mouse"];
 
@@ -44,11 +46,7 @@ impl Pip {
                 vec![wait_minutes(*pick(rng, &[3u32, 5, 8]), "roam")]
             }
             Trigger::Waited if activity_of(ctx, "pip") == "roam" => {
-                let town = ctx.place_id("town").expect("town exists");
-                match ctx.random_tile(town, content::Cell::Ground, rng) {
-                    Some(p) => vec![go_tile(ctx, "town", p.x, p.y, "roam")],
-                    None => vec![wait_minutes(5, "roam")],
-                }
+                vec![go_area(ctx, "square", "roam", rng).unwrap_or_else(|| wait_minutes(5, "roam"))]
             }
             // At the bakery: ask for a bun.
             Trigger::Arrived if activity_of(ctx, "pip") == "pester" => {
@@ -83,16 +81,13 @@ impl Pip {
             // Children fall over all the time; he does not give it a thought.
             Trigger::Mishap { .. } => Vec::new(),
             // An unroutable roam target: shrug and try somewhere else.
-            Trigger::Stuck => {
-                let town = ctx.place_id("town").expect("town exists");
-                match ctx.random_tile(town, content::Cell::Ground, rng) {
-                    Some(p) => vec![
-                        Command::Note("couldn't get there; trying elsewhere".into()),
-                        go_tile(ctx, "town", p.x, p.y, "roam"),
-                    ],
-                    None => vec![wait_minutes(5, "roam")],
-                }
-            }
+            Trigger::Stuck => match go_area(ctx, "square", "roam", rng) {
+                Some(go) => vec![
+                    Command::Note("couldn't get there; trying elsewhere".into()),
+                    go,
+                ],
+                None => vec![wait_minutes(5, "roam")],
+            },
             // Meeting someone standing still, he stops for a chat; anyone else gets a hello.
             Trigger::Encounter { other } if activity_of(ctx, "pip") != "sleep" => {
                 let me = villager(ctx, "pip");
@@ -163,7 +158,11 @@ impl Interlocutor for Pip {
         {
             return act(Gesture::Tell, &news);
         }
-        if s.turn >= 1 && s.turn < 4 && s.frame != Frame::Confiding && roll(rng) < 25 {
+        if s.turn >= 1
+            && s.turn < 4
+            && s.frame != Frame::Confiding
+            && s.ctx.chance(rng, s.me, BLURTS, 25)
+        {
             return act(Gesture::Disclose, &s.ctx.topic(pick(rng, &NEWS)));
         }
         default_next_act(self, s, rng)
@@ -173,5 +172,15 @@ impl Interlocutor for Pip {
     fn out_of_frame(&mut self, s: &Situation<'_>, did: &Act, rng: &mut Pcg32) -> Act {
         let _ = (s, did);
         act(Gesture::Tell, &s.ctx.topic(pick(rng, &NEWS)))
+    }
+}
+
+impl crate::Character for Pip {
+    const ID: &'static str = "pip";
+    fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
+        Pip::plan_day(self, ctx, rng)
+    }
+    fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {
+        Pip::react(self, trigger.clone(), ctx, rng)
     }
 }

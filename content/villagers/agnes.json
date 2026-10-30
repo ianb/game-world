@@ -1,0 +1,71 @@
+{
+  "id": "agnes",
+  "name": "Agnes",
+  "home": "school",
+  "bed": "bed_agnes",
+  "coins": 20,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_agnes",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:00pm",
+      "object": "table_agnes",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_agnes",
+      "activity": "eat"
+    },
+    {
+      "days": "weekday",
+      "at": "8:15am",
+      "object": "lectern_school",
+      "activity": "teach"
+    },
+    {
+      "days": "weekday",
+      "at": "1:00pm",
+      "object": "lectern_school",
+      "activity": "teach"
+    },
+    {
+      "days": "weekday",
+      "at": "3:30pm",
+      "object": "table_agnes",
+      "activity": "mark"
+    },
+    {
+      "days": "weekend",
+      "at": "9:00am",
+      "object": "table_agnes",
+      "activity": "read"
+    },
+    {
+      "days": "sun",
+      "at": "9:40am",
+      "object": "pew_1",
+      "activity": "service"
+    },
+    {
+      "days": "daily",
+      "at": "9:00pm",
+      "object": "bed_agnes",
+      "activity": "sleep"
+    }
+  ],
+  "income": [
+    {
+      "days": "mon",
+      "at": "9:00am",
+      "amount": 12,
+      "what": "stipend"
+    }
+  ]
+}

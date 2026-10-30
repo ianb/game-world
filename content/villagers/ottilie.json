@@ -1,0 +1,57 @@
+{
+  "id": "ottilie",
+  "name": "Ottilie",
+  "home": "fisher",
+  "bed": "bed_ottilie",
+  "coins": 8,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:00am",
+      "object": "table_fisher",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_fisher",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_fisher",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "nets_fen",
+      "activity": "mend-nets"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "nets_fen",
+      "activity": "mend-nets"
+    },
+    {
+      "days": "fri",
+      "at": "7:30pm",
+      "object": "table_alehouse_2",
+      "activity": "drink"
+    },
+    {
+      "days": "wed",
+      "at": "10:00am",
+      "object": "counter_store",
+      "activity": "shop"
+    },
+    {
+      "days": "daily",
+      "at": "10:00pm",
+      "object": "bed_ottilie",
+      "activity": "sleep"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "thorn",
+  "name": "Thorn",
+  "home": "lodge",
+  "bed": "bed_thorn",
+  "coins": 9,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_thorn",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_thorn",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_thorn",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:30am",
+      "object": "well_manor",
+      "activity": "garden"
+    },
+    {
+      "days": "daily",
+      "at": "1:30pm",
+      "object": "well_manor",
+      "activity": "garden"
+    },
+    {
+      "days": "daily",
+      "at": "9:00pm",
+      "object": "bed_thorn",
+      "activity": "sleep"
+    }
+  ]
+}

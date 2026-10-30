@@ -1,0 +1,45 @@
+{
+  "id": "josie",
+  "name": "Josie",
+  "home": "manor",
+  "bed": "bed_josie",
+  "coins": 4,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_manor",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_manor",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_manor",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "stove_manor",
+      "activity": "clean"
+    },
+    {
+      "days": "daily",
+      "at": "1:30pm",
+      "object": "stove_manor",
+      "activity": "clean"
+    },
+    {
+      "days": "daily",
+      "at": "10:00pm",
+      "object": "bed_josie",
+      "activity": "sleep"
+    }
+  ]
+}

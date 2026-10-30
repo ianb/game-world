@@ -18,7 +18,7 @@ use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
 use sim::protocol::{Act, BidAnswer, Blame, Frame, Gesture, Topic};
 use sim::social::{
-    Interlocutor, Memory, Persona, Situation, act, default_answer_bid, default_next_act, roll,
+    Interlocutor, Memory, Persona, Situation, act, default_answer_bid, default_next_act,
 };
 use sim::time::{TICKS_PER_DAY, TICKS_PER_MINUTE, Tick};
 
@@ -29,6 +29,10 @@ pub const LOAVES_PER_BATCH: i32 = 6;
 pub const LOAVES_ENOUGH: u16 = 4;
 /// Minutes since her last talk with Tom before she goes back to the bar for another word.
 pub const WORD_WITH_TOM_GAP: u32 = 60;
+
+/// Chance labels, for tests to force.
+pub const COMPLIMENTS_TOM: &str = "mara-compliments-tom";
+pub const KEEPS_CHATTING: &str = "mara-keeps-chatting";
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Mara {
@@ -293,7 +297,7 @@ impl Interlocutor for Mara {
         if s.other == villager(ctx, "tom")
             && s.frame == Frame::SmallTalk
             && s.turn >= 1
-            && roll(rng) < 30
+            && s.ctx.chance(rng, s.me, COMPLIMENTS_TOM, 30)
         {
             return act(Gesture::Compliment, s.topic);
         }
@@ -313,8 +317,12 @@ impl Interlocutor for Mara {
             // them off.
             (Frame::Transaction, _, false, 1)
                 if self.mind.regard(s.other).familiarity >= 1
-                    && roll(rng)
-                        < 30 + 15 * i16::from(self.mind.regard(s.other).feeling.max(0)) =>
+                    && s.ctx.chance(
+                        rng,
+                        s.me,
+                        KEEPS_CHATTING,
+                        30 + 15 * i16::from(self.mind.regard(s.other).feeling.max(0)),
+                    ) =>
             {
                 Mara::small_talk(s)
             }
@@ -338,5 +346,20 @@ impl Interlocutor for Mara {
         } else {
             default_answer_bid(self, s, frame, rng)
         }
+    }
+}
+
+impl crate::Character for Mara {
+    const ID: &'static str = "mara";
+    fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
+        Mara::plan_day(self, ctx, rng)
+    }
+    fn react(
+        &mut self,
+        trigger: &Trigger,
+        ctx: &Ctx<'_>,
+        _rng: &mut Pcg32,
+    ) -> Option<Vec<Command>> {
+        Mara::react(self, trigger, ctx)
     }
 }

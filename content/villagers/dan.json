@@ -1,0 +1,51 @@
+{
+  "id": "dan",
+  "name": "Dan",
+  "home": "ashby_barn",
+  "bed": "bed_dan",
+  "coins": 4,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_dan",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_dan",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_dan",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_dan",
+      "activity": "farm"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "table_dan",
+      "activity": "farm"
+    },
+    {
+      "days": "fri",
+      "at": "7:30pm",
+      "object": "table_tavern_2",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "10:00pm",
+      "object": "bed_dan",
+      "activity": "sleep"
+    }
+  ]
+}

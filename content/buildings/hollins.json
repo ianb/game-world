@@ -1,0 +1,176 @@
+{
+  "id": "hollins",
+  "zone": "town",
+  "at": {
+    "x": 14,
+    "y": 6
+  },
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "kitchen",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 7,
+            "h": 5
+          },
+          "flooring": "flagstone"
+        },
+        {
+          "id": "parents",
+          "rect": {
+            "x": 9,
+            "y": 1,
+            "w": 5,
+            "h": 5
+          }
+        },
+        {
+          "id": "children",
+          "rect": {
+            "x": 15,
+            "y": 1,
+            "w": 5,
+            "h": 5
+          }
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 4,
+            "y": 6
+          },
+          "between": [
+            "kitchen"
+          ]
+        },
+        {
+          "at": {
+            "x": 8,
+            "y": 3
+          },
+          "between": [
+            "kitchen",
+            "parents"
+          ]
+        },
+        {
+          "at": {
+            "x": 14,
+            "y": 3
+          },
+          "between": [
+            "parents",
+            "children"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "table_hollins",
+          "kind": "table",
+          "room": "kitchen",
+          "at": {
+            "x": 3,
+            "y": 3
+          },
+          "activity": "eat"
+        },
+        {
+          "id": "churn_hollins",
+          "kind": "churn",
+          "room": "kitchen",
+          "at": {
+            "x": 7,
+            "y": 1
+          },
+          "activity": "dairy",
+          "stock": {
+            "cheese": 2
+          }
+        },
+        {
+          "id": "stove_hollins",
+          "kind": "stove",
+          "room": "kitchen",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "activity": "cook"
+        },
+        {
+          "id": "bed_will",
+          "kind": "bed",
+          "room": "parents",
+          "at": {
+            "x": 9,
+            "y": 1
+          },
+          "owner": "will",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_ada",
+          "kind": "bed",
+          "room": "parents",
+          "at": {
+            "x": 10,
+            "y": 1
+          },
+          "owner": "ada",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_jory",
+          "kind": "bed",
+          "room": "children",
+          "at": {
+            "x": 15,
+            "y": 1
+          },
+          "owner": "jory",
+          "activity": "sleep"
+        },
+        {
+          "id": "bed_tilly",
+          "kind": "bed",
+          "room": "children",
+          "at": {
+            "x": 19,
+            "y": 1
+          },
+          "owner": "tilly",
+          "activity": "sleep"
+        },
+        {
+          "id": "hearth_hollins",
+          "kind": "hearth",
+          "room": "kitchen",
+          "at": {
+            "x": 3,
+            "y": 1
+          }
+        },
+        {
+          "id": "sacks_hollins",
+          "kind": "sacks",
+          "room": "kitchen",
+          "at": {
+            "x": 5,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 4
+      }
+    }
+  ]
+}

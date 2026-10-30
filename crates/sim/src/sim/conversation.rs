@@ -138,6 +138,7 @@ impl<C: CharacterSet> Sim<C> {
             terrain: &self.state.terrain,
             stock: &self.state.stock,
             record: &self.state.record,
+            odds: &self.state.odds,
         };
         if let Some(m) = self.state.characters.interlocutor(who, &ctx) {
             m.hear(heard);
@@ -231,6 +232,7 @@ impl<C: CharacterSet> Sim<C> {
             terrain: &self.state.terrain,
             stock: &self.state.stock,
             record: &self.state.record,
+            odds: &self.state.odds,
         };
         let in_it = who == convo.a || who == convo.b;
         let situation = Situation {

@@ -1202,3 +1202,81 @@ the view are cut down to a stub:
 - A shot is taken from the south side of the people in it unless much
   more stands in the way there, never end on. Objects and trees still in
   the way are hidden.
+
+## 2026-10-30: A valley ten times the size, with a program for everyone
+
+Ian: "OK, now we just need to make the world quite a bit larger. Like maybe
+10x...?" Asked what to scale, he chose area and people together and one big
+outdoor zone. On the villagers: "The mix and configuration of each character
+should somewhat unique (some have jobs, some don't, some are neurotic in
+certain ways, etc). And probably at least one unique program per character
+too, something that makes them special and unique. Probably all characters
+should have both a description, and design notes you use now and in the
+future to guide their programming development".
+
+Decided and built (see `docs/design/valley.md`):
+
+- One zone of 150 by 115 tiles with the old town in the middle, farms, a mill
+  on a river, woods with clearings, a hamlet across the river and a manor.
+  31 buildings, 45 villagers.
+- Every villager has `docs/characters/<id>.md` (a placeholder description and
+  design notes) and a module with at least one behavior of their own. The 40
+  new ones are placeholders like the first five.
+- Zones declare named areas, and character code refers to them instead of
+  coordinates. Paths are laid after water and woods, so a road across water is
+  a bridge.
+- A `Character` trait and a `town!` macro replace the hand-written dispatch:
+  adding a villager is a module and a line.
+- Routing became one A* over dense tiles before any of this, which made the
+  size affordable (a week in about half a second).
+- The villager sheets are packed four to a row so the atlas stays within
+  common texture limits, and the 2D map caches its still layer.
+
+Implications: tests that named seeds or coordinates moved to areas, wider
+seed searches, or properties that hold on any seed. Confiding is rarer with 45
+people (warm pairs are thinner), so the four-week conversation test checks
+that people try to confide, and a separate test that one takes. The economy
+has not been tuned. Layout 10.
+
+## 2026-10-30: Tests set up scenes and force chances
+
+Ian, on tests that searched seeds for an event: "using seeds to get a test to
+pass is crazy! You can and should build testability in, maybe in this case
+forcing a certain "random" order of things".
+
+Decided and built (see `docs/testing.md`):
+
+- Every roll that decides whether something happens is a named chance,
+  `Ctx::chance(rng, who, label, percent)`, with the label a `pub const` beside
+  the code. A test can force a label for one villager or everyone. Forced
+  outcomes live in `SimState` (snapshot 14) and are empty in a normal run.
+- `characters::scene::Scene` sets a moment up: forced chances, coins, needs,
+  memories, positions, and cued commands (`Sim::cue`, `Sim::state_mut`).
+- A teleport now fires encounters, since the villager has come to rest.
+- The seed searches and seed-specific tests became scenes. Tests that run the
+  ordinary town for weeks all use seed 1 and check properties that hold on any
+  run.
+
+This corrects the implication in the previous entry: there are no wider seed
+searches.
+
+## 2026-10-30: Town hall, Saturdays, and materials
+
+Ian, on the valley: "make sure you add more variety too, town halls,
+workplaces, etc. Not just more cottages or something. Use lots more textures
+too for floors or whatever".
+
+Decided and built (see `docs/design/valley.md`):
+
+- A town hall with a Saturday moot that eight villagers attend, a Saturday
+  market on the square with three new stalls, and brewing at the alehouse.
+  These are schedule entries; no character code changed.
+- Rooms have a `flooring` and buildings `walls`, both closed enums in content
+  that only the views read. The world view carries rooms and wall materials
+  to the viewer (protocol 20).
+- Six floors, four wall styles inside and out, and sprites for every object
+  kind, all from the LPC sheets already vendored.
+
+Implications: a new material is a variant in `Flooring` or `Walling` and a
+tile in `scripts/make-tileset.mjs`. The furniture is decoration and blocks a
+tile; content validation catches a piece that seals part of a room.

@@ -183,6 +183,22 @@ put("wall_outside", face(53, 67));
 // brick outside.
 put("wall_tall_inside", tiles(WALL, 1, 59, 1, 3));
 put("wall_tall_outside", tiles(WALL, 53, 65, 1, 3));
+
+// The same per building material (`Walling` in content): the column and top row of a
+// three-tile block in walls.png, outside and inside. Timber buildings are panelled inside,
+// brick ones too; stone and board ones show the same material both sides.
+const WALLINGS = {
+  timber: { out: [53, 65], in: [1, 59] },
+  stone: { out: [1, 20], in: [1, 20] },
+  brick: { out: [1, 23], in: [1, 59] },
+  boards: { out: [17, 59], in: [17, 59] },
+};
+for (const [name, w] of Object.entries(WALLINGS)) {
+  put(`wall_outside_${name}`, face(w.out[0], w.out[1] + 2));
+  put(`wall_face_${name}`, face(w.in[0], w.in[1] + 2));
+  put(`wall_tall_outside_${name}`, tiles(WALL, w.out[0], w.out[1], 1, 3));
+  put(`wall_tall_inside_${name}`, tiles(WALL, w.in[0], w.in[1], 1, 3));
+}
 // A window for outside walls, and its dark panes alone, which the 3D view lights at night.
 put("window", tiles("tiles/windows-doors/windows-doors.png", 21, 6));
 put("window_glow", (() => {
@@ -195,6 +211,13 @@ put("window_glow", (() => {
 })());
 
 put("floor", tiles("tiles/house-interior/interior.png", 0, 3));
+// Room floors by material (`Flooring` in content).
+put("floor_planks", tiles("tiles/house-interior/interior.png", 0, 3));
+put("floor_darkplanks", tiles("tiles/base/inside.png", 0, 4));
+put("floor_flagstone", tiles("tiles/atlas/build_atlas.png", 1, 3));
+put("floor_cobbles", tiles("tiles/house-interior/interior.png", 1, 4));
+put("floor_checker", tiles("tiles/house-interior/interior.png", 0, 4));
+put("floor_earth", tiles("tiles/base/dirt.png", 1, 3));
 put("opening", tiles("tiles/house-interior/interior.png", 0, 3));
 put("door", tiles("tiles/windows-doors/windows-doors.png", 4, 26));
 put("void", (() => {
@@ -224,6 +247,40 @@ put("obj_well", tiles("tiles/decorations-medieval/decorations-medieval.png", 0, 
 put("obj_bench", tiles("tiles/decorations-medieval/decorations-medieval.png", 6, 34, 2, 1), -H, 0);
 put("obj_chair", tiles("tiles/base/country.png", 2, 0));
 put("obj_generic", tiles("tiles/house-interior/interior.png", 6, 6));
+// Workplaces and furnishings.
+const INT = "tiles/house-interior/interior.png";
+const DEC = "tiles/decorations-medieval/decorations-medieval.png";
+const OBJ = "tiles/atlas/obj_misk_atlas.png";
+put("obj_anvil", tiles(OBJ, 6, 11));
+put("obj_sacks", tiles(OBJ, 4, 13));
+put("obj_millstone", tiles(OBJ, 15, 10));
+put("obj_altar", tiles("tiles/atlas/build_atlas.png", 13, 12));
+put("obj_workbench", tiles(INT, 4, 8));
+put("obj_desk", tiles(INT, 4, 9));
+put("obj_loom", tiles(INT, 5, 8));
+put("obj_lectern", tiles(INT, 7, 6));
+put("obj_bookshelf", tiles(INT, 1, 6, 1, 2), 0, -T);
+put("obj_chest", tiles(INT, 3, 8, 1, 2), 0, -T);
+put("obj_weaponrack", tiles(INT, 6, 8, 1, 2), 0, -T);
+put("obj_clock", tiles(INT, 1, 10));
+put("obj_hearth", tiles(INT, 12, 4));
+put("obj_barrels", tiles(INT, 1, 8, 2, 2), -H, -T);
+put("obj_haystack", tiles(DEC, 0, 20, 2, 2), -H, -T);
+put("obj_firewood", tiles(DEC, 12, 20, 2, 2), -H, -T);
+put("obj_logs", tiles(DEC, 13, 22));
+put("obj_bucket", tiles(DEC, 2, 14));
+put("obj_trough", tiles(DEC, 4, 5));
+put("obj_churn", tiles(DEC, 2, 22));
+put("obj_wheel", tiles(DEC, 3, 15));
+put("obj_grave", tiles(DEC, 1, 3));
+put("obj_cross", tiles(DEC, 0, 0, 1, 2), 0, -T);
+put("obj_scarecrow", tiles(DEC, 10, 4, 1, 2), 0, -T);
+put("obj_banner", tiles(DEC, 0, 38, 1, 2), 0, -T);
+put("obj_lantern", tiles(DEC, 13, 4));
+put("obj_stall", tiles(DEC, 6, 25, 2, 3), -H, -2 * T);
+put("obj_hive", tiles(DEC, 3, 22));
+put("obj_clamp", tiles(DEC, 10, 49));
+put("obj_fence", tiles("tiles/atlas/build_atlas.png", 25, 11));
 
 // ---- Villagers: each one's walk sheet composed from their layers (art/lpc/characters),
 // recolored from each material's base palette. 9 frames of 64px; rows face up, left, down,
@@ -271,8 +328,12 @@ for (const name of names) {
   shelf = Math.max(shelf, h);
 }
 y += shelf;
+// Villagers four to a row, so the sheet stays within the texture size every GPU allows.
+const PER_ROW = 4;
 const villagerTop = y * T;
-const atlas = new Img(COLS * T, villagerTop + Object.keys(villagers).length * 4 * FRAME);
+const names_v = Object.keys(villagers);
+const width = Math.max(COLS * T, PER_ROW * 9 * FRAME);
+const atlas = new Img(width, villagerTop + Math.ceil(names_v.length / PER_ROW) * 4 * FRAME);
 const entries = {};
 for (const name of Object.keys(out).sort()) {
   const { img, ox, oy, variants } = out[name];
@@ -286,9 +347,14 @@ for (const name of Object.keys(out).sort()) {
   entries[name] = e;
 }
 const villagerRows = {};
-Object.entries(villagers).forEach(([who, img], i) => {
-  atlas.draw(img, 0, 0, img.w, img.h, 0, villagerTop + i * 4 * FRAME);
-  villagerRows[who] = villagerTop + i * 4 * FRAME;
+const villagerLeft = {};
+names_v.forEach((who, i) => {
+  const img = villagers[who];
+  const x = (i % PER_ROW) * 9 * FRAME;
+  const top = villagerTop + Math.floor(i / PER_ROW) * 4 * FRAME;
+  atlas.draw(img, 0, 0, img.w, img.h, x, top);
+  villagerRows[who] = top;
+  villagerLeft[who] = x;
 });
 
 const png = new PNG({ width: atlas.w, height: atlas.h });
@@ -296,6 +362,6 @@ atlas.data.copy(png.data);
 writeFileSync("packages/viewer/public/tiles.png", PNG.sync.write(png));
 writeFileSync(
   "packages/viewer/public/tiles.json",
-  `${JSON.stringify({ tile: T, columns: COLS, tiles: entries, villagers: { frame: FRAME, frames: 9, top: villagerRows } }, null, 1)}\n`,
+  `${JSON.stringify({ tile: T, columns: COLS, tiles: entries, villagers: { frame: FRAME, frames: 9, top: villagerRows, left: villagerLeft } }, null, 1)}\n`,
 );
 console.log(`wrote tiles.png (${atlas.w}x${atlas.h}, ${names.length} tiles, ${Object.keys(villagers).length} villagers) and tiles.json`);

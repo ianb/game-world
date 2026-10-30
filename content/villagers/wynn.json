@@ -1,0 +1,45 @@
+{
+  "id": "wynn",
+  "name": "Wynn",
+  "home": "herbalist",
+  "bed": "bed_wynn",
+  "coins": 18,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_wynn",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_wynn",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_wynn",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "shelf_wynn",
+      "activity": "mix"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "shelf_wynn",
+      "activity": "mix"
+    },
+    {
+      "days": "daily",
+      "at": "10:30pm",
+      "object": "bed_wynn",
+      "activity": "sleep"
+    }
+  ]
+}
