@@ -64,7 +64,8 @@
     {
       "good": "malt",
       "to": "copper_alehouse",
-      "price": 2
+      "price": 2,
+      "keep": 8
     }
   ]
 }

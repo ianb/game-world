@@ -392,3 +392,84 @@ fn people_take_to_the_hens_in_their_own_ways() {
     assert_eq!(felt("tom"), Some((-1, true, Some(ada))));
     assert_eq!(felt("rob"), None);
 }
+
+/// Pip, delighted by Ada's hens, runs after them for a few minutes and then goes back to
+/// what he was doing; the hens keep out of his reach.
+#[test]
+fn pip_chases_the_hens_and_they_run() {
+    let mut s = Scene::new();
+    s.run_until(at(0, 10, 0));
+    let pip = s.id("pip");
+    s.put_by_flock("pip", "hens_hollins");
+    let events = s.run_until(at(0, 10, 20)).to_vec();
+    let chased = events.iter().find_map(|e| match e {
+        Emitted::Activity {
+            tick,
+            who,
+            activity,
+            ..
+        } if *who == pip && activity == "chase-hens" => Some(*tick),
+        _ => None,
+    });
+    let chased = chased.expect("Pip chases the hens");
+    assert!(events.iter().any(|e| matches!(e,
+        Emitted::Activity { tick, who, activity, .. } if *who == pip && activity != "chase-hens" && activity != "walking" && *tick > chased)),
+        "and then goes back to what he was doing");
+    // While he chases, no hen lets him stand next to it for long: at the end, none is
+    // beside him.
+    let p = s.sim.state().villagers[pip.index()].pos;
+    let flock = s
+        .sim
+        .flocks()
+        .iter()
+        .position(|f| f.id == "hens_hollins")
+        .unwrap();
+    assert!(
+        s.sim
+            .state()
+            .animals
+            .iter()
+            .filter(|a| usize::from(a.flock) == flock)
+            .all(|a| a.pos != p)
+    );
+}
+
+/// On a day the train stops Lottie is on the platform before it comes, stays until it has
+/// gone, and then says aloud that she wants to leave.
+#[test]
+fn lottie_watches_the_train_go() {
+    let mut s = Scene::new();
+    s.force_for(characters::lottie::SAYS_SO, "lottie", true);
+    let lottie = s.id("lottie");
+    let events = s.run_until(at(1, 11, 0)).to_vec();
+    let watching = events.iter().find_map(|e| match e {
+        Emitted::Activity {
+            tick,
+            who,
+            activity,
+            ..
+        } if *who == lottie && activity == "watch-train" => Some(*tick),
+        _ => None,
+    });
+    assert!(
+        watching.is_some_and(|t| t < at(1, 10, 0)),
+        "on the platform before ten"
+    );
+    let left = events.iter().find_map(|e| match e {
+        Emitted::TrainLeft { tick, .. } => Some(*tick),
+        _ => None,
+    });
+    let thought = events.iter().find_map(|e| match e {
+        Emitted::Thought { tick, who, thought }
+            if *who == lottie && thought.about.is("leaving") =>
+        {
+            Some((*tick, thought.aloud))
+        }
+        _ => None,
+    });
+    let (when, aloud) = thought.expect("she thinks about leaving");
+    assert!(
+        aloud && left.is_some_and(|l| when > l),
+        "aloud, after the train has gone"
+    );
+}

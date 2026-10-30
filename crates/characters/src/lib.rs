@@ -243,7 +243,7 @@ impl CharacterSet for Town {
             .and_then(|c| c.answer(&trigger, ctx, rng));
         let mut cmds = match (own, &trigger) {
             (Some(own), _) => own,
-            (None, Trigger::Animals { kind, owner }) => {
+            (None, Trigger::Animals { kind, owner, .. }) => {
                 let fondness = self
                     .character_ref(id)
                     .map_or(Fondness::Indifferent, |c| c.fond(*kind));

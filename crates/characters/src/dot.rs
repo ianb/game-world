@@ -11,6 +11,8 @@ use sim::social::{Interlocutor, Memory, Persona};
 const RESTOCK_BELOW: u16 = 6;
 const RESTOCK: i32 = 8;
 const RESTOCK_COST: u32 = 12;
+/// Malt from the railway for one brew of `RESTOCK` ale, instead of buying it in.
+const MALT_PER_BREW: u16 = 4;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Dot {
@@ -38,13 +40,22 @@ impl Character for Dot {
         _rng: &mut Pcg32,
     ) -> Option<Vec<Command>> {
         Some(match trigger {
-            // Morning at the keg: order more if it is low, and have it out with Wat if the
-            // keg came up short.
+            // Morning at the keg: brew or order more if it is low, and have it out with Wat
+            // if the keg came up short.
             Trigger::Arrived if activity_of(ctx, "dot") == "tap" => {
                 let me = villager(ctx, "dot");
                 let mut cmds = Vec::new();
                 if stock_of(ctx, "bar_alehouse", "ale") < RESTOCK_BELOW {
-                    cmds.push(pay(ctx, "dot", "outside", RESTOCK_COST, "ale"));
+                    if stock_of(ctx, "copper_alehouse", "malt") >= MALT_PER_BREW {
+                        cmds.push(stock(
+                            ctx,
+                            "copper_alehouse",
+                            "malt",
+                            -i32::from(MALT_PER_BREW),
+                        ));
+                    } else {
+                        cmds.push(pay(ctx, "dot", "outside", RESTOCK_COST, "ale"));
+                    }
                     cmds.push(stock(ctx, "bar_alehouse", "ale", RESTOCK));
                 }
                 if std::mem::take(&mut self.short) {

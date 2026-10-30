@@ -42,6 +42,9 @@ impl Character for Kit {
     }
 
     fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {
+        if let Some(chase) = crate::toolbox::chase_hens(ctx, "kit", trigger) {
+            return Some(chase);
+        }
         Some(match trigger {
             // Out to the square to look for Pip.
             Trigger::Arrived if activity_of(ctx, "kit") == "play" => {

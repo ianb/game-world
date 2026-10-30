@@ -17,6 +17,8 @@ const DOOR_H = 2;
 const CLOSE = 16;
 /** Objects drawn flat on the floor rather than standing up. */
 const LYING = new Set(["bed", "bed_double", "platform"]);
+/** Objects people stand at the front of, set back so whoever is on their tile shows. */
+const BACKDROPS = new Set(["stall"]);
 /** Objects that glow after dark. */
 const HEARTHS = new Set(["oven", "stove", "hearth", "kiln", "copper"]);
 /** How long a speech mark stays up, in real milliseconds. */
@@ -631,6 +633,7 @@ export class Diorama {
       if (o.place !== place.id || LYING.has(o.kind)) continue;
       const tile = objectTileAt(o, this.o.objects);
       const m = tile ? this.sprite(tile, o.pos.x, o.pos.y) : null;
+      if (m && BACKDROPS.has(o.kind)) m.position.z -= 0.6;
       if (m) this.sprites.push(m);
       if (HEARTHS.has(o.kind)) {
         const lamp = new THREE.PointLight(0xffa04a, 0, 9, 1.6);

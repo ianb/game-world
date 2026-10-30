@@ -62,7 +62,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 22;
+export const PROTOCOL_VERSION = 23;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;

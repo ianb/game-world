@@ -198,6 +198,13 @@
         "good": {
           "type": "string"
         },
+        "keep": {
+          "description": "They fetch only enough to bring what is at `to` up to this.",
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
         "price": {
           "description": "What they pay the railway for each.",
           "type": "integer",
@@ -212,7 +219,8 @@
       "required": [
         "good",
         "to",
-        "price"
+        "price",
+        "keep"
       ]
     },
     "FlockSpec": {
@@ -546,7 +554,7 @@
           }
         },
         "delivers": {
-          "description": "What every stopping train leaves in the shed.",
+          "description": "What the shed holds after a stopping train: each train tops it up to these counts.",
           "type": "array",
           "default": [],
           "items": {

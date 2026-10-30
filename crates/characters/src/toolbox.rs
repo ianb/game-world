@@ -286,6 +286,25 @@ pub fn chat(
     })
 }
 
+/// Today's trains, in timetable order.
+#[must_use]
+pub fn trains_today(ctx: &Ctx<'_>) -> Vec<sim::railway::Timing> {
+    let (Some(rail), Some(spec)) = (
+        ctx.world.rail.as_ref(),
+        ctx.content.zones.iter().find_map(|z| z.railway.as_ref()),
+    ) else {
+        return Vec::new();
+    };
+    sim::railway::timings(spec, rail, ctx.tick.day_start(), ctx.calendar.weekday)
+}
+
+/// The railway platform's object id, if there is a railway.
+#[must_use]
+pub fn platform<'a>(ctx: &Ctx<'a>) -> Option<&'a str> {
+    let rail = ctx.world.rail.as_ref()?;
+    Some(ctx.world.objects[rail.platform].id.as_str())
+}
+
 /// At the platform: everything they send by rail, from where they keep it.
 #[must_use]
 pub fn send_goods(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
@@ -317,7 +336,8 @@ pub fn fetch_goods(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
     let who = villager(ctx, me);
     let mut cmds = Vec::new();
     for f in &v.fetches {
-        let n = stock_of(ctx, &shed, &f.good);
+        let wanted = f.keep.saturating_sub(stock_of(ctx, &f.to, &f.good));
+        let n = stock_of(ctx, &shed, &f.good).min(wanted);
         let afford = ctx.coins(who) / f.price.max(1);
         let n = u32::from(n).min(afford);
         if n == 0 {
@@ -334,6 +354,46 @@ pub fn fetch_goods(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
         });
     }
     cmds
+}
+
+/// A child's answer to hens close by when they are free to: run at them for a few
+/// minutes, delighted, then back to whatever they were doing. Hens run from a chaser.
+#[must_use]
+pub fn chase_hens(ctx: &Ctx<'_>, me: &str, trigger: &Trigger) -> Option<Vec<Command>> {
+    let Trigger::Animals {
+        kind: content::AnimalKind::Chicken,
+        owner,
+        place,
+        at,
+    } = trigger
+    else {
+        return None;
+    };
+    let busy = matches!(
+        activity_of(ctx, me),
+        "school" | "sleep" | "talk" | "service" | "chase-hens"
+    );
+    if busy {
+        return None;
+    }
+    Some(vec![
+        think_aloud(
+            ctx.topic("hens").about(*owner),
+            Blame::Them(*owner),
+            false,
+            false,
+            2,
+        ),
+        Command::Interlude {
+            target: Target::Tile {
+                place: *place,
+                pos: *at,
+            },
+            activity: "chase-hens".into(),
+            minutes: 4,
+        },
+        Command::Note("after the hens".into()),
+    ])
 }
 
 /// The shared response to animals close by, by how the person takes to them. Their own

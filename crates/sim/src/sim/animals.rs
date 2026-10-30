@@ -12,6 +12,8 @@ use rand::RngExt;
 
 /// Kind of `met` entry for a villager noticing a flock.
 const NOTICED: u8 = 2;
+/// The activity that sends animals running.
+pub const CHASE: &str = "chase-hens";
 
 impl<C: CharacterSet> Sim<C> {
     /// Flocks from content, references resolved. Validation has checked they resolve.
@@ -160,9 +162,53 @@ impl<C: CharacterSet> Sim<C> {
             }
             return;
         }
+        if let Some(from) = self.chaser_near(&a) {
+            self.flee(i, &flock, from);
+            let gap = self.state.rng.animals.random_range(4..=8u32);
+            self.state
+                .queue
+                .schedule(tick.plus(gap), Event::Animal { index });
+            return;
+        }
         self.wander(i, &flock);
         self.noticed_by_villagers(i, out);
         self.schedule_step(index, a.kind);
+    }
+
+    /// Where someone chasing this animal stands, if they are within two tiles.
+    fn chaser_near(&self, a: &Animal) -> Option<Pos> {
+        self.state
+            .villagers
+            .iter()
+            .find(|v| {
+                v.place == a.place
+                    && v.activity == CHASE
+                    && v.pos.x.abs_diff(a.pos.x) + v.pos.y.abs_diff(a.pos.y) <= 2
+            })
+            .map(|v| v.pos)
+    }
+
+    /// A step that takes the animal furthest from `from`, inside its area.
+    fn flee(&mut self, i: usize, flock: &Flock, from: Pos) {
+        let p = self.state.animals[i].pos;
+        let area = flock.area;
+        let best = [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)]
+            .into_iter()
+            .filter_map(|(dx, dy)| {
+                let x = u16::try_from(i32::from(p.x) + dx).ok()?;
+                let y = u16::try_from(i32::from(p.y) + dy).ok()?;
+                let inside =
+                    x >= area.x && y >= area.y && x < area.x + area.w && y < area.y + area.h;
+                (inside && self.animal_can_stand(flock.place, Pos { x, y }, Some(i)))
+                    .then_some(Pos { x, y })
+            })
+            .max_by_key(|q| q.x.abs_diff(from.x) + q.y.abs_diff(from.y));
+        if let Some(q) = best
+            && q.x.abs_diff(from.x) + q.y.abs_diff(from.y)
+                >= p.x.abs_diff(from.x) + p.y.abs_diff(from.y)
+        {
+            self.state.animals[i].pos = q;
+        }
     }
 
     fn schedule_step(&mut self, index: u16, kind: AnimalKind) {
@@ -207,6 +253,7 @@ impl<C: CharacterSet> Sim<C> {
             out.push(Emitted::Laid {
                 tick: self.state.tick,
                 flock: flock.id.clone(),
+                owner: flock.owner,
                 object: coop,
                 now,
             });
@@ -283,7 +330,7 @@ impl<C: CharacterSet> Sim<C> {
             .map(|(vi, _)| VillagerId(u16::try_from(vi).expect("few villagers")))
             .collect();
         for who in near {
-            self.notice(who, usize::from(a.flock), out);
+            self.notice(who, usize::from(a.flock), a.place, a.pos, out);
         }
     }
 
@@ -293,7 +340,7 @@ impl<C: CharacterSet> Sim<C> {
             let v = &self.state.villagers[who.index()];
             (v.place, v.pos)
         };
-        let flocks: Vec<usize> = self
+        let seen: Vec<(usize, Pos)> = self
             .state
             .animals
             .iter()
@@ -302,14 +349,21 @@ impl<C: CharacterSet> Sim<C> {
                     && a.place == place
                     && a.pos.x.abs_diff(pos.x) + a.pos.y.abs_diff(pos.y) <= 1
             })
-            .map(|a| usize::from(a.flock))
+            .map(|a| (usize::from(a.flock), a.pos))
             .collect();
-        for f in flocks {
-            self.notice(who, f, out);
+        for (f, at) in seen {
+            self.notice(who, f, place, at, out);
         }
     }
 
-    fn notice(&mut self, who: VillagerId, flock: usize, out: &mut Vec<Emitted>) {
+    fn notice(
+        &mut self,
+        who: VillagerId,
+        flock: usize,
+        place: PlaceId,
+        at: Pos,
+        out: &mut Vec<Emitted>,
+    ) {
         let key = (NOTICED, who.0, u16::try_from(flock).expect("few flocks"));
         let now = self.state.tick;
         if let Some(last) = self.state.met.get(&key)
@@ -322,6 +376,8 @@ impl<C: CharacterSet> Sim<C> {
         let trigger = Trigger::Animals {
             kind: f.kind,
             owner: f.owner,
+            place,
+            at,
         };
         self.react(who, trigger, out);
     }

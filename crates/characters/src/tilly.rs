@@ -23,6 +23,9 @@ impl Character for Tilly {
         }
     }
     fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {
+        if let Some(chase) = crate::toolbox::chase_hens(ctx, "tilly", trigger) {
+            return Some(chase);
+        }
         Some(match trigger {
             // After school, frogs at the pond.
             Trigger::Arrived if activity_of(ctx, "tilly") == "chores" && !is_weekend(ctx) => {

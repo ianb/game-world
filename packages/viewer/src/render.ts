@@ -399,6 +399,15 @@ export function isTreeCell(names: string[], w: number, x: number, y: number): bo
   return names[y * w + x] === "canopy" && (x + y) % 2 === 0 && variantAt(x, y, 3) === 0;
 }
 
+/** The most pixels a canvas may have on iOS Safari; bigger ones fail to draw. */
+const MAX_CANVAS_AREA = 16_777_216;
+
+/** Whether this browser limits canvas size: iOS and iPadOS Safari, and anything on them. */
+function smallCanvases(): boolean {
+  const ua = navigator.userAgent;
+  return /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+}
+
 /** Where a villager was last drawn and which way they were going. */
 interface Gait {
   x: number;
@@ -418,6 +427,8 @@ export class PlaceCanvas {
   private readonly dressing: Dressing;
   private readonly rail: WorldView["rail"];
   private readonly gaits = new Map<string, Gait>();
+  /** Canvas pixels per map pixel: 1, or 0.5 for a place too big for the browser's canvas. */
+  private readonly res: number;
 
   constructor(
     private readonly tiles: Tileset,
@@ -425,8 +436,10 @@ export class PlaceCanvas {
     world: WorldView,
   ) {
     this.canvas = document.createElement("canvas");
-    this.canvas.width = place.width * tiles.size;
-    this.canvas.height = place.height * tiles.size;
+    const area = place.width * tiles.size * place.height * tiles.size;
+    this.res = area > MAX_CANVAS_AREA && smallCanvases() ? 0.5 : 1;
+    this.canvas.width = place.width * tiles.size * this.res;
+    this.canvas.height = place.height * tiles.size * this.res;
     this.canvas.className = "place";
     this.canvas.setAttribute("role", "img");
     this.canvas.setAttribute("aria-label", `map of ${place.key}`);
@@ -491,6 +504,7 @@ export class PlaceCanvas {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("no 2d canvas");
     ctx.imageSmoothingEnabled = false;
+    ctx.setTransform(this.res, 0, 0, this.res, 0, 0);
     const { tiles, place } = this;
     const w = place.width;
     const h = place.height;
@@ -539,7 +553,9 @@ export class PlaceCanvas {
 
   draw(sim: Sim, villagers: VillagerView[], highlight: { x: number; y: number } | null = null): void {
     const { ctx, tiles, place } = this;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(this.paintLayer(sim), 0, 0);
+    ctx.setTransform(this.res, 0, 0, this.res, 0, 0);
     // Villagers, animals and the train over the still layer, back to front.
     const here = villagers.filter((v) => v.place === place.id);
     const shift = spread(here, tiles.size);

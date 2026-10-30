@@ -292,6 +292,15 @@ impl Summarizer {
                 }
             }
             Emitted::Thought { who, thought, .. } => self.thought(tick, *who, thought),
+            Emitted::Laid { owner, .. } => {
+                let name = self.name(*owner).to_string();
+                let key = format!("laid:{}", name.to_lowercase());
+                let text = format!("{name}'s hens laid an egg");
+                self.line(tick, *owner, SummaryKind::Animals, text, None, key);
+            }
+            Emitted::TrainPassed { .. }
+            | Emitted::TrainArrived { .. }
+            | Emitted::TrainLeft { .. } => self.train(tick, e),
             Emitted::Stuck {
                 who, reason, cause, ..
             } => {
@@ -310,6 +319,70 @@ impl Summarizer {
             }
             _ => {}
         }
+    }
+
+    /// Trains through, stopping, and leaving with what was sent.
+    fn train(&mut self, tick: Tick, e: &Emitted) {
+        match e {
+            Emitted::TrainPassed { .. } => {
+                self.world_line(
+                    tick,
+                    SummaryKind::Railway,
+                    "a train went through".into(),
+                    "train:passed".into(),
+                );
+            }
+            Emitted::TrainArrived { delivered, .. } => {
+                let goods: Vec<String> = delivered
+                    .iter()
+                    .map(|g| format!("{} {}", g.count, g.good))
+                    .collect();
+                let text = if goods.is_empty() {
+                    "the train stopped".to_string()
+                } else {
+                    format!("the train stopped and left {}", goods.join(", "))
+                };
+                self.world_line(tick, SummaryKind::Railway, text, "train:arrived".into());
+            }
+            Emitted::TrainLeft { shipped, .. } => {
+                let sent: Vec<String> = shipped
+                    .iter()
+                    .map(|x| {
+                        format!(
+                            "{}'s {} {} ({} coins)",
+                            self.name(x.who),
+                            x.count,
+                            x.good,
+                            x.paid
+                        )
+                    })
+                    .collect();
+                let text = if sent.is_empty() {
+                    "the train left with nothing".to_string()
+                } else {
+                    format!("the train took {}", sent.join(", "))
+                };
+                // Who sent what changes from train to train, so this is never routine.
+                let key = format!("train:left:{}", tick.0);
+                self.world_line(tick, SummaryKind::Railway, text, key);
+            }
+            _ => {}
+        }
+    }
+
+    /// A one-key line about no one in particular.
+    fn world_line(&mut self, tick: Tick, kind: SummaryKind, text: String, key: String) {
+        self.draft(
+            tick,
+            Draft {
+                tick,
+                who: None,
+                kind,
+                text,
+                cause: None,
+                keys: vec![key],
+            },
+        );
     }
 
     /// A one-key line about one villager.

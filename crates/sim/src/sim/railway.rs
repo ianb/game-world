@@ -64,18 +64,18 @@ impl<C: CharacterSet> Sim<C> {
             return;
         };
         let shed = u16::try_from(rail.shed).expect("few objects");
-        let delivered: Vec<GoodsLine> = spec
-            .delivers
-            .iter()
-            .map(|d| GoodsLine {
-                good: d.good.clone(),
-                count: d.count,
-            })
-            .collect();
+        let delivers = spec.delivers.clone();
         let goods = self.state.stock.entry(shed).or_default();
-        for d in &delivered {
+        let mut delivered = Vec::new();
+        for d in delivers {
             let n = goods.entry(d.good.clone()).or_insert(0);
-            *n = n.saturating_add(d.count);
+            if *n < d.count {
+                delivered.push(GoodsLine {
+                    good: d.good,
+                    count: d.count - *n,
+                });
+                *n = d.count;
+            }
         }
         out.push(Emitted::TrainArrived { tick, delivered });
     }

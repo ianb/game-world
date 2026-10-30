@@ -29,6 +29,9 @@ impl Character for Benny {
         }
     }
     fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {
+        if let Some(chase) = crate::toolbox::chase_hens(ctx, "benny", trigger) {
+            return Some(chase);
+        }
         Some(match trigger {
             Trigger::Arrived | Trigger::Waited if activity_of(ctx, "benny") == "play" => {
                 work_area(ctx, "benny", trigger, "hamlet-green", "play", 20, 0, rng)

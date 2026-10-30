@@ -78,7 +78,8 @@
     {
       "good": "iron",
       "to": "anvil_smithy",
-      "price": 2
+      "price": 2,
+      "keep": 8
     }
   ]
 }

@@ -156,7 +156,7 @@ pub struct RailwaySpec {
     /// Where delivered goods are left.
     pub shed: String,
     pub runs: Vec<TrainRun>,
-    /// What every stopping train leaves in the shed.
+    /// What the shed holds after a stopping train: each train tops it up to these counts.
     #[serde(default)]
     pub delivers: Vec<GoodsCount>,
     /// What the railway pays for goods left on the platform, each.
@@ -464,6 +464,8 @@ pub struct Fetches {
     pub to: String,
     /// What they pay the railway for each.
     pub price: u32,
+    /// They fetch only enough to bring what is at `to` up to this.
+    pub keep: u16,
 }
 
 /// What a topic says about the person it concerns, when it says they are in trouble.

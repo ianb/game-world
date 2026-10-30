@@ -52,22 +52,26 @@
     {
       "good": "tea",
       "to": "shelf_store",
-      "price": 1
+      "price": 1,
+      "keep": 6
     },
     {
       "good": "salt",
       "to": "shelf_store",
-      "price": 1
+      "price": 1,
+      "keep": 6
     },
     {
       "good": "candles",
       "to": "shelf_store",
-      "price": 1
+      "price": 1,
+      "keep": 10
     },
     {
       "good": "nails",
       "to": "shelf_store",
-      "price": 1
+      "price": 1,
+      "keep": 8
     }
   ]
 }

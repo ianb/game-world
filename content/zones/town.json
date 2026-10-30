@@ -2405,7 +2405,8 @@
         "x": 66,
         "y": 52
       },
-      "activity": "market"
+      "activity": "market",
+      "walkable": true
     },
     {
       "id": "bench_green",
@@ -2459,7 +2460,8 @@
         "x": 65,
         "y": 49
       },
-      "activity": "sell"
+      "activity": "sell",
+      "walkable": true
     },
     {
       "id": "stall_penn",
@@ -2468,7 +2470,8 @@
         "x": 68,
         "y": 49
       },
-      "activity": "sell"
+      "activity": "sell",
+      "walkable": true
     },
     {
       "id": "stall_iris",
@@ -2477,7 +2480,8 @@
         "x": 71,
         "y": 49
       },
-      "activity": "sell"
+      "activity": "sell",
+      "walkable": true
     },
     {
       "id": "scarecrow_hollins",
@@ -2857,19 +2861,19 @@
       },
       {
         "good": "cloth",
-        "price": 4
+        "price": 3
       },
       {
         "good": "honey",
-        "price": 3
+        "price": 2
       },
       {
         "good": "cheese",
-        "price": 3
+        "price": 2
       },
       {
         "good": "barrel",
-        "price": 6
+        "price": 5
       },
       {
         "good": "eggs",
@@ -3037,6 +3041,36 @@
         "h": 2
       },
       "crop": "beans"
+    },
+    {
+      "id": "corn_ashby_west",
+      "rect": {
+        "x": 53,
+        "y": 17,
+        "w": 6,
+        "h": 8
+      },
+      "crop": "corn"
+    },
+    {
+      "id": "corn_ashby_east",
+      "rect": {
+        "x": 62,
+        "y": 17,
+        "w": 4,
+        "h": 8
+      },
+      "crop": "corn"
+    },
+    {
+      "id": "flowers_manor_1",
+      "rect": {
+        "x": 125,
+        "y": 19,
+        "w": 5,
+        "h": 3
+      },
+      "crop": "flowers"
     }
   ]
 }

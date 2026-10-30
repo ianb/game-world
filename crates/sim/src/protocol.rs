@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 22;
+pub const PROTOCOL_VERSION: u32 = 23;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -193,10 +193,11 @@ pub enum Emitted {
         x: u16,
         y: u16,
     },
-    /// A hen laid; `now` is how many eggs are in the coop.
+    /// A hen of `owner`'s laid; `now` is how many eggs are in the coop.
     Laid {
         tick: Tick,
         flock: String,
+        owner: VillagerId,
         object: ObjectId,
         now: u16,
     },
@@ -469,6 +470,10 @@ pub enum SummaryKind {
     Stuck,
     /// Something that usually happens did not.
     Absent,
+    /// Trains, and goods sent and delivered by rail.
+    Railway,
+    /// Animals: eggs laid.
+    Animals,
     /// Everything else worth a count: greetings, weeding.
     Other,
 }

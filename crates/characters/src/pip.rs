@@ -40,6 +40,9 @@ impl Pip {
         ctx: &Ctx<'_>,
         rng: &mut Pcg32,
     ) -> Option<Vec<Command>> {
+        if let Some(chase) = crate::toolbox::chase_hens(ctx, "pip", &trigger) {
+            return Some(chase);
+        }
         Some(match trigger {
             // Roaming: pick a random ground tile, walk there, pause, repeat.
             Trigger::Arrived if activity_of(ctx, "pip") == "roam" => {

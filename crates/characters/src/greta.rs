@@ -35,7 +35,9 @@ impl Character for Greta {
     fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
         let me = villager(ctx, "greta");
         let mut plan = Plan::baseline(me, ctx);
-        if weekday(ctx) == Weekday::Mon {
+        // The railway brings candles twice a week; she orders from outside only when
+        // the shelf is low anyway.
+        if weekday(ctx) == Weekday::Mon && stock_of(ctx, "shelf_store", "candles") < 4 {
             plan.at(
                 7,
                 45,

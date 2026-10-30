@@ -1,13 +1,22 @@
 //! Lottie, Hester's granddaughter. Twice a week she walks to where the road leaves the valley and looks down it.
 //! Description and design notes: `docs/characters/lottie.md`.
 use crate::Character;
-use crate::toolbox::{Plan, activity_of, go, go_area, think, villager, wait_minutes, weekday};
+use crate::toolbox::{
+    Plan, activity_of, go, go_area, platform, think, think_aloud, trains_today, villager,
+    wait_minutes, weekday,
+};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::protocol::{Blame, Gesture};
 use sim::social::{Interlocutor, Memory, Persona};
 use sim::time::Weekday;
+
+/// The chance label for saying aloud, after watching the train go, that she wants to leave.
+pub const SAYS_SO: &str = "lottie-says-so";
+const SAYS_SO_CHANCE: i16 = 25;
+/// Minutes before a stopping train comes that she gets to the platform.
+const EARLY_MINUTES: u32 = 10;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Lottie {
@@ -32,16 +41,40 @@ impl Character for Lottie {
         {
             plan.at(15, 0, go);
         }
+        // A train that stops: she goes to see it come in and go out again.
+        if let (Some(t), Some(platform)) = (
+            trains_today(ctx).into_iter().find(|t| t.stops),
+            platform(ctx),
+        ) {
+            let at = t
+                .arrive
+                .seconds_into_day()
+                .saturating_sub(EARLY_MINUTES * 60);
+            plan.at(at / 3600, at % 3600 / 60, go(ctx, platform, "watch-train"));
+        }
         plan.build()
     }
 
-    fn react(
-        &mut self,
-        trigger: &Trigger,
-        ctx: &Ctx<'_>,
-        _rng: &mut Pcg32,
-    ) -> Option<Vec<Command>> {
+    fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {
         Some(match trigger {
+            // At the platform: stay until the train has gone.
+            Trigger::Arrived if activity_of(ctx, "lottie") == "watch-train" => {
+                let gone = trains_today(ctx)
+                    .into_iter()
+                    .find(|t| t.stops && t.depart >= ctx.tick)
+                    .map_or(10, |t| (t.depart.0 - ctx.tick.0) / 60 + 3);
+                vec![wait_minutes(gone, "watch-train")]
+            }
+            Trigger::Waited if activity_of(ctx, "lottie") == "watch-train" => {
+                let me = villager(ctx, "lottie");
+                let topic = ctx.topic("leaving").about(me);
+                let thought = if ctx.chance(rng, me, SAYS_SO, SAYS_SO_CHANCE) {
+                    think_aloud(topic, Blame::World, true, true, -1)
+                } else {
+                    think(topic, Blame::World, true, true, -1)
+                };
+                vec![thought, go(ctx, "table_pike", "chores")]
+            }
             Trigger::Arrived if activity_of(ctx, "lottie") == "look-down-road" => {
                 let me = villager(ctx, "lottie");
                 vec![

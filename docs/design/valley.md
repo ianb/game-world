@@ -95,15 +95,26 @@ weekdays and Saturday one passes through at three without stopping.
 
 Where a train is follows from the clock (`sim::railway::head_at`), so the
 only state is what waits on the platform and whose it is. A stopping train
-leaves its deliveries in the shed (tea, salt, candles, nails, iron, malt) and,
+tops the shed up to a fixed stock (tea, salt, candles, nails, iron, malt) and,
 when it leaves, takes everything consigned and pays the senders.
 
 Villagers declare in content what they send (`sends`: Penn's pots, Iris's
 cloth, Martha's honey, Rob's barrels, Ada's cheese and eggs, Dot's eggs) and
-what they fetch (`fetches`: Greta's shop goods, Bram's iron, Dot's malt). On a
-day a train stops their plan gains a walk to the platform half an hour before
-it comes, or to the shed ten minutes after, and then back to what they were
-doing.
+what they fetch (`fetches`: Greta's shop goods, Bram's iron, Dot's malt). A
+fetch says how much to `keep` where it goes, and they take and pay for only the
+difference. On a day a train stops their plan gains a walk to the platform half
+an hour before it comes, or to the shed ten minutes after, and then back to
+what they were doing. Lottie goes to watch the stopping trains and stays until
+one has gone.
+
+Dot brews from the malt when the keg runs low, and buys ale in only when there
+is none. Greta orders candles from outside on Mondays only when the shelf is
+low.
+
+Money: over four weeks (seed 1) the senders gain 40 to 140 coins each. Dot
+gains from brewing, Bram holds at about 6, and Greta drifts down slowly (32 to
+18). There is still nothing for the well-off to
+spend on, so the farmers, Celia and the senders keep accumulating.
 
 ## Animals
 
@@ -119,6 +130,9 @@ says how fond it is of each kind of animal, and a new kind makes every one of
 them decide. The shared response: delight is said aloud, fondness and
 wariness are kept quiet, and annoyance and fear are said aloud and laid at the
 owner's door, where the owner may hear of it.
+
+Children who are free (Pip, Kit, Tilly, Benny) run after hens they come
+across, and hens run from anyone chasing them within two tiles.
 
 ## Farms and gardens
 

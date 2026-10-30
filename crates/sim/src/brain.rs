@@ -413,6 +413,9 @@ pub enum Trigger {
     Animals {
         kind: content::AnimalKind,
         owner: VillagerId,
+        /// Where the one they noticed is.
+        place: PlaceId,
+        at: Pos,
     },
     /// Reached the target of a `GoTo`.
     Arrived,
@@ -470,7 +473,7 @@ impl Trigger {
             }
             Trigger::Need { need, level } => format!("{} ({level})", need.name()),
             Trigger::Resumed => "resumed".into(),
-            Trigger::Animals { kind, owner } => {
+            Trigger::Animals { kind, owner, .. } => {
                 format!("{}'s {}", name(owner), animal_plural(*kind))
             }
             Trigger::Look { .. } => "looked around".into(),
