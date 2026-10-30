@@ -15,7 +15,6 @@ postcard = { version = "1.1", features = ["alloc"] }
 rand = { version = "0.10", default-features = false }
 rand_pcg = { version = "0.10", features = ["serde"] }
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
-pathfinding = "4"
 schemars = "1.2"
 ts-rs = { version = "12", features = ["serde-compat", "no-serde-warnings"] }
 thiserror = "2"

@@ -136,18 +136,20 @@ impl Ctx<'_> {
     pub fn nearest_object(&self, who: VillagerId, kind: &str) -> Option<ObjectId> {
         let v = self.villager(who);
         let here = content::Spot::new(v.place.index(), v.pos.x, v.pos.y);
-        self.objects_of_kind(kind)
+        let targets: Vec<(content::Spot, ObjectId)> = self
+            .objects_of_kind(kind)
             .into_iter()
             .filter_map(|id| {
                 let o = &self.world.objects[id.index()];
                 let access = content::validate::neighbours(o.at.x, o.at.y)
                     .into_iter()
                     .find(|&(x, y)| self.world.passable(o.place, x, y))?;
-                let there = content::Spot::new(o.place, access.0, access.1);
-                let cost = self.nav.route(self.world, here, there)?.cost;
-                Some((cost, id))
+                Some((content::Spot::new(o.place, access.0, access.1), id))
             })
-            .min_by_key(|(cost, id)| (*cost, id.0))
+            .collect();
+        let cost = content::nav::base_cost(self.world);
+        self.nav
+            .nearest(self.world, here, &targets, |_| true, &cost)
             .map(|(_, id)| id)
     }
 

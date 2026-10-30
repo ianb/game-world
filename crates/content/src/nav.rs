@@ -1,19 +1,18 @@
-//! Hierarchical pathfinding over the compiled world: a door graph with door-to-door costs
-//! inside each place, then grid search inside the current place. Costs come from the cell
-//! kind plus a caller-supplied adjustment (the sim passes wear), so routes prefer paths and
-//! trodden ground. Derived data, rebuilt from content, never part of a snapshot.
+//! Pathfinding over the compiled world: one search over every tile of every place, where a
+//! door is an edge from one end's tile to the other's. Costs come from the cell kind plus a
+//! caller-supplied adjustment (the sim passes wear), so routes prefer paths and trodden
+//! ground. Tiles are indexed densely, place after place, so a search is arrays, not maps.
+//! Derived data, rebuilt from content, never part of a snapshot.
 //!
-//! Determinism: neighbours are visited N, E, S, W, successor lists are sorted, and every
-//! cost is an integer, so the same inputs always give the same path. Door ends are numbered
-//! in declaration order; the shuffle test checks that order does not change the route.
-//! A door crossing costs nothing, matching movement, where the crossing happens in the same
-//! event as the last step of the leg.
+//! Determinism: neighbours are visited N, E, S, W, the heap breaks ties by tile index, and
+//! every cost is an integer, so the same inputs always give the same path. A door crossing
+//! costs nothing, matching movement, where the crossing happens in the same event as the
+//! last step of the leg.
 use crate::compile::World;
 use crate::model::Pos;
 use crate::validate::neighbours;
-use pathfinding::directed::astar::astar;
-use pathfinding::directed::dijkstra::dijkstra;
-use std::collections::{BTreeMap, VecDeque};
+use std::cmp::Reverse;
+use std::collections::{BTreeMap, BinaryHeap, VecDeque};
 
 /// Ticks a villager spends crossing one tile. Six tiles per game-minute.
 pub const WALK_TICKS_PER_TILE: u32 = 10;
@@ -43,14 +42,6 @@ struct DoorEnd {
     far: bool,
 }
 
-/// Route-search node: the start spot, a door end, or the goal spot.
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-enum Node {
-    Start,
-    End(usize),
-    Goal,
-}
-
 /// Cost of stepping onto a tile, for routing. Returns `None` for impassable tiles.
 pub type CostFn<'a> = &'a dyn Fn(usize, Pos) -> Option<u32>;
 
@@ -75,6 +66,8 @@ pub struct Leg {
     pub door_reverse: bool,
     /// Tiles walked in this leg (0 when already there).
     pub tiles: u32,
+    /// Every tile of the leg, both ends included.
+    pub path: Vec<Pos>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -97,8 +90,11 @@ impl Route {
 pub struct Nav {
     /// Door-end spots: (door index, far) -> spot in that end's place.
     ends: Vec<(DoorEnd, Spot)>,
-    /// For each place, the ends located in it, in end order.
-    ends_by_place: Vec<Vec<usize>>,
+    /// First tile index of each place in the dense numbering.
+    offsets: Vec<usize>,
+    /// The door ends on each tile, by dense index; most tiles have none.
+    ends_at: BTreeMap<usize, Vec<usize>>,
+    has_end: Vec<bool>,
 }
 
 impl Nav {
@@ -124,13 +120,20 @@ impl Nav {
                 },
             ));
         }
-        let mut ends_by_place = vec![Vec::new(); world.places.len()];
+        let offsets = offsets(world);
+        let total = offsets.last().copied().unwrap_or(0);
+        let mut ends_at: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
+        let mut has_end = vec![false; total];
         for (ei, (_, spot)) in ends.iter().enumerate() {
-            ends_by_place[spot.place].push(ei);
+            let i = index(world, &offsets, *spot);
+            ends_at.entry(i).or_default().push(ei);
+            has_end[i] = true;
         }
         Nav {
             ends,
-            ends_by_place,
+            offsets,
+            ends_at,
+            has_end,
         }
     }
 
@@ -144,7 +147,6 @@ impl Nav {
 
     /// Like `route`, but only doors for which `allow(door index)` holds may be crossed, and
     /// with the caller's step cost.
-    #[allow(clippy::too_many_lines)]
     pub fn route_filtered(
         &self,
         world: &World,
@@ -158,117 +160,97 @@ impl Nav {
         {
             return None;
         }
-        let from_dist = cost_distances(world, from, cost);
-        let to_dist = cost_distances(world, to, cost);
-        // Door-to-door costs within each place, computed for the ends we touch.
-        let mut end_dist: BTreeMap<usize, BTreeMap<Pos, u32>> = BTreeMap::new();
-        let mut within = |ei: usize, ej: usize| -> Option<u32> {
-            let spot_i = self.ends[ei].1;
-            let spot_j = self.ends[ej].1;
-            if spot_i.place != spot_j.place {
-                return None;
-            }
-            let map = end_dist
-                .entry(ei)
-                .or_insert_with(|| cost_distances(world, spot_i, cost));
-            map.get(&spot_j.pos).copied()
-        };
+        let goal = index(world, &self.offsets, to);
+        let found = search(
+            world,
+            &self.offsets,
+            Some(self),
+            from,
+            &Target::One(to),
+            &|i| i == goal,
+            &allow,
+            cost,
+        )?;
+        Some(self.route_from(world, &found))
+    }
 
-        let mut successors = |n: &Node| -> Vec<(Node, u32)> {
-            let mut out = Vec::new();
-            match *n {
-                Node::Start => {
-                    if from.place == to.place
-                        && let Some(&d) = from_dist.get(&to.pos)
-                    {
-                        out.push((Node::Goal, d));
-                    }
-                    for &ei in &self.ends_by_place[from.place] {
-                        if let Some(&d) = from_dist.get(&self.ends[ei].1.pos) {
-                            out.push((Node::End(ei), d));
-                        }
-                    }
-                }
-                Node::End(ei) => {
-                    let (end, spot) = self.ends[ei];
-                    // Cross the door to its twin end, if allowed in this direction.
-                    let door = &world.doors[end.door];
-                    let twin = ei ^ 1;
-                    let may_cross = allow(end.door) && (!end.far || !door.one_way);
-                    if may_cross {
-                        out.push((Node::End(twin), 0));
-                    }
-                    // Walk to another end in the same place.
-                    for &ej in &self.ends_by_place[spot.place] {
-                        if ej != ei
-                            && let Some(d) = within(ei, ej)
-                        {
-                            out.push((Node::End(ej), d));
-                        }
-                    }
-                    if spot.place == to.place
-                        && let Some(&d) = to_dist.get(&spot.pos)
-                    {
-                        out.push((Node::Goal, d));
-                    }
-                }
-                Node::Goal => {}
-            }
-            out.sort();
-            out
-        };
-
-        let (nodes, total_cost) = dijkstra(&Node::Start, &mut successors, |n| *n == Node::Goal)?;
-
-        // Turn the node sequence into legs. A leg ends at a door end that is then crossed.
-        let mut legs = Vec::new();
-        let mut cur = from;
-        let mut i = 1;
-        while i < nodes.len() {
-            match nodes[i] {
-                Node::End(ei) => {
-                    let (end, spot) = self.ends[ei];
-                    let next_is_twin =
-                        matches!(nodes.get(i + 1), Some(Node::End(ej)) if *ej == ei ^ 1);
-                    if next_is_twin {
-                        let walked = steps_between(world, cur, spot.pos, cost);
-                        legs.push(Leg {
-                            place: cur.place,
-                            from: cur.pos,
-                            to: spot.pos,
-                            door: Some(end.door),
-                            door_reverse: end.far,
-                            tiles: walked,
-                        });
-                        cur = self.ends[ei ^ 1].1;
-                        i += 2;
-                    } else {
-                        // Walking to an end without crossing it is never shortest unless it is
-                        // on the way; treat it as an intermediate waypoint of the same leg.
-                        i += 1;
-                    }
-                }
-                Node::Goal => {
-                    let walked = steps_between(world, cur, to.pos, cost);
-                    legs.push(Leg {
-                        place: cur.place,
-                        from: cur.pos,
-                        to: to.pos,
-                        door: None,
-                        door_reverse: false,
-                        tiles: walked,
-                    });
-                    i += 1;
-                }
-                Node::Start => i += 1,
+    /// The cheapest of several targets to reach from `from`, with its cost: the one first
+    /// reached, and among those reached at the same cost the least by `T`'s order.
+    pub fn nearest<T: Copy + Ord>(
+        &self,
+        world: &World,
+        from: Spot,
+        targets: &[(Spot, T)],
+        allow: impl Fn(usize) -> bool,
+        cost: CostFn<'_>,
+    ) -> Option<(u32, T)> {
+        if !world.passable(from.place, from.pos.x, from.pos.y) {
+            return None;
+        }
+        let mut at: BTreeMap<usize, Vec<T>> = BTreeMap::new();
+        for (spot, t) in targets {
+            if world.passable(spot.place, spot.pos.x, spot.pos.y) {
+                at.entry(index(world, &self.offsets, *spot))
+                    .or_default()
+                    .push(*t);
             }
         }
+        if at.is_empty() {
+            return None;
+        }
+        let found = search(
+            world,
+            &self.offsets,
+            Some(self),
+            from,
+            &Target::Any,
+            &|i| at.contains_key(&i),
+            &allow,
+            cost,
+        )?;
+        // Others reached at the same cost compete on their order.
+        let best = found
+            .ties
+            .iter()
+            .chain(std::iter::once(&found.goal))
+            .filter_map(|i| at.get(i))
+            .flatten()
+            .min()
+            .copied()?;
+        Some((found.cost, best))
+    }
+
+    /// Splits a found path into legs at its door crossings.
+    fn route_from(&self, world: &World, found: &Found) -> Route {
+        let mut legs = Vec::new();
+        let mut place = found.steps[0].0.place;
+        let mut path = vec![found.steps[0].0.pos];
+        for w in found.steps.windows(2) {
+            let (prev, _) = w[0];
+            let (spot, via) = w[1];
+            if let Some(ei) = via {
+                let end = self.ends[ei].0;
+                legs.push(leg(
+                    place,
+                    std::mem::take(&mut path),
+                    Some(end.door),
+                    end.far,
+                ));
+                place = spot.place;
+                path = vec![spot.pos];
+            } else {
+                debug_assert_eq!(prev.place, spot.place);
+                path.push(spot.pos);
+            }
+        }
+        legs.push(leg(place, path, None, false));
+        let _ = world;
         let tiles = legs.iter().map(|l| l.tiles).sum();
-        Some(Route {
+        Route {
             legs,
             tiles,
-            cost: total_cost,
-        })
+            cost: found.cost,
+        }
     }
 
     /// Travel time in ticks between two spots, if reachable.
@@ -276,13 +258,6 @@ impl Nav {
     pub fn travel_ticks(&self, world: &World, from: Spot, to: Spot) -> Option<u32> {
         self.route(world, from, to).map(|r| r.ticks())
     }
-}
-
-/// Tiles stepped along the cheapest path between two tiles of one place.
-fn steps_between(world: &World, from: Spot, to: Pos, cost: CostFn<'_>) -> u32 {
-    grid_path_cost(world, from.place, from.pos, to, cost).map_or(0, |p| {
-        u32::try_from(p.len().saturating_sub(1)).expect("short path")
-    })
 }
 
 /// Cheapest-path cost from `start` to every reachable tile in its place.
@@ -343,9 +318,7 @@ pub fn grid_path(world: &World, place: usize, from: Pos, to: Pos) -> Option<Vec<
     grid_path_cost(world, place, from, to, &cost)
 }
 
-/// Grid path inside one place with the caller's step cost. Deterministic: fixed neighbour
-/// order and integer costs. The heuristic is Manhattan distance, admissible because every
-/// step costs at least 1.
+/// Grid path inside one place with the caller's step cost, doors not crossed.
 #[must_use]
 pub fn grid_path_cost(
     world: &World,
@@ -354,18 +327,222 @@ pub fn grid_path_cost(
     to: Pos,
     cost: CostFn<'_>,
 ) -> Option<Vec<Pos>> {
-    let _ = world;
-    let heuristic = |p: &Pos| u32::from(p.x.abs_diff(to.x)) + u32::from(p.y.abs_diff(to.y));
-    let successors = |p: &Pos| -> Vec<(Pos, u32)> {
-        neighbours(p.x, p.y)
-            .into_iter()
-            .filter_map(|(x, y)| {
-                let n = Pos { x, y };
-                cost(place, n).map(|c| (n, c.max(1)))
-            })
-            .collect()
+    if !world.passable(place, from.x, from.y) || !world.passable(place, to.x, to.y) {
+        return None;
+    }
+    let offsets = offsets(world);
+    let goal_spot = Spot { place, pos: to };
+    let goal = index(world, &offsets, goal_spot);
+    let found = search(
+        world,
+        &offsets,
+        None,
+        Spot { place, pos: from },
+        &Target::One(goal_spot),
+        &|i| i == goal,
+        &|_| false,
+        cost,
+    )?;
+    Some(found.steps.into_iter().map(|(s, _)| s.pos).collect())
+}
+
+fn leg(place: usize, path: Vec<Pos>, door: Option<usize>, door_reverse: bool) -> Leg {
+    Leg {
+        place,
+        from: path[0],
+        to: path[path.len() - 1],
+        door,
+        door_reverse,
+        tiles: u32::try_from(path.len() - 1).expect("short path"),
+        path,
+    }
+}
+
+/// First dense index of each place, and the total at the end.
+fn offsets(world: &World) -> Vec<usize> {
+    let mut out = Vec::with_capacity(world.places.len() + 1);
+    let mut n = 0;
+    for p in &world.places {
+        out.push(n);
+        n += usize::from(p.width) * usize::from(p.height);
+    }
+    out.push(n);
+    out
+}
+
+fn index(world: &World, offsets: &[usize], s: Spot) -> usize {
+    offsets[s.place]
+        + usize::from(s.pos.y) * usize::from(world.places[s.place].width)
+        + usize::from(s.pos.x)
+}
+
+fn spot_of(world: &World, offsets: &[usize], i: usize) -> Spot {
+    // Few places: the last one starting at or before `i`.
+    let place = offsets.partition_point(|&o| o <= i) - 1;
+    let w = usize::from(world.places[place].width);
+    let r = i - offsets[place];
+    Spot {
+        place,
+        pos: Pos {
+            x: u16::try_from(r % w).expect("in place"),
+            y: u16::try_from(r / w).expect("in place"),
+        },
+    }
+}
+
+/// What a search is looking for: one spot, which allows a distance estimate within its
+/// place, or whichever target comes first.
+enum Target {
+    One(Spot),
+    Any,
+}
+
+/// A finished search: the tiles from start to goal, each with the door end it was reached
+/// through if it was a crossing, the cost, and other targets reached at the same cost.
+struct Found {
+    steps: Vec<(Spot, Option<usize>)>,
+    cost: u32,
+    goal: usize,
+    ties: Vec<usize>,
+}
+
+/// The tiles from `start` to `goal` by following parents back, each with the door end it
+/// was reached through if that step was a crossing.
+fn trace(
+    world: &World,
+    offsets: &[usize],
+    start: usize,
+    goal: usize,
+    parent: &[u32],
+    via: &[u32],
+) -> Vec<(Spot, Option<usize>)> {
+    let mut steps = Vec::new();
+    let mut i = goal;
+    loop {
+        let door = (via[i] != NO_DOOR).then(|| via[i] as usize);
+        steps.push((spot_of(world, offsets, i), door));
+        if i == start {
+            break;
+        }
+        i = parent[i] as usize;
+    }
+    steps.reverse();
+    steps
+}
+
+const UNSEEN: u32 = u32::MAX;
+const NO_DOOR: u32 = u32::MAX;
+
+/// A* over every tile, with door crossings as free edges when `nav` is given. The estimate
+/// is the Manhattan distance on the target's own place and zero elsewhere; every step costs
+/// at least 1, so within a place it never overestimates.
+#[allow(clippy::too_many_arguments)]
+fn search(
+    world: &World,
+    offsets: &[usize],
+    nav: Option<&Nav>,
+    from: Spot,
+    target: &Target,
+    is_goal: &dyn Fn(usize) -> bool,
+    allow: &dyn Fn(usize) -> bool,
+    cost: CostFn<'_>,
+) -> Option<Found> {
+    let total = offsets.last().copied().unwrap_or(0);
+    let estimate = |s: Spot| -> u32 {
+        match target {
+            Target::One(t) if t.place == s.place => {
+                u32::from(s.pos.x.abs_diff(t.pos.x)) + u32::from(s.pos.y.abs_diff(t.pos.y))
+            }
+            _ => 0,
+        }
     };
-    astar(&from, successors, heuristic, |p| *p == to).map(|(path, _)| path)
+    let mut best = vec![UNSEEN; total];
+    let mut parent = vec![u32::MAX; total];
+    let mut via = vec![NO_DOOR; total];
+    let mut done = vec![false; total];
+    let mut heap = BinaryHeap::new();
+    let start = index(world, offsets, from);
+    best[start] = 0;
+    heap.push(Reverse((estimate(from), start)));
+    let mut goal: Option<(usize, u32)> = None;
+    let mut ties = Vec::new();
+    while let Some(Reverse((f, i))) = heap.pop() {
+        if done[i] {
+            continue;
+        }
+        let g = best[i];
+        if let Some((_, gc)) = goal {
+            // Keep popping only for other targets at the same cost.
+            if f > gc {
+                break;
+            }
+            if is_goal(i) && g == gc {
+                ties.push(i);
+            }
+            done[i] = true;
+            continue;
+        }
+        done[i] = true;
+        if is_goal(i) {
+            goal = Some((i, g));
+            if matches!(target, Target::One(_)) {
+                break;
+            }
+            continue;
+        }
+        let here = spot_of(world, offsets, i);
+        let mut relax = |j: usize, nd: u32, door: u32, s: Spot, heap: &mut BinaryHeap<_>| {
+            if !done[j] && nd < best[j] {
+                best[j] = nd;
+                parent[j] = u32::try_from(i).expect("few tiles");
+                via[j] = door;
+                heap.push(Reverse((nd + estimate(s), j)));
+            }
+        };
+        let place = &world.places[here.place];
+        for (x, y) in neighbours(here.pos.x, here.pos.y) {
+            if !place.in_bounds(x, y) {
+                continue;
+            }
+            let n = Pos { x, y };
+            let Some(c) = cost(here.place, n) else {
+                continue;
+            };
+            let s = Spot {
+                place: here.place,
+                pos: n,
+            };
+            relax(
+                index(world, offsets, s),
+                g + c.max(1),
+                NO_DOOR,
+                s,
+                &mut heap,
+            );
+        }
+        if let Some(nav) = nav
+            && nav.has_end[i]
+        {
+            for &ei in &nav.ends_at[&i] {
+                let (end, _) = nav.ends[ei];
+                let door = &world.doors[end.door];
+                if !allow(end.door) || (end.far && door.one_way) {
+                    continue;
+                }
+                let twin = nav.ends[ei ^ 1].1;
+                let j = index(world, offsets, twin);
+                relax(j, g, u32::try_from(ei).expect("few doors"), twin, &mut heap);
+            }
+        }
+    }
+    let (goal, cost) = goal?;
+    let steps = trace(world, offsets, start, goal, &parent, &via);
+    Some(Found {
+        steps,
+        cost,
+        goal,
+        ties,
+    })
 }
 
 impl PartialOrd for Pos {

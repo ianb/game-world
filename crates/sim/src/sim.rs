@@ -1080,19 +1080,24 @@ impl<C: CharacterSet> Sim<C> {
                     .collect();
                 if v.place.index() == obj.place {
                     let base = nav::base_cost(&self.world);
-                    let dist = nav::cost_distances(
-                        &self.world,
-                        Spot {
-                            place: obj.place,
-                            pos: v.pos,
-                        },
-                        &base,
-                    );
-                    candidates
+                    let targets: Vec<(Spot, Pos)> = candidates
                         .iter()
-                        .copied()
-                        .filter_map(|c| dist.get(&c).map(|d| (*d, c)))
-                        .min()
+                        .map(|&c| {
+                            (
+                                Spot {
+                                    place: obj.place,
+                                    pos: c,
+                                },
+                                c,
+                            )
+                        })
+                        .collect();
+                    let here = Spot {
+                        place: obj.place,
+                        pos: v.pos,
+                    };
+                    self.nav
+                        .nearest(&self.world, here, &targets, |_| false, &base)
                         .map(|(_, c)| Spot {
                             place: obj.place,
                             pos: c,
@@ -1392,12 +1397,7 @@ impl<C: CharacterSet> Sim<C> {
             })
             .collect();
         let first = legs.remove(0);
-        let Some(path) =
-            nav::grid_path_cost(&self.world, first.place.index(), here.pos, first.to, &cost)
-        else {
-            self.stuck(who, "no path inside the place".into(), out);
-            return;
-        };
+        let path = route.legs[0].path.clone();
         self.interrupt(who);
         let v = &mut self.state.villagers[who.index()];
         let generation = v.generation;

@@ -13,7 +13,6 @@ serde_json.workspace = true
 rand.workspace = true
 rand_pcg.workspace = true
 xxhash-rust.workspace = true
-pathfinding.workspace = true
 thiserror.workspace = true
 ts-rs = { workspace = true, optional = true }
 
