@@ -23,6 +23,14 @@ pub struct Gid {
 
 impl Character for Gid {
     const ID: &'static str = "gid";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken => crate::Fondness::Wary,
+            content::AnimalKind::Sheep => crate::Fondness::Indifferent,
+        }
+    }
     fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
         let me = villager(ctx, "gid");
         self.given_up = false;

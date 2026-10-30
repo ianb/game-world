@@ -61,5 +61,11 @@
       "amount": 10,
       "what": "cloth"
     }
+  ],
+  "sends": [
+    {
+      "object": "loom_reed",
+      "good": "cloth"
+    }
   ]
 }

@@ -77,7 +77,7 @@
         },
         {
           "id": "bed_bram",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "home",
           "at": {
             "x": 8,
@@ -88,7 +88,7 @@
         },
         {
           "id": "bed_greta",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "home",
           "at": {
             "x": 9,

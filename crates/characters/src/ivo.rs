@@ -16,6 +16,14 @@ pub struct Ivo {
 
 impl Character for Ivo {
     const ID: &'static str = "ivo";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken => crate::Fondness::Afraid,
+            content::AnimalKind::Sheep => crate::Fondness::Fond,
+        }
+    }
     fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
         let me = villager(ctx, "ivo");
         let mut plan = Plan::baseline(me, ctx);

@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 20;
+pub const PROTOCOL_VERSION: u32 = 22;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -192,6 +192,35 @@ pub enum Emitted {
         place: PlaceId,
         x: u16,
         y: u16,
+    },
+    /// A hen laid; `now` is how many eggs are in the coop.
+    Laid {
+        tick: Tick,
+        flock: String,
+        object: ObjectId,
+        now: u16,
+    },
+    /// `who` left goods on the platform for the next train.
+    Consigned {
+        tick: Tick,
+        who: VillagerId,
+        good: String,
+        count: u16,
+        cause: Cause,
+    },
+    /// A train stopped at the platform and left `delivered` in the goods shed.
+    TrainArrived {
+        tick: Tick,
+        delivered: Vec<GoodsLine>,
+    },
+    /// The train left with what was on the platform, and paid for it.
+    TrainLeft {
+        tick: Tick,
+        shipped: Vec<Shipment>,
+    },
+    /// A train went through without stopping.
+    TrainPassed {
+        tick: Tick,
     },
     /// What `who` told themselves about something.
     Thought {
@@ -634,6 +663,11 @@ impl Emitted {
             | Emitted::FrameChanged { tick, .. }
             | Emitted::ConversationEnded { tick, .. }
             | Emitted::Mishap { tick, .. }
+            | Emitted::Laid { tick, .. }
+            | Emitted::Consigned { tick, .. }
+            | Emitted::TrainArrived { tick, .. }
+            | Emitted::TrainLeft { tick, .. }
+            | Emitted::TrainPassed { tick }
             | Emitted::Thought { tick, .. } => *tick,
         }
     }
@@ -659,10 +693,77 @@ impl Emitted {
             | Emitted::FrameChanged { who, .. }
             | Emitted::ConversationEnded { who, .. }
             | Emitted::Mishap { who, .. }
+            | Emitted::Consigned { who, .. }
             | Emitted::Thought { who, .. } => Some(*who),
             _ => None,
         }
     }
+}
+
+/// A count of one good.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct GoodsLine {
+    pub good: String,
+    pub count: u16,
+}
+
+/// Goods a train took, whose they were, and what the railway paid.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct Shipment {
+    pub who: VillagerId,
+    pub good: String,
+    pub count: u16,
+    pub paid: u32,
+}
+
+/// An animal as the viewer sees it. Roosting animals are out of sight.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct AnimalView {
+    pub id: u16,
+    pub kind: content::AnimalKind,
+    pub flock: String,
+    pub place: PlaceId,
+    pub pos: Pos,
+    pub roosting: bool,
+}
+
+/// A train on the track: its front, in sixteenths of a tile along `RailView::tiles`, and
+/// which way it is going.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct TrainView {
+    pub head: i32,
+    pub toward_end: bool,
+    /// Tiles the train covers, engine first.
+    pub length: u16,
+    pub stopped: bool,
+}
+
+/// The railway's track, for drawing.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct RailView {
+    pub place: PlaceId,
+    pub tiles: Vec<Pos>,
+    pub stop: u16,
+}
+
+/// A bed of tilled ground and its crop.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct PlotView {
+    pub place: PlaceId,
+    pub rect: Rect,
+    pub crop: content::Crop,
 }
 
 /// A villager as the viewer sees it.
@@ -712,6 +813,10 @@ pub struct ObjectView {
     pub walkable: bool,
     pub building: String,
     pub room: String,
+    /// The villager it belongs to, by content id.
+    pub owner: Option<String>,
+    /// What villagers do at it, when it is somewhere to do something.
+    pub activity: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -758,6 +863,8 @@ pub struct WorldView {
     pub doors: Vec<DoorView>,
     pub roofs: Vec<RoofView>,
     pub rooms: Vec<RoomView>,
+    pub rail: Option<RailView>,
+    pub plots: Vec<PlotView>,
 }
 
 /// Snapshot of the clock, for the viewer's header.
@@ -803,6 +910,8 @@ pub fn world_view<C: CharacterSet>(sim: &Sim<C>) -> WorldView {
                 walkable: o.walkable,
                 building: o.building.clone(),
                 room: o.room.clone(),
+                owner: o.owner.clone(),
+                activity: o.activity.clone(),
             })
             .collect(),
         doors: w
@@ -838,7 +947,52 @@ pub fn world_view<C: CharacterSet>(sim: &Sim<C>) -> WorldView {
                 flooring: r.flooring,
             })
             .collect(),
+        rail: w.rail.as_ref().map(|r| RailView {
+            place: place_id(r.place),
+            tiles: r.tiles.clone(),
+            stop: u16::try_from(r.stop).unwrap_or(0),
+        }),
+        plots: sim
+            .content()
+            .zones
+            .iter()
+            .flat_map(|z| {
+                let place = place_id(w.place_index[&z.id]);
+                z.plots.iter().map(move |p| PlotView {
+                    place,
+                    rect: p.rect,
+                    crop: p.crop,
+                })
+            })
+            .collect(),
     }
+}
+
+#[must_use]
+pub fn animal_views<C: CharacterSet>(sim: &Sim<C>) -> Vec<AnimalView> {
+    sim.state()
+        .animals
+        .iter()
+        .enumerate()
+        .map(|(i, a)| AnimalView {
+            id: u16::try_from(i).unwrap_or(u16::MAX),
+            kind: a.kind,
+            flock: sim.flocks()[usize::from(a.flock)].id.clone(),
+            place: a.place,
+            pos: a.pos,
+            roosting: a.roosting,
+        })
+        .collect()
+}
+
+#[must_use]
+pub fn train_view<C: CharacterSet>(sim: &Sim<C>) -> Option<TrainView> {
+    sim.train_now().map(|(t, head)| TrainView {
+        head,
+        toward_end: matches!(t.from, content::TrackEnd::Start),
+        length: u16::try_from(crate::railway::TRAIN_TILES).unwrap_or(8),
+        stopped: t.stops && sim.tick() >= t.arrive && sim.tick() < t.depart,
+    })
 }
 
 #[must_use]

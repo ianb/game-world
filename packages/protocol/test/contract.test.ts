@@ -38,7 +38,7 @@ describe("wasm sim against the native fixture", () => {
   it("exposes a typed world and villagers, with Option as null", () => {
     const sim = LocalSim.create(wasm, 1, content);
     const world = sim.world();
-    expect(world.places.map((p) => p.key)).toStrictEqual(["town", "house/upstairs"]);
+    expect(world.places.map((p) => p.key)).toStrictEqual(["town", "ashby_barn/loft", "hollins_barn/loft", "house/upstairs"]);
     const town = world.places[0]!;
     expect(town.cells.length).toBe(town.width * town.height);
     const asleep = sim.villagers().find((v) => v.key === "mara")!;

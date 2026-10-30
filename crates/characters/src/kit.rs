@@ -20,6 +20,14 @@ pub struct Kit {
 
 impl Character for Kit {
     const ID: &'static str = "kit";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken => crate::Fondness::Delighted,
+            content::AnimalKind::Sheep => crate::Fondness::Fond,
+        }
+    }
     fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
         let me = villager(ctx, "kit");
         let mut plan = Plan::baseline(me, ctx);

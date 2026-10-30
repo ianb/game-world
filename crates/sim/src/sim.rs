@@ -33,7 +33,9 @@ pub const TRIPS: &str = "trips";
 const TRIP_OVERGROWN: u32 = 150;
 const TRIP_LONG_GRASS: u32 = 40;
 
+mod animals;
 mod conversation;
+mod railway;
 
 /// Everything that determines the future. Serializable in full; hashed by subsystem.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -67,6 +69,10 @@ pub struct SimState<C> {
     pub record: Record,
     /// Chances a test has forced; empty in a normal run.
     pub odds: crate::odds::Odds,
+    /// Every animal, flock by flock in content order.
+    pub animals: Vec<crate::animals::Animal>,
+    /// Goods waiting on the railway platform.
+    pub railway: crate::railway::RailState,
     /// Character private state.
     pub characters: C,
     /// Events produced while constructing the sim (the first day's plans), returned by the
@@ -95,6 +101,8 @@ pub struct Sim<C: CharacterSet> {
     world: World,
     nav: Nav,
     state: SimState<C>,
+    /// Flocks with their references resolved, from content.
+    flocks: Vec<crate::animals::Flock>,
     /// Transient: current nesting of `react` calls.
     depth: u8,
     /// Transient: why the commands now running are running. Set before every dispatch.
@@ -185,15 +193,20 @@ impl<C: CharacterSet> Sim<C> {
                 markers: Vec::new(),
                 record: Record::default(),
                 odds: crate::odds::Odds::default(),
+                animals: Vec::new(),
+                railway: crate::railway::RailState::default(),
                 characters,
                 pending: Vec::new(),
             },
+            flocks: Vec::new(),
             content,
             world,
             nav,
             depth: 0,
             cause: Cause::Sim,
         };
+        sim.flocks = sim.resolve_flocks();
+        sim.place_animals();
         let mut out = Vec::new();
         sim.plan_everyone(&mut out);
         sim.state.pending = out;
@@ -240,6 +253,12 @@ impl<C: CharacterSet> Sim<C> {
     #[must_use]
     pub fn content(&self) -> &Content {
         &self.content
+    }
+
+    /// Flocks with their references resolved.
+    #[must_use]
+    pub fn flocks(&self) -> &[crate::animals::Flock] {
+        &self.flocks
     }
 
     #[must_use]
@@ -300,6 +319,18 @@ impl<C: CharacterSet> Sim<C> {
         }
         self.state.tick = target;
         Ok(out)
+    }
+
+    /// A quarter-hourly look around, unless asleep; the next is queued.
+    fn look(&mut self, who: VillagerId, out: &mut Vec<Emitted>) {
+        let tick = self.state.tick;
+        self.state
+            .queue
+            .schedule(tick.plus(LOOK_TICKS), Event::Look { who });
+        if self.state.villagers[who.index()].activity != "sleep" {
+            let since = tick.minus(LOOK_TICKS);
+            self.react(who, Trigger::Look { since }, out);
+        }
     }
 
     fn handle(&mut self, event: Event, out: &mut Vec<Emitted>) {
@@ -377,15 +408,10 @@ impl<C: CharacterSet> Sim<C> {
             Event::Woke { who } => self.woke(who, out),
             Event::Beat { convo } => self.beat(convo, out),
             Event::Body { who } => self.body_hour(who, out),
-            Event::Look { who } => {
-                self.state
-                    .queue
-                    .schedule(tick.plus(LOOK_TICKS), Event::Look { who });
-                if self.state.villagers[who.index()].activity != "sleep" {
-                    let since = tick.minus(LOOK_TICKS);
-                    self.react(who, Trigger::Look { since }, out);
-                }
-            }
+            Event::Look { who } => self.look(who, out),
+            Event::Animal { index } => self.animal_step(usize::from(index), out),
+            Event::TrainArrives { run } => self.train_arrives(run, out),
+            Event::TrainDeparts { run } => self.train_departs(run, out),
             Event::Tripped { who } => {
                 let v = &self.state.villagers[who.index()];
                 out.push(Emitted::Mishap {
@@ -506,12 +532,14 @@ impl<C: CharacterSet> Sim<C> {
             && input.source == Source::System
         {
             self.encounters(*who, out);
+            self.notice_animals(*who, out);
         }
     }
 
     /// Asks every character for today's plan and schedules the wake-ups. Items already in
     /// the past (at sim start, or if the plan lists them) are dropped.
     fn plan_everyone(&mut self, out: &mut Vec<Emitted>) {
+        self.schedule_trains();
         let now = self.state.tick;
         let day_start = now.day_start();
         let count = self.state.villagers.len();
@@ -750,6 +778,7 @@ impl<C: CharacterSet> Sim<C> {
                 activity,
                 minutes,
             } => self.interlude(who, &target, activity, minutes, out),
+            Command::Consign { from, good, count } => self.consign(who, from, &good, count, out),
             Command::Clear { radius } => {
                 let v = &self.state.villagers[who.index()];
                 let (place, at) = (v.place, v.pos);
@@ -1050,6 +1079,7 @@ impl<C: CharacterSet> Sim<C> {
                 self.react(other, Trigger::Passing { other: who }, out);
             }
         }
+        self.notice_animals(who, out);
     }
 
     /// Starts an activity under the villager's current intention.
@@ -1673,14 +1703,17 @@ impl<C: CharacterSet> Sim<C> {
         }
         let world = content::compile::compile(&content);
         let nav = Nav::build(&world);
-        Ok(Sim {
+        let mut sim = Sim {
             content,
             world,
             nav,
             state,
+            flocks: Vec::new(),
             depth: 0,
             cause: Cause::Sim,
-        })
+        };
+        sim.flocks = sim.resolve_flocks();
+        Ok(sim)
     }
 }
 

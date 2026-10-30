@@ -98,7 +98,7 @@
         },
         {
           "id": "bed_dot",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "back",
           "at": {
             "x": 10,
@@ -109,10 +109,10 @@
         },
         {
           "id": "bed_wat",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "back",
           "at": {
-            "x": 13,
+            "x": 11,
             "y": 1
           },
           "owner": "wat",

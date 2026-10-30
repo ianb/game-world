@@ -68,6 +68,7 @@ pub fn validate(content: &Content) -> Vec<ContentError> {
     check_objects(&world, &mut r);
     check_arrivals(&world, &mut r);
     check_roofs(content, &world, &mut r);
+    check_zone_extras(content, &world, &mut r);
     check_villagers(content, &world, &mut r);
     r.errors.sort_by(|a, b| {
         b.severity
@@ -116,6 +117,113 @@ fn check_areas(content: &Content, r: &mut Report) {
             }
         }
     }
+}
+
+/// Plots, flocks and the railway: rects inside the zone, and every reference resolved.
+fn check_zone_extras(content: &Content, world: &World, r: &mut Report) {
+    let object = |id: &str| world.objects.iter().find(|o| o.id == id);
+    for z in &content.zones {
+        let inside = |rect: &Rect| {
+            rect.w > 0 && rect.h > 0 && rect.right() <= z.width && rect.bottom() <= z.height
+        };
+        for p in &z.plots {
+            if !inside(&p.rect) {
+                r.error(
+                    format!("zones/{} plot {}", z.id, p.id),
+                    "rect is empty or outside the zone",
+                );
+            }
+        }
+        for f in &z.flocks {
+            let subject = format!("zones/{} flock {}", z.id, f.id);
+            if !content.villagers.iter().any(|v| v.id == f.owner) {
+                r.error(&subject, format!("owner {} is not a villager", f.owner));
+            }
+            if !z.areas.iter().any(|a| a.id == f.area) {
+                r.error(&subject, format!("area {} is not declared", f.area));
+            }
+            if let Some(c) = &f.coop
+                && object(c).is_none()
+            {
+                r.error(&subject, format!("coop {c} is not an object"));
+            }
+            if f.count == 0 {
+                r.error(&subject, "count is zero");
+            }
+        }
+        let Some(rail) = &z.railway else { continue };
+        for v in &content.villagers {
+            let subject = format!("villagers/{}", v.id);
+            for x in &v.sends {
+                if object(&x.object).is_none() {
+                    r.error(
+                        &subject,
+                        format!("sends from {}, which is not an object", x.object),
+                    );
+                }
+                if !rail.buys.iter().any(|b| b.good == x.good) {
+                    r.error(
+                        &subject,
+                        format!("sends {}, which the railway does not buy", x.good),
+                    );
+                }
+            }
+            for x in &v.fetches {
+                if object(&x.to).is_none() {
+                    r.error(
+                        &subject,
+                        format!("fetches to {}, which is not an object", x.to),
+                    );
+                }
+                if !rail.delivers.iter().any(|d| d.good == x.good) {
+                    r.error(
+                        &subject,
+                        format!("fetches {}, which the railway does not deliver", x.good),
+                    );
+                }
+            }
+        }
+        let subject = format!("zones/{} railway", z.id);
+        if rail.track.len() < 2 {
+            r.error(&subject, "track needs at least two points");
+        }
+        for p in &rail.track {
+            if p.x >= z.width || p.y >= z.height {
+                r.error(&subject, format!("track point {p:?} is outside the zone"));
+            }
+        }
+        for w in rail.track.windows(2) {
+            if w[0].x != w[1].x && w[0].y != w[1].y {
+                r.error(
+                    &subject,
+                    format!("track from {:?} to {:?} is not straight", w[0], w[1]),
+                );
+            }
+        }
+        for id in [&rail.platform, &rail.shed] {
+            if object(id).is_none() {
+                r.error(&subject, format!("{id} is not an object"));
+            }
+        }
+        for run in &rail.runs {
+            for t in std::iter::once(&run.arrive).chain(run.depart.iter()) {
+                if parse_time(t).is_none() {
+                    r.error(&subject, format!("time {t:?} does not parse"));
+                }
+            }
+            if run.stops && run.depart.is_none() {
+                r.error(
+                    &subject,
+                    format!("the {} train stops but has no departure", run.arrive),
+                );
+            }
+        }
+    }
+}
+
+/// A bed, or one side of a bed for two.
+fn is_bed(kind: &str) -> bool {
+    kind == "bed" || kind == "bed_double"
 }
 
 fn check_ids(content: &Content, r: &mut Report) {
@@ -647,7 +755,7 @@ fn check_objects(world: &World, r: &mut Report) {
         }
     }
     let mut owners: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
-    for o in world.objects.iter().filter(|o| o.kind == "bed") {
+    for o in world.objects.iter().filter(|o| is_bed(&o.kind)) {
         if let Some(owner) = &o.owner {
             owners
                 .entry(owner.as_str())
@@ -724,7 +832,7 @@ fn check_villagers(content: &Content, world: &World, r: &mut Report) {
         match world.objects.iter().find(|o| o.id == v.bed) {
             None => r.error(&subj, format!("bed {:?} not found", v.bed)),
             Some(bed) => {
-                if bed.kind != "bed" {
+                if !is_bed(&bed.kind) {
                     r.error(&subj, format!("bed {:?} is a {}", v.bed, bed.kind));
                 }
                 if bed.owner.as_deref() != Some(v.id.as_str()) {
@@ -773,7 +881,7 @@ fn check_villagers(content: &Content, world: &World, r: &mut Report) {
             }
         }
     }
-    for o in world.objects.iter().filter(|o| o.kind == "bed") {
+    for o in world.objects.iter().filter(|o| is_bed(&o.kind)) {
         if let Some(owner) = &o.owner
             && !content.villagers.iter().any(|v| &v.id == owner)
         {

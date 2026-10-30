@@ -1,6 +1,6 @@
 # LPC art
 
-The viewer's tiles and villagers are built from Liberated Pixel Cup (LPC) art:
+The viewer's tiles, villagers and animals are built from Liberated Pixel Cup (LPC) art:
 pixel art that hundreds of artists have contributed to OpenGameArt since the
 2012 contest. Most of it is CC-BY-SA 3.0 and GPL 3.0, some also OGA-BY or
 CC-BY. Each file's authors and licenses are in the credits next to it.
@@ -18,6 +18,7 @@ the same terms: CC-BY-SA 3.0 (or GPL 3.0), with the credits below.
 | `tiles/walls` | [[LPC] Walls](https://opengameart.org/content/lpc-walls) (bluecarrot16 and others) | `tiles/walls/CREDITS-walls.txt` |
 | `tiles/windows-doors` | [[LPC] Windows & Doors](https://opengameart.org/content/lpc-windows-doors) | `tiles/windows-doors/CREDITS-windows-doors.txt` |
 | `tiles/decorations-medieval` | [[LPC] Medieval village decorations](https://opengameart.org/content/lpc-medieval-village-decorations) | `tiles/decorations-medieval/CREDITS-decorations-medieval.txt` |
+| `animals` | [LPC style farm animals](https://opengameart.org/content/lpc-style-farm-animals) (Daniel Eddeland) | `animals/CREDITS.md` |
 | `characters` | layers from the [Universal LPC Spritesheet Character Generator](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator) | `characters/CREDITS.md` |
 
 The source sheets are kept whole, so a different tile can be picked from

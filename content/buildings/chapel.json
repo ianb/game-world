@@ -93,8 +93,8 @@
           }
         },
         {
-          "id": "banner_chapel",
-          "kind": "banner",
+          "id": "plant_chapel",
+          "kind": "plant",
           "room": "nave",
           "at": {
             "x": 3,

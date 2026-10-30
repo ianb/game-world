@@ -65,8 +65,8 @@
           "activity": "meeting"
         },
         {
-          "id": "banner_townhall_1",
-          "kind": "banner",
+          "id": "plant_townhall_1",
+          "kind": "plant",
           "room": "hall",
           "at": {
             "x": 2,
@@ -74,8 +74,8 @@
           }
         },
         {
-          "id": "banner_townhall_2",
-          "kind": "banner",
+          "id": "plant_townhall_2",
+          "kind": "plant",
           "room": "hall",
           "at": {
             "x": 6,

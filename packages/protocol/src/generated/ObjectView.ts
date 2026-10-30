@@ -2,4 +2,12 @@
 import type { PlaceId } from "./PlaceId";
 import type { Pos } from "./Pos";
 
-export type ObjectView = { key: string, kind: string, place: PlaceId, pos: Pos, walkable: boolean, building: string, room: string, };
+export type ObjectView = { key: string, kind: string, place: PlaceId, pos: Pos, walkable: boolean, building: string, room: string, 
+/**
+ * The villager it belongs to, by content id.
+ */
+owner: string | null, 
+/**
+ * What villagers do at it, when it is somewhere to do something.
+ */
+activity: string | null, };

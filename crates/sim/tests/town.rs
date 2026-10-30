@@ -100,7 +100,10 @@ fn mara_reaches_the_bakery_counter_and_everyone_sleeps_at_night() {
             .world()
             .objects
             .iter()
-            .find(|o| o.kind == "bed" && o.owner.as_deref() == Some(v.id.as_str()))
+            .find(|o| {
+                matches!(o.kind.as_str(), "bed" | "bed_double")
+                    && o.owner.as_deref() == Some(v.id.as_str())
+            })
             .unwrap_or_else(|| panic!("{} has no bed", v.name));
         assert_eq!(v.place.index(), bed.place, "{} sleeps by their bed", v.name);
     }

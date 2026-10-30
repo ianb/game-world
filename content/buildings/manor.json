@@ -253,8 +253,8 @@
           }
         },
         {
-          "id": "banner_manor",
-          "kind": "banner",
+          "id": "plant_manor",
+          "kind": "plant",
           "room": "hall",
           "at": {
             "x": 5,
@@ -262,8 +262,8 @@
           }
         },
         {
-          "id": "banner_manor_2",
-          "kind": "banner",
+          "id": "plant_manor_2",
+          "kind": "plant",
           "room": "hall",
           "at": {
             "x": 7,

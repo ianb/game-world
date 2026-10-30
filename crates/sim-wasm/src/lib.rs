@@ -152,6 +152,16 @@ impl Sim {
         to_js(&sim::protocol::villager_views(self.history.sim()))
     }
 
+    /// Animals as `AnimalView[]`.
+    pub fn animals(&self) -> Result<JsValue, JsError> {
+        to_js(&sim::protocol::animal_views(self.history.sim()))
+    }
+
+    /// The train on the track now as a `TrainView`, or null.
+    pub fn train(&self) -> Result<JsValue, JsError> {
+        to_js(&sim::protocol::train_view(self.history.sim()))
+    }
+
     /// A villager's inner side as a `MindView`, or null for one with no program, by
     /// villager key.
     pub fn mind(&self, key: &str) -> Result<JsValue, JsError> {

@@ -18,6 +18,14 @@ pub struct Ada {
 
 impl Character for Ada {
     const ID: &'static str = "ada";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken => crate::Fondness::Fond,
+            content::AnimalKind::Sheep => crate::Fondness::Indifferent,
+        }
+    }
     fn react(
         &mut self,
         trigger: &Trigger,

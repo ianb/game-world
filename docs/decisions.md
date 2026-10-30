@@ -1280,3 +1280,37 @@ Decided and built (see `docs/design/valley.md`):
 Implications: a new material is a variant in `Flooring` or `Walling` and a
 tile in `scripts/make-tileset.mjs`. The furniture is decoration and blocks a
 tile; content validation catches a piece that seals part of a room.
+
+## 2026-10-30: A railway, animals, farms, and a more organic valley
+
+Ian, after looking at the valley: "Some parts should be more organic. Like the
+stream should be curvy, not straight. Seems like there should be something
+like a farm or garden. Maybe chickens too (interesting to have a new entity)
+... Also there should be like barn doors and a loft ... A train that comes
+through, maybe delivering items, would be cool. Also taking items, maybe there
+can be some cottage industry of sorts here. Not sure how to model the train,
+but you can figure it out. For now no people going on or off the train, just
+goods." And: "Probably the chickens make some people happy and some people sad
+(or other emotional reactions, annoyed, etc)." And: "a bridge like this should
+look like a bridge".
+
+Decided and built (see `docs/design/valley.md`):
+
+- Animals are a new kind of entity in the sim: flocks declared in content,
+  each animal's position in the state, moving on its own random stream.
+  Chickens roost and lay; sheep graze. They have no minds.
+- Every character says how fond it is of each kind of animal
+  (`Character::fondness`, an exhaustive match), and the shared response turns
+  that into thoughts said aloud or kept quiet. Annoyance is laid at the
+  owner's door.
+- The railway is a timetable in content. A train's position is a function of
+  the clock, so it needs no state of its own; consignments do. Villagers send
+  and fetch goods by declaring it in content, and the baseline plan adds the
+  trips on days a train stops.
+- Crops in plots, gardens, barn doors and lofts, a winding river, ragged
+  woods, more kinds of tree and ground decoration. All view-only except the
+  river, woods and lofts, which change the map.
+
+Implications: protocol 22, snapshot 15. A new animal kind is an `AnimalKind`
+variant, which every character must then answer for. Trains carry no
+passengers; if they ever do, a train becomes a place villagers can be in.

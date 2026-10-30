@@ -1,6 +1,7 @@
 [
   { "id": "greeting", "gloss": "a greeting" },
   { "id": "day", "gloss": "the day" },
+  { "id": "hens", "gloss": "the hens" },
   { "id": "road", "gloss": "the road" },
   { "id": "bread", "gloss": "bread" },
   { "id": "ale", "gloss": "ale" },

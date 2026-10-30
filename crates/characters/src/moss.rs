@@ -19,6 +19,14 @@ pub struct Moss {
 
 impl Character for Moss {
     const ID: &'static str = "moss";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken => crate::Fondness::Indifferent,
+            content::AnimalKind::Sheep => crate::Fondness::Fond,
+        }
+    }
     fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {
         Some(match trigger {
             // With the sheep, alone, he talks to them.

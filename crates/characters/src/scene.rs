@@ -167,6 +167,30 @@ impl Scene {
         self
     }
 
+    /// Moves `who` next to the first animal of `flock` that is out.
+    pub fn put_by_flock(&mut self, who: &str, flock: &str) -> &mut Self {
+        let fi = self
+            .sim
+            .flocks()
+            .iter()
+            .position(|f| f.id == flock)
+            .unwrap_or_else(|| panic!("no flock {flock}"));
+        let (place, pos) = self
+            .sim
+            .state()
+            .animals
+            .iter()
+            .find(|a| usize::from(a.flock) == fi && !a.roosting)
+            .map_or_else(
+                || panic!("all of {flock} are roosting"),
+                |a| (a.place, a.pos),
+            );
+        let spot = self.beside(place, pos);
+        let who = self.id(who);
+        self.teleport(who, place, spot);
+        self
+    }
+
     /// Has `who` do `command` at `when` (today), as if their own code had planned it.
     pub fn cue(&mut self, who: &str, when: Tick, command: Command) -> &mut Self {
         let who = self.id(who);

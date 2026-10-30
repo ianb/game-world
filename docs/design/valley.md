@@ -85,6 +85,59 @@ Programs that involve more than one person:
 
 Dot brews in the alehouse back room on weekday mornings.
 
+## The railway
+
+A goods line runs east to west along y = 34, on a bridge over the river. The
+station is north of it, off the lane from the square: a goods shed and an
+office, with the platform beside the track. Trains come from the west on
+Tuesday and Friday, stop from ten to twenty past ten, and leave east; on other
+weekdays and Saturday one passes through at three without stopping.
+
+Where a train is follows from the clock (`sim::railway::head_at`), so the
+only state is what waits on the platform and whose it is. A stopping train
+leaves its deliveries in the shed (tea, salt, candles, nails, iron, malt) and,
+when it leaves, takes everything consigned and pays the senders.
+
+Villagers declare in content what they send (`sends`: Penn's pots, Iris's
+cloth, Martha's honey, Rob's barrels, Ada's cheese and eggs, Dot's eggs) and
+what they fetch (`fetches`: Greta's shop goods, Bram's iron, Dot's malt). On a
+day a train stops their plan gains a walk to the platform half an hour before
+it comes, or to the shed ten minutes after, and then back to what they were
+doing.
+
+## Animals
+
+Flocks are declared in the zone: six hens of Ada's in a yard north of the
+Hollins farmhouse, five of Dot's on the hamlet green, and Moss's eight sheep
+in the pasture. Each animal wanders its area on its own clock. Hens roost in
+their coop at dusk and come out at dawn, when each may lay (the chance
+`hen-lays`); the eggs wait in the coop until someone sends them by rail.
+
+When a villager comes within a tile of a flock they notice it (once in four
+hours per flock), and how they take it is theirs: every character module
+says how fond it is of each kind of animal, and a new kind makes every one of
+them decide. The shared response: delight is said aloud, fondness and
+wariness are kept quiet, and annoyance and fear are said aloud and laid at the
+owner's door, where the owner may hear of it.
+
+## Farms and gardens
+
+Plots of tilled ground carry crops that grow with the season: sprouts in early
+spring, growing plants, then ready to harvest in late summer and early autumn,
+and bare soil after. The Hollins and Ashby fields have wheat, potatoes, beans,
+cabbages and carrots, the manor has flower beds and a kitchen garden, and most
+cottages have a small garden. The barns have wide doors and a hay loft up a
+ladder; Dan sleeps in the Ashby loft. Couples share a bed.
+
+## The ground
+
+The river winds, three or four tiles wide, held off the buildings along its
+banks. The woods have ragged edges. Outdoors are scattered flowers, stones,
+bushes, ferns and mushrooms near the woods, reeds along the water and lilies
+on it, and the woods mix several kinds of tree, with pines and firs to the
+south. Paths over water are drawn as bridges, doorways have sills, and barns
+have their doors standing open.
+
 ## Materials
 
 Rooms declare a `flooring` (planks, dark planks, flagstone, cobbles, checker,

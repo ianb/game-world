@@ -2,8 +2,9 @@
 // a plane, walls are raised from it, and objects, trees and villagers are upright LPC sprites
 // that turn to face the camera. Light follows the clock. Loaded only when switched on.
 import * as THREE from "three";
-import type { ClockView, Emitted, ObjectView, PlaceView, Rect, RoofView, RoomView, Sim, VillagerView, Walling } from "@game-world/protocol";
-import { type Facing, type Materials, type Tileset, groundNames, isTreeCell, materials, objectTile, paintGround } from "./render";
+import type { AnimalView, Calendar, ClockView, Emitted, ObjectView, PlaceView, Rect, RoofView, RoomView, Sim, TrainView, VillagerView, Walling, WorldView } from "@game-world/protocol";
+import { type Dressing, SOUTHERN_WOODS, dressingFor, paintDressing, treeAt } from "./dressing";
+import { type Facing, type Materials, type Tileset, groundNames, isTreeCell, materials, objectTileAt, paintGround, trainCars } from "./render";
 
 /** Wall height, in tiles: the LPC tall walls are three tiles of art. */
 const WALL_H = 3;
@@ -15,7 +16,7 @@ const DOOR_H = 2;
  * further out every wall with a room behind it is cut, as in a dollhouse. */
 const CLOSE = 16;
 /** Objects drawn flat on the floor rather than standing up. */
-const LYING = new Set(["bed"]);
+const LYING = new Set(["bed", "bed_double", "platform"]);
 /** Objects that glow after dark. */
 const HEARTHS = new Set(["oven", "stove", "hearth", "kiln", "copper"]);
 /** How long a speech mark stays up, in real milliseconds. */
@@ -29,6 +30,8 @@ export interface DioramaOptions {
   roofs: RoofView[];
   /** Rooms, for their floors and the material of their walls. */
   rooms: RoomView[];
+  /** The whole world view, for what dresses the ground. */
+  world: WorldView;
   name: (id: number) => string;
   /** A tile was clicked (not dragged). */
   pick: (place: number, x: number, y: number) => void;
@@ -82,9 +85,13 @@ export class Diorama {
   private placeGroup = new THREE.Group();
   private sprites: THREE.Mesh[] = [];
   /** Trees, which step aside when they stand between the camera and what it looks at. */
-  private trees: Trees | null = null;
+  private trees: Trees[] = [];
   /** Where trees stand while a place is being built, before they become one mesh. */
-  private treeSpots: { x: number; z: number }[] = [];
+  private treeSpots = new Map<string, { x: number; z: number }[]>();
+  private dressing: Dressing | null = null;
+  private calendar: Calendar | null = null;
+  private readonly beasts = new Map<number, Beast>();
+  private trainMeshes: THREE.Mesh[] = [];
   private hearths: THREE.PointLight[] = [];
   /** Lamps inside buildings, lit in the evening. */
   private lamps: THREE.PointLight[] = [];
@@ -145,8 +152,12 @@ export class Diorama {
     this.walls?.dispose();
     this.walls = null;
     this.sprites = [];
-    this.trees = null;
-    this.treeSpots = [];
+    this.trees = [];
+    this.treeSpots = new Map();
+    this.beasts.clear();
+    this.trainMeshes = [];
+    this.dressing = dressingFor(this.o.world, place);
+    this.calendar = sim.clock().calendar;
     this.hearths = [];
     this.lamps = [];
     this.ground?.texture.dispose();
@@ -165,6 +176,7 @@ export class Diorama {
     this.buildLamps(place);
     this.buildWoods(place);
     this.trees = this.makeTrees();
+    this.syncAnimals(sim);
     // The sun's shadow covers the whole place.
     const s = this.sun.shadow.camera;
     const r = Math.hypot(place.width, place.height) / 2 + 4;
@@ -245,7 +257,7 @@ export class Diorama {
     let fewest = Infinity;
     for (const turn of [0, Math.PI]) {
       const v = { ...view, yaw: yaw + turn };
-      const n = this.occluders(v).length + this.treesInTheWay(v).size + (turn === 0 ? 0 : 2.5);
+      const n = this.occluders(v).length + this.trees.reduce((k, t) => k + this.treesInTheWay(v, t).size, 0) + (turn === 0 ? 0 : 2.5);
       if (n < fewest) {
         best = v;
         fewest = n;
@@ -259,11 +271,9 @@ export class Diorama {
     return this.sprites.filter((m) => inTheWay(v, m.position.x, m.position.z, Number(m.userData.w ?? 1), Number(m.userData.h ?? 1)));
   }
 
-  /** Trees, by index, that would hide the middle of a close view. */
-  private treesInTheWay(v: View): Set<number> {
+  /** Trees of one kind, by index, that would hide the middle of a close view. */
+  private treesInTheWay(v: View, t: Trees): Set<number> {
     const out = new Set<number>();
-    const t = this.trees;
-    if (!t) return out;
     t.at.forEach((p, i) => {
       if (inTheWay(v, p.x, p.z, t.w, t.h)) out.add(i);
     });
@@ -360,9 +370,99 @@ export class Diorama {
         if (best && d > 0) w.heading = Math.atan2(best.pos.x - v.pos.x, best.pos.y - v.pos.y);
       }
     }
+    this.syncAnimals(sim);
+    this.syncTrain(sim.train());
     if (place.kind === "Zone" && performance.now() - (this.ground?.painted ?? 0) > 3000) {
+      this.calendar = sim.clock().calendar;
       this.repaintGround(sim);
     }
+  }
+
+  /** Animals as sprites, easing toward their tiles; roosting ones are hidden. */
+  private syncAnimals(sim: Sim): void {
+    const place = this.place;
+    if (!place) return;
+    for (const a of sim.animals()) {
+      let b = this.beasts.get(a.id);
+      const here = a.place === place.id && !a.roosting;
+      if (!here) {
+        if (b) b.mesh.visible = false;
+        continue;
+      }
+      const to = { x: a.pos.x + 0.5, z: a.pos.y + 0.5 };
+      if (!b) {
+        b = this.beast(a, to);
+        this.beasts.set(a.id, b);
+      }
+      b.mesh.visible = true;
+      if (b.to.x !== to.x || b.to.z !== to.z) {
+        b.heading = Math.atan2(to.x - b.to.x, to.z - b.to.z);
+        b.to = to;
+        b.steps += 1;
+      }
+    }
+  }
+
+  private beast(a: AnimalView, at: { x: number; z: number }): Beast {
+    const size = a.kind === "sheep" ? 2 : 1;
+    const g = new THREE.PlaneGeometry(size, size);
+    g.translate(0, size / 2 - (a.kind === "sheep" ? 0.3 : 0.05), 0);
+    const uv = g.getAttribute("uv") as THREE.BufferAttribute;
+    const mesh = new THREE.Mesh(g, this.spriteMaterial);
+    mesh.customDepthMaterial = this.spriteDepth;
+    mesh.castShadow = true;
+    this.placeGroup.add(mesh);
+    const b: Beast = { mesh, uv, kind: a.kind, to: at, shown: { ...at }, heading: 0, steps: 0, frame: -1 };
+    this.beastFrame(b, true);
+    return b;
+  }
+
+  private beastFrame(b: Beast, force = false): void {
+    const t = this.o.tiles.atlas.tiles[`animal_${b.kind}`];
+    if (!t) return;
+    const rel = b.heading - this.view.yaw;
+    const quarter = ((Math.round(rel / (Math.PI / 2)) % 4) + 4) % 4;
+    const row = ROW_OF[quarter] ?? FACING_ROW.down;
+    const moving = Math.abs(b.shown.x - b.to.x) + Math.abs(b.shown.z - b.to.z) > 0.05;
+    const col = moving ? (b.steps + Math.floor(performance.now() / 150)) % 4 : 0;
+    const code = row * 4 + col;
+    if (!force && code === b.frame) return;
+    b.frame = code;
+    const s = this.o.tiles.size;
+    const f = (b.kind === "sheep" ? 2 : 1) * s;
+    const iw = this.o.tiles.image.width;
+    const ih = this.o.tiles.image.height;
+    const sx = t.col * s + col * f;
+    const sy = t.row * s + row * f;
+    b.uv.set([sx / iw, 1 - sy / ih, (sx + f) / iw, 1 - sy / ih, sx / iw, 1 - (sy + f) / ih, (sx + f) / iw, 1 - (sy + f) / ih]);
+    b.uv.needsUpdate = true;
+  }
+
+  /** The train's cars as upright sprites along the track. */
+  private syncTrain(t: TrainView | null): void {
+    const rail = this.o.world.rail;
+    const cars = t && rail && this.place && rail.place === this.place.id ? trainCars(t, rail.tiles) : [];
+    while (this.trainMeshes.length < cars.length) {
+      const m = this.sprite("train_wagon", 0, 0);
+      if (!m) break;
+      this.trainMeshes.push(m);
+    }
+    this.trainMeshes.forEach((m, i) => {
+      const c = cars[i];
+      m.visible = c !== undefined;
+      if (!c) return;
+      const t = this.o.tiles.atlas.tiles[c.tile];
+      if (!t) return;
+      const s = this.o.tiles.size;
+      const iw = this.o.tiles.image.width;
+      const ih = this.o.tiles.image.height;
+      const [u0, u1] = [(t.col * s) / iw, ((t.col + 2) * s) / iw];
+      const [vb, vt] = [1 - ((t.row + 2) * s) / ih, 1 - (t.row * s) / ih];
+      const attr = m.geometry.getAttribute("uv") as THREE.BufferAttribute;
+      attr.set([u0, vt, u1, vt, u0, vb, u1, vb]);
+      attr.needsUpdate = true;
+      m.position.set(c.x + 1, 0, c.y + 0.55);
+    });
   }
 
   /** Draws a frame. `tick` may carry a fraction for smooth walking. */
@@ -377,6 +477,13 @@ export class Diorama {
     }
     this.light(clock);
     this.placeWalkers(tick);
+    for (const b of this.beasts.values()) {
+      if (!b.mesh.visible) continue;
+      b.shown.x += (b.to.x - b.shown.x) * 0.15;
+      b.shown.z += (b.to.z - b.shown.z) * 0.15;
+      b.mesh.position.set(b.shown.x, 0, b.shown.z - 0.1);
+      this.beastFrame(b);
+    }
     if (this.follow) {
       const w = this.walkers.get(this.follow);
       if (w?.mesh.visible) {
@@ -434,9 +541,8 @@ export class Diorama {
     // Close up, whatever stands between the camera and what it looks at steps aside.
     for (const s of this.sprites) s.visible = true;
     if (v.dist < CLOSE) for (const m of this.occluders(v)) m.visible = false;
-    const t = this.trees;
-    if (t) {
-      const hidden = v.dist < CLOSE ? this.treesInTheWay(v) : new Set<number>();
+    for (const t of this.trees) {
+      const hidden = v.dist < CLOSE ? this.treesInTheWay(v, t) : new Set<number>();
       const o = new THREE.Object3D();
       o.rotation.y = v.yaw;
       t.at.forEach((p, i) => {
@@ -448,6 +554,8 @@ export class Diorama {
       t.mesh.instanceMatrix.needsUpdate = true;
     }
     for (const w of this.walkers.values()) w.mesh.rotation.y = v.yaw;
+    for (const b of this.beasts.values()) b.mesh.rotation.y = v.yaw;
+    for (const m of this.trainMeshes) m.rotation.y = v.yaw;
     this.walls?.cutFor(v);
   }
 
@@ -495,10 +603,14 @@ export class Diorama {
     const ctx = g.canvas.getContext("2d");
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
-    paintGround(ctx, this.o.tiles, place, names, true, this.mat ?? materials(place, this.o.rooms, this.o.roofs));
+    const mat = this.mat ?? materials(place, this.o.rooms, this.o.roofs);
+    paintGround(ctx, this.o.tiles, place, names, true, mat);
+    if (this.dressing) paintDressing(ctx, this.o.tiles, place, names, mat, this.dressing, this.calendar);
     // Things that lie flat, like beds, are part of the floor.
     for (const o of this.o.objects) {
-      if (o.place === place.id && LYING.has(o.kind)) this.o.tiles.draw(ctx, objectTile(o.kind), o.pos.x, o.pos.y);
+      if (o.place !== place.id || !LYING.has(o.kind)) continue;
+      const tile = objectTileAt(o, this.o.objects);
+      if (tile) this.o.tiles.draw(ctx, tile, o.pos.x, o.pos.y);
     }
     g.texture.needsUpdate = true;
     g.painted = performance.now();
@@ -517,7 +629,8 @@ export class Diorama {
   private buildObjects(place: PlaceView): void {
     for (const o of this.o.objects) {
       if (o.place !== place.id || LYING.has(o.kind)) continue;
-      const m = this.sprite(objectTile(o.kind), o.pos.x, o.pos.y);
+      const tile = objectTileAt(o, this.o.objects);
+      const m = tile ? this.sprite(tile, o.pos.x, o.pos.y) : null;
       if (m) this.sprites.push(m);
       if (HEARTHS.has(o.kind)) {
         const lamp = new THREE.PointLight(0xffa04a, 0, 9, 1.6);
@@ -531,7 +644,7 @@ export class Diorama {
   private buildTrees(place: PlaceView, names: string[]): void {
     for (let y = 0; y < place.height; y++) {
       for (let x = 0; x < place.width; x++) {
-        if (isTreeCell(names, place.width, x, y)) this.treeSpots.push(this.spriteFoot("tree", x, y));
+        if (isTreeCell(names, place.width, x, y)) this.addTree(treeAt(x, y, place.kind === "Zone" && y > place.height * SOUTHERN_WOODS), x, y);
       }
     }
   }
@@ -563,9 +676,15 @@ export class Diorama {
         const r = ((h ^ (h >>> 16)) >>> 0) / 4294967296;
         // Thicker further out; none right on the edge, where the canopy tiles are.
         if (edge < 2 || r > 0.12 + edge * 0.02) continue;
-        this.treeSpots.push(this.spriteFoot("tree", x, y));
+        this.addTree(treeAt(x, y, false), x, y);
       }
     }
+  }
+
+  private addTree(kind: string, x: number, y: number): void {
+    const spots = this.treeSpots.get(kind) ?? [];
+    spots.push(this.spriteFoot(kind, x, y));
+    this.treeSpots.set(kind, spots);
   }
 
   /** Where a sprite's foot stands, in tiles, as the 2D view places it. */
@@ -579,25 +698,29 @@ export class Diorama {
     return { x: x + ox / s + tw / 2, z: y + (oy + th * s) / s - 0.45 };
   }
 
-  /** Every tree as one instanced mesh, each turned to the camera in `aim`. */
-  private makeTrees(): Trees | null {
-    const t = this.o.tiles.atlas.tiles["tree"];
-    if (!t || !this.treeSpots.length) return null;
-    const s = this.o.tiles.size;
-    const tw = t.w ?? 1;
-    const th = t.h ?? 1;
-    const iw = this.o.tiles.image.width;
-    const ih = this.o.tiles.image.height;
-    const g = new THREE.PlaneGeometry(tw, th);
-    g.translate(0, th / 2, 0);
-    const u0 = (t.col * s) / iw, u1 = ((t.col + tw) * s) / iw;
-    const v0 = 1 - ((t.row + th) * s) / ih, v1 = 1 - (t.row * s) / ih;
-    g.setAttribute("uv", new THREE.Float32BufferAttribute([u0, v1, u1, v1, u0, v0, u1, v0], 2));
-    const mesh = new THREE.InstancedMesh(g, this.spriteMaterial, this.treeSpots.length);
-    mesh.customDepthMaterial = this.spriteDepth;
-    mesh.castShadow = true;
-    this.placeGroup.add(mesh);
-    return { mesh, at: this.treeSpots, w: tw, h: th };
+  /** Every tree as one instanced mesh per kind, each turned to the camera in `aim`. */
+  private makeTrees(): Trees[] {
+    const out: Trees[] = [];
+    for (const [kind, spots] of this.treeSpots) {
+      const t = this.o.tiles.atlas.tiles[kind];
+      if (!t || !spots.length) continue;
+      const s = this.o.tiles.size;
+      const tw = t.w ?? 1;
+      const th = t.h ?? 1;
+      const iw = this.o.tiles.image.width;
+      const ih = this.o.tiles.image.height;
+      const g = new THREE.PlaneGeometry(tw, th);
+      g.translate(0, th / 2, 0);
+      const u0 = (t.col * s) / iw, u1 = ((t.col + tw) * s) / iw;
+      const v0 = 1 - ((t.row + th) * s) / ih, v1 = 1 - (t.row * s) / ih;
+      g.setAttribute("uv", new THREE.Float32BufferAttribute([u0, v1, u1, v1, u0, v0, u1, v0], 2));
+      const mesh = new THREE.InstancedMesh(g, this.spriteMaterial, spots.length);
+      mesh.customDepthMaterial = this.spriteDepth;
+      mesh.castShadow = true;
+      this.placeGroup.add(mesh);
+      out.push({ mesh, at: spots, w: tw, h: th });
+    }
+    return out;
   }
 
   /** An upright sprite standing where the 2D view would draw it, its foot in its cell. */
@@ -1098,6 +1221,18 @@ class Walls {
 }
 
 /** The trees of a place: one mesh, an instance per tree, all the same size. */
+/** An animal's sprite and where it is going. */
+interface Beast {
+  mesh: THREE.Mesh;
+  uv: THREE.BufferAttribute;
+  kind: AnimalView["kind"];
+  to: { x: number; z: number };
+  shown: { x: number; z: number };
+  heading: number;
+  steps: number;
+  frame: number;
+}
+
 interface Trees {
   mesh: THREE.InstancedMesh;
   at: { x: number; z: number }[];

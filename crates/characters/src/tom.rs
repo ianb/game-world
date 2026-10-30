@@ -418,6 +418,14 @@ impl Interlocutor for Tom {
 
 impl crate::Character for Tom {
     const ID: &'static str = "tom";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken => crate::Fondness::Annoyed,
+            content::AnimalKind::Sheep => crate::Fondness::Indifferent,
+        }
+    }
     fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
         Tom::plan_day(self, ctx, rng)
     }

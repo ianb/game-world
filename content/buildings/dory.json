@@ -77,7 +77,7 @@
         },
         {
           "id": "bed_penn",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "beds",
           "at": {
             "x": 8,
@@ -88,7 +88,7 @@
         },
         {
           "id": "bed_rosa",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "beds",
           "at": {
             "x": 9,

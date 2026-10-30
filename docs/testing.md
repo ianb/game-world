@@ -40,7 +40,9 @@ day 1.
 
 `crates/characters/tests/scenes.rs` has the examples: a confidence taken up and
 acted on, news passed on to someone who acts on it, errands queuing, Agnes and
-a late pupil, Benny hiding, Penn forgetting. Each behavior with a scene also
+a late pupil, Benny hiding, Penn forgetting, the Tuesday train taking Ada's eggs
+and bringing Greta's tea, and three people taking to the same hens in their own
+ways. `put_by_flock` puts someone beside a flock. Each behavior with a scene also
 has its negative where that is cheap (the same set-up with the chance forced
 the other way).
 

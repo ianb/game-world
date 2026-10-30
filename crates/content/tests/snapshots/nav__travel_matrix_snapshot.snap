@@ -3,6 +3,8 @@ source: crates/content/tests/nav.rs
 expression: "nav::travel_matrix(&world, &nav)"
 ---
 travel time in game-minutes between arrival tiles (10 ticks per tile)
-                         town house/upstairs
-town                     0m00           5m10
-house/upstairs           5m10           0m00
+                               town   ashby_barn/loft hollins_barn/loft    house/upstairs
+town                           0m00             13m50             12m20              5m10
+ashby_barn/loft               13m50              0m00             10m10             15m00
+hollins_barn/loft             12m20             10m10              0m00             13m30
+house/upstairs                 5m10             15m00             13m30              0m00

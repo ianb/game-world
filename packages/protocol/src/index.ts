@@ -3,6 +3,8 @@
 import type { Emitted } from "./generated/Emitted";
 import type { Input } from "./generated/Input";
 import type { VillagerView } from "./generated/VillagerView";
+import type { AnimalView } from "./generated/AnimalView";
+import type { TrainView } from "./generated/TrainView";
 import type { WorldView } from "./generated/WorldView";
 import type { ClockView } from "./generated/ClockView";
 import type { TerrainView } from "./generated/TerrainView";
@@ -45,6 +47,14 @@ export type { RoofView } from "./generated/RoofView";
 export type { RoomView } from "./generated/RoomView";
 export type { Flooring } from "./generated/Flooring";
 export type { Walling } from "./generated/Walling";
+export type { AnimalView } from "./generated/AnimalView";
+export type { AnimalKind } from "./generated/AnimalKind";
+export type { TrainView } from "./generated/TrainView";
+export type { RailView } from "./generated/RailView";
+export type { PlotView } from "./generated/PlotView";
+export type { Crop } from "./generated/Crop";
+export type { GoodsLine } from "./generated/GoodsLine";
+export type { Shipment } from "./generated/Shipment";
 export type { Pos } from "./generated/Pos";
 export type { Rect } from "./generated/Rect";
 export type { Tick } from "./generated/Tick";
@@ -52,7 +62,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 20;
+export const PROTOCOL_VERSION = 22;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;
@@ -79,6 +89,8 @@ export interface WasmSim {
   where_is_everyone(): string;
   world(): unknown;
   villagers(): unknown;
+  animals(): unknown;
+  train(): unknown;
   terrain(id: string): unknown;
   economy(): unknown;
   clock(): unknown;
@@ -119,6 +131,10 @@ export interface Sim {
   hashParts(): string[];
   world(): WorldView;
   villagers(): VillagerView[];
+  /** Animals, roosting ones included (the viewer hides them). */
+  animals(): AnimalView[];
+  /** The train on the track now, if there is one. */
+  train(): TrainView | null;
   /** The living ground of an outdoor place. Throws for an indoor or unknown place. */
   terrain(id: string): TerrainView;
   /** Goods on objects. */
@@ -223,6 +239,12 @@ export class LocalSim implements Sim {
   }
   villagers(): VillagerView[] {
     return this.guard(() => this.inner.villagers() as VillagerView[]);
+  }
+  animals(): AnimalView[] {
+    return this.guard(() => this.inner.animals() as AnimalView[]);
+  }
+  train(): TrainView | null {
+    return this.guard(() => (this.inner.train() as TrainView | null) ?? null);
   }
   terrain(id: string): TerrainView {
     return this.guard(() => this.inner.terrain(id) as TerrainView);

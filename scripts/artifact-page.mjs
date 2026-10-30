@@ -93,6 +93,7 @@ const page = `<title>Game World</title>
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   button.word { min-height: 32px; min-width: 0; padding: 2px 8px; }
   #inspect button.word { min-height: 0; padding: 0 4px; font: inherit; }
+  #inspect button.unpin { min-height: 0; padding: 0 6px; font: inherit; }
   .word-head { white-space: pre-wrap; }
   #words button.moment { grid-template-columns: 11ch 1fr; }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

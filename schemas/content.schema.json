@@ -37,6 +37,14 @@
     "villagers"
   ],
   "$defs": {
+    "AnimalKind": {
+      "description": "A kind of animal. Every character says how they feel about each kind.",
+      "type": "string",
+      "enum": [
+        "chicken",
+        "sheep"
+      ]
+    },
     "AreaSpec": {
       "description": "A named stretch of ground in a zone.",
       "type": "object",
@@ -89,6 +97,18 @@
         "zone",
         "at",
         "floors"
+      ]
+    },
+    "Crop": {
+      "type": "string",
+      "enum": [
+        "wheat",
+        "cabbages",
+        "carrots",
+        "potatoes",
+        "beans",
+        "corn",
+        "flowers"
       ]
     },
     "DayPattern": {
@@ -170,6 +190,69 @@
         "id",
         "from",
         "to"
+      ]
+    },
+    "Fetches": {
+      "type": "object",
+      "properties": {
+        "good": {
+          "type": "string"
+        },
+        "price": {
+          "description": "What they pay the railway for each.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "to": {
+          "description": "Where they put it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "good",
+        "to",
+        "price"
+      ]
+    },
+    "FlockSpec": {
+      "description": "Animals of one kind that belong to someone and keep to one area. Chickens roost and\nlay in their `coop`; animals without one stay out.",
+      "type": "object",
+      "properties": {
+        "area": {
+          "description": "The area they keep to.",
+          "type": "string"
+        },
+        "coop": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "count": {
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/AnimalKind"
+        },
+        "owner": {
+          "description": "The villager they belong to.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "count",
+        "owner",
+        "area"
       ]
     },
     "Floor": {
@@ -259,6 +342,41 @@
           "type": "string",
           "const": "earth"
         }
+      ]
+    },
+    "GoodsCount": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "good": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "good",
+        "count"
+      ]
+    },
+    "GoodsPrice": {
+      "type": "object",
+      "properties": {
+        "good": {
+          "type": "string"
+        },
+        "price": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "good",
+        "price"
       ]
     },
     "Income": {
@@ -374,6 +492,26 @@
         "between"
       ]
     },
+    "PlotSpec": {
+      "description": "A bed of tilled ground with one crop.",
+      "type": "object",
+      "properties": {
+        "crop": {
+          "$ref": "#/$defs/Crop"
+        },
+        "id": {
+          "type": "string"
+        },
+        "rect": {
+          "$ref": "#/$defs/Rect"
+        }
+      },
+      "required": [
+        "id",
+        "rect",
+        "crop"
+      ]
+    },
     "Pos": {
       "type": "object",
       "properties": {
@@ -393,6 +531,54 @@
       "required": [
         "x",
         "y"
+      ]
+    },
+    "RailwaySpec": {
+      "description": "A railway line across the zone: goods only. The track is a polyline of zone tiles\njoined by straight runs. Trains stop at the tile beside `platform`.",
+      "type": "object",
+      "properties": {
+        "buys": {
+          "description": "What the railway pays for goods left on the platform, each.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/GoodsPrice"
+          }
+        },
+        "delivers": {
+          "description": "What every stopping train leaves in the shed.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/GoodsCount"
+          }
+        },
+        "platform": {
+          "description": "Where goods for sending are left, and where the train stops.",
+          "type": "string"
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/TrainRun"
+          }
+        },
+        "shed": {
+          "description": "Where delivered goods are left.",
+          "type": "string"
+        },
+        "track": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Pos"
+          }
+        }
+      },
+      "required": [
+        "track",
+        "platform",
+        "shed",
+        "runs"
       ]
     },
     "Rect": {
@@ -485,6 +671,21 @@
         "activity"
       ]
     },
+    "Sends": {
+      "type": "object",
+      "properties": {
+        "good": {
+          "type": "string"
+        },
+        "object": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "object",
+        "good"
+      ]
+    },
     "TopicDef": {
       "description": "Something villagers can talk about. Code refers to it by `id`; `gloss` is how views\nshow it.",
       "type": "object",
@@ -510,6 +711,52 @@
       "required": [
         "id",
         "gloss"
+      ]
+    },
+    "TrackEnd": {
+      "oneOf": [
+        {
+          "description": "The first tile of the track.",
+          "type": "string",
+          "const": "start"
+        },
+        {
+          "description": "The last tile.",
+          "type": "string",
+          "const": "end"
+        }
+      ]
+    },
+    "TrainRun": {
+      "description": "One train on the days given: it reaches the platform at `arrive` and leaves at `depart`.\nWhen `stops` is false it passes through at `arrive` without stopping.",
+      "type": "object",
+      "properties": {
+        "arrive": {
+          "type": "string"
+        },
+        "days": {
+          "$ref": "#/$defs/DayPattern"
+        },
+        "depart": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "from": {
+          "description": "Which end of the track it comes from.",
+          "$ref": "#/$defs/TrackEnd"
+        },
+        "stops": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "required": [
+        "days",
+        "arrive",
+        "from"
       ]
     },
     "Trouble": {
@@ -541,6 +788,14 @@
           "default": 0,
           "minimum": 0
         },
+        "fetches": {
+          "description": "Goods they collect from the goods shed when a train has stopped, paying for them.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Fetches"
+          }
+        },
         "home": {
           "type": "string"
         },
@@ -564,6 +819,14 @@
           "default": [],
           "items": {
             "$ref": "#/$defs/ScheduleEntry"
+          }
+        },
+        "sends": {
+          "description": "Goods they send by rail when a train stops: taken from `object` to the platform.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Sends"
           }
         }
       },
@@ -620,6 +883,14 @@
             "$ref": "#/$defs/Rect"
           }
         },
+        "flocks": {
+          "description": "Animals kept in the zone.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FlockSpec"
+          }
+        },
         "height": {
           "type": "integer",
           "format": "uint16",
@@ -644,6 +915,26 @@
           "items": {
             "$ref": "#/$defs/Rect"
           }
+        },
+        "plots": {
+          "description": "Tilled ground and what grows in it. Only the views read it.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PlotSpec"
+          }
+        },
+        "railway": {
+          "description": "The railway through the zone, if there is one.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RailwaySpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "water": {
           "description": "Water: impassable, drawn as water.",

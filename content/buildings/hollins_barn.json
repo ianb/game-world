@@ -30,6 +30,15 @@
           "between": [
             "barn"
           ]
+        },
+        {
+          "at": {
+            "x": 5,
+            "y": 6
+          },
+          "between": [
+            "barn"
+          ]
         }
       ],
       "objects": [
@@ -48,8 +57,8 @@
           "kind": "haystack",
           "room": "barn",
           "at": {
-            "x": 8,
-            "y": 1
+            "x": 7,
+            "y": 3
           },
           "activity": "fork-hay"
         },
@@ -67,7 +76,77 @@
         "x": 4,
         "y": 3
       }
+    },
+    {
+      "id": "loft",
+      "level": 1,
+      "detached": "hay loft",
+      "rooms": [
+        {
+          "id": "loft",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 8,
+            "h": 4
+          },
+          "flooring": "planks"
+        }
+      ],
+      "openings": [],
+      "objects": [
+        {
+          "id": "hay_loft_hollins_1",
+          "kind": "haystack",
+          "room": "loft",
+          "at": {
+            "x": 6,
+            "y": 2
+          }
+        },
+        {
+          "id": "hay_loft_hollins_2",
+          "kind": "haystack",
+          "room": "loft",
+          "at": {
+            "x": 7,
+            "y": 2
+          }
+        },
+        {
+          "id": "sacks_loft_hollins",
+          "kind": "sacks",
+          "room": "loft",
+          "at": {
+            "x": 4,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 2,
+        "y": 2
+      }
     }
   ],
-  "walls": "boards"
+  "walls": "boards",
+  "doors": [
+    {
+      "id": "ladder_hollins",
+      "from": {
+        "floor": "ground",
+        "at": {
+          "x": 1,
+          "y": 5
+        }
+      },
+      "to": {
+        "floor": "loft",
+        "at": {
+          "x": 1,
+          "y": 1
+        }
+      }
+    }
+  ]
 }

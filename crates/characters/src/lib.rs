@@ -62,15 +62,37 @@ pub mod behavior {
     include!(concat!(env!("OUT_DIR"), "/behavior.rs"));
 }
 
+use content::AnimalKind;
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{CharacterSet, Command, Ctx, Planned, Trigger, baseline_plan};
 use sim::ids::VillagerId;
 use sim::social::Interlocutor;
 
+/// How someone takes to a kind of animal. The shared response is in
+/// `toolbox::meet_animals`; a character can answer `Trigger::Animals` itself instead.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Fondness {
+    /// Glad to see them: says so.
+    Delighted,
+    /// Pleased, quietly.
+    Fond,
+    Indifferent,
+    /// Uneasy, quietly.
+    Wary,
+    /// Put out, and says so, laying it at the owner's door.
+    Annoyed,
+    /// Frightened: says so.
+    Afraid,
+}
+
 /// What a character module provides. `ID` is the villager's id in content.
 pub trait Character: Interlocutor {
     const ID: &'static str;
+
+    /// How they take to each kind of animal. Every character decides; a new kind of animal
+    /// makes each of them decide again.
+    fn fondness(&self, kind: AnimalKind) -> Fondness;
 
     /// The day's plan: the content schedule, unless the character changes it.
     fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
@@ -85,12 +107,16 @@ pub trait Character: Interlocutor {
 
 /// `Character` without its constant, so the town can hold any of them behind one pointer.
 trait Dispatch: Interlocutor {
+    fn fond(&self, kind: AnimalKind) -> Fondness;
     fn plan(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned>;
     fn answer(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32)
     -> Option<Vec<Command>>;
 }
 
 impl<T: Character> Dispatch for T {
+    fn fond(&self, kind: AnimalKind) -> Fondness {
+        Character::fondness(self, kind)
+    }
     fn plan(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
         Character::plan_day(self, ctx, rng)
     }
@@ -215,7 +241,16 @@ impl CharacterSet for Town {
         let own = self
             .character(id)
             .and_then(|c| c.answer(&trigger, ctx, rng));
-        let mut cmds = own.unwrap_or_else(|| toolbox::human(&trigger, ctx, id));
+        let mut cmds = match (own, &trigger) {
+            (Some(own), _) => own,
+            (None, Trigger::Animals { kind, owner }) => {
+                let fondness = self
+                    .character_ref(id)
+                    .map_or(Fondness::Indifferent, |c| c.fond(*kind));
+                toolbox::meet_animals(ctx, who, *kind, *owner, fondness)
+            }
+            (None, _) => toolbox::human(&trigger, ctx, id),
+        };
         // Shared rules that run alongside each character's own answer.
         if let Trigger::TalkEnded { other, .. } | Trigger::Encounter { other } = &trigger
             && let Some(mind) = self.interlocutor_ref(who, ctx)

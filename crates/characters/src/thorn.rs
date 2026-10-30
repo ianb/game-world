@@ -20,6 +20,13 @@ pub struct Thorn {
 
 impl Character for Thorn {
     const ID: &'static str = "thorn";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken | content::AnimalKind::Sheep => crate::Fondness::Annoyed,
+        }
+    }
     fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
         let me = villager(ctx, "thorn");
         self.fretted = false;

@@ -15,6 +15,14 @@ pub struct Jenna {
 
 impl Character for Jenna {
     const ID: &'static str = "jenna";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken => crate::Fondness::Fond,
+            content::AnimalKind::Sheep => crate::Fondness::Indifferent,
+        }
+    }
     fn react(
         &mut self,
         trigger: &Trigger,

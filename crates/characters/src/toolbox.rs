@@ -286,6 +286,82 @@ pub fn chat(
     })
 }
 
+/// At the platform: everything they send by rail, from where they keep it.
+#[must_use]
+pub fn send_goods(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
+    let Some(v) = ctx.content.villagers.iter().find(|v| v.id == me) else {
+        return Vec::new();
+    };
+    v.sends
+        .iter()
+        .filter(|x| stock_of(ctx, &x.object, &x.good) > 0)
+        .map(|x| Command::Consign {
+            from: object(ctx, &x.object),
+            good: x.good.clone(),
+            count: u16::MAX,
+        })
+        .collect()
+}
+
+/// At the goods shed: what they fetch, as much as is there, paid for and carried to where
+/// it goes.
+#[must_use]
+pub fn fetch_goods(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
+    let (Some(v), Some(rail)) = (
+        ctx.content.villagers.iter().find(|v| v.id == me),
+        ctx.world.rail.as_ref(),
+    ) else {
+        return Vec::new();
+    };
+    let shed = ctx.world.objects[rail.shed].id.clone();
+    let who = villager(ctx, me);
+    let mut cmds = Vec::new();
+    for f in &v.fetches {
+        let n = stock_of(ctx, &shed, &f.good);
+        let afford = ctx.coins(who) / f.price.max(1);
+        let n = u32::from(n).min(afford);
+        if n == 0 {
+            continue;
+        }
+        let n = i32::try_from(n).unwrap_or(0);
+        cmds.push(stock(ctx, &shed, &f.good, -n));
+        cmds.push(stock(ctx, &f.to, &f.good, n));
+        cmds.push(Command::Pay {
+            from: Party::Villager(who),
+            to: Party::Outside,
+            amount: f.price * n.unsigned_abs(),
+            what: f.good.clone(),
+        });
+    }
+    cmds
+}
+
+/// The shared response to animals close by, by how the person takes to them. Their own
+/// animals get no remark. Pleasure is quiet unless delight; annoyance and fear are said
+/// aloud and laid at the owner's door, so the owner may hear of it.
+#[must_use]
+pub fn meet_animals(
+    ctx: &Ctx<'_>,
+    me: VillagerId,
+    kind: content::AnimalKind,
+    owner: VillagerId,
+    fondness: crate::Fondness,
+) -> Vec<Command> {
+    use crate::Fondness as F;
+    if me == owner {
+        return Vec::new();
+    }
+    let topic = ctx.topic(sim::brain::animal_plural(kind)).about(owner);
+    match fondness {
+        F::Delighted => vec![think_aloud(topic, Blame::Them(owner), false, false, 2)],
+        F::Fond => vec![think(topic, Blame::Them(owner), false, false, 1)],
+        F::Indifferent => Vec::new(),
+        F::Wary => vec![think(topic, Blame::Luck, false, false, -1)],
+        F::Annoyed => vec![think_aloud(topic, Blame::Them(owner), false, false, -1)],
+        F::Afraid => vec![think_aloud(topic, Blame::Them(owner), false, false, -2)],
+    }
+}
+
 /// Coins someone keeps back before they will give any away.
 pub const SPARE_COINS: u32 = 12;
 /// What a kindness gives.
@@ -521,6 +597,8 @@ pub fn human(trigger: &Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
             -1,
         )],
         // A drink at whichever bar this is.
+        Trigger::Arrived if activity_of(ctx, me) == "send-goods" => send_goods(ctx, me),
+        Trigger::Arrived if activity_of(ctx, me) == "fetch-goods" => fetch_goods(ctx, me),
         Trigger::Arrived if activity_of(ctx, me) == "drink" => buy_ale_nearest(ctx, me)
             .unwrap_or_else(|| vec![Command::Note("no drink to be had".into())]),
         Trigger::Arrived if activity_of(ctx, me) == "sleep" => {

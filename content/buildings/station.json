@@ -1,0 +1,101 @@
+{
+  "id": "station",
+  "zone": "town",
+  "at": {
+    "x": 62,
+    "y": 27
+  },
+  "walls": "brick",
+  "floors": [
+    {
+      "id": "ground",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "goods",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 5,
+            "h": 3
+          },
+          "flooring": "planks"
+        },
+        {
+          "id": "office",
+          "rect": {
+            "x": 7,
+            "y": 1,
+            "w": 2,
+            "h": 3
+          },
+          "flooring": "darkplanks"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 3,
+            "y": 4
+          },
+          "between": [
+            "goods"
+          ]
+        },
+        {
+          "at": {
+            "x": 6,
+            "y": 2
+          },
+          "between": [
+            "goods",
+            "office"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "shed_station",
+          "kind": "crates",
+          "room": "goods",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "activity": "fetch-goods"
+        },
+        {
+          "id": "sacks_station",
+          "kind": "sacks",
+          "room": "goods",
+          "at": {
+            "x": 5,
+            "y": 1
+          }
+        },
+        {
+          "id": "desk_station",
+          "kind": "desk",
+          "room": "office",
+          "at": {
+            "x": 8,
+            "y": 1
+          }
+        },
+        {
+          "id": "clock_station",
+          "kind": "clock",
+          "room": "office",
+          "at": {
+            "x": 7,
+            "y": 1
+          }
+        }
+      ],
+      "arrival": {
+        "x": 3,
+        "y": 3
+      }
+    }
+  ]
+}

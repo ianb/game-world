@@ -73,5 +73,11 @@
       "amount": 14,
       "what": "barrels to market"
     }
+  ],
+  "sends": [
+    {
+      "object": "workbench_cooper",
+      "good": "barrel"
+    }
   ]
 }

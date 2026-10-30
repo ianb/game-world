@@ -102,7 +102,7 @@
         },
         {
           "id": "bed_rob",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "beds",
           "at": {
             "x": 8,
@@ -113,7 +113,7 @@
         },
         {
           "id": "bed_jenna",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "beds",
           "at": {
             "x": 9,

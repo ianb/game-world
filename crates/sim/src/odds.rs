@@ -64,6 +64,19 @@ impl Odds {
         self.chance_in(rng, who, label, 100, i32::from(percent))
     }
 
+    /// A chance that belongs to no villager (a hen laying): only a force for everyone
+    /// applies.
+    pub fn chance_any(&self, rng: &mut Pcg32, label: &str, percent: i16) -> bool {
+        match self
+            .forced
+            .iter()
+            .find(|f| f.label == label && f.who.is_none())
+        {
+            Some(f) => f.happens,
+            None => i32::try_from(rng.random_range(0..100u32)).unwrap_or(0) < i32::from(percent),
+        }
+    }
+
     /// `chance` with odds out of `scale` (1000 for per-mille).
     pub fn chance_in(
         &self,

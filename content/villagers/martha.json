@@ -53,5 +53,11 @@
       "object": "stall_martha",
       "activity": "sell"
     }
+  ],
+  "sends": [
+    {
+      "object": "jars_martha",
+      "good": "honey"
+    }
   ]
 }

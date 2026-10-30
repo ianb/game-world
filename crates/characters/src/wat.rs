@@ -15,6 +15,15 @@ pub struct Wat {
 
 impl Character for Wat {
     const ID: &'static str = "wat";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken | content::AnimalKind::Sheep => {
+                crate::Fondness::Indifferent
+            }
+        }
+    }
     fn react(
         &mut self,
         trigger: &Trigger,

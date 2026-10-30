@@ -166,8 +166,51 @@ pub struct World {
     pub doors: Vec<CompiledDoor>,
     pub roofs: Vec<Roof>,
     pub areas: Vec<Area>,
+    /// The railway, if a zone has one.
+    pub rail: Option<Rail>,
     /// place id -> index
     pub place_index: BTreeMap<String, usize>,
+}
+
+/// A railway's track as tiles in order, with where trains stop.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+pub struct Rail {
+    pub place: usize,
+    pub tiles: Vec<Pos>,
+    /// Index into `tiles` of the stop beside the platform.
+    pub stop: usize,
+    /// Object indexes.
+    pub platform: usize,
+    pub shed: usize,
+}
+
+/// The tiles of a polyline of axis-aligned runs, each corner once.
+#[must_use]
+pub fn track_tiles(points: &[Pos]) -> Vec<Pos> {
+    let mut tiles: Vec<Pos> = Vec::new();
+    for w in points.windows(2) {
+        let (from, to) = (w[0], w[1]);
+        let (mut x, mut y) = (i32::from(from.x), i32::from(from.y));
+        let (dx, dy) = (
+            (i32::from(to.x) - x).signum(),
+            (i32::from(to.y) - y).signum(),
+        );
+        loop {
+            let p = Pos {
+                x: u16::try_from(x).unwrap_or(0),
+                y: u16::try_from(y).unwrap_or(0),
+            };
+            if tiles.last() != Some(&p) {
+                tiles.push(p);
+            }
+            if p == to || (dx == 0 && dy == 0) {
+                break;
+            }
+            x += dx;
+            y += dy;
+        }
+    }
+    tiles
 }
 
 /// A named stretch of ground in a place.
@@ -314,6 +357,29 @@ pub fn compile(content: &Content) -> World {
                 mark_door(&mut world.places[to_place], to);
             }
         }
+    }
+
+    for z in &content.zones {
+        let Some(r) = &z.railway else { continue };
+        let place = world.place_index[&z.id];
+        let object = |id: &str| world.objects.iter().position(|o| o.id == id);
+        let (Some(platform), Some(shed)) = (object(&r.platform), object(&r.shed)) else {
+            continue;
+        };
+        let tiles = track_tiles(&r.track);
+        let at = world.objects[platform].at;
+        let stop = tiles
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, t)| t.x.abs_diff(at.x) + t.y.abs_diff(at.y))
+            .map_or(0, |(i, _)| i);
+        world.rail = Some(Rail {
+            place,
+            tiles,
+            stop,
+            platform,
+            shed,
+        });
     }
 
     world.finish();

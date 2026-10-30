@@ -309,3 +309,86 @@ fn penn_forgets_at_the_kiln() {
     assert!(!events.iter().any(|e| matches!(e,
         Emitted::Stocked { who, delta, .. } if *who == penn && *delta < 0)));
 }
+
+/// Tuesday's train: the hens have laid, Ada takes eggs and cheese to the platform before it
+/// comes, it leaves deliveries in the shed and pays her when it goes, and Greta fetches
+/// the tea for the store.
+#[test]
+fn the_tuesday_train_takes_eggs_and_brings_tea() {
+    let mut s = Scene::new();
+    s.force(sim::animals::LAYS, true);
+    let (ada, greta) = (s.id("ada"), s.id("greta"));
+    let events = s.run_until(at(1, 12, 0)).to_vec();
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, Emitted::Laid { flock, .. } if flock == "hens_hollins"))
+    );
+    let sent: Vec<&str> = events
+        .iter()
+        .filter_map(|e| match e {
+            Emitted::Consigned { who, good, .. } if *who == ada => Some(good.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert!(sent.contains(&"eggs"), "Ada sends eggs: {sent:?}");
+    assert!(events.iter().any(|e| matches!(e, Emitted::TrainArrived { delivered, .. } if delivered.iter().any(|d| d.good == "tea"))));
+    let paid = events.iter().find_map(|e| match e {
+        Emitted::TrainLeft { shipped, .. } => Some(
+            shipped
+                .iter()
+                .filter(|s| s.who == ada)
+                .map(|s| s.paid)
+                .sum::<u32>(),
+        ),
+        _ => None,
+    });
+    assert!(paid.is_some_and(|p| p > 0), "the railway pays Ada");
+    assert!(events.iter().any(|e| matches!(e,
+        Emitted::Paid { who, to: None, what, .. } if *who == greta && what == "tea")));
+    assert!(
+        s.sim
+            .ctx()
+            .stock(s.sim.ctx().object_id("shelf_store").unwrap(), "tea")
+            > 0
+    );
+}
+
+/// On Monday the afternoon train goes through without stopping, and nobody goes to meet it.
+#[test]
+fn the_monday_train_passes_through() {
+    let mut s = Scene::new();
+    let events = s.run_until(at(0, 16, 0));
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, Emitted::TrainPassed { .. }))
+    );
+    assert!(
+        !events
+            .iter()
+            .any(|e| matches!(e, Emitted::Consigned { .. } | Emitted::TrainArrived { .. }))
+    );
+}
+
+/// The same hens, three people: Pip is delighted and says so, Tom is annoyed and lays it at
+/// Ada's door aloud, and Rob does not care.
+#[test]
+fn people_take_to_the_hens_in_their_own_ways() {
+    let mut s = Scene::new();
+    s.run_until(at(0, 10, 0));
+    let ada = s.id("ada");
+    let mut felt = |who: &str| {
+        s.put_by_flock(who, "hens_hollins");
+        let id = s.id(who);
+        s.events.iter().rev().find_map(|e| match e {
+            Emitted::Thought { who, thought, .. } if *who == id && thought.about.is("hens") => {
+                Some((thought.feeling, thought.aloud, thought.about.about))
+            }
+            _ => None,
+        })
+    };
+    assert_eq!(felt("pip"), Some((2, true, Some(ada))));
+    assert_eq!(felt("tom"), Some((-1, true, Some(ada))));
+    assert_eq!(felt("rob"), None);
+}

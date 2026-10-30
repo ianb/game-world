@@ -11,7 +11,9 @@ pub mod nav;
 pub mod render;
 pub mod validate;
 
-pub use compile::{Area, Cell, CompiledDoor, CompiledObject, Place, PlaceKind, World};
+pub use compile::{
+    Area, Cell, CompiledDoor, CompiledObject, Place, PlaceKind, Rail, World, track_tiles,
+};
 pub use load::{LoadError, load_dir, load_str};
 pub use model::*;
 pub use nav::{Leg, Nav, Route, Spot, WALK_TICKS_PER_TILE};

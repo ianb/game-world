@@ -70,6 +70,7 @@
       .chips { display: flex; flex-wrap: wrap; gap: 6px; }
       button.word { min-height: 32px; min-width: 0; padding: 2px 8px; }
       #inspect button.word { min-height: 0; padding: 0 4px; font: inherit; }
+      #inspect button.unpin { min-height: 0; padding: 0 6px; font: inherit; }
       .word-head { white-space: pre-wrap; }
       #words button.moment { grid-template-columns: 11ch 1fr; }
       @media (max-width: 900px) {
@@ -107,7 +108,7 @@
         </nav>
         <div class="tab" id="tab-people" role="tabpanel">
           <div id="everyone"></div>
-          <pre id="inspect">hover or click a tile; click a name for the person</pre>
+          <pre id="inspect">hover or click a tile or a thing; click a name for the person; click again or press Escape to let go</pre>
         </div>
         <div class="tab" id="tab-days" role="tabpanel" hidden>
           <div class="daynav">

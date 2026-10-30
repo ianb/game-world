@@ -1,8 +1,8 @@
 // The viewer: the sim advancing in the browser, drawn as tiles, with the text views the
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import * as wasm from "@game-world/sim-wasm";
-import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type ClockView, type Emitted, type DaySummary, type MindView, type Sim, type StockView, type SummaryItem, type Topic, type VillagerView } from "@game-world/protocol";
-import { PlaceCanvas, Tileset, legend } from "./render";
+import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type ClockView, type Emitted, type DaySummary, type MindView, type ObjectView, type Sim, type StockView, type SummaryItem, type Topic, type VillagerView } from "@game-world/protocol";
+import { PlaceCanvas, Tileset, legend, objectTile } from "./render";
 import { Words, type TopicDef, type Word } from "./words";
 import type { Diorama } from "./diorama";
 
@@ -56,7 +56,7 @@ const placeTabs = new Map<number, HTMLButtonElement>();
 let activePlace = (world.places.find((p) => p.key === "town") ?? world.places[0])?.id ?? 0;
 for (const place of world.places) {
   const section = document.createElement("section");
-  const canvas = new PlaceCanvas(tileset, place, world.objects, world.roofs, world.rooms);
+  const canvas = new PlaceCanvas(tileset, place, world);
   section.append(canvas.canvas);
   section.hidden = place.id !== activePlace;
   placesEl.appendChild(section);
@@ -86,17 +86,46 @@ for (const place of world.places) {
   canvas.canvas.addEventListener("click", (e) => {
     const t = canvas.tileAt(e.clientX, e.clientY);
     if (!t) return;
-    // Clicking a villager pins the person; clicking anything else pins the tile.
+    // Clicking a villager pins the person, an object (anywhere on its sprite) the object,
+    // anything else the tile. Clicking what is already pinned lets it go.
     const v = sim.villagers().find((v) => v.place === canvas.id && v.pos.x === t.x && v.pos.y === t.y);
-    pinned = v ? { kind: "villager", key: v.key } : { kind: "tile", place: canvas.id, x: t.x, y: t.y };
+    const o = v ? undefined : objectAt(canvas.id, t.x, t.y);
+    const next: Focus = v ? { kind: "villager", key: v.key } : o ? { kind: "object", key: o.key } : { kind: "tile", place: canvas.id, x: t.x, y: t.y };
+    pinned = samePin(pinned, next) ? null : next;
     drawnTick = -1;
   });
 }
 
 // What the inspector shows: the pinned thing, else whatever the pointer is over.
-type Focus = { kind: "tile"; place: number; x: number; y: number } | { kind: "villager"; key: string };
+type Focus = { kind: "tile"; place: number; x: number; y: number } | { kind: "villager"; key: string } | { kind: "object"; key: string };
 let hover: Focus | null = null;
 let pinned: Focus | null = null;
+
+function samePin(a: Focus | null, b: Focus): boolean {
+  if (!a || a.kind !== b.kind) return false;
+  if (a.kind === "tile" && b.kind === "tile") return a.place === b.place && a.x === b.x && a.y === b.y;
+  return "key" in a && "key" in b && a.key === b.key;
+}
+
+/** The object whose sprite covers a tile: one standing on it first, else the nearest in
+ * front. */
+function objectAt(place: number, x: number, y: number): ObjectView | undefined {
+  let best: ObjectView | undefined;
+  for (const o of world.objects) {
+    if (o.place !== place) continue;
+    if (o.pos.x === x && o.pos.y === y) return o;
+    const r = tileset.covers(objectTile(o.kind), o.pos.x, o.pos.y);
+    if (x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1 && (!best || o.pos.y > best.pos.y)) best = o;
+  }
+  return best;
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && pinned) {
+    pinned = null;
+    drawnTick = -1;
+  }
+});
 const inspectEl = $("inspect");
 
 const rules = sim.rules();
@@ -153,7 +182,7 @@ const signed = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
 const words = (name: string): string => name.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
 
 /** A line of the inspector: text, or text with words that open the words tab. */
-type Seg = string | { word: Word; label: string };
+type Seg = string | { word: Word; label: string } | { act: () => void; label: string };
 type Line = string | Seg[];
 
 /** A topic chip from a label as views show it ("money (Mara)"): the topic whose gloss it
@@ -216,6 +245,22 @@ function describeVillager(v: VillagerView, stock: StockView[]): Line[] {
   return lines;
 }
 
+function describeObject(o: ObjectView, villagers: VillagerView[], stock: StockView[]): Line[] {
+  const place = world.places.find((p) => p.id === o.place);
+  const owner = o.owner ? villagers.find((v) => v.key === o.owner) : undefined;
+  const lines: Line[] = [
+    `${words(o.kind)} (${o.key})`,
+    `in ${o.room ? `${o.building.replace(/_/g, " ")}, ${o.room}` : place?.key ?? "?"} at (${o.pos.x}, ${o.pos.y})`,
+  ];
+  if (owner) lines.push(`belongs to ${owner.name}`);
+  if (o.activity) lines.push(`for: ${o.activity}`);
+  const goods = stock.filter((s) => s.key === o.key && s.count > 0).map((s) => `${s.good} ${s.count}`);
+  if (goods.length) lines.push(`holds ${goods.join(", ")}`);
+  const near = villagers.filter((v) => v.place === o.place && Math.abs(v.pos.x - o.pos.x) <= 1 && Math.abs(v.pos.y - o.pos.y) <= 1);
+  for (const v of near) lines.push(`${v.name} is here: ${v.activity}`);
+  return lines;
+}
+
 function describeTile(f: { place: number; x: number; y: number }, villagers: VillagerView[], stock: StockView[]): Line[] {
   const place = world.places.find((p) => p.id === f.place);
   if (!place) return ["?"];
@@ -246,7 +291,7 @@ function inspect(villagers: VillagerView[]): void {
   const focus = pinned ?? hover;
   if (!focus) {
     shownInspect = "";
-    inspectEl.textContent = "hover or click a tile; click a name for the person";
+    inspectEl.textContent = "hover or click a tile or a thing; click a name for the person; click again or press Escape to let go";
     return;
   }
   const stock = sim.economy();
@@ -256,8 +301,25 @@ function inspect(villagers: VillagerView[]): void {
           const v = villagers.find((x) => x.key === focus.key);
           return v ? describeVillager(v, stock) : ["?"];
         })()
-      : describeTile(focus, villagers, stock);
-  lines[0] = [pinned ? "pinned: " : "", ...(typeof lines[0] === "string" ? [lines[0]] : (lines[0] ?? []))];
+      : focus.kind === "object"
+        ? (() => {
+            const o = world.objects.find((x) => x.key === focus.key);
+            return o ? describeObject(o, villagers, stock) : ["?"];
+          })()
+        : describeTile(focus, villagers, stock);
+  const unpin: Seg[] = pinned
+    ? [
+        {
+          act: () => {
+            pinned = null;
+            drawnTick = -1;
+          },
+          label: "unpin",
+        },
+        " ",
+      ]
+    : [];
+  lines[0] = [...unpin, ...(typeof lines[0] === "string" ? [lines[0]] : (lines[0] ?? []))];
   // Rebuilt only when the text changes, so a word can be clicked between redraws.
   const text = lines.map((l) => (typeof l === "string" ? l : l.map((s) => (typeof s === "string" ? s : s.label)).join(""))).join("\n");
   if (text === shownInspect) return;
@@ -267,7 +329,15 @@ function inspect(villagers: VillagerView[]): void {
     if (i > 0) frag.append("\n");
     for (const s of typeof l === "string" ? [l] : l) {
       if (typeof s === "string") frag.append(s);
-      else {
+      else if ("act" in s) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "unpin";
+        b.textContent = s.label;
+        b.title = "or press Escape, or click it again";
+        b.addEventListener("click", s.act);
+        frag.append(b);
+      } else {
         const b = wordsPanel.chip(s.word, s.label);
         b.addEventListener("click", () => selectSideTab("words"));
         frag.append(b);
@@ -283,6 +353,10 @@ function highlightFor(placeId: number, villagers: VillagerView[]): { x: number; 
   const focus = pinned ?? hover;
   if (!focus) return null;
   if (focus.kind === "tile") return focus.place === placeId ? { x: focus.x, y: focus.y } : null;
+  if (focus.kind === "object") {
+    const o = world.objects.find((x) => x.key === focus.key);
+    return o && o.place === placeId ? { x: o.pos.x, y: o.pos.y } : null;
+  }
   const v = villagers.find((x) => x.key === focus.key);
   return v && v.place === placeId ? { x: v.pos.x, y: v.pos.y } : null;
 }
@@ -893,10 +967,13 @@ async function loadDiorama(): Promise<Diorama> {
       objects: world.objects,
       roofs: world.roofs,
       rooms: world.rooms,
+      world,
       name: villagerName,
       pick: (place, x, y) => {
         const v = sim.villagers().find((v) => v.place === place && v.pos.x === x && v.pos.y === y);
-        pinned = v ? { kind: "villager", key: v.key } : { kind: "tile", place, x, y };
+        const o = v ? undefined : world.objects.find((o) => o.place === place && o.pos.x === x && o.pos.y === y);
+        const next: Focus = v ? { kind: "villager", key: v.key } : o ? { kind: "object", key: o.key } : { kind: "tile", place, x, y };
+        pinned = samePin(pinned, next) ? null : next;
         drawnTick = -1;
       },
     });

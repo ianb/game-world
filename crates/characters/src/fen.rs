@@ -25,6 +25,15 @@ pub struct Fen {
 
 impl Character for Fen {
     const ID: &'static str = "fen";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken | content::AnimalKind::Sheep => {
+                crate::Fondness::Indifferent
+            }
+        }
+    }
     fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
         let me = villager(ctx, "fen");
         self.caught = 0;

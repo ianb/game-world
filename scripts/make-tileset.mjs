@@ -252,7 +252,6 @@ const INT = "tiles/house-interior/interior.png";
 const DEC = "tiles/decorations-medieval/decorations-medieval.png";
 const OBJ = "tiles/atlas/obj_misk_atlas.png";
 put("obj_anvil", tiles(OBJ, 6, 11));
-put("obj_sacks", tiles(OBJ, 4, 13));
 put("obj_millstone", tiles(OBJ, 15, 10));
 put("obj_altar", tiles("tiles/atlas/build_atlas.png", 13, 12));
 put("obj_workbench", tiles(INT, 4, 8));
@@ -265,11 +264,9 @@ put("obj_weaponrack", tiles(INT, 6, 8, 1, 2), 0, -T);
 put("obj_clock", tiles(INT, 1, 10));
 put("obj_hearth", tiles(INT, 12, 4));
 put("obj_barrels", tiles(INT, 1, 8, 2, 2), -H, -T);
-put("obj_haystack", tiles(DEC, 0, 20, 2, 2), -H, -T);
 put("obj_firewood", tiles(DEC, 12, 20, 2, 2), -H, -T);
 put("obj_logs", tiles(DEC, 13, 22));
 put("obj_bucket", tiles(DEC, 2, 14));
-put("obj_trough", tiles(DEC, 4, 5));
 put("obj_churn", tiles(DEC, 2, 22));
 put("obj_wheel", tiles(DEC, 3, 15));
 put("obj_grave", tiles(DEC, 1, 3));
@@ -281,6 +278,185 @@ put("obj_stall", tiles(DEC, 6, 25, 2, 3), -H, -2 * T);
 put("obj_hive", tiles(DEC, 3, 22));
 put("obj_clamp", tiles(DEC, 10, 49));
 put("obj_fence", tiles("tiles/atlas/build_atlas.png", 25, 11));
+
+// ---- The valley outdoors and its furnishings, second round.
+const TERR = "tiles/atlas/terrain_atlas.png";
+const BLD = "tiles/atlas/build_atlas.png";
+const WD = "tiles/windows-doors/windows-doors.png";
+/** `img` mirrored left to right. */
+function flipH(img) {
+  const t = new Img(img.w, img.h);
+  for (let y = 0; y < img.h; y++) {
+    for (let x = 0; x < img.w; x++) t.data.set(img.data.subarray((y * img.w + x) * 4, (y * img.w + x) * 4 + 4), (y * img.w + (img.w - 1 - x)) * 4);
+  }
+  return t;
+}
+const rgba = (h, a = 255) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), a];
+
+// Corrections: the sacks were half of a two-tile drawing; banners are gone for plants; the
+// barn's hay is one bale and the trough a real trough.
+put("obj_sacks", tiles(OBJ, 1, 15));
+put("obj_plant", tiles(BLD, 7, 5, 1, 2), 0, -T);
+put("obj_haystack", tiles(TERR, 0, 26, 1, 2), 0, -T);
+put("obj_trough", tiles(DEC, 14, 18, 2, 1), -H, 0);
+put("obj_coop", tiles(DEC, 9, 22, 2, 2), -H, -T);
+put("obj_crates", tiles(TERR, 21, 18, 2, 1), -H, 0);
+put("obj_platform", tiles(TERR, 16, 20, 3, 1), -T, 0);
+put("ladder", tiles(TERR, 9, 5));
+// Two beds side by side as one: the left bed's left part and the right bed's right part,
+// one frame between them.
+put("obj_bed_double", (() => {
+  const single = (() => {
+    const b = blank(1, 2);
+    b.draw(sheet(INT), 14 * T, 0, T, T, 0, 0);
+    b.draw(sheet(INT), 14 * T, 2 * T, T, T, 0, T);
+    return b;
+  })();
+  const t = blank(2, 2);
+  t.draw(single, 0, 0, 29, 2 * T, 3, 0);
+  t.draw(single, 3, 0, 29, 2 * T, 32, 0);
+  return t;
+})());
+// Doorways: a sill across an opening, and the red doors of a barn standing over a wide one.
+put("threshold_wood", tiles(TERR, 16, 20));
+put("threshold_stone", tiles(TERR, 17, 26));
+put("barn_door", tiles(TERR, 17, 21, 2, 2), 0, -T);
+put("barn_door_l", tiles(TERR, 17, 21, 1, 2), 0, -T);
+put("barn_door_r", tiles(TERR, 18, 21, 1, 2), 0, -T);
+
+// Trees of several kinds; a cell picks one by position. Each stands on its cell.
+/** `img` with its leaves recoloured: each green pixel's green and red swapped toward
+ * `mix` ([r, g, b] multipliers on the pixel's green), for fir and autumn variants. */
+function retint(img, mix) {
+  const t = new Img(img.w, img.h, Buffer.from(img.data));
+  for (let i = 0; i < t.data.length; i += 4) {
+    const [r, g, b, a] = [t.data[i], t.data[i + 1], t.data[i + 2], t.data[i + 3]];
+    if (a === 0 || g <= r || g <= b) continue;
+    t.data[i] = Math.min(255, Math.round(g * mix[0]));
+    t.data[i + 1] = Math.min(255, Math.round(g * mix[1]));
+    t.data[i + 2] = Math.min(255, Math.round(g * mix[2]));
+  }
+  return t;
+}
+const pine = pixels(TERR, 962, 0, 62, 160, 3, 5, 20, 0);
+const oak = tiles(TERR, 29, 28, 3, 4);
+put("tree_pine", pine, -T, -4 * T);
+put("tree_fir", retint(pine, [0.35, 0.8, 0.75]), -T, -4 * T);
+put("tree_oak", oak, -T, -3 * T);
+put("tree_young", tiles(TERR, 27, 29, 2, 3), -H, -2 * T);
+put("tree_autumn", retint(oak, [1.15, 0.6, 0.2]), -T, -3 * T);
+
+// Things in the grass, on the banks and in the water.
+put("grass_flowers", tiles(TERR, 21, 11, 3, 1), 0, 0, 3);
+put("decor_rock", tiles(TERR, 22, 21));
+put("decor_stones", tiles(TERR, 24, 21));
+put("decor_mushrooms", tiles(TERR, 27, 28));
+put("decor_toadstool", tiles(TERR, 26, 31));
+put("decor_bush", tiles(TERR, 9, 14));
+put("decor_fern", tiles(TERR, 13, 14));
+put("decor_reeds", tiles(TERR, 26, 29, 1, 2), 0, -T);
+put("decor_lily", tiles(TERR, 6, 30, 3, 1), 0, 0, 3);
+put("decor_lily_flower", tiles(TERR, 6, 31, 3, 1), 0, 0, 3);
+
+// Crops: tilled soil, then each crop as it grows: sprouts, growing, ready.
+put("soil", tiles(TERR, 4, 28));
+put("crop_sprout", tiles(TERR, 9, 24, 3, 1), 0, 0, 3);
+put("crop_wheat_growing", tiles(TERR, 9, 18));
+put("crop_wheat_ready", tiles(TERR, 1, 29));
+put("crop_cabbages", tiles(TERR, 10, 28));
+put("crop_cabbages_growing", tiles(TERR, 10, 26));
+put("crop_carrots", tiles(TERR, 10, 30));
+put("crop_carrots_growing", tiles(TERR, 11, 25));
+put("crop_potatoes", tiles(TERR, 9, 30));
+put("crop_potatoes_growing", tiles(TERR, 9, 27));
+put("crop_beans", tiles(TERR, 12, 28));
+put("crop_beans_growing", tiles(TERR, 12, 26));
+put("crop_corn", tiles(TERR, 15, 26, 1, 3), 0, -2 * T);
+put("crop_corn_growing", tiles(TERR, 15, 25));
+put("crop_flowers", tiles(TERR, 21, 11, 3, 1), 0, 0, 3);
+put("crop_flowers_growing", tiles(TERR, 14, 25));
+
+// Bridges: boards across the water with a rail along each open side.
+put("bridge", tiles(TERR, 16, 20));
+/** A wooden rail along one edge of a bridge tile: posts and a top bar. */
+function bridgeRail(top) {
+  const t = blank();
+  const y = top ? 0 : T - 9;
+  t.fill(0, y + 1, T, 3, rgba("#6b4426"));
+  t.fill(0, y + 1, T, 1, rgba("#9a6a3c"));
+  for (const x of [2, 18]) t.fill(x, y, 4, 9, rgba("#4e301a"));
+  return t;
+}
+put("bridge_rail_n", bridgeRail(true));
+put("bridge_rail_s", bridgeRail(false));
+
+// The railway, drawn here: sleepers and two rails, across and down, and the train.
+put("rail_h", (() => {
+  const t = blank();
+  for (let x = 2; x < T; x += 8) t.fill(x, 6, 5, 20, rgba("#5b3f28"));
+  t.fill(0, 9, T, 3, rgba("#8f969c"));
+  t.fill(0, 20, T, 3, rgba("#8f969c"));
+  t.fill(0, 9, T, 1, rgba("#c7ccd0"));
+  t.fill(0, 20, T, 1, rgba("#c7ccd0"));
+  return t;
+})());
+put("rail_v", (() => {
+  const t = blank();
+  for (let y = 2; y < T; y += 8) t.fill(6, y, 20, 5, rgba("#5b3f28"));
+  t.fill(9, 0, 3, T, rgba("#8f969c"));
+  t.fill(20, 0, 3, T, rgba("#8f969c"));
+  return t;
+})());
+/** A train car seen from the side, two tiles long, facing east (right). */
+function car(kind) {
+  const t = blank(2, 2);
+  const wheel = (x) => {
+    t.fill(x, 52, 10, 10, rgba("#2a2a2e"));
+    t.fill(x + 2, 54, 6, 6, rgba("#a33a2c"));
+    t.fill(x + 4, 56, 2, 2, rgba("#e0c06a"));
+  };
+  if (kind === "engine") {
+    t.fill(4, 44, 58, 8, rgba("#1d1d22"));
+    t.fill(18, 30, 36, 16, rgba("#2c3f35"));
+    t.fill(18, 32, 36, 2, rgba("#47614f"));
+    for (const x of [26, 38]) t.fill(x, 30, 2, 16, rgba("#c49a3a"));
+    t.fill(46, 18, 7, 13, rgba("#1d1d22"));
+    t.fill(44, 16, 11, 3, rgba("#1d1d22"));
+    t.fill(54, 38, 6, 8, rgba("#1d1d22"));
+    t.fill(2, 22, 18, 24, rgba("#5a1f1a"));
+    t.fill(0, 20, 22, 3, rgba("#1d1d22"));
+    t.fill(6, 26, 10, 8, rgba("#e7d9a0"));
+    t.fill(56, 40, 6, 3, rgba("#e7d9a0"));
+    for (const x of [8, 24, 40]) wheel(x);
+  } else {
+    const body = kind === "wagon" ? "#7a5232" : "#5d6a73";
+    t.fill(2, 26, 60, 22, rgba(body));
+    for (let x = 2; x < 62; x += 6) t.fill(x, 26, 1, 22, rgba("#3e2a1a"));
+    t.fill(2, 24, 60, 3, rgba("#3e2a1a"));
+    t.fill(2, 46, 60, 3, rgba("#1d1d22"));
+    t.fill(0, 44, 2, 3, rgba("#1d1d22"));
+    t.fill(62, 44, 2, 3, rgba("#1d1d22"));
+    for (const x of [8, 46]) wheel(x);
+  }
+  return t;
+}
+put("train_engine_e", car("engine"), 0, -T);
+put("train_engine_w", flipH(car("engine")), 0, -T);
+put("train_wagon", car("wagon"), 0, -T);
+put("train_van", car("van"), 0, -T);
+
+// Farm animals: four facings (up, left, down, right) by four walking frames. Chickens are a
+// tile a frame; sheep are cropped to two tiles from their 128px frames.
+put("animal_chicken", (() => {
+  const t = blank(4, 4);
+  t.draw(sheet("animals/chicken_walk.png"), 0, 0, 128, 128, 0, 0);
+  return t;
+})());
+put("animal_sheep", (() => {
+  const t = blank(8, 8);
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) t.draw(sheet("animals/sheep_walk.png"), c * 128 + 32, r * 128 + 40, 64, 64, c * 64, r * 64);
+  return t;
+})());
 
 // ---- Villagers: each one's walk sheet composed from their layers (art/lpc/characters),
 // recolored from each material's base palette. 9 frames of 64px; rows face up, left, down,

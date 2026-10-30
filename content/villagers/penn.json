@@ -55,5 +55,11 @@
       "amount": 10,
       "what": "pots"
     }
+  ],
+  "sends": [
+    {
+      "object": "kiln_dory",
+      "good": "pots"
+    }
   ]
 }

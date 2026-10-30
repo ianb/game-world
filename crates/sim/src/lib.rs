@@ -4,6 +4,7 @@
 //! function of (content, seed, inputs). See `docs/decisions.md`.
 #![deny(clippy::float_arithmetic)]
 
+pub mod animals;
 pub mod brain;
 pub mod event;
 pub mod hash;
@@ -14,6 +15,7 @@ pub mod needs;
 pub mod odds;
 pub mod protocol;
 pub mod queue;
+pub mod railway;
 pub mod recall;
 pub mod rng;
 pub mod sim;

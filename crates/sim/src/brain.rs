@@ -255,6 +255,13 @@ pub enum Command {
     /// Clear grass and weeds within `radius` tiles of where you stand. Instant; pair it
     /// with a `Wait` for the time the work takes. Emits `Cleared`.
     Clear { radius: u16 },
+    /// Send goods by rail: moves up to `count` of `good` from `from` onto the railway
+    /// platform, to be paid for when the next train leaves. Only goods the railway buys.
+    Consign {
+        from: ObjectId,
+        good: String,
+        count: u16,
+    },
     /// Move money. Pays what the payer has if that is less than `amount`. Emits `Paid`.
     Pay {
         from: Party,
@@ -328,6 +335,7 @@ impl Command {
                 )
             }
             Command::Clear { radius } => format!("clear within {radius}"),
+            Command::Consign { good, count, .. } => format!("send {count} {good} by rail"),
             Command::Pay {
                 from,
                 to,
@@ -400,6 +408,12 @@ pub struct Planned {
 /// Why the brain was asked.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Trigger {
+    /// Animals close by: a flock of `kind` that belongs to `owner`. Fires again for the
+    /// same flock only after a few hours.
+    Animals {
+        kind: content::AnimalKind,
+        owner: VillagerId,
+    },
     /// Reached the target of a `GoTo`.
     Arrived,
     /// A `Wait` elapsed.
@@ -456,6 +470,9 @@ impl Trigger {
             }
             Trigger::Need { need, level } => format!("{} ({level})", need.name()),
             Trigger::Resumed => "resumed".into(),
+            Trigger::Animals { kind, owner } => {
+                format!("{}'s {}", name(owner), animal_plural(*kind))
+            }
             Trigger::Look { .. } => "looked around".into(),
             Trigger::Mishap { what } => format!("{what:?}").to_lowercase(),
             Trigger::Overheard {
@@ -576,26 +593,42 @@ impl CharacterSet for DataCharacters {
     }
 }
 
+/// Whether a schedule's day pattern covers `weekday`.
+#[must_use]
+pub fn day_applies(d: &content::DayPattern, weekday: crate::time::Weekday) -> bool {
+    use crate::time::Weekday as W;
+    use content::DayPattern as D;
+    match d {
+        D::Daily => true,
+        D::Weekday => !weekday.is_weekend(),
+        D::Weekend => weekday.is_weekend(),
+        D::Mon => weekday == W::Mon,
+        D::Tue => weekday == W::Tue,
+        D::Wed => weekday == W::Wed,
+        D::Thu => weekday == W::Thu,
+        D::Fri => weekday == W::Fri,
+        D::Sat => weekday == W::Sat,
+        D::Sun => weekday == W::Sun,
+    }
+}
+
+/// "hens", "sheep": how people speak of a flock.
+#[must_use]
+pub fn animal_plural(kind: content::AnimalKind) -> &'static str {
+    match kind {
+        content::AnimalKind::Chicken => "hens",
+        content::AnimalKind::Sheep => "sheep",
+    }
+}
+
 /// The content schedule for `who` on the current day: most specific day pattern wins per
 /// departure time. Scheduled income is paid at its time.
 #[must_use]
 pub fn baseline_plan(who: VillagerId, ctx: &Ctx<'_>) -> Vec<Planned> {
-    use content::DayPattern;
     use std::collections::BTreeMap;
     let weekday = ctx.calendar.weekday;
     let villager = &ctx.content.villagers[who.index()];
-    let applies = |d: &DayPattern| match d {
-        DayPattern::Daily => true,
-        DayPattern::Weekday => !weekday.is_weekend(),
-        DayPattern::Weekend => weekday.is_weekend(),
-        DayPattern::Mon => weekday == crate::time::Weekday::Mon,
-        DayPattern::Tue => weekday == crate::time::Weekday::Tue,
-        DayPattern::Wed => weekday == crate::time::Weekday::Wed,
-        DayPattern::Thu => weekday == crate::time::Weekday::Thu,
-        DayPattern::Fri => weekday == crate::time::Weekday::Fri,
-        DayPattern::Sat => weekday == crate::time::Weekday::Sat,
-        DayPattern::Sun => weekday == crate::time::Weekday::Sun,
-    };
+    let applies = |d: &content::DayPattern| day_applies(d, weekday);
     let mut by_time: BTreeMap<u32, (u8, Planned)> = BTreeMap::new();
     for e in &villager.schedule {
         if !applies(&e.days) {
@@ -640,5 +673,73 @@ pub fn baseline_plan(who: VillagerId, ctx: &Ctx<'_>) -> Vec<Planned> {
             },
         });
     }
+    rail_errands(ctx, villager, &mut plan);
     plan
+}
+
+/// Before the train sends goods by it, walk to the platform: half an hour before it comes.
+pub const SEND_LEAD_MINUTES: u32 = 30;
+/// After it has gone, collect deliveries from the shed: this long after it arrives.
+pub const FETCH_DELAY_MINUTES: u32 = 10;
+/// How long either errand takes before going back to what the plan had them doing.
+pub const ERRAND_MINUTES: u32 = 35;
+
+/// On a day a train stops, trips to the platform for anyone who sends goods by rail and
+/// to the goods shed for anyone who fetches deliveries. After each they go back to
+/// whatever their plan had them doing.
+fn rail_errands(ctx: &Ctx<'_>, villager: &content::Villager, plan: &mut Vec<Planned>) {
+    if villager.sends.is_empty() && villager.fetches.is_empty() {
+        return;
+    }
+    let (Some(rail), Some(spec)) = (
+        ctx.world.rail.as_ref(),
+        ctx.content.zones.iter().find_map(|z| z.railway.as_ref()),
+    ) else {
+        return;
+    };
+    let day = ctx.tick.day_start();
+    let Some(train) = crate::railway::timings(spec, rail, day, ctx.calendar.weekday)
+        .into_iter()
+        .find(|t| t.stops)
+    else {
+        return;
+    };
+    let arrive = train.arrive.seconds_into_day();
+    let mut errands = Vec::new();
+    if !villager.sends.is_empty() {
+        let at = arrive.saturating_sub(SEND_LEAD_MINUTES * 60);
+        errands.push((at, &spec.platform, "send-goods"));
+    }
+    if !villager.fetches.is_empty() {
+        errands.push((arrive + FETCH_DELAY_MINUTES * 60, &spec.shed, "fetch-goods"));
+    }
+    for (at, object, activity) in errands {
+        let Some(target) = ctx.object_id(object).map(Target::Object) else {
+            continue;
+        };
+        // What they were doing then, to go back to afterwards.
+        let back = plan
+            .iter()
+            .filter(|p| p.at.seconds() <= at && matches!(p.command, Command::GoTo { .. }))
+            .max_by_key(|p| p.at.seconds())
+            .map(|p| p.command.clone());
+        plan.push(Planned {
+            at: TimeOfDay::from_seconds(at),
+            command: Command::GoTo {
+                target,
+                activity: activity.to_string(),
+            },
+        });
+        let until = at + ERRAND_MINUTES * 60;
+        let busy_until = plan
+            .iter()
+            .any(|p| p.at.seconds() > at && p.at.seconds() <= until);
+        if let (Some(back), false) = (back, busy_until) {
+            plan.push(Planned {
+                at: TimeOfDay::from_seconds(until),
+                command: back,
+            });
+        }
+    }
+    plan.sort_by_key(|p| p.at.seconds());
 }

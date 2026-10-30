@@ -27,7 +27,8 @@ fn bed_to_bakery_counter_goes_down_the_stairs_and_across_the_square() {
         .map(|l| world.places[l.place].id.as_str())
         .collect();
     assert_eq!(places, vec!["house/upstairs", "town"]);
-    assert_eq!(route.legs[0].door, Some(0), "crosses the stairs");
+    let door = route.legs[0].door.map(|d| world.doors[d].id.as_str());
+    assert_eq!(door, Some("stairs"), "crosses the stairs");
     assert!(
         route.tiles > 20 && route.tiles < 80,
         "tiles = {}",

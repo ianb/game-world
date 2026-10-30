@@ -83,8 +83,129 @@ pub struct Zone {
     /// work, a bank to fish from. In zone coordinates.
     #[serde(default)]
     pub areas: Vec<AreaSpec>,
+    /// Tilled ground and what grows in it. Only the views read it.
+    #[serde(default)]
+    pub plots: Vec<PlotSpec>,
+    /// Animals kept in the zone.
+    #[serde(default)]
+    pub flocks: Vec<FlockSpec>,
+    /// The railway through the zone, if there is one.
+    #[serde(default)]
+    pub railway: Option<RailwaySpec>,
     /// Where a debug warp lands.
     pub arrival: Pos,
+}
+
+/// A bed of tilled ground with one crop.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct PlotSpec {
+    pub id: String,
+    pub rect: Rect,
+    pub crop: Crop,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+#[serde(rename_all = "lowercase")]
+pub enum Crop {
+    Wheat,
+    Cabbages,
+    Carrots,
+    Potatoes,
+    Beans,
+    Corn,
+    Flowers,
+}
+
+/// A kind of animal. Every character says how they feel about each kind.
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+#[serde(rename_all = "lowercase")]
+pub enum AnimalKind {
+    Chicken,
+    Sheep,
+}
+
+/// Animals of one kind that belong to someone and keep to one area. Chickens roost and
+/// lay in their `coop`; animals without one stay out.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct FlockSpec {
+    pub id: String,
+    pub kind: AnimalKind,
+    pub count: u8,
+    /// The villager they belong to.
+    pub owner: String,
+    /// The area they keep to.
+    pub area: String,
+    #[serde(default)]
+    pub coop: Option<String>,
+}
+
+/// A railway line across the zone: goods only. The track is a polyline of zone tiles
+/// joined by straight runs. Trains stop at the tile beside `platform`.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct RailwaySpec {
+    pub track: Vec<Pos>,
+    /// Where goods for sending are left, and where the train stops.
+    pub platform: String,
+    /// Where delivered goods are left.
+    pub shed: String,
+    pub runs: Vec<TrainRun>,
+    /// What every stopping train leaves in the shed.
+    #[serde(default)]
+    pub delivers: Vec<GoodsCount>,
+    /// What the railway pays for goods left on the platform, each.
+    #[serde(default)]
+    pub buys: Vec<GoodsPrice>,
+}
+
+/// One train on the days given: it reaches the platform at `arrive` and leaves at `depart`.
+/// When `stops` is false it passes through at `arrive` without stopping.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct TrainRun {
+    pub days: DayPattern,
+    pub arrive: String,
+    #[serde(default)]
+    pub depart: Option<String>,
+    /// Which end of the track it comes from.
+    pub from: TrackEnd,
+    #[serde(default = "yes")]
+    pub stops: bool,
+}
+
+fn yes() -> bool {
+    true
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+#[serde(rename_all = "lowercase")]
+pub enum TrackEnd {
+    /// The first tile of the track.
+    Start,
+    /// The last tile.
+    End,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct GoodsCount {
+    pub good: String,
+    pub count: u16,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct GoodsPrice {
+    pub good: String,
+    pub price: u32,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -320,6 +441,29 @@ pub struct Villager {
     /// Money paid in from outside on a schedule.
     #[serde(default)]
     pub income: Vec<Income>,
+    /// Goods they send by rail when a train stops: taken from `object` to the platform.
+    #[serde(default)]
+    pub sends: Vec<Sends>,
+    /// Goods they collect from the goods shed when a train has stopped, paying for them.
+    #[serde(default)]
+    pub fetches: Vec<Fetches>,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct Sends {
+    pub object: String,
+    pub good: String,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct Fetches {
+    pub good: String,
+    /// Where they put it.
+    pub to: String,
+    /// What they pay the railway for each.
+    pub price: u32,
 }
 
 /// What a topic says about the person it concerns, when it says they are in trouble.

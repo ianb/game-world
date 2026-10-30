@@ -177,6 +177,13 @@ impl Interlocutor for Pip {
 
 impl crate::Character for Pip {
     const ID: &'static str = "pip";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken | content::AnimalKind::Sheep => crate::Fondness::Delighted,
+        }
+    }
     fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
         Pip::plan_day(self, ctx, rng)
     }

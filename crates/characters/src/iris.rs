@@ -22,6 +22,14 @@ pub struct Iris {
 
 impl Character for Iris {
     const ID: &'static str = "iris";
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+        match kind {
+            content::AnimalKind::Chicken => crate::Fondness::Wary,
+            content::AnimalKind::Sheep => crate::Fondness::Fond,
+        }
+    }
     fn react(
         &mut self,
         trigger: &Trigger,

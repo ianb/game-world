@@ -47,5 +47,27 @@
       "object": "bed_greta",
       "activity": "sleep"
     }
+  ],
+  "fetches": [
+    {
+      "good": "tea",
+      "to": "shelf_store",
+      "price": 1
+    },
+    {
+      "good": "salt",
+      "to": "shelf_store",
+      "price": 1
+    },
+    {
+      "good": "candles",
+      "to": "shelf_store",
+      "price": 1
+    },
+    {
+      "good": "nails",
+      "to": "shelf_store",
+      "price": 1
+    }
   ]
 }

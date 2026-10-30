@@ -35,7 +35,7 @@
       "objects": [
         {
           "id": "bed_fen",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "room",
           "at": {
             "x": 4,
@@ -46,7 +46,7 @@
         },
         {
           "id": "bed_ottilie",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "room",
           "at": {
             "x": 5,

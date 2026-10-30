@@ -28,6 +28,8 @@ pub struct Streams {
     pub social: Pcg32,
     /// Indexed by villager.
     pub villagers: Vec<VillagerStreams>,
+    /// Every animal's wandering and laying.
+    pub animals: Pcg32,
 }
 
 impl Streams {
@@ -47,6 +49,7 @@ impl Streams {
         Streams {
             social: Pcg32::seed_from_u64(split_mix(seed, 2)),
             villagers,
+            animals: Pcg32::seed_from_u64(split_mix(seed, 3)),
         }
     }
 }

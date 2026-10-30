@@ -73,5 +73,12 @@
       "amount": 20,
       "what": "ironwork"
     }
+  ],
+  "fetches": [
+    {
+      "good": "iron",
+      "to": "anvil_smithy",
+      "price": 2
+    }
   ]
 }

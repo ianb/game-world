@@ -30,20 +30,18 @@
           "between": [
             "barn"
           ]
+        },
+        {
+          "at": {
+            "x": 4,
+            "y": 5
+          },
+          "between": [
+            "barn"
+          ]
         }
       ],
       "objects": [
-        {
-          "id": "bed_dan",
-          "kind": "bed",
-          "room": "barn",
-          "at": {
-            "x": 1,
-            "y": 1
-          },
-          "owner": "dan",
-          "activity": "sleep"
-        },
         {
           "id": "table_dan",
           "kind": "table",
@@ -53,13 +51,103 @@
             "y": 1
           },
           "activity": "eat"
+        },
+        {
+          "id": "hay_ashby",
+          "kind": "haystack",
+          "room": "barn",
+          "at": {
+            "x": 1,
+            "y": 3
+          }
+        },
+        {
+          "id": "trough_ashby",
+          "kind": "trough",
+          "room": "barn",
+          "at": {
+            "x": 5,
+            "y": 3
+          }
         }
       ],
       "arrival": {
         "x": 3,
         "y": 3
       }
+    },
+    {
+      "id": "loft",
+      "level": 1,
+      "detached": "hay loft",
+      "rooms": [
+        {
+          "id": "loft",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 6,
+            "h": 3
+          },
+          "flooring": "planks"
+        }
+      ],
+      "openings": [],
+      "objects": [
+        {
+          "id": "bed_dan",
+          "kind": "bed",
+          "room": "loft",
+          "at": {
+            "x": 6,
+            "y": 1
+          },
+          "owner": "dan",
+          "activity": "sleep"
+        },
+        {
+          "id": "hay_loft_ashby",
+          "kind": "haystack",
+          "room": "loft",
+          "at": {
+            "x": 4,
+            "y": 3
+          }
+        },
+        {
+          "id": "chest_dan",
+          "kind": "chest",
+          "room": "loft",
+          "at": {
+            "x": 6,
+            "y": 3
+          }
+        }
+      ],
+      "arrival": {
+        "x": 2,
+        "y": 2
+      }
     }
   ],
-  "walls": "boards"
+  "walls": "boards",
+  "doors": [
+    {
+      "id": "ladder_ashby",
+      "from": {
+        "floor": "ground",
+        "at": {
+          "x": 1,
+          "y": 4
+        }
+      },
+      "to": {
+        "floor": "loft",
+        "at": {
+          "x": 1,
+          "y": 1
+        }
+      }
+    }
+  ]
 }

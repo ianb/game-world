@@ -46,6 +46,25 @@
       "at": "8:00am",
       "object": "copper_alehouse",
       "activity": "brew"
+    },
+    {
+      "days": "daily",
+      "at": "9:00am",
+      "object": "coop_green",
+      "activity": "feed-hens"
+    }
+  ],
+  "sends": [
+    {
+      "object": "coop_green",
+      "good": "eggs"
+    }
+  ],
+  "fetches": [
+    {
+      "good": "malt",
+      "to": "copper_alehouse",
+      "price": 2
     }
   ]
 }

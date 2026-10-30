@@ -32,6 +32,12 @@ pub enum Event {
     Look { who: VillagerId },
     /// `who` tripped on the tile they just stepped onto.
     Tripped { who: VillagerId },
+    /// Animal `index` takes its next step, or wakes, or goes to roost.
+    Animal { index: u16 },
+    /// Today's train `run` (its index in today's timings) reaches the platform.
+    TrainArrives { run: u16 },
+    /// It leaves the platform.
+    TrainDeparts { run: u16 },
     /// A player or external actor input, applied at its tick in `(tick, seq)` order.
     Input(Input),
 }

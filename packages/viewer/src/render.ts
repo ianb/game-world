@@ -2,7 +2,8 @@
 // in public/tiles.png (built by scripts/make-tileset.mjs). Pixel art at native size, scaled
 // by CSS at an integer factor. The text views stay the source of truth for tests; this is
 // for eyes.
-import type { Cell, ObjectView, PlaceView, RoofView, RoomView, Sim, Surface, VillagerView, Walling } from "@game-world/protocol";
+import type { AnimalView, Cell, ObjectView, PlaceView, RoofView, Sim, Surface, TrainView, VillagerView, Walling, WorldView } from "@game-world/protocol";
+import { type Dressing, SOUTHERN_WOODS, dressingFor, paintDressing, treeAt } from "./dressing";
 
 interface AtlasTile {
   col: number;
@@ -59,6 +60,42 @@ export class Tileset {
     const h = (t.h ?? 1) * s;
     const oy = t.oy ?? (rise ? s - h : 0);
     ctx.drawImage(this.image, col * s, t.row * s, w, h, x * s + (t.ox ?? 0), y * s + oy, w, h);
+  }
+
+  /** The cells a sprite drawn at (x, y) covers, as an inclusive tile rect. */
+  covers(name: string, x: number, y: number): { x0: number; y0: number; x1: number; y1: number } {
+    const t = this.atlas.tiles[name] ?? this.atlas.tiles["obj_generic"];
+    const s = this.atlas.tile;
+    if (!t) return { x0: x, y0: y, x1: x, y1: y };
+    const px = x * s + (t.ox ?? 0);
+    const py = y * s + (t.oy ?? 0);
+    const w = (t.w ?? 1) * s;
+    const h = (t.h ?? 1) * s;
+    return { x0: Math.floor(px / s), y0: Math.floor(py / s), x1: Math.floor((px + w - 1) / s), y1: Math.floor((py + h - 1) / s) };
+  }
+
+  /** Draws a tile at a fractional position, for things that slide between cells. */
+  drawAt(ctx: CanvasRenderingContext2D, name: string, x: number, y: number): void {
+    const t = this.atlas.tiles[name];
+    if (!t) return;
+    const s = this.atlas.tile;
+    const w = (t.w ?? 1) * s;
+    const h = (t.h ?? 1) * s;
+    ctx.drawImage(this.image, t.col * s, t.row * s, w, h, Math.round(x * s + (t.ox ?? 0)), Math.round(y * s + (t.oy ?? 0)), w, h);
+  }
+
+  /** An animal's walking frame: four facings by four frames. Chickens fill a tile; sheep
+   * are two tiles wide, centred on theirs and standing on its lower edge. */
+  drawAnimal(ctx: CanvasRenderingContext2D, a: AnimalView, facing: Facing, frame: number): void {
+    const t = this.atlas.tiles[`animal_${a.kind}`];
+    if (!t) return;
+    const s = this.atlas.tile;
+    const size = a.kind === "sheep" ? 2 * s : s;
+    const row = { up: 0, left: 1, down: 2, right: 3 }[facing];
+    const col = frame === 0 ? 0 : frame % 4;
+    const dx = a.pos.x * s + (s - size) / 2;
+    const dy = (a.pos.y + 1) * s - size + (a.kind === "sheep" ? 8 : 0);
+    ctx.drawImage(this.image, t.col * s + col * size, t.row * s + row * size, size, size, dx, dy, size, size);
   }
 
   /** Draws one quadrant (qx, qy in 0..1) of a shape tile into the same quadrant of (x, y). */
@@ -132,7 +169,7 @@ export type Facing = "up" | "left" | "down" | "right";
 const FACING_ROW: Record<Facing, number> = { up: 0, left: 1, down: 2, right: 3 };
 
 /** A stable pseudo-random pick for a cell, so the ground does not repeat in a grid. */
-function variantAt(x: number, y: number, n: number): number {
+export function variantAt(x: number, y: number, n: number): number {
   let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) % n;
@@ -202,7 +239,7 @@ const OBJECT_TILES = new Set([
   "bed", "table", "counter", "oven", "stove", "shelf", "pantry", "barrel", "cart", "privy", "well", "bench", "chair",
   "anvil", "sacks", "millstone", "altar", "workbench", "desk", "loom", "lectern", "bookshelf", "chest", "weaponrack",
   "clock", "hearth", "barrels", "haystack", "firewood", "logs", "bucket", "trough", "churn", "wheel", "grave", "cross",
-  "scarecrow", "banner", "lantern", "stall", "hive", "clamp", "fence",
+  "scarecrow", "banner", "lantern", "stall", "hive", "clamp", "fence", "plant", "coop", "crates", "platform",
 ]);
 
 /** Kinds drawn with another kind's sprite. */
@@ -222,6 +259,30 @@ export function objectTile(kind: string): string {
   return OBJECT_TILES.has(k) ? `obj_${k}` : "obj_generic";
 }
 
+/** The sprite for an object as placed among its neighbours: a bed for two is drawn once,
+ * from its left half; the right half draws nothing. */
+export function objectTileAt(o: ObjectView, all: ObjectView[]): string | null {
+  if (o.kind !== "bed_double") return objectTile(o.kind);
+  const left = all.some((p) => p.kind === "bed_double" && p.place === o.place && p.pos.y === o.pos.y && p.pos.x === o.pos.x - 1);
+  return left ? null : "obj_bed_double";
+}
+
+/** Where each car of a train is drawn, in tile units, engine first. The track runs left to
+ * right; a train going toward its end faces right. */
+export function trainCars(t: TrainView, track: { x: number; y: number }[]): { tile: string; x: number; y: number }[] {
+  const first = track[0];
+  if (!first) return [];
+  const cars = ["engine", "wagon", "wagon", "van"].slice(0, Math.max(1, Math.floor(t.length / 2)));
+  const head = t.head / 16;
+  return cars.map((kind, k) => {
+    // Each car is two tiles; the engine's front is at the head.
+    const front = t.toward_end ? head - 2 * k : head + 2 * k;
+    const left = t.toward_end ? front - 2 : front;
+    const tile = kind === "engine" ? (t.toward_end ? "train_engine_e" : "train_engine_w") : kind === "van" ? "train_van" : "train_wagon";
+    return { tile, x: first.x + left, y: first.y };
+  });
+}
+
 /** What each cell of a place is made of: the floor tile of the room it is in, and the
  * material of the building whose wall it is. */
 export interface Materials {
@@ -229,7 +290,7 @@ export interface Materials {
   walls: (Walling | undefined)[];
 }
 
-export function materials(place: PlaceView, rooms: RoomView[], roofs: RoofView[]): Materials {
+export function materials(place: PlaceView, rooms: WorldView["rooms"], roofs: RoofView[]): Materials {
   const w = place.width;
   const n = w * place.height;
   const floor = new Array<string | undefined>(n).fill(undefined);
@@ -354,14 +415,14 @@ export class PlaceCanvas {
   /** Inline buildings' footprints in this place, for their name labels. */
   private readonly roofs: RoofView[];
   private readonly mat: Materials;
+  private readonly dressing: Dressing;
+  private readonly rail: WorldView["rail"];
   private readonly gaits = new Map<string, Gait>();
 
   constructor(
     private readonly tiles: Tileset,
     private readonly place: PlaceView,
-    objects: ObjectView[],
-    roofs: RoofView[] = [],
-    rooms: RoomView[] = [],
+    world: WorldView,
   ) {
     this.canvas = document.createElement("canvas");
     this.canvas.width = place.width * tiles.size;
@@ -373,9 +434,11 @@ export class PlaceCanvas {
     if (!ctx) throw new Error("no 2d canvas");
     ctx.imageSmoothingEnabled = false;
     this.ctx = ctx;
-    this.objects = objects.filter((o) => o.place === place.id);
-    this.roofs = roofs.filter((r) => r.place === place.id);
-    this.mat = materials(place, rooms, roofs);
+    this.objects = world.objects.filter((o) => o.place === place.id);
+    this.roofs = world.roofs.filter((r) => r.place === place.id);
+    this.mat = materials(place, world.rooms, world.roofs);
+    this.dressing = dressingFor(world, place);
+    this.rail = world.rail && world.rail.place === place.id ? world.rail : null;
   }
 
   /** The tile under a mouse or touch position on the canvas, or null when off it. */
@@ -398,7 +461,7 @@ export class PlaceCanvas {
 
   /** Which way a villager faces and which step they are on, from how they moved since the
    * last draw. Standing still shows the standing frame, facing the way they last went. */
-  private gait(v: VillagerView): { facing: Facing; frame: number } {
+  private gait(v: { key: string; pos: { x: number; y: number } }): { facing: Facing; frame: number } {
     const g = this.gaits.get(v.key) ?? { x: v.pos.x, y: v.pos.y, facing: "down" as Facing, steps: 0 };
     const dx = v.pos.x - g.x;
     const dy = v.pos.y - g.y;
@@ -435,20 +498,23 @@ export class PlaceCanvas {
     const at = (x: number, y: number): string | undefined =>
       x < 0 || y < 0 || x >= w || y >= h ? undefined : names[y * w + x];
     paintGround(ctx, tiles, place, names, false, this.mat);
+    paintDressing(ctx, tiles, place, names, this.mat, this.dressing, sim.clock().calendar);
     // Trees and furniture back to front, so whatever is lower on the map is in front.
     const sprites: { y: number; draw: () => void }[] = [];
     // Trees stand in the forest, scattered so they do not line up.
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         if (isTreeCell(names, w, x, y)) {
-          sprites.push({ y, draw: () => tiles.draw(ctx, "tree", x, y) });
+          const tree = treeAt(x, y, y > h * SOUTHERN_WOODS);
+          sprites.push({ y, draw: () => tiles.draw(ctx, tree, x, y) });
         }
       }
     }
     for (const o of this.objects) {
       const below = at(o.pos.x, o.pos.y + 1);
       const rise = below !== "floor" && below !== "opening";
-      sprites.push({ y: o.pos.y, draw: () => tiles.draw(ctx, objectTile(o.kind), o.pos.x, o.pos.y, rise) });
+      const tile = objectTileAt(o, this.objects);
+      if (tile) sprites.push({ y: o.pos.y, draw: () => tiles.draw(ctx, tile, o.pos.x, o.pos.y, rise) });
     }
     sprites.sort((a, b) => a.y - b.y);
     for (const s of sprites) s.draw();
@@ -474,10 +540,21 @@ export class PlaceCanvas {
   draw(sim: Sim, villagers: VillagerView[], highlight: { x: number; y: number } | null = null): void {
     const { ctx, tiles, place } = this;
     ctx.drawImage(this.paintLayer(sim), 0, 0);
-    // Villagers over the still layer, back to front.
+    // Villagers, animals and the train over the still layer, back to front.
     const here = villagers.filter((v) => v.place === place.id);
     const shift = spread(here, tiles.size);
     const sprites: { y: number; draw: () => void }[] = [];
+    for (const a of sim.animals()) {
+      if (a.place !== place.id || a.roosting) continue;
+      const g = this.gait({ key: `animal-${a.id}`, pos: a.pos });
+      sprites.push({ y: a.pos.y + 0.4, draw: () => tiles.drawAnimal(ctx, a, g.facing, g.frame) });
+    }
+    const train = this.rail ? sim.train() : null;
+    if (train && this.rail) {
+      for (const c of trainCars(train, this.rail.tiles)) {
+        sprites.push({ y: c.y + 0.6, draw: () => tiles.drawAt(ctx, c.tile, c.x, c.y) });
+      }
+    }
     for (const v of here) {
       const gait = this.gait(v);
       // LPC has no lying-down frames: a sleeper is in their bed, shown by their name.

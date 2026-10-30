@@ -52,6 +52,22 @@
       "at": "9:00pm",
       "object": "bed_ada",
       "activity": "sleep"
+    },
+    {
+      "days": "daily",
+      "at": "7:30am",
+      "object": "coop_hollins",
+      "activity": "feed-hens"
+    }
+  ],
+  "sends": [
+    {
+      "object": "churn_hollins",
+      "good": "cheese"
+    },
+    {
+      "object": "coop_hollins",
+      "good": "eggs"
     }
   ]
 }

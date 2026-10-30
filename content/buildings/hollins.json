@@ -106,7 +106,7 @@
         },
         {
           "id": "bed_will",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "parents",
           "at": {
             "x": 9,
@@ -117,7 +117,7 @@
         },
         {
           "id": "bed_ada",
-          "kind": "bed",
+          "kind": "bed_double",
           "room": "parents",
           "at": {
             "x": 10,
