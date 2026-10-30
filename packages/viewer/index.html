@@ -84,7 +84,11 @@
       .hud { position: absolute; z-index: 2; display: flex; gap: 8px; align-items: center; }
 
       /* The clock: a dial with the sun or moon, the day and time, and the speed. */
-      #timebar { top: calc(var(--gap) + env(safe-area-inset-top, 0px)); left: calc(var(--gap) + env(safe-area-inset-left, 0px)); padding: 6px 10px 6px 6px; gap: 10px; }
+      /* The clock on the left and the places on the right, in one bar along the top. When
+         they do not both fit, the places go to a second row rather than under the clock. */
+      #topbar { top: calc(var(--gap) + env(safe-area-inset-top, 0px)); left: calc(var(--gap) + env(safe-area-inset-left, 0px)); right: var(--gap); flex-wrap: wrap; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+      #topbar > * { pointer-events: auto; }
+      #timebar { display: flex; align-items: center; padding: 6px 10px 6px 6px; gap: 10px; flex: none; }
       #dial { width: 46px; height: 46px; flex: none; border-radius: 50%; background: var(--inset); border: 2px solid var(--frame); }
       .clock { display: grid; line-height: 1.1; min-width: 8.5em; }
       #clock { font-size: 20px; font-weight: 900; letter-spacing: 0.01em; }
@@ -96,8 +100,8 @@
       #back { background: linear-gradient(#f6d77e, var(--past)); color: var(--gold-ink); border-color: #f8e2a0; }
 
       /* Places across the top, and the view switches. */
-      #views { top: calc(var(--gap) + env(safe-area-inset-top, 0px)); right: var(--gap); justify-content: flex-end; max-width: calc(100% - 560px); }
-      #place-tabs { display: flex; gap: 3px; padding: 4px; overflow-x: auto; scrollbar-width: none; min-width: 0; flex: 0 1 auto; }
+      #views { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex: 1 1 0; min-width: min(380px, 100%); }
+      #place-tabs { display: flex; gap: 3px; padding: 4px; overflow-x: auto; scrollbar-width: none; min-width: min(240px, 100%); flex: 0 1 auto; }
       #place-tabs button { white-space: nowrap; min-height: 32px; padding: 3px 12px; border-width: 1px; }
       .viewbtns { display: flex; gap: 4px; padding: 4px; flex: none; }
       .viewbtns button { min-height: 32px; border-width: 1px; }
@@ -181,7 +185,7 @@
         body.journal-closed #side { height: auto; }
         body.journal-closed #side .tab, body.journal-closed .journal-head { display: none; }
         #journal { display: none; }
-        #timebar { right: var(--gap); gap: 6px; padding: 5px 6px; }
+        #timebar { flex: 1; min-width: 0; gap: 6px; padding: 5px 6px; }
         .clock { min-width: 0; flex: 1; white-space: nowrap; }
         #clock { font-size: 15px; }
         #date { overflow: hidden; text-overflow: ellipsis; }
@@ -190,7 +194,8 @@
         .speeds button { min-width: 28px; padding: 2px 3px; font-size: 10px; }
         #morning { padding: 2px 8px; }
         .wide { display: none; }
-        #views { top: calc(var(--gap) + 58px + env(safe-area-inset-top, 0px)); left: var(--gap); right: var(--gap); max-width: none; }
+        #views { flex: 1 1 100%; }
+        #place-tabs { flex: 1 1 auto; }
         #inspector { width: calc(100% - 2 * var(--gap) - 56px); max-height: 46%; }
       }
     </style>
@@ -201,7 +206,8 @@
         <div id="map"><canvas id="map-canvas" role="img" aria-label="map"></canvas></div>
         <div id="map3d" hidden></div>
 
-        <div class="hud panel" id="timebar" role="group" aria-label="Time">
+        <div class="hud" id="topbar">
+        <div class="panel" id="timebar" role="group" aria-label="Time">
           <svg id="dial" viewBox="0 0 46 46" aria-hidden="true"></svg>
           <div class="clock"><strong id="clock">loading…</strong><span id="date"></span></div>
           <div class="speeds" role="group" aria-label="Speed">
@@ -212,12 +218,13 @@
           <button id="back" hidden>back to now</button>
         </div>
 
-        <div class="hud" id="views">
+        <div id="views">
           <nav class="panel" id="place-tabs" role="tablist" aria-label="Places"></nav>
           <div class="panel viewbtns">
             <button id="view3d" aria-pressed="false" title="switch between the map and the 3D view">3D</button>
             <button id="journal" aria-pressed="true" title="show or hide the journal: people, days, words and the key (J)">Journal</button>
           </div>
+        </div>
         </div>
 
         <div class="hud panel" id="zoom" role="group" aria-label="Zoom">
