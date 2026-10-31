@@ -1,7 +1,7 @@
 //! Grue, a fisher who eats the catch raw. Placeholder: odd in the way raw eaters are, lonely.
 //! Notes: `docs/worlds/welling/people.md`.
 use crate::Character;
-use crate::toolbox::{activity_of, stock, stock_of, wait_minutes};
+use crate::toolbox::{activity_of, object, stock, stock_of, wait_minutes};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Trigger};
@@ -26,7 +26,9 @@ impl Character for Grue {
         _rng: &mut Pcg32,
     ) -> Option<Vec<Command>> {
         Some(match trigger {
-            Trigger::Arrived | Trigger::Waited if activity_of(ctx, "grue") == "fish" => {
+            Trigger::Arrived | Trigger::Resumed | Trigger::Waited
+                if activity_of(ctx, "grue") == "fish" =>
+            {
                 let mut cmds = Vec::new();
                 if stock_of(ctx, TABLE, "fish") < KEEPS {
                     cmds.push(stock(ctx, TABLE, "fish", 1));
@@ -35,10 +37,13 @@ impl Character for Grue {
                 cmds
             }
             // Raw, at the table.
-            Trigger::Arrived
+            Trigger::Arrived | Trigger::Resumed
                 if activity_of(ctx, "grue") == "eat" && stock_of(ctx, TABLE, "fish") > 0 =>
             {
-                vec![stock(ctx, TABLE, "fish", -1)]
+                vec![Command::Consume {
+                    object: object(ctx, TABLE),
+                    good: "fish".into(),
+                }]
             }
             _ => return None,
         })

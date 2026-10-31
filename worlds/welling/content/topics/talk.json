@@ -55,5 +55,9 @@
   {
     "id": "drink",
     "gloss": "a drink"
+  },
+  {
+    "id": "kelp",
+    "gloss": "kelp"
   }
 ]

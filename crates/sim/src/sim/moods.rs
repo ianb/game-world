@@ -35,7 +35,7 @@ impl<C: CharacterSet> Sim<C> {
 
     /// Applies a push and tells the world: an event when the level changes, and a trigger
     /// when it rises to where it is acted on.
-    fn push_mood(&mut self, who: VillagerId, push: &Push, out: &mut Vec<Emitted>) {
+    pub(super) fn push_mood(&mut self, who: VillagerId, push: &Push, out: &mut Vec<Emitted>) {
         let tick = self.state.tick;
         let Some((mood, was, level)) = apply(&mut self.state.moods[who.index()], push, tick) else {
             return;

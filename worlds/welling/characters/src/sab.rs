@@ -25,7 +25,9 @@ impl Character for Sab {
         _rng: &mut Pcg32,
     ) -> Option<Vec<Command>> {
         Some(match trigger {
-            Trigger::Arrived | Trigger::Waited if activity_of(ctx, "sab") == "capture" => {
+            Trigger::Arrived | Trigger::Resumed | Trigger::Waited
+                if activity_of(ctx, "sab") == "capture" =>
+            {
                 let mut cmds = Vec::new();
                 if stock_of(ctx, CASKS, RAW_GAS) < CASKS_HOLD {
                     cmds.push(stock(ctx, CASKS, RAW_GAS, 1));
@@ -33,7 +35,9 @@ impl Character for Sab {
                 cmds.push(wait_minutes(45, "capture"));
                 cmds
             }
-            Trigger::Arrived | Trigger::Waited if activity_of(ctx, "sab") == "refine" => {
+            Trigger::Arrived | Trigger::Resumed | Trigger::Waited
+                if activity_of(ctx, "sab") == "refine" =>
+            {
                 refine(ctx)
             }
             _ => return None,

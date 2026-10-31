@@ -70,7 +70,10 @@
             "y": 5
           },
           "room": "cabin",
-          "activity": "eat"
+          "activity": "eat",
+          "stock": {
+            "kelp": 3
+          }
         },
         {
           "id": "bed_ora",

@@ -37,6 +37,8 @@ pub enum Source {
     Earning,
     Work,
     Time,
+    /// Something they took (`substances`).
+    Took,
 }
 
 /// One mood someone is prone to.

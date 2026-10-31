@@ -1,0 +1,76 @@
+[
+  {
+    "id": "kelp",
+    "lift": 1,
+    "hours": 3,
+    "moods": [
+      {
+        "mood": "gloomy",
+        "points": -2
+      },
+      {
+        "mood": "restless",
+        "points": -1
+      }
+    ],
+    "wakes": 8,
+    "habit": 3
+  },
+  {
+    "id": "refined-gas",
+    "lift": 3,
+    "hours": 4,
+    "moods": [
+      {
+        "mood": "anxious",
+        "points": -6
+      },
+      {
+        "mood": "gloomy",
+        "points": -4
+      },
+      {
+        "mood": "cheerful",
+        "points": 6
+      }
+    ],
+    "wakes": 15,
+    "habit": 6
+  },
+  {
+    "id": "raw-gas",
+    "lift": 1,
+    "hours": 1,
+    "habit": 2,
+    "wild": {
+      "portion": 25,
+      "bad_batch": 0,
+      "lift": 1,
+      "hours": 2
+    }
+  },
+  {
+    "id": "fish",
+    "wild": {
+      "portion": 15,
+      "bad_batch": 10,
+      "lift": 2,
+      "hours": 10
+    }
+  },
+  {
+    "id": "drink",
+    "lift": 1,
+    "hours": 2,
+    "moods": [
+      {
+        "mood": "lonely",
+        "points": -2
+      },
+      {
+        "mood": "anxious",
+        "points": -1
+      }
+    ]
+  }
+]

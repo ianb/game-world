@@ -1,7 +1,7 @@
 //! Nessa, a fisher who cooks what she catches on the cutter. Placeholder: cheered by fine days, flattened by rain.
 //! Notes: `docs/worlds/welling/people.md`.
 use crate::Character;
-use crate::toolbox::{activity_of, stock, stock_of, wait_minutes};
+use crate::toolbox::{activity_of, object, stock, stock_of, wait_minutes};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Trigger};
@@ -26,7 +26,9 @@ impl Character for Nessa {
         _rng: &mut Pcg32,
     ) -> Option<Vec<Command>> {
         Some(match trigger {
-            Trigger::Arrived | Trigger::Waited if activity_of(ctx, "nessa") == "fish" => {
+            Trigger::Arrived | Trigger::Resumed | Trigger::Waited
+                if activity_of(ctx, "nessa") == "fish" =>
+            {
                 let mut cmds = Vec::new();
                 if stock_of(ctx, TABLE, "fish") < KEEPS {
                     cmds.push(stock(ctx, TABLE, "fish", 1));
@@ -35,7 +37,7 @@ impl Character for Nessa {
                 cmds
             }
             // Two at a time on the stove; cooking takes out what the seep put in.
-            Trigger::Arrived if activity_of(ctx, "nessa") == "cook" => {
+            Trigger::Arrived | Trigger::Resumed if activity_of(ctx, "nessa") == "cook" => {
                 let n = stock_of(ctx, TABLE, "fish").min(2);
                 if n == 0 {
                     return Some(Vec::new());
@@ -45,11 +47,14 @@ impl Character for Nessa {
                     stock(ctx, TABLE, "cooked-fish", i32::from(n)),
                 ]
             }
-            Trigger::Arrived
+            Trigger::Arrived | Trigger::Resumed
                 if activity_of(ctx, "nessa") == "eat"
                     && stock_of(ctx, TABLE, "cooked-fish") > 0 =>
             {
-                vec![stock(ctx, TABLE, "cooked-fish", -1)]
+                vec![Command::Consume {
+                    object: object(ctx, TABLE),
+                    good: "cooked-fish".into(),
+                }]
             }
             _ => return None,
         })

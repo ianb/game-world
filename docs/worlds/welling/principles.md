@@ -73,10 +73,14 @@ The dossier is the source; where this page and the dossier differ, the dossier w
 
 ## Proposed
 
-- **Proposed.** Every substance is declared with its effects as mood pushes and need
-  changes, on the moods' named scales, never as a bare number.
-- **Proposed.** Addiction is a craving need that grows with use and fades without it.
-- **Proposed.** Every portion of a substance belongs to a batch with an id, so a bad
-  batch can be followed through the people it reached.
+- **Proposed, built.** Every substance is declared with its effects: a lift to spirits
+  for some hours, pushes to named moods, sleepiness taken away
+  (`crates/sim/src/substances.rs`).
+- **Proposed, built.** Addiction is a habit that deepens with use and eases without, and
+  between doses a craving grows at a rate the habit sets. A desperate craving lowers
+  spirits.
+- **Proposed, built.** Every portion of a substance belongs to a batch with an id, made
+  by whoever stocked it, carried with the goods from object to object, so a bad batch can
+  be followed through the people it reached.
 - **Proposed.** A seep's strength is state that rises, holds and declines over weeks,
   and what grows or bubbles near it follows its strength.

@@ -38,6 +38,7 @@ mod conversation;
 mod fields;
 mod moods;
 mod railway;
+mod substances;
 
 /// Everything that determines the future. Serializable in full; hashed by subsystem.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -69,6 +70,10 @@ pub struct SimState<C> {
     pub fields: crate::fields::Fields,
     /// Each villager's moods, by villager.
     pub moods: Vec<crate::moods::Moods>,
+    /// Each villager's doses and habits, by villager.
+    pub intake: Vec<crate::substances::Intake>,
+    /// Every batch of a substance, and where its portions are.
+    pub batches: crate::substances::Batches,
     pub day_rollovers: u32,
     pub markers: Vec<(Tick, String)>,
     /// Recent events worth knowing, with who could perceive them.
@@ -201,6 +206,8 @@ impl<C: CharacterSet> Sim<C> {
                     .iter()
                     .map(|v| crate::moods::Moods::new(&v.moods))
                     .collect(),
+                intake: substances::starting_intake(&content),
+                batches: crate::substances::Batches::default(),
                 day_rollovers: 0,
                 markers: Vec::new(),
                 record: Record::default(),
@@ -220,6 +227,7 @@ impl<C: CharacterSet> Sim<C> {
         sim.flocks = sim.resolve_flocks();
         sim.place_animals();
         sim.state.fields = sim.lay_out_fields();
+        sim.state.batches = substances::starting_batches(&sim.content, &sim.state.stock);
         let mut out = Vec::new();
         sim.plan_everyone(&mut out);
         sim.state.pending = out;
@@ -291,6 +299,7 @@ impl<C: CharacterSet> Sim<C> {
             terrain: &self.state.terrain,
             fields: &self.state.fields,
             moods: &self.state.moods,
+            intake: &self.state.intake,
             stock: &self.state.stock,
             record: &self.state.record,
             odds: &self.state.odds,
@@ -494,6 +503,7 @@ impl<C: CharacterSet> Sim<C> {
             }
         }
         self.mood_hour(who, out);
+        self.substances_hour(who, asleep, out);
     }
 
     fn handle_input(&mut self, input: &Input, out: &mut Vec<Emitted>) {
@@ -574,6 +584,7 @@ impl<C: CharacterSet> Sim<C> {
                     terrain: &self.state.terrain,
                     fields: &self.state.fields,
                     moods: &self.state.moods,
+                    intake: &self.state.intake,
                     stock: &self.state.stock,
                     record: &self.state.record,
                     odds: &self.state.odds,
@@ -670,6 +681,7 @@ impl<C: CharacterSet> Sim<C> {
                 terrain: &self.state.terrain,
                 fields: &self.state.fields,
                 moods: &self.state.moods,
+                intake: &self.state.intake,
                 stock: &self.state.stock,
                 record: &self.state.record,
                 odds: &self.state.odds,
@@ -795,6 +807,7 @@ impl<C: CharacterSet> Sim<C> {
                 good,
                 delta,
             } => self.stock(who, object, &good, delta, out),
+            Command::Consume { object, good } => self.consume(who, object, &good, out),
             Command::Interlude {
                 target,
                 activity,
@@ -1306,6 +1319,7 @@ impl<C: CharacterSet> Sim<C> {
         if after == 0 {
             goods.remove(good);
         }
+        self.batches_follow(who, object, good, delta);
         out.push(Emitted::Stocked {
             tick,
             who,

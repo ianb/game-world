@@ -19,5 +19,20 @@ Shared behaviour (`toolbox::human`): the privy on the yard, a cistern for water 
 no wells at sea), food at home when starving, a drink at the Kettle, and the mood
 reactions (the lonely go to the Kettle when nobody is about).
 
-Not yet: nobody buys gas from the stall, kelp is not chewed, fish have no batches or
-effects. Those come with substances (`plan.md`, step 1).
+Substances (`worlds/welling/content/substances/`, all numbers placeholders):
+
+| substance | lift | lasts | moods | wakes | habit | can go wrong |
+| --- | --- | --- | --- | --- | --- | --- |
+| kelp | +1 | 3 h | gloomy -2, restless -1 | 8 | 3 | no |
+| refined gas | +3 | 4 h | anxious -6, gloomy -4, cheerful +6 | 15 | 6 | no |
+| raw gas | +1 | 1 h | | | 2 | a quarter of portions odd |
+| raw fish | | | | | | 15% of portions odd, 10% of batches bad |
+| drink | +1 | 2 h | lonely -2, anxious -1 | | | no |
+
+Cooked fish is not a substance: cooking takes out what the seep put in. Everyone starts a
+little hooked on kelp (Grue most), Pike hooked on refined gas, Sab on raw gas. Kelp is
+kept at home and bought at the Kettle three at a time; Pike buys gas at the stall one
+measure at a time and scrounges 5 coins a day.
+
+Not yet: kelp has no supply once the Kettle's 40 are gone, and nothing brings money in
+from outside. Both come with the boats (`plan.md`).

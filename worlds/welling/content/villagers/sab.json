@@ -53,5 +53,15 @@
         "dark"
       ]
     }
+  ],
+  "habits": [
+    {
+      "substance": "kelp",
+      "hooked": 30
+    },
+    {
+      "substance": "raw-gas",
+      "hooked": 25
+    }
   ]
 }

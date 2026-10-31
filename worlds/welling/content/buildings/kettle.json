@@ -42,7 +42,10 @@
           },
           "room": "bar",
           "activity": "serve",
-          "owner": "lark"
+          "owner": "lark",
+          "stock": {
+            "kelp": 40
+          }
         },
         {
           "id": "barrel_kettle",

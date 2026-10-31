@@ -26,6 +26,13 @@
         "$ref": "#/$defs/CropDef"
       }
     },
+    "substances": {
+      "description": "What people take for its effect, in declaration order. Left out of the serialized\ncontent when empty.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SubstanceDef"
+      }
+    },
     "topics": {
       "description": "The topics conversations can be about. A topic that code uses must be listed here.",
       "type": "array",
@@ -506,6 +513,25 @@
         "price"
       ]
     },
+    "HabitSpec": {
+      "description": "A habit someone starts with: how hooked they are on a substance, out of 100.",
+      "type": "object",
+      "properties": {
+        "hooked": {
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "substance": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "substance",
+        "hooked"
+      ]
+    },
     "Income": {
       "description": "Money that reaches a villager from outside the town on a schedule, such as a pension.",
       "type": "object",
@@ -557,6 +583,37 @@
           "type": "string",
           "const": "stuck"
         }
+      ]
+    },
+    "MoodEffect": {
+      "type": "object",
+      "properties": {
+        "mood": {
+          "$ref": "#/$defs/MoodName"
+        },
+        "points": {
+          "type": "integer",
+          "format": "int8",
+          "maximum": 127,
+          "minimum": -128
+        }
+      },
+      "required": [
+        "mood",
+        "points"
+      ]
+    },
+    "MoodName": {
+      "description": "The moods, by name, for content that moves a mood without being one (substances).",
+      "type": "string",
+      "enum": [
+        "lonely",
+        "restless",
+        "irritable",
+        "anxious",
+        "gloomy",
+        "cheerful",
+        "proud"
       ]
     },
     "MoodSpec": {
@@ -1036,6 +1093,70 @@
         "good"
       ]
     },
+    "SubstanceDef": {
+      "description": "Something people take for its effect: chewed, drunk, eaten raw, breathed. Its id is the\ngood it comes as. Declared in the world's `substances/`.",
+      "type": "object",
+      "properties": {
+        "habit": {
+          "description": "How much each dose deepens the habit, out of 100. Zero is not habit-forming.",
+          "type": "integer",
+          "format": "uint8",
+          "default": 0,
+          "maximum": 255,
+          "minimum": 0
+        },
+        "hours": {
+          "description": "How long a dose lasts, in hours.",
+          "type": "integer",
+          "format": "uint8",
+          "default": 0,
+          "maximum": 255,
+          "minimum": 0
+        },
+        "id": {
+          "type": "string"
+        },
+        "lift": {
+          "description": "How much a dose lifts spirits while it lasts (negative lowers them).",
+          "type": "integer",
+          "format": "int8",
+          "default": 0,
+          "maximum": 127,
+          "minimum": -128
+        },
+        "moods": {
+          "description": "Moods a dose moves, for those prone to them, in points on the mood's scale.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/MoodEffect"
+          }
+        },
+        "wakes": {
+          "description": "Points of sleepiness a dose takes away.",
+          "type": "integer",
+          "format": "uint8",
+          "default": 0,
+          "maximum": 255,
+          "minimum": 0
+        },
+        "wild": {
+          "description": "What can go wrong with a portion or a batch, for a substance that varies.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Wild"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
     "TopicDef": {
       "description": "Something villagers can talk about. Code refers to it by `id`; `gloss` is how views\nshow it.",
       "type": "object",
@@ -1146,6 +1267,13 @@
             "$ref": "#/$defs/Fetches"
           }
         },
+        "habits": {
+          "description": "Habits they start with. Left out of the serialized content when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HabitSpec"
+          }
+        },
         "home": {
           "type": "string"
         },
@@ -1215,6 +1343,45 @@
           "type": "string",
           "const": "boards"
         }
+      ]
+    },
+    "Wild": {
+      "description": "Effects nobody planned. A portion may turn out odd, for better or worse; a whole batch\nmay be bad, and then every portion of it is.",
+      "type": "object",
+      "properties": {
+        "bad_batch": {
+          "description": "Chance in a hundred that a batch is bad.",
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "hours": {
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "lift": {
+          "description": "How strong an unplanned effect is, in spirits, and how many hours it lasts.",
+          "type": "integer",
+          "format": "int8",
+          "maximum": 127,
+          "minimum": -128
+        },
+        "portion": {
+          "description": "Chance in a hundred that a portion has an unplanned effect, good or bad.",
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        }
+      },
+      "required": [
+        "portion",
+        "bad_batch",
+        "lift",
+        "hours"
       ]
     },
     "Worry": {

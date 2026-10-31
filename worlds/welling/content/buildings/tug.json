@@ -52,7 +52,10 @@
             "y": 2
           },
           "room": "cabin",
-          "activity": "eat"
+          "activity": "eat",
+          "stock": {
+            "kelp": 3
+          }
         }
       ],
       "arrival": {

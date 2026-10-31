@@ -53,5 +53,11 @@
         "rain"
       ]
     }
+  ],
+  "habits": [
+    {
+      "substance": "kelp",
+      "hooked": 50
+    }
   ]
 }

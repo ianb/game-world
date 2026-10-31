@@ -2,7 +2,7 @@
 //! move goods between the vent, the Mire, the stall and the fishers' tables.
 use content::validate::Severity;
 use sim::Sim;
-use sim::protocol::Emitted;
+use sim::protocol::{Emitted, Odd};
 use sim::time::{TICKS_PER_DAY, Tick};
 use welling::City;
 use welling::scene::{Scene, at, city_content};
@@ -98,13 +98,101 @@ fn tully_brings_refined_gas_up_to_the_stall_and_pays_ora() {
 fn nessa_cooks_her_catch_and_grue_eats_his_raw() {
     let mut s = Scene::new();
     s.run_until(at(1, 0, 0));
+    let nessa = s.id("nessa");
+    let cooked = s.events.iter().any(|e| {
+        matches!(e, Emitted::Stocked { who, good, delta, .. }
+            if *who == nessa && good == "cooked-fish" && *delta > 0)
+    });
+    assert!(cooked, "Nessa cooked nothing on day 0");
     assert!(
-        s.stock("table_nessa", "cooked-fish") > 0,
-        "Nessa cooked nothing on day 0"
+        took(&s, "cooked-fish").any(|t| t.0 == "nessa"),
+        "Nessa ate none"
     );
-    assert_eq!(
-        s.stock("table_grue", "cooked-fish"),
-        0,
-        "Grue does not cook"
+    assert!(
+        took(&s, "fish").any(|t| t.0 == "grue"),
+        "Grue ate no raw fish"
     );
+    assert!(
+        !took(&s, "fish").any(|t| t.0 == "nessa"),
+        "Nessa ate raw fish"
+    );
+}
+
+/// Who took `good`, with the batch and how it went, in order.
+fn took<'a>(s: &'a Scene, good: &'a str) -> impl Iterator<Item = (String, Option<u32>, Odd)> + 'a {
+    s.events.iter().filter_map(move |e| match e {
+        Emitted::Consumed {
+            who,
+            good: g,
+            batch,
+            odd,
+            ..
+        } if g == good => Some((
+            s.sim.state().villagers[who.index()].id.clone(),
+            *batch,
+            *odd,
+        )),
+        _ => None,
+    })
+}
+
+#[test]
+fn everyone_chews_kelp() {
+    let mut s = Scene::new();
+    s.run_until(at(1, 0, 0));
+    let chewers: std::collections::BTreeSet<String> = took(&s, "kelp").map(|t| t.0).collect();
+    assert!(chewers.len() >= 6, "only {chewers:?} chewed kelp on day 0");
+}
+
+#[test]
+fn pike_buys_gas_at_the_stall_and_the_batch_goes_back_to_a_refiner() {
+    let mut s = Scene::new();
+    s.run_until(at(0, 18, 0));
+    let (_, batch, _) = took(&s, "refined-gas")
+        .find(|t| t.0 == "pike")
+        .expect("Pike took no gas by 6pm");
+    let paid = s.events.iter().any(|e| {
+        matches!(e, Emitted::Paid { from, to, amount, .. }
+            if *from == Some(s.id("pike")) && *to == Some(s.id("tully"))
+                && *amount == welling::toolbox::GAS_PRICE)
+    });
+    assert!(paid, "Pike did not pay Tully for it");
+    // The gas the stall started with was made by nobody; whatever Pike took, its batch is
+    // known, so it can be traced.
+    let batch = batch.expect("the dose has a batch");
+    let made = &s.sim.state().batches.made[batch as usize];
+    let by = made
+        .by
+        .map(|v| s.sim.state().villagers[v.index()].id.clone());
+    assert!(
+        by.is_none() || matches!(by.as_deref(), Some("ora" | "sab")),
+        "batch {batch} made by {by:?}"
+    );
+}
+
+#[test]
+fn a_bad_batch_of_raw_fish_reaches_whoever_eats_it() {
+    let mut s = Scene::new();
+    s.force_for(sim::substances::BAD_BATCH, "grue", true);
+    s.run_until(at(2, 0, 0));
+    let (_, batch, odd) = took(&s, "fish")
+        .find(|t| t.0 == "grue" && t.2 == Odd::BadBatch)
+        .expect("Grue ate no fish from a bad batch");
+    let made = &s.sim.state().batches.made[batch.expect("a batch") as usize];
+    assert!(made.bad);
+    assert_eq!(made.by, Some(s.id("grue")), "his own catch");
+    assert_eq!(odd, Odd::BadBatch);
+    let lowered = s.events.iter().any(|e| {
+        matches!(e, Emitted::Consumed { who, good, lift, .. }
+            if *who == s.id("grue") && good == "fish" && *lift < 0)
+    });
+    assert!(lowered, "the bad fish did not lower his spirits");
+}
+
+#[test]
+fn cooked_fish_has_no_surprises() {
+    let mut s = Scene::new();
+    s.force(sim::substances::ODD_PORTION, true);
+    s.run_until(at(1, 0, 0));
+    assert!(took(&s, "cooked-fish").all(|t| t.2 == Odd::No));
 }

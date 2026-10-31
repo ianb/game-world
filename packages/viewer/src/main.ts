@@ -376,6 +376,25 @@ function describeVillager(v: VillagerView): Card {
     }
     blocks.push(note("Each mood runs 0 to 3. Spirits add the good moods, take away the bad ones and the body's discomfort, -3 to 3."));
   }
+  if (mind && (mind.doses.length || mind.habits.length)) {
+    blocks.push(head("Taking"));
+    for (const d of mind.doses) {
+      const lift = d.lift > 0 ? `+${d.lift}` : String(d.lift);
+      const batch = d.batch === null ? "" : `, batch ${d.batch}`;
+      blocks.push(note(`${words(d.good)}: ${lift} to spirits for ${d.hours_left} more hour${d.hours_left === 1 ? "" : "s"}${batch}`));
+    }
+    for (const h of mind.habits) {
+      blocks.push({
+        kind: "pips",
+        label: `${words(h.good)} habit`,
+        level: Math.min(3, Math.floor(h.craving / 30)),
+        max: 3,
+        good: false,
+        name: h.craving >= 70 ? "desperate" : h.craving >= 30 ? "wants some" : "",
+        note: `hooked ${h.hooked} of 100, craving ${h.craving}`,
+      });
+    }
+  }
   if (mind) blocks.push(...describeMind(mind, sim.villagers()));
   return {
     picture: { villager: v.key },

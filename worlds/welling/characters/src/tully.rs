@@ -34,7 +34,7 @@ impl Character for Tully {
         _rng: &mut Pcg32,
     ) -> Option<Vec<Command>> {
         Some(match trigger {
-            Trigger::Arrived if activity_of(ctx, "tully") == "fetch-gas" => {
+            Trigger::Arrived | Trigger::Resumed if activity_of(ctx, "tully") == "fetch-gas" => {
                 let room = STALL_HOLDS.saturating_sub(stock_of(ctx, STALL, REFINED_GAS));
                 let afford = ctx.coins(villager(ctx, "tully")) / GAS_TRADE_PRICE;
                 let n = stock_of(ctx, CASKS, REFINED_GAS)

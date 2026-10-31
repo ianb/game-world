@@ -481,6 +481,78 @@ pub struct Villager {
     /// each; nobody has all of them.
     #[serde(default)]
     pub moods: Vec<MoodSpec>,
+    /// Habits they start with. Left out of the serialized content when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub habits: Vec<HabitSpec>,
+}
+
+/// The moods, by name, for content that moves a mood without being one (substances).
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum MoodName {
+    Lonely,
+    Restless,
+    Irritable,
+    Anxious,
+    Gloomy,
+    Cheerful,
+    Proud,
+}
+
+/// Something people take for its effect: chewed, drunk, eaten raw, breathed. Its id is the
+/// good it comes as. Declared in the world's `substances/`.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct SubstanceDef {
+    pub id: String,
+    /// How much a dose lifts spirits while it lasts (negative lowers them).
+    #[serde(default)]
+    pub lift: i8,
+    /// How long a dose lasts, in hours.
+    #[serde(default)]
+    pub hours: u8,
+    /// Moods a dose moves, for those prone to them, in points on the mood's scale.
+    #[serde(default)]
+    pub moods: Vec<MoodEffect>,
+    /// Points of sleepiness a dose takes away.
+    #[serde(default)]
+    pub wakes: u8,
+    /// How much each dose deepens the habit, out of 100. Zero is not habit-forming.
+    #[serde(default)]
+    pub habit: u8,
+    /// What can go wrong with a portion or a batch, for a substance that varies.
+    #[serde(default)]
+    pub wild: Option<Wild>,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct MoodEffect {
+    pub mood: MoodName,
+    pub points: i8,
+}
+
+/// Effects nobody planned. A portion may turn out odd, for better or worse; a whole batch
+/// may be bad, and then every portion of it is.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct Wild {
+    /// Chance in a hundred that a portion has an unplanned effect, good or bad.
+    pub portion: u8,
+    /// Chance in a hundred that a batch is bad.
+    pub bad_batch: u8,
+    /// How strong an unplanned effect is, in spirits, and how many hours it lasts.
+    pub lift: i8,
+    pub hours: u8,
+}
+
+/// A habit someone starts with: how hooked they are on a substance, out of 100.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct HabitSpec {
+    pub substance: String,
+    pub hooked: u8,
 }
 
 /// A mood someone is prone to, and what moves it for them in particular.
@@ -638,6 +710,10 @@ pub struct Content {
     /// The kinds of animal this world keeps, in declaration order.
     #[serde(default)]
     pub animals: Vec<AnimalDef>,
+    /// What people take for its effect, in declaration order. Left out of the serialized
+    /// content when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub substances: Vec<SubstanceDef>,
 }
 
 impl Content {
@@ -650,6 +726,12 @@ impl Content {
     #[must_use]
     pub fn crop_index(&self, id: &str) -> Option<usize> {
         self.crops.iter().position(|c| c.id == id)
+    }
+
+    /// The index of a declared substance.
+    #[must_use]
+    pub fn substance_index(&self, id: &str) -> Option<usize> {
+        self.substances.iter().position(|s| s.id == id)
     }
 
     /// The index of a declared kind of animal.

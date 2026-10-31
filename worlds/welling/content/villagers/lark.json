@@ -47,5 +47,11 @@
       "mood": "lonely",
       "after_hours": 4
     }
+  ],
+  "habits": [
+    {
+      "substance": "kelp",
+      "hooked": 25
+    }
   ]
 }

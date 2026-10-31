@@ -28,6 +28,8 @@ pub struct Ctx<'a> {
     pub fields: &'a crate::fields::Fields,
     /// Every villager's moods, by villager.
     pub moods: &'a [crate::moods::Moods],
+    /// Every villager's doses and habits, by villager.
+    pub intake: &'a [crate::substances::Intake],
     /// Goods on objects, by object index then good.
     pub stock: &'a BTreeMap<u16, BTreeMap<String, u16>>,
     /// What the town keeps of recent events, with who could perceive each.
@@ -178,7 +180,8 @@ impl Ctx<'_> {
     /// `who`'s spirits, -3 to 3: their moods and their body together.
     #[must_use]
     pub fn spirits(&self, who: VillagerId) -> i8 {
-        crate::moods::spirits(self.moods(who), crate::social::needs_mood(self, who))
+        let body = crate::social::needs_mood(self, who) + self.intake[who.index()].lift();
+        crate::moods::spirits(self.moods(who), body)
     }
 
     /// The field tile at a spot, with its plot, if there is one.
@@ -358,6 +361,9 @@ pub enum Command {
     /// then it carries like a complaint (if it felt bad) or a remark, and anyone in earshot
     /// may overhear it.
     Think(Thought),
+    /// Take one `good` from `object`: eat, chew, drink or breathe it. A declared substance
+    /// has its effect. Emits `Stocked` and `Consumed`; nothing happens if there is none.
+    Consume { object: ObjectId, good: String },
 }
 
 /// Who pays or is paid. `Outside` is the world beyond the town: pensions come from it,
@@ -411,6 +417,14 @@ impl Command {
                     Party::Outside => "outside".to_string(),
                 };
                 format!("{} pays {} {amount} for {what}", name(from), name(to))
+            }
+            Command::Consume { object, good } => {
+                let key = ctx
+                    .world
+                    .objects
+                    .get(object.index())
+                    .map_or_else(|| format!("object#{}", object.0), |o| o.id.clone());
+                format!("takes {good} from {key}")
             }
             Command::Stock {
                 object,
@@ -521,6 +535,8 @@ pub enum Trigger {
         about_me: bool,
         caught: Caught,
     },
+    /// Their craving for `good` reached `level`: 1 wanting, 2 desperate.
+    Craving { good: String, level: u8 },
 }
 
 impl Trigger {
@@ -530,6 +546,7 @@ impl Trigger {
         let name = |v: &VillagerId| ctx.villager(*v).name.clone();
         match self {
             Trigger::Arrived => "arrived".into(),
+            Trigger::Craving { good, level } => format!("craving {good} ({level})"),
             Trigger::Waited => "waited".into(),
             Trigger::Stuck => "stuck".into(),
             Trigger::Encounter { other } => format!("encounter {}", name(other)),

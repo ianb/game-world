@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 28;
+pub const PROTOCOL_VERSION: u32 = 29;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -265,6 +265,26 @@ pub enum Emitted {
         who: VillagerId,
         thought: Thought,
     },
+    /// `who` took one `good` from `object`: ate, chewed, drank or breathed it. For a
+    /// declared substance, `batch` says which batch it came from, `lift` what it does to
+    /// their spirits while it lasts, and `odd` whether it was not what they expected.
+    Consumed {
+        tick: Tick,
+        who: VillagerId,
+        object: ObjectId,
+        good: String,
+        batch: Option<u32>,
+        lift: i8,
+        odd: Odd,
+        cause: Cause,
+    },
+    /// `who`'s craving for `good` reached `level`: 1 wanting, 2 desperate.
+    Craved {
+        tick: Tick,
+        who: VillagerId,
+        good: String,
+        level: u8,
+    },
 }
 
 /// The kind of exchange two people have settled on. Shared conventions: which moves make
@@ -512,6 +532,8 @@ pub enum SummaryKind {
     Animals,
     /// A mood strong enough to act on.
     Mood,
+    /// Something taken that was not what it should be, or a craving gone desperate.
+    Substance,
     /// Fields: harvests, crops ripening and spoiling.
     Fields,
     /// Rain.
@@ -717,6 +739,8 @@ impl Emitted {
             | Emitted::TrainPassed { tick }
             | Emitted::Rained { tick }
             | Emitted::MoodShifted { tick, .. }
+            | Emitted::Consumed { tick, .. }
+            | Emitted::Craved { tick, .. }
             | Emitted::CropsRipened { tick, .. }
             | Emitted::CropsSpoiled { tick, .. }
             | Emitted::Tended { tick, .. }
@@ -748,10 +772,47 @@ impl Emitted {
             | Emitted::Consigned { who, .. }
             | Emitted::Tended { who, .. }
             | Emitted::MoodShifted { who, .. }
+            | Emitted::Consumed { who, .. }
+            | Emitted::Craved { who, .. }
             | Emitted::Thought { who, .. } => Some(*who),
             _ => None,
         }
     }
+}
+
+/// Whether a portion did what it usually does.
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum Odd {
+    No,
+    /// Stronger than usual.
+    Better,
+    /// Off: it lowered their spirits.
+    Worse,
+    /// From a bad batch, as every portion of that batch is.
+    BadBatch,
+}
+
+/// A dose working on someone.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct DoseView {
+    pub good: String,
+    pub batch: Option<u32>,
+    pub lift: i8,
+    pub hours_left: u8,
+}
+
+/// Someone's habit: how hooked, out of 100, and how much they want a dose now.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct HabitView {
+    pub good: String,
+    pub hooked: u8,
+    pub craving: u8,
 }
 
 /// A count of one good.
@@ -1280,6 +1341,9 @@ pub struct MindView {
     pub spirits: String,
     /// Each mood they are prone to, in their content's order.
     pub moods: Vec<MoodView>,
+    /// Doses working on them, and their habits.
+    pub doses: Vec<DoseView>,
+    pub habits: Vec<HabitView>,
     pub worry: Option<String>,
     pub regard: Vec<RegardView>,
     /// Most recent last.
@@ -1421,6 +1485,29 @@ pub fn mind_view<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Option<MindV
         mood: mind.mood(&ctx, who),
         spirits: crate::moods::spirits_name(mind.mood(&ctx, who)).to_string(),
         moods: mood_views(sim, who),
+        doses: sim.state().intake[who.index()]
+            .doses
+            .iter()
+            .map(|d| DoseView {
+                good: sim.content().substances[usize::from(d.substance)]
+                    .id
+                    .clone(),
+                batch: d.batch,
+                lift: d.lift,
+                hours_left: d.hours_left,
+            })
+            .collect(),
+        habits: sim.state().intake[who.index()]
+            .habits
+            .iter()
+            .map(|h| HabitView {
+                good: sim.content().substances[usize::from(h.substance)]
+                    .id
+                    .clone(),
+                hooked: h.hooked,
+                craving: h.craving,
+            })
+            .collect(),
         worry: mind.worry(&ctx, who).map(|t| t.label(&ctx)),
         regard,
         episodes: memory.episodes[recent(memory.episodes.len())..]

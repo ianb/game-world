@@ -57,5 +57,11 @@
         "crowds"
       ]
     }
+  ],
+  "habits": [
+    {
+      "substance": "kelp",
+      "hooked": 25
+    }
   ]
 }

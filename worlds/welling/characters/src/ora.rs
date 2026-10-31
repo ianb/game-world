@@ -23,7 +23,9 @@ impl Character for Ora {
         _rng: &mut Pcg32,
     ) -> Option<Vec<Command>> {
         Some(match trigger {
-            Trigger::Arrived | Trigger::Waited if activity_of(ctx, "ora") == "refine" => {
+            Trigger::Arrived | Trigger::Resumed | Trigger::Waited
+                if activity_of(ctx, "ora") == "refine" =>
+            {
                 refine(ctx)
             }
             _ => return None,

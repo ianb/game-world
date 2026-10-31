@@ -65,6 +65,13 @@ impl Scene {
         self
     }
 
+    /// Forces chance `label` for `who` only.
+    pub fn force_for(&mut self, label: &str, who: &str, happens: bool) -> &mut Self {
+        let id = self.id(who);
+        self.sim.state_mut().odds.force_for(label, id, happens);
+        self
+    }
+
     pub fn set_coins(&mut self, who: &str, coins: u32) -> &mut Self {
         let id = self.id(who);
         self.sim.state_mut().villagers[id.index()].coins = coins;

@@ -302,6 +302,7 @@ impl Summarizer {
             | Emitted::TrainArrived { .. }
             | Emitted::TrainLeft { .. } => self.train(tick, e),
             Emitted::MoodShifted { .. } => self.mood(tick, e),
+            Emitted::Consumed { .. } | Emitted::Craved { .. } => self.substance(tick, e),
             Emitted::Rained { .. }
             | Emitted::CropsRipened { .. }
             | Emitted::CropsSpoiled { .. }
@@ -342,6 +343,48 @@ impl Summarizer {
                 let key = format!("mood:{}:{feeling}", name.to_lowercase());
                 let text = format!("{name} is {feeling}: {cause}");
                 self.line(tick, *who, SummaryKind::Mood, text, None, key);
+            }
+            _ => {}
+        }
+    }
+
+    /// A portion that was not what it should be, with its batch so a bad one can be
+    /// followed; a craving that has gone desperate.
+    fn substance(&mut self, tick: Tick, e: &Emitted) {
+        match e {
+            Emitted::Consumed {
+                who,
+                good,
+                batch,
+                odd,
+                cause,
+                ..
+            } if *odd != crate::protocol::Odd::No => {
+                let name = self.name(*who).to_string();
+                let what = match odd {
+                    crate::protocol::Odd::Better => "stronger than usual",
+                    crate::protocol::Odd::Worse => "off",
+                    crate::protocol::Odd::BadBatch | crate::protocol::Odd::No => "from a bad batch",
+                };
+                let from = batch.map(|b| format!(" (batch {b})")).unwrap_or_default();
+                let key = format!("odd:{}:{good}:{what}", name.to_lowercase());
+                let text = format!("{name}'s {good} was {what}{from}");
+                self.line(
+                    tick,
+                    *who,
+                    SummaryKind::Substance,
+                    text,
+                    Some(cause.clone()),
+                    key,
+                );
+            }
+            Emitted::Craved {
+                who, good, level, ..
+            } if *level >= 2 => {
+                let name = self.name(*who).to_string();
+                let key = format!("craved:{}:{good}", name.to_lowercase());
+                let text = format!("{name} is desperate for {good}");
+                self.line(tick, *who, SummaryKind::Substance, text, None, key);
             }
             _ => {}
         }

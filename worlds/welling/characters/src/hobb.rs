@@ -23,7 +23,7 @@ impl Character for Hobb {
         _rng: &mut Pcg32,
     ) -> Option<Vec<Command>> {
         Some(match trigger {
-            Trigger::Arrived if activity_of(ctx, "hobb") == "lash" => {
+            Trigger::Arrived | Trigger::Resumed if activity_of(ctx, "hobb") == "lash" => {
                 vec![wait_minutes(30, "lash")]
             }
             Trigger::Passing { other } => vec![Command::Greet { with: *other }],

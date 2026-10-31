@@ -115,6 +115,28 @@ fn check_kinds(content: &Content, r: &mut Report) {
             );
         }
     }
+    let mut seen = BTreeSet::new();
+    for s in &content.substances {
+        if !seen.insert(&s.id) {
+            r.error(format!("substance {}", s.id), "declared twice");
+        }
+        if (s.lift != 0 || !s.moods.is_empty()) && s.hours == 0 {
+            r.error(
+                format!("substance {}", s.id),
+                "an effect needs hours to last",
+            );
+        }
+    }
+    for v in &content.villagers {
+        for h in &v.habits {
+            if content.substance_index(&h.substance).is_none() {
+                r.error(
+                    format!("villagers/{}", v.id),
+                    format!("habit {} is not a declared substance", h.substance),
+                );
+            }
+        }
+    }
     for z in &content.zones {
         for p in &z.plots {
             if content.crop_index(&p.crop).is_none() {
