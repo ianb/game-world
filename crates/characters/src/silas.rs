@@ -1,7 +1,7 @@
 //! Silas Ashby, farmer and miser. Counts his coins every night and takes any drop hard.
 //! Description and design notes: `docs/characters/silas.md`.
 use crate::Character;
-use crate::toolbox::{activity_of, think, villager, wait_minutes, work_area};
+use crate::toolbox::{activity_of, tend_fields, think, villager, wait_minutes};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Trigger};
@@ -27,7 +27,7 @@ impl Character for Silas {
     fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {
         Some(match trigger {
             Trigger::Arrived | Trigger::Waited if activity_of(ctx, "silas") == "farm" => {
-                work_area(ctx, "silas", trigger, "ashby-fields", "farm", 40, 2, rng)
+                tend_fields(ctx, "silas", trigger, "ashby-fields", "farm", rng)
             }
             // Counting: less than last night, and it stays with him.
             Trigger::Arrived if activity_of(ctx, "silas") == "count-coins" => {

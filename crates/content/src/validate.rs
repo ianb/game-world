@@ -119,21 +119,43 @@ fn check_areas(content: &Content, r: &mut Report) {
     }
 }
 
-/// Plots, flocks and the railway: rects inside the zone, and every reference resolved.
+/// A zone's plots: rects inside the zone, and their household and store resolved.
+fn check_plots(content: &Content, world: &World, z: &crate::model::Zone, r: &mut Report) {
+    let object = |id: &str| world.objects.iter().find(|o| o.id == id);
+    let inside = |rect: &Rect| {
+        rect.w > 0 && rect.h > 0 && rect.right() <= z.width && rect.bottom() <= z.height
+    };
+    for p in &z.plots {
+        if !inside(&p.rect) {
+            r.error(
+                format!("zones/{} plot {}", z.id, p.id),
+                "rect is empty or outside the zone",
+            );
+        }
+        if let Some(h) = &p.household
+            && !content.buildings.iter().any(|b| &b.id == h)
+        {
+            r.error(
+                format!("zones/{} plot {}", z.id, p.id),
+                format!("household {h} is not a building"),
+            );
+        }
+        if let Some(s) = &p.store
+            && object(s).is_none()
+        {
+            r.error(
+                format!("zones/{} plot {}", z.id, p.id),
+                format!("store {s} is not an object"),
+            );
+        }
+    }
+}
+
+/// Plots, flocks and the railway: every reference resolved.
 fn check_zone_extras(content: &Content, world: &World, r: &mut Report) {
     let object = |id: &str| world.objects.iter().find(|o| o.id == id);
     for z in &content.zones {
-        let inside = |rect: &Rect| {
-            rect.w > 0 && rect.h > 0 && rect.right() <= z.width && rect.bottom() <= z.height
-        };
-        for p in &z.plots {
-            if !inside(&p.rect) {
-                r.error(
-                    format!("zones/{} plot {}", z.id, p.id),
-                    "rect is empty or outside the zone",
-                );
-            }
-        }
+        check_plots(content, world, z, r);
         for f in &z.flocks {
             let subject = format!("zones/{} flock {}", z.id, f.id);
             if !content.villagers.iter().any(|v| v.id == f.owner) {

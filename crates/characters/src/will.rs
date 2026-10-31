@@ -2,7 +2,7 @@
 //! Description and design notes: `docs/characters/will.md`.
 use crate::Character;
 use crate::toolbox::{
-    Plan, activity_of, go, go_area, near, think_aloud, villager, wait_minutes, weekday, work_area,
+    Plan, activity_of, go, go_area, near, tend_fields, think_aloud, villager, wait_minutes, weekday,
 };
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
@@ -43,7 +43,7 @@ impl Character for Will {
         Some(match trigger {
             // Field work: weed a patch, then the next.
             Trigger::Arrived | Trigger::Waited if activity_of(ctx, "will") == "farm" => {
-                work_area(ctx, "will", trigger, "hollins-fields", "farm", 40, 2, rng)
+                tend_fields(ctx, "will", trigger, "hollins-fields", "farm", rng)
             }
             Trigger::Arrived if activity_of(ctx, "will") == "patrol" => {
                 vec![wait_minutes(30, "patrol")]

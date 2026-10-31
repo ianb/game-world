@@ -24,6 +24,8 @@ pub struct Ctx<'a> {
     pub nav: &'a Nav,
     pub villagers: &'a [VillagerState],
     pub terrain: &'a Terrain,
+    /// Every field tile.
+    pub fields: &'a crate::fields::Fields,
     /// Goods on objects, by object index then good.
     pub stock: &'a BTreeMap<u16, BTreeMap<String, u16>>,
     /// What the town keeps of recent events, with who could perceive each.
@@ -165,6 +167,49 @@ impl Ctx<'_> {
             .collect()
     }
 
+    /// The field tile at a spot, with its plot, if there is one.
+    #[must_use]
+    pub fn field_at(
+        &self,
+        place: PlaceId,
+        pos: Pos,
+    ) -> Option<(&crate::fields::Plot, &crate::fields::FieldTile)> {
+        self.fields.plots.iter().find_map(|p| {
+            (p.place == place)
+                .then(|| p.index_at(pos).map(|i| (p, &p.tiles[i])))
+                .flatten()
+        })
+    }
+
+    /// The next piece of field work inside `area` of `place`, for someone at `from`: the
+    /// most pressing kind first (harvest, weed, water, sow, till), then the nearest tile,
+    /// then content order. `None` when the fields there want nothing.
+    #[must_use]
+    pub fn field_job(
+        &self,
+        place: PlaceId,
+        area: Rect,
+        from: Pos,
+    ) -> Option<(Pos, crate::protocol::FieldWork)> {
+        use crate::protocol::FieldWork as W;
+        let rank = |w: W| match w {
+            W::Harvest => 0u8,
+            W::Weed => 1,
+            W::Water => 2,
+            W::Sow => 3,
+            W::Till => 4,
+        };
+        let season = self.calendar.season;
+        self.fields
+            .plots
+            .iter()
+            .filter(|p| p.place == place)
+            .flat_map(|p| p.tiles.iter().enumerate().map(move |(i, t)| (p.pos(i), t)))
+            .filter(|(pos, _)| area.contains(pos.x, pos.y))
+            .filter_map(|(pos, t)| crate::fields::wants(t, season).map(|w| (pos, w)))
+            .min_by_key(|(pos, w)| (rank(*w), pos.x.abs_diff(from.x) + pos.y.abs_diff(from.y)))
+    }
+
     /// The object of a kind nearest to `who` by travel time, if any is reachable.
     #[must_use]
     pub fn nearest_object(&self, who: VillagerId, kind: &str) -> Option<ObjectId> {
@@ -255,6 +300,10 @@ pub enum Command {
     /// Clear grass and weeds within `radius` tiles of where you stand. Instant; pair it
     /// with a `Wait` for the time the work takes. Emits `Cleared`.
     Clear { radius: u16 },
+    /// Work the field tile you stand on. Instant; pair it with a `Wait` for the time the
+    /// work takes (`fields::minutes`). Emits `Tended`; does nothing on a tile that does
+    /// not take that work now.
+    Tend { work: crate::protocol::FieldWork },
     /// Send goods by rail: moves up to `count` of `good` from `from` onto the railway
     /// platform, to be paid for when the next train leaves. Only goods the railway buys.
     Consign {
@@ -335,6 +384,7 @@ impl Command {
                 )
             }
             Command::Clear { radius } => format!("clear within {radius}"),
+            Command::Tend { work } => format!("{work:?} the field").to_lowercase(),
             Command::Consign { good, count, .. } => format!("send {count} {good} by rail"),
             Command::Pay {
                 from,

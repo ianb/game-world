@@ -1,8 +1,9 @@
 //! What character code is written against. Grows from what characters want to say.
+use content::Rect;
 use rand::RngExt;
 use rand_pcg::Pcg32;
 use sim::brain::{Command, Ctx, Party, Planned, Target, Trigger};
-use sim::ids::{ObjectId, VillagerId};
+use sim::ids::{ObjectId, PlaceId, VillagerId};
 use sim::needs::Need;
 use sim::protocol::{Blame, Cause, Emitted, Frame, Mishap, Thought, Topic};
 use sim::recall::Perceived;
@@ -660,6 +661,9 @@ pub fn human(trigger: &Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
         Trigger::Arrived if activity_of(ctx, me) == "send-goods" => send_goods(ctx, me),
         Trigger::Arrived if activity_of(ctx, me) == "fetch-goods" => fetch_goods(ctx, me),
         Trigger::Arrived if activity_of(ctx, me) == "buy-luxuries" => buy_luxuries(ctx, me),
+        Trigger::Arrived | Trigger::Waited if activity_of(ctx, me) == "garden" => {
+            work_garden(ctx, me)
+        }
         Trigger::Arrived if activity_of(ctx, me) == "drink" => buy_ale_nearest(ctx, me)
             .unwrap_or_else(|| vec![Command::Note("no drink to be had".into())]),
         Trigger::Arrived if activity_of(ctx, me) == "sleep" => {
@@ -942,6 +946,134 @@ pub fn buy_ale_nearest(ctx: &Ctx<'_>, me: &str) -> Option<Vec<Command>> {
         cmds.push(pay(ctx, me, keeper, ALE_PRICE, "ale"));
     }
     Some(cmds)
+}
+
+/// Field work inside `rect` of `place`, one tile at a time: work the tile underfoot if it
+/// wants anything, else walk to the most pressing job there (`Ctx::field_job`). `None`
+/// when the fields there want nothing.
+#[must_use]
+pub fn tend_in(
+    ctx: &Ctx<'_>,
+    who: VillagerId,
+    place: PlaceId,
+    rect: Rect,
+    activity: &str,
+) -> Option<Vec<Command>> {
+    let v = ctx.villager(who);
+    let here = (v.place == place && rect.contains(v.pos.x, v.pos.y))
+        .then(|| ctx.field_at(v.place, v.pos))
+        .flatten()
+        .and_then(|(_, t)| sim::fields::wants(t, ctx.calendar.season));
+    if let Some(work) = here {
+        return Some(vec![
+            Command::Tend { work },
+            wait_minutes(sim::fields::minutes(work), activity),
+        ]);
+    }
+    let (pos, _) = ctx.field_job(place, rect, v.pos)?;
+    Some(vec![Command::GoTo {
+        target: Target::Tile { place, pos },
+        activity: activity.to_string(),
+    }])
+}
+
+/// Farm work over the fields in an area (`tend_in`), and when they want nothing, the
+/// old round of the area pulling weeds. Call on `Arrived` and `Waited` for the activity.
+#[must_use]
+pub fn tend_fields(
+    ctx: &Ctx<'_>,
+    me: &str,
+    trigger: &Trigger,
+    area: &str,
+    activity: &str,
+    rng: &mut Pcg32,
+) -> Vec<Command> {
+    let (place, rect) = ctx.area(area);
+    tend_in(ctx, villager(ctx, me), place, rect, activity)
+        .unwrap_or_else(|| work_area(ctx, me, trigger, area, activity, 40, 2, rng))
+}
+
+/// The gardens kept by the household `who` sleeps in.
+fn gardens<'a>(ctx: &Ctx<'a>, who: VillagerId) -> Vec<&'a sim::fields::Plot> {
+    let Some(v) = ctx.content.villagers.get(who.index()) else {
+        return Vec::new();
+    };
+    let Some(home) = ctx
+        .world
+        .objects
+        .iter()
+        .find(|o| o.id == v.bed)
+        .map(|o| o.building.as_str())
+    else {
+        return Vec::new();
+    };
+    let households: Vec<&str> = ctx
+        .content
+        .zones
+        .iter()
+        .flat_map(|z| z.plots.iter())
+        .map(|p| p.household.as_deref().unwrap_or(""))
+        .collect();
+    ctx.fields
+        .plots
+        .iter()
+        .zip(households)
+        .filter(|(_, h)| *h == home)
+        .map(|(p, _)| p)
+        .collect()
+}
+
+/// How long an evening in the garden lasts.
+const GARDEN_MINUTES: u32 = 40;
+
+/// The people of a household take turns in their garden in the early evening: one of
+/// them a day, by who they are and the day, from half past five.
+pub fn garden_turn(ctx: &Ctx<'_>, who: VillagerId, plan: &mut Vec<Planned>) {
+    let Some(garden) = gardens(ctx, who).into_iter().next() else {
+        return;
+    };
+    let home = ctx
+        .world
+        .objects
+        .iter()
+        .find(|o| o.id == ctx.content.villagers[who.index()].bed)
+        .map(|o| o.building.as_str());
+    let household: Vec<usize> = ctx
+        .content
+        .villagers
+        .iter()
+        .enumerate()
+        .filter(|(_, v)| {
+            ctx.world
+                .objects
+                .iter()
+                .find(|o| o.id == v.bed)
+                .map(|o| o.building.as_str())
+                == home
+        })
+        .map(|(i, _)| i)
+        .collect();
+    let day = usize::try_from(ctx.calendar.day_index).unwrap_or(0);
+    if household.get(day % household.len().max(1)) != Some(&who.index()) {
+        return;
+    }
+    let at = (17 * 60 + 30) * 60;
+    let target = Target::Tile {
+        place: garden.place,
+        pos: garden.pos(0),
+    };
+    sim::brain::add_errand(plan, at, target, "garden", GARDEN_MINUTES);
+}
+
+/// In the garden: the next job it wants, or a stand in it when it wants nothing.
+#[must_use]
+pub fn work_garden(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
+    let who = villager(ctx, me);
+    let Some(garden) = gardens(ctx, who).into_iter().next() else {
+        return Vec::new();
+    };
+    tend_in(ctx, who, garden.place, garden.rect, "garden")
+        .unwrap_or_else(|| vec![wait_minutes(10, "garden")])
 }
 
 /// Loop of work over an area: go to a random spot in it, do `activity` there for

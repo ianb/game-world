@@ -58,8 +58,22 @@
     {
       "days": "sat",
       "at": "5:00pm",
-      "amount": 26,
-      "what": "grain and wool"
+      "amount": 8,
+      "what": "wool"
+    }
+  ],
+  "sends": [
+    {
+      "object": "sacks_loft_hollins",
+      "good": "wheat"
+    },
+    {
+      "object": "sacks_loft_hollins",
+      "good": "potatoes"
+    },
+    {
+      "object": "sacks_loft_hollins",
+      "good": "beans"
     }
   ]
 }

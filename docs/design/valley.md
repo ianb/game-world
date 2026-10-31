@@ -143,12 +143,34 @@ across, and hens run from anyone chasing them within two tiles.
 
 ## Farms and gardens
 
-Plots of tilled ground carry crops that grow with the season: sprouts in early
-spring, growing plants, then ready to harvest in late summer and early autumn,
-and bare soil after. The Hollins and Ashby fields have wheat, potatoes, beans,
-cabbages and carrots, the manor has flower beds and a kitchen garden, and most
-cottages have a small garden. The barns have wide doors and a hay loft up a
-ladder; Dan sleeps in the Ashby loft. Couples share a bed.
+Fields are state, tile by tile (`sim::fields`): a stage (fallow, tilled, sown,
+sprouting, growing, ripe, spoiling, stubble), growth toward the crop's need,
+water, weeds and fertility, each on a stated scale. Every night the land
+changes on its own: water drops a day's worth unless it rains (a nightly
+chance by season, `rains`), weeds come up, crops grow 2 a day watered and
+weeded, 1 a day weedy or on poor soil, and wilt back 1 a day dry. Growth is
+fast: one to two weeks from sowing to ripe. A ripe crop stands 5 days, then
+spoils over 3 and is lost; stubble goes fallow; fallow ground gets a point of
+fertility back every 4 days.
+
+Farmers work one tile at a time (`toolbox::tend_fields`), most pressing job
+first: harvest, weed, water, sow, till. A harvest takes a point of fertility
+(beans give one back), and spent ground is rested, not tilled, until it
+recovers, so a worked field shows resting patches and its yield falls as it
+tires. The harvest goes into the farm's sacks (Hollins wheat, potatoes and
+beans; Ashby corn, cabbages and carrots) and Will and Silas send it by rail;
+the fixed grain income is gone, so the farms' money follows the land.
+
+Gardens belong to the household that sleeps in the building they are named
+for (`household` in content). One of them, in turn, works the garden for 40
+minutes from half past five (`toolbox::garden_turn`). A household with no
+time for it lets it go to weeds; Thorn's at the lodge does.
+
+`cargo run -p tools -- fields --day N` prints every plot's stages and mean
+water, weeds and fertility.
+
+The barns have wide doors and a hay loft up a ladder; Dan sleeps in the
+Ashby loft. Couples share a bed.
 
 ## The ground
 

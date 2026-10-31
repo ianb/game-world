@@ -1353,3 +1353,37 @@ Decided and built:
 Implications: Greta levels off around 330 coins, the richest in the valley.
 The reserve matters: without it she spent her margin on herself and could
 not restock, and the shelves went bare.
+
+## 2026-10-30: Change before contention; feelings as personal vocabularies
+
+Ian, on the direction plan (`design/direction.md`): "Let's not worry about
+intention and contention right now, just change. Maybe an easy place is
+farming, where the farmer actually affects their land, and the land changes
+automatically. Of course we should probably have accelerated growth." On
+feelings: "Mostly people could have their own internal feeling
+vocabularies, only the interactions have to be more normalized ... the
+differences are about different focuses and encourage diversity." And:
+"Mood is a category of attributes." On disasters: "hand-coded (by you)
+events that affect things ... a flood doesn't place water anywhere, it
+places it by the stream." On modules: "The character probably has their own
+flags that basically dispatch to known modules ... grieving is a module
+that is invoked if there's something that causes grieving."
+
+Decided:
+
+- Intentions, contention and group decisions wait.
+- Next is living fields: field tiles as state that grows, dries, weeds and
+  rots on its own, fast, and that farmers work tile by tile, with the
+  harvest feeding the economy.
+- Disasters are hand-written events with their own geography; drought
+  first, since it acts on the fields.
+- Feelings will be per-character vocabularies drawn from a shared library of
+  feeling kinds with named levels, over a fixed set of normalized
+  interaction signals. Mood becomes a category of named states. No bare
+  numbers without a scale and a meaning.
+- Modules are dispatched by the character's flags, with a core set the
+  shared rules invoke.
+
+Implications: the order in `design/direction.md` is revised at its end.
+The feelings change replaces `warmth_of` as the only felt quantity, so it
+will touch every character module.

@@ -60,12 +60,19 @@
       "activity": "farm"
     }
   ],
-  "income": [
+  "income": [],
+  "sends": [
     {
-      "days": "sat",
-      "at": "5:00pm",
-      "amount": 26,
-      "what": "grain"
+      "object": "sacks_ashby",
+      "good": "corn"
+    },
+    {
+      "object": "sacks_ashby",
+      "good": "cabbages"
+    },
+    {
+      "object": "sacks_ashby",
+      "good": "carrots"
     }
   ]
 }

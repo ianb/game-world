@@ -103,6 +103,13 @@ pub struct PlotSpec {
     pub id: String,
     pub rect: Rect,
     pub crop: Crop,
+    /// The object the harvest goes into. Without one, what is grown is eaten at home.
+    #[serde(default)]
+    pub store: Option<String>,
+    /// The building whose people keep this plot as their garden, in turns, in the early
+    /// evening.
+    #[serde(default)]
+    pub household: Option<String>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]

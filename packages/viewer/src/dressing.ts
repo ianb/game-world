@@ -2,7 +2,7 @@
 // a path crosses water, sills in doorways, ladders up to lofts, and the flowers, stones and
 // reeds scattered over the ground. All of it lies flat, so the 2D map and the 3D ground
 // share it. Also which tree stands where.
-import type { Calendar, DoorView, PlaceView, PlotView, Crop, WorldView } from "@game-world/protocol";
+import type { Calendar, DoorView, FieldTileView, FieldView, PlaceView, PlotView, Crop, WorldView } from "@game-world/protocol";
 import { type Materials, type TileRect, type Tileset, variantAt, within } from "./render";
 
 export interface Dressing {
@@ -59,6 +59,34 @@ function cropTile(crop: Crop, s: Stage, x: number, y: number): { tile: string; c
   return { tile: s === "ready" ? `crop_${crop}` : `crop_${crop}_growing`, covers: crop === "flowers" };
 }
 
+/** A field tile: bare, tilled or overgrown ground, or its crop at the stage it has
+ * reached, with a straw tint for stubble, a brown one for a crop spoiling, a pale one for a
+ * crop gone dry, and weeds showing through when they are thick. */
+function paintFieldTile(ctx: CanvasRenderingContext2D, tiles: Tileset, f: FieldView, t: FieldTileView, x: number, y: number): void {
+  const s = tiles.size;
+  const tint = (colour: string): void => {
+    ctx.fillStyle = colour;
+    ctx.fillRect(x * s, y * s, s, s);
+  };
+  if (t.stage === "Fallow") {
+    if (t.weeds >= 8) tiles.draw(ctx, "tall_grass_full", x, y);
+    else {
+      tiles.draw(ctx, "soil", x, y);
+      if (t.weeds >= 3) tiles.draw(ctx, "decor_fern", x, y);
+    }
+    return;
+  }
+  const stage: Stage = t.stage === "Sprouting" ? "sprout" : t.stage === "Growing" ? "growing" : t.stage === "Ripe" || t.stage === "Spoiling" ? "ready" : "bare";
+  const c = cropTile(f.crop, stage, x, y);
+  if (!c?.covers) tiles.draw(ctx, "soil", x, y);
+  if (c) tiles.draw(ctx, c.tile, x, y);
+  if (t.stage === "Stubble") tint("rgba(196, 160, 90, 0.45)");
+  if (t.stage === "Spoiling") tint("rgba(80, 52, 24, 0.45)");
+  const planted = t.stage === "Sown" || t.stage === "Sprouting" || t.stage === "Growing";
+  if (planted && t.water === 0) tint("rgba(214, 186, 110, 0.35)");
+  if (t.weeds >= 5 && t.stage !== "Stubble") tiles.draw(ctx, "decor_fern", x, y);
+}
+
 const WATER = "water";
 const isPath = (n: string | undefined): boolean => n === "path" || n === "weedy_path" || n === "overgrown_path" || n === "track" || n === "cowpath";
 
@@ -72,6 +100,7 @@ export function paintDressing(
   dressing: Dressing,
   calendar: Calendar | null,
   region: TileRect | null = null,
+  fields: FieldView[] | null = null,
 ): void {
   const w = place.width;
   const h = place.height;
@@ -92,14 +121,24 @@ export function paintDressing(
       if (waterAt(x, y + 1)) tiles.draw(ctx, "bridge_rail_s", x, y);
     }
   }
-  // Crops.
-  const s = calendar ? stage(calendar) : "growing";
-  for (const p of dressing.plots) {
-    for (let y = p.rect.y; y < p.rect.y + p.rect.h; y++) {
-      for (let x = p.rect.x; x < p.rect.x + p.rect.w; x++) {
-        const c = cropTile(p.crop, s, x, y);
-        if (!c?.covers) tiles.draw(ctx, "soil", x, y);
-        if (c) tiles.draw(ctx, c.tile, x, y);
+  // Crops: each tile as the sim has it, or by the calendar when there is no sim state.
+  if (fields) {
+    for (const f of fields) {
+      f.tiles.forEach((t, i) => {
+        const x = f.rect.x + (i % f.rect.w);
+        const y = f.rect.y + Math.floor(i / f.rect.w);
+        if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1) paintFieldTile(ctx, tiles, f, t, x, y);
+      });
+    }
+  } else {
+    const s = calendar ? stage(calendar) : "growing";
+    for (const p of dressing.plots) {
+      for (let y = p.rect.y; y < p.rect.y + p.rect.h; y++) {
+        for (let x = p.rect.x; x < p.rect.x + p.rect.w; x++) {
+          const c = cropTile(p.crop, s, x, y);
+          if (!c?.covers) tiles.draw(ctx, "soil", x, y);
+          if (c) tiles.draw(ctx, c.tile, x, y);
+        }
       }
     }
   }

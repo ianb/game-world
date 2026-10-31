@@ -2,7 +2,7 @@
 // a plane, walls are raised from it, and objects, trees and villagers are upright LPC sprites
 // that turn to face the camera. Light follows the clock. Loaded only when switched on.
 import * as THREE from "three";
-import type { AnimalView, Calendar, ClockView, Emitted, ObjectView, PlaceView, Rect, RoofView, RoomView, Sim, TrainView, VillagerView, Walling, WorldView } from "@game-world/protocol";
+import type { AnimalView, Calendar, ClockView, Emitted, FieldView, ObjectView, PlaceView, Rect, RoofView, RoomView, Sim, TrainView, VillagerView, Walling, WorldView } from "@game-world/protocol";
 import { type Dressing, SOUTHERN_WOODS, dressingFor, paintDressing, treeAt } from "./dressing";
 import { type Facing, type Materials, type Tileset, groundNames, isTreeCell, materials, objectTileAt, paintGround, trainCars } from "./render";
 
@@ -596,8 +596,13 @@ export class Diorama {
 
   private repaintGround(sim: Sim): void {
     if (!this.place) return;
+    const id = this.place.id;
+    this.fields = sim.fields().filter((f) => f.place === id);
     this.paint(this.place, groundNames(sim, this.place));
   }
+
+  /** The fields of the place shown, as of the last repaint. */
+  private fields: FieldView[] | null = null;
 
   private paint(place: PlaceView, names: string[]): void {
     const g = this.ground;
@@ -607,7 +612,7 @@ export class Diorama {
     ctx.imageSmoothingEnabled = false;
     const mat = this.mat ?? materials(place, this.o.rooms, this.o.roofs);
     paintGround(ctx, this.o.tiles, place, names, true, mat);
-    if (this.dressing) paintDressing(ctx, this.o.tiles, place, names, mat, this.dressing, this.calendar);
+    if (this.dressing) paintDressing(ctx, this.o.tiles, place, names, mat, this.dressing, this.calendar, null, this.fields);
     // Things that lie flat, like beds, are part of the floor.
     for (const o of this.o.objects) {
       if (o.place !== place.id || !LYING.has(o.kind)) continue;

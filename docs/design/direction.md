@@ -310,3 +310,67 @@ without building one now.
    would rather see (a mill, a bridge, something contested)?
 4. Agreed that new modules are code written at authoring time, and run time
    only attaches them?
+
+## Revised after Ian's answer (2026-10-30)
+
+Ian's answer, verbatim:
+
+> It was supposed to be more varied than just warmth too, if that's the only
+> real emotion. Mostly people could have their own internal feeling
+> vocabularies, only the interactions have to be more normalized. One person
+> might keep track of resentments, another person might keep track of
+> flirting and attraction, another might keep track of intimacy, etc. A
+> person might keep track of 2 things or something, but we don't have to
+> fill out every attribute for every person; the differences are about
+> different focuses and encourage diversity.
+>
+> Also the emotions are often not with clear units. E.g., Tom mood 0->2...
+> 0 to 2 out of what? What kind of mood? Happiness? Mood is a category of
+> attributes.
+>
+> I think for disasters we should mostly treat them as hand-coded (by you)
+> events that affect things. They might use randomness, but like a flood
+> doesn't place water anywhere, it places it by the stream.
+>
+> The character probably has their own flags that basically dispatch to
+> known modules. Maybe there's a core set, like grieving is a module that is
+> invoked if there's something that causes grieving.
+>
+> Let's not worry about intention and contention right now, just change.
+> Maybe an easy place is farming, where the farmer actually affects their
+> land, and the land changes automatically. Of course we should probably
+> have accelerated growth, waiting months for stuff to resolve is too long.
+
+What changes in the plan:
+
+- **Intentions, contention and group decisions (old steps 4 and 5) are
+  set aside.** The next work is change in the world.
+- **First: living fields.** Each field tile is state: tilled or not, what
+  is sown, how far it has grown, water, weeds, fertility. Growth, drying,
+  weeds and rot happen daily on their own, and fast (a crop ripens in one to
+  two weeks, not a season). Farmers till, sow, water, weed and harvest tile
+  by tile, and the harvest is goods that go into the economy. A neglected
+  field goes to weeds and back to grass; a tended one shows it. Gardens
+  nobody tends show that too.
+- **Disasters are hand-written events,** each with its own logic for where
+  it lands: a flood rises along the stream, a drought dries the fields and
+  the pond, a storm fells trees at the wood's edge. They may roll dice, but
+  within their own geography. The with/without harness from step 2 still
+  applies. Drought comes first because it acts on the fields.
+- **Feelings become per-person vocabularies over a normalized interaction
+  layer.** Interactions (gestures, help, slights, gifts, disclosures) emit a
+  small fixed set of normalized signals. Each person keeps only the feelings
+  their character cares about, two or three each, from a shared library of
+  feeling kinds (resentment, attraction, intimacy, gratitude, trust,
+  rivalry, fear, and so on), each with named levels instead of bare numbers
+  ("sore, 2 of 4: took ale without paying, Tuesday"). Mood stops being one
+  number; it is a category with named members (contentment from the body,
+  loneliness, stress), each with its own scale. Every level change is an
+  event with a cause, which is the legibility half of step 1.
+- **Modules are dispatched by the character's own flags,** with a core set
+  the shared rules invoke when something happens (grieving when someone they
+  care about dies or leaves). Same exhaustive-enum shape as before.
+- **Order now:** living fields; drought; feeling vocabularies and the norms
+  views (old step 1); the changeable map and find-by-role (old step 2) as
+  disasters that move things need it; trees and building condition (old
+  step 3).

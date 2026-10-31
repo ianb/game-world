@@ -162,6 +162,11 @@ impl Sim {
         to_js(&sim::protocol::train_view(self.history.sim()))
     }
 
+    /// Every field tile as `FieldView[]`, plot by plot.
+    pub fn fields(&self) -> Result<JsValue, JsError> {
+        to_js(&sim::protocol::field_views(self.history.sim()))
+    }
+
     /// The trains still to come this week as `TrainTimeView[]`, in order.
     pub fn upcoming_trains(&self) -> Result<JsValue, JsError> {
         to_js(&sim::protocol::upcoming_train_views(self.history.sim(), 7))

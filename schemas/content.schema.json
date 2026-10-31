@@ -507,11 +507,27 @@
         "crop": {
           "$ref": "#/$defs/Crop"
         },
+        "household": {
+          "description": "The building whose people keep this plot as their garden, in turns, in the early\nevening.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
         "id": {
           "type": "string"
         },
         "rect": {
           "$ref": "#/$defs/Rect"
+        },
+        "store": {
+          "description": "The object the harvest goes into. Without one, what is grown is eaten at home.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
         }
       },
       "required": [

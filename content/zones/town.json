@@ -2886,6 +2886,30 @@
       {
         "good": "eggs",
         "price": 1
+      },
+      {
+        "good": "wheat",
+        "price": 1
+      },
+      {
+        "good": "corn",
+        "price": 1
+      },
+      {
+        "good": "potatoes",
+        "price": 1
+      },
+      {
+        "good": "cabbages",
+        "price": 1
+      },
+      {
+        "good": "carrots",
+        "price": 1
+      },
+      {
+        "good": "beans",
+        "price": 1
       }
     ]
   },
@@ -2898,7 +2922,8 @@
         "w": 15,
         "h": 7
       },
-      "crop": "wheat"
+      "crop": "wheat",
+      "store": "sacks_loft_hollins"
     },
     {
       "id": "potatoes_hollins",
@@ -2908,7 +2933,8 @@
         "w": 14,
         "h": 4
       },
-      "crop": "potatoes"
+      "crop": "potatoes",
+      "store": "sacks_loft_hollins"
     },
     {
       "id": "beans_hollins",
@@ -2918,7 +2944,8 @@
         "w": 14,
         "h": 2
       },
-      "crop": "beans"
+      "crop": "beans",
+      "store": "sacks_loft_hollins"
     },
     {
       "id": "cabbages_ashby",
@@ -2928,7 +2955,8 @@
         "w": 13,
         "h": 4
       },
-      "crop": "cabbages"
+      "crop": "cabbages",
+      "store": "sacks_ashby"
     },
     {
       "id": "carrots_ashby",
@@ -2938,7 +2966,8 @@
         "w": 13,
         "h": 3
       },
-      "crop": "carrots"
+      "crop": "carrots",
+      "store": "sacks_ashby"
     },
     {
       "id": "flowers_manor_2",
@@ -2948,7 +2977,8 @@
         "w": 6,
         "h": 3
       },
-      "crop": "flowers"
+      "crop": "flowers",
+      "household": "manor"
     },
     {
       "id": "carrots_manor",
@@ -2958,7 +2988,8 @@
         "w": 14,
         "h": 2
       },
-      "crop": "carrots"
+      "crop": "carrots",
+      "household": "manor"
     },
     {
       "id": "garden_cottage",
@@ -2968,7 +2999,8 @@
         "w": 5,
         "h": 2
       },
-      "crop": "cabbages"
+      "crop": "cabbages",
+      "household": "cottage"
     },
     {
       "id": "garden_sexton",
@@ -2978,7 +3010,8 @@
         "w": 5,
         "h": 2
       },
-      "crop": "carrots"
+      "crop": "carrots",
+      "household": "sexton"
     },
     {
       "id": "garden_dory",
@@ -2988,7 +3021,8 @@
         "w": 5,
         "h": 2
       },
-      "crop": "cabbages"
+      "crop": "cabbages",
+      "household": "dory"
     },
     {
       "id": "garden_cooper",
@@ -2998,7 +3032,8 @@
         "w": 5,
         "h": 2
       },
-      "crop": "carrots"
+      "crop": "carrots",
+      "household": "cooper"
     },
     {
       "id": "garden_lodge",
@@ -3008,7 +3043,8 @@
         "w": 5,
         "h": 2
       },
-      "crop": "potatoes"
+      "crop": "potatoes",
+      "household": "lodge"
     },
     {
       "id": "garden_woodcutter",
@@ -3018,7 +3054,8 @@
         "w": 5,
         "h": 2
       },
-      "crop": "flowers"
+      "crop": "flowers",
+      "household": "woodcutter"
     },
     {
       "id": "garden_mill",
@@ -3028,7 +3065,8 @@
         "w": 5,
         "h": 2
       },
-      "crop": "carrots"
+      "crop": "carrots",
+      "household": "mill"
     },
     {
       "id": "garden_hollins",
@@ -3038,7 +3076,8 @@
         "w": 5,
         "h": 2
       },
-      "crop": "potatoes"
+      "crop": "potatoes",
+      "household": "hollins"
     },
     {
       "id": "garden_ashby",
@@ -3048,7 +3087,8 @@
         "w": 5,
         "h": 2
       },
-      "crop": "beans"
+      "crop": "beans",
+      "household": "ashby"
     },
     {
       "id": "corn_ashby_west",
@@ -3058,7 +3098,8 @@
         "w": 6,
         "h": 8
       },
-      "crop": "corn"
+      "crop": "corn",
+      "store": "sacks_ashby"
     },
     {
       "id": "corn_ashby_east",
@@ -3068,7 +3109,8 @@
         "w": 4,
         "h": 8
       },
-      "crop": "corn"
+      "crop": "corn",
+      "store": "sacks_ashby"
     },
     {
       "id": "flowers_manor_1",
@@ -3078,7 +3120,8 @@
         "w": 5,
         "h": 3
       },
-      "crop": "flowers"
+      "crop": "flowers",
+      "household": "manor"
     }
   ]
 }

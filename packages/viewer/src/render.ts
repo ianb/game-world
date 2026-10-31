@@ -2,7 +2,7 @@
 // in public/tiles.png (built by scripts/make-tileset.mjs). Pixel art at native size, scaled
 // by CSS at an integer factor. The text views stay the source of truth for tests; this is
 // for eyes.
-import type { AnimalView, Cell, ObjectView, PlaceView, RoofView, Sim, Surface, TrainView, VillagerView, Walling, WorldView } from "@game-world/protocol";
+import type { AnimalView, Cell, FieldView, ObjectView, PlaceView, RoofView, Sim, Surface, TrainView, VillagerView, Walling, WorldView } from "@game-world/protocol";
 import { type Dressing, SOUTHERN_WOODS, dressingFor, paintDressing, treeAt } from "./dressing";
 
 interface AtlasTile {
@@ -537,7 +537,7 @@ export class PlaceCanvas {
   private readonly gaits = new Map<string, Gait>();
   private readonly chunks = new Map<string, Chunk>();
   /** The ground's tile names and the still sprites, refreshed every `LAYER_MS`. */
-  private still: { names: string[]; sprites: Still[]; at: number } | null = null;
+  private still: { names: string[]; sprites: Still[]; fields: FieldView[]; at: number } | null = null;
   private repaints = 0;
 
   constructor(
@@ -605,7 +605,7 @@ export class PlaceCanvas {
 
   /** The ground's names and the trees and furniture, worked out again when they are older
    * than `LAYER_MS`, which marks every chunk painted before then as stale. */
-  private stillLayer(sim: Sim): { names: string[]; sprites: Still[]; at: number } {
+  private stillLayer(sim: Sim): { names: string[]; sprites: Still[]; fields: FieldView[]; at: number } {
     const now = performance.now();
     if (this.still && now - this.still.at < LAYER_MS) return this.still;
     const { tiles, place } = this;
@@ -636,7 +636,8 @@ export class PlaceCanvas {
     }
     // Back to front, so whatever is lower on the map is in front.
     sprites.sort((a, b) => a.y - b.y);
-    this.still = { names, sprites, at: now };
+    const fields = sim.fields().filter((f) => f.place === place.id);
+    this.still = { names, sprites, fields, at: now };
     return this.still;
   }
 
@@ -664,7 +665,7 @@ export class PlaceCanvas {
     const region = { x0: cx * CHUNK - m, y0: cy * CHUNK - m, x1: cx * CHUNK + tw + m, y1: cy * CHUNK + th + m };
     try {
       paintGround(ctx, tiles, place, layer.names, false, this.mat, region);
-      paintDressing(ctx, tiles, place, layer.names, this.mat, this.dressing, sim.clock().calendar, region);
+      paintDressing(ctx, tiles, place, layer.names, this.mat, this.dressing, sim.clock().calendar, region, layer.fields);
       for (const sp of layer.sprites) {
         if (sp.x1 > clip.x0 && sp.x0 < clip.x1 && sp.y1 > clip.y0 && sp.y0 < clip.y1) sp.draw(ctx);
       }

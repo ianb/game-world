@@ -1,7 +1,7 @@
 //! Dan, Ashby's hired hand, new to the valley. Introduces himself to everyone he has not met.
 //! Description and design notes: `docs/characters/dan.md`.
 use crate::Character;
-use crate::toolbox::{activity_of, chat, villager, work_area};
+use crate::toolbox::{activity_of, chat, tend_fields, villager};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Trigger};
@@ -30,7 +30,7 @@ impl Character for Dan {
     fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {
         Some(match trigger {
             Trigger::Arrived | Trigger::Waited if activity_of(ctx, "dan") == "farm" => {
-                work_area(ctx, "dan", trigger, "ashby-fields", "farm", 40, 2, rng)
+                tend_fields(ctx, "dan", trigger, "ashby-fields", "farm", rng)
             }
             // Anyone he has not met yet: he stops and gives his name, or at least a word.
             Trigger::Encounter { other } | Trigger::Passing { other }

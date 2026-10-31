@@ -416,3 +416,48 @@ fn transcript_line<C: CharacterSet>(sim: &Sim<C>, e: &Emitted) -> Option<(u32, S
         _ => return None,
     })
 }
+
+/// Every field: tiles at each stage, then mean water, weeds and fertility on their scales.
+#[must_use]
+pub fn fields<C: CharacterSet>(sim: &Sim<C>) -> String {
+    use crate::protocol::FieldStage as S;
+    use std::fmt::Write as _;
+    let stages = [
+        (S::Fallow, "fallow"),
+        (S::Tilled, "tilled"),
+        (S::Sown, "sown"),
+        (S::Sprouting, "sprouting"),
+        (S::Growing, "growing"),
+        (S::Ripe, "ripe"),
+        (S::Spoiling, "spoiling"),
+        (S::Stubble, "stubble"),
+    ];
+    let mut out = format!("{}\n", sim.tick().calendar());
+    for p in &sim.state().fields.plots {
+        let n = u32::try_from(p.tiles.len().max(1)).unwrap_or(1);
+        let mean = |f: fn(&crate::fields::FieldTile) -> u8| {
+            p.tiles.iter().map(|t| u32::from(f(t))).sum::<u32>() / n
+        };
+        let counts: Vec<String> = stages
+            .iter()
+            .filter_map(|(s, name)| {
+                let c = p.tiles.iter().filter(|t| t.stage == *s).count();
+                (c > 0).then(|| format!("{c} {name}"))
+            })
+            .collect();
+        let _ = writeln!(
+            out,
+            "{:<18} {:<9} {:<44} water {}/{} weeds {}/{} soil {}/{}",
+            p.id,
+            format!("{:?}", p.crop).to_lowercase(),
+            counts.join(", "),
+            mean(|t| t.water),
+            crate::fields::WATER_FULL,
+            mean(|t| t.weeds),
+            crate::fields::WEEDS_MAX,
+            mean(|t| t.fertility),
+            crate::fields::FERTILITY_MAX,
+        );
+    }
+    out
+}

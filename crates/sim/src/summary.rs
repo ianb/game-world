@@ -301,6 +301,10 @@ impl Summarizer {
             Emitted::TrainPassed { .. }
             | Emitted::TrainArrived { .. }
             | Emitted::TrainLeft { .. } => self.train(tick, e),
+            Emitted::Rained { .. }
+            | Emitted::CropsRipened { .. }
+            | Emitted::CropsSpoiled { .. }
+            | Emitted::Tended { .. } => self.fields(tick, e),
             Emitted::Stuck {
                 who, reason, cause, ..
             } => {
@@ -312,6 +316,48 @@ impl Summarizer {
                     tick,
                     *who,
                     SummaryKind::Stuck,
+                    text,
+                    Some(cause.clone()),
+                    key,
+                );
+            }
+            _ => {}
+        }
+    }
+
+    /// Rain, crops ripening or spoiling, and harvests brought in.
+    fn fields(&mut self, tick: Tick, e: &Emitted) {
+        let plot_name = |p: &str| p.replace('_', " ");
+        match e {
+            Emitted::Rained { .. } => {
+                self.world_line(
+                    tick,
+                    SummaryKind::Weather,
+                    "rain in the night".into(),
+                    "rain".into(),
+                );
+            }
+            Emitted::CropsRipened { plot, tiles, .. } => {
+                let text = format!("{} ripening ({tiles} tiles)", plot_name(plot));
+                self.world_line(tick, SummaryKind::Fields, text, format!("ripe:{plot}"));
+            }
+            Emitted::CropsSpoiled { plot, tiles, .. } => {
+                let text = format!("{tiles} tiles of {} spoiled unharvested", plot_name(plot));
+                self.world_line(tick, SummaryKind::Fields, text, format!("spoiled:{plot}"));
+            }
+            Emitted::Tended {
+                who,
+                stored: Some(g),
+                cause,
+                ..
+            } => {
+                let name = self.name(*who).to_string();
+                let key = format!("harvest:{}:{}", name.to_lowercase(), g.good);
+                let text = format!("{name} brought in {}", g.good);
+                self.line(
+                    tick,
+                    *who,
+                    SummaryKind::Fields,
                     text,
                     Some(cause.clone()),
                     key,

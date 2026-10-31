@@ -2,7 +2,7 @@
 // tools print behind a toggle (and always in `window.__scene()` for the smoke test).
 import "@fontsource-variable/nunito";
 import * as wasm from "@game-world/sim-wasm";
-import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type ClockView, type Emitted, type DaySummary, type MindView, type ObjectView, type Sim, type StockView, type SummaryItem, type Topic, type TrainTimeView, type VillagerView } from "@game-world/protocol";
+import { LocalSim, TICKS_PER_MINUTE, at, type Cause, type ClockView, type Emitted, type DaySummary, type MindView, type ObjectView, type Sim, type StockView, type SummaryItem, type Topic, type TrainTimeView, type VillagerView, type FieldView, type FieldTileView } from "@game-world/protocol";
 import { PlaceCanvas, Tileset, legend, objectTile, trainCars, type View } from "./render";
 import { Words, type TopicDef, type Word } from "./words";
 import type { Diorama } from "./diorama";
@@ -351,6 +351,28 @@ function describeObject(o: ObjectView, villagers: VillagerView[], stock: StockVi
   };
 }
 
+/** A named level for a value on a 0..max scale: the first name for 0, the last for max,
+ * the rest spread between. */
+function level(value: number, max: number, names: string[]): string {
+  if (value <= 0) return names[0] ?? "";
+  if (value >= max) return names[names.length - 1] ?? "";
+  const inner = names.length - 2;
+  return names[1 + Math.min(inner - 1, Math.floor(((value - 1) / Math.max(1, max - 1)) * inner))] ?? "";
+}
+
+/** The field tile at a spot, from the fields as they were at the current tick. */
+let fieldsAt: { tick: number; fields: FieldView[] } | null = null;
+function fieldAt(place: number, x: number, y: number): { plot: FieldView; tile: FieldTileView } | null {
+  if (!fieldsAt || fieldsAt.tick !== sim.tick) fieldsAt = { tick: sim.tick, fields: sim.fields() };
+  for (const plot of fieldsAt.fields) {
+    const r = plot.rect;
+    if (plot.place !== place || x < r.x || y < r.y || x >= r.x + r.w || y >= r.y + r.h) continue;
+    const tile = plot.tiles[(y - r.y) * r.w + (x - r.x)];
+    if (tile) return { plot, tile };
+  }
+  return null;
+}
+
 function describeTile(f: { place: number; x: number; y: number }, villagers: VillagerView[], stock: StockView[]): Card {
   const place = world.places.find((p) => p.id === f.place);
   if (!place) return { picture: null, title: "?", sub: "", blocks: [] };
@@ -370,6 +392,22 @@ function describeTile(f: { place: number; x: number; y: number }, villagers: Vil
         ...(surface ? [{ label: "wear", value: String(t.wear[i] ?? 0) }, { label: "growth", value: String(t.growth[i] ?? 0) }] : []),
       ],
     });
+  }
+  const field = fieldAt(f.place, f.x, f.y);
+  if (field) {
+    const { plot, tile } = field;
+    ground = `${plot.crop}, ${words(tile.stage)}`;
+    blocks.push(head(title(plot.id)));
+    blocks.push({
+      kind: "stats",
+      items: [
+        { label: "grown", value: `${Math.min(tile.growth, plot.grow)} of ${plot.grow}` },
+        { label: "water", value: `${level(tile.water, plot.water_full, ["dry", "drying", "damp", "wet"])} (${tile.water} of ${plot.water_full})` },
+        { label: "weeds", value: `${level(tile.weeds, plot.weeds_max, ["clean", "a few", "weedy", "choked"])} (${tile.weeds} of ${plot.weeds_max})` },
+        { label: "soil", value: `${level(tile.fertility, plot.fertility_max, ["spent", "poor", "fair", "rich"])} (${tile.fertility} of ${plot.fertility_max})` },
+      ],
+    });
+    blocks.push(note("A watered, weeded tile grows 2 a day, a weedy one 1, a dry one wilts back 1. Ripe crops spoil after 5 days."));
   }
   for (const o of world.objects) {
     if (o.place !== f.place || o.pos.x !== f.x || o.pos.y !== f.y) continue;

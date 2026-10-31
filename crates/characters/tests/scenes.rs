@@ -545,3 +545,79 @@ fn only_money_to_spare_sends_someone_shopping() {
     assert!(plans_trip(COMFORT_COINS + 30));
     assert!(!plans_trip(COMFORT_COINS));
 }
+
+/// Will, at his farm work with the wheat ripe, harvests it tile by tile, and the grain
+/// goes into the Hollins sacks.
+#[test]
+fn will_brings_in_ripe_wheat() {
+    use sim::protocol::{FieldStage, FieldWork};
+    let mut s = Scene::new();
+    s.run_until(at(0, 7, 0));
+    {
+        let plot = s
+            .sim
+            .state_mut()
+            .fields
+            .plots
+            .iter_mut()
+            .find(|p| p.id == "wheat_hollins")
+            .expect("wheat field");
+        for t in &mut plot.tiles {
+            t.stage = FieldStage::Ripe;
+            t.growth = 24;
+        }
+    }
+    let sacks = s.sim.ctx().object_id("sacks_loft_hollins").unwrap();
+    let before = s.sim.ctx().stock(sacks, "wheat");
+    let events = s.run_until(at(0, 16, 0)).to_vec();
+    let will = s.id("will");
+    let cut = events
+        .iter()
+        .filter(
+            |e| matches!(e, Emitted::Tended { who, work: FieldWork::Harvest, .. } if *who == will),
+        )
+        .count();
+    assert!(cut >= 4, "Will cut {cut} tiles");
+    assert!(
+        s.sim.ctx().stock(sacks, "wheat") > before,
+        "grain went into the sacks"
+    );
+}
+
+/// A household's garden is kept by one of them each evening, in turn.
+#[test]
+fn a_household_takes_turns_in_its_garden() {
+    let mut s = Scene::new();
+    let household = ["penn", "rosa", "benny"];
+    let ids: Vec<_> = household.iter().map(|h| s.id(h)).collect();
+    let mut turns = Vec::new();
+    // Day 0's plans come out with the first step.
+    s.run_until(at(0, 1, 0));
+    for day in 1..4 {
+        let events = s.run_until(at(day, 1, 0)).to_vec();
+        let gardeners: Vec<_> = events
+            .iter()
+            .filter_map(|e| match e {
+                Emitted::Planned { who, items, .. }
+                    if ids.contains(who)
+                        && items
+                            .iter()
+                            .any(|i| i.activity.as_deref() == Some("garden")) =>
+                {
+                    Some(*who)
+                }
+                _ => None,
+            })
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        assert_eq!(
+            gardeners.len(),
+            1,
+            "one gardener on day {day}: {gardeners:?}"
+        );
+        turns.push(gardeners[0]);
+    }
+    turns.dedup();
+    assert_eq!(turns.len(), 3, "a different one each day");
+}

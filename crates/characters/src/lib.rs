@@ -228,6 +228,7 @@ impl CharacterSet for Town {
         };
         // Shared errands that go into everyone's day.
         toolbox::shopping_trip(ctx, who, &mut plan);
+        toolbox::garden_turn(ctx, who, &mut plan);
         plan
     }
 

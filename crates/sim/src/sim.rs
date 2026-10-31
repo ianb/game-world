@@ -35,6 +35,7 @@ const TRIP_LONG_GRASS: u32 = 40;
 
 mod animals;
 mod conversation;
+mod fields;
 mod railway;
 
 /// Everything that determines the future. Serializable in full; hashed by subsystem.
@@ -63,6 +64,8 @@ pub struct SimState<C> {
     /// Wear and growth on every outdoor tile: cowpaths form where villagers walk, grass
     /// and weeds grow where they do not.
     pub terrain: Terrain,
+    /// Every field tile: what is sown, how far it has grown, water, weeds and fertility.
+    pub fields: crate::fields::Fields,
     pub day_rollovers: u32,
     pub markers: Vec<(Tick, String)>,
     /// Recent events worth knowing, with who could perceive them.
@@ -189,6 +192,7 @@ impl<C: CharacterSet> Sim<C> {
                 conversations: BTreeMap::new(),
                 next_conversation: 0,
                 terrain: Terrain::new(&world),
+                fields: crate::fields::Fields::default(),
                 day_rollovers: 0,
                 markers: Vec::new(),
                 record: Record::default(),
@@ -207,6 +211,7 @@ impl<C: CharacterSet> Sim<C> {
         };
         sim.flocks = sim.resolve_flocks();
         sim.place_animals();
+        sim.state.fields = sim.lay_out_fields();
         let mut out = Vec::new();
         sim.plan_everyone(&mut out);
         sim.state.pending = out;
@@ -276,6 +281,7 @@ impl<C: CharacterSet> Sim<C> {
             nav: &self.nav,
             villagers: &self.state.villagers,
             terrain: &self.state.terrain,
+            fields: &self.state.fields,
             stock: &self.state.stock,
             record: &self.state.record,
             odds: &self.state.odds,
@@ -340,6 +346,7 @@ impl<C: CharacterSet> Sim<C> {
                 self.state.day_rollovers += 1;
                 self.state.record.forget(tick);
                 self.state.terrain.new_day(&self.world);
+                self.fields_new_day(out);
                 self.state
                     .queue
                     .schedule(tick.plus(TICKS_PER_DAY), Event::DayRollover);
@@ -554,6 +561,7 @@ impl<C: CharacterSet> Sim<C> {
                     nav: &self.nav,
                     villagers: &self.state.villagers,
                     terrain: &self.state.terrain,
+                    fields: &self.state.fields,
                     stock: &self.state.stock,
                     record: &self.state.record,
                     odds: &self.state.odds,
@@ -648,6 +656,7 @@ impl<C: CharacterSet> Sim<C> {
                 nav: &self.nav,
                 villagers: &self.state.villagers,
                 terrain: &self.state.terrain,
+                fields: &self.state.fields,
                 stock: &self.state.stock,
                 record: &self.state.record,
                 odds: &self.state.odds,
@@ -793,6 +802,7 @@ impl<C: CharacterSet> Sim<C> {
                     cause: self.cause.clone(),
                 });
             }
+            Command::Tend { work } => self.tend(who, work, out),
             Command::Greet { with } => {
                 if with == who || with.index() >= self.state.villagers.len() {
                     return;

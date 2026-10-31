@@ -6,6 +6,7 @@ import type { VillagerView } from "./generated/VillagerView";
 import type { AnimalView } from "./generated/AnimalView";
 import type { TrainView } from "./generated/TrainView";
 import type { TrainTimeView } from "./generated/TrainTimeView";
+import type { FieldView } from "./generated/FieldView";
 import type { WorldView } from "./generated/WorldView";
 import type { ClockView } from "./generated/ClockView";
 import type { TerrainView } from "./generated/TerrainView";
@@ -52,6 +53,9 @@ export type { AnimalView } from "./generated/AnimalView";
 export type { AnimalKind } from "./generated/AnimalKind";
 export type { TrainView } from "./generated/TrainView";
 export type { TrainTimeView } from "./generated/TrainTimeView";
+export type { FieldView } from "./generated/FieldView";
+export type { FieldTileView } from "./generated/FieldTileView";
+export type { FieldStage } from "./generated/FieldStage";
 export type { RailView } from "./generated/RailView";
 export type { PlotView } from "./generated/PlotView";
 export type { Crop } from "./generated/Crop";
@@ -64,7 +68,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 24;
+export const PROTOCOL_VERSION = 25;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;
@@ -94,6 +98,7 @@ export interface WasmSim {
   animals(): unknown;
   train(): unknown;
   upcoming_trains(): unknown;
+  fields(): unknown;
   terrain(id: string): unknown;
   economy(): unknown;
   clock(): unknown;
@@ -140,6 +145,8 @@ export interface Sim {
   train(): TrainView | null;
   /** The trains still to come this week, one on the track now first. */
   upcomingTrains(): TrainTimeView[];
+  /** Every field tile, plot by plot. */
+  fields(): FieldView[];
   /** The living ground of an outdoor place. Throws for an indoor or unknown place. */
   terrain(id: string): TerrainView;
   /** Goods on objects. */
@@ -253,6 +260,9 @@ export class LocalSim implements Sim {
   }
   upcomingTrains(): TrainTimeView[] {
     return this.guard(() => this.inner.upcoming_trains() as TrainTimeView[]);
+  }
+  fields(): FieldView[] {
+    return this.guard(() => this.inner.fields() as FieldView[]);
   }
   terrain(id: string): TerrainView {
     return this.guard(() => this.inner.terrain(id) as TerrainView);

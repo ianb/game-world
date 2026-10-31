@@ -7,6 +7,7 @@
 pub mod animals;
 pub mod brain;
 pub mod event;
+pub mod fields;
 pub mod hash;
 pub mod history;
 pub mod ids;

@@ -1,7 +1,7 @@
 //! Jory Hollins, Will's son. Sweet on Lottie: calls on her on Sundays and always finds something nice to say.
 //! Description and design notes: `docs/characters/jory.md`.
 use crate::Character;
-use crate::toolbox::{Plan, activity_of, chat, go, seek, villager, weekday, work_area};
+use crate::toolbox::{Plan, activity_of, chat, go, seek, tend_fields, villager, weekday};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
@@ -37,7 +37,7 @@ impl Character for Jory {
     fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {
         Some(match trigger {
             Trigger::Arrived | Trigger::Waited if activity_of(ctx, "jory") == "farm" => {
-                work_area(ctx, "jory", trigger, "hollins-fields", "farm", 40, 2, rng)
+                tend_fields(ctx, "jory", trigger, "hollins-fields", "farm", rng)
             }
             // On Sunday he goes to find her, wherever she is this side of the river.
             Trigger::Arrived if activity_of(ctx, "jory") == "call-on-lottie" => {

@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 24;
+pub const PROTOCOL_VERSION: u32 = 25;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -222,6 +222,33 @@ pub enum Emitted {
     /// A train went through without stopping.
     TrainPassed {
         tick: Tick,
+    },
+    /// It rained in the night: every field is soaked.
+    Rained {
+        tick: Tick,
+    },
+    /// Overnight, `tiles` of a plot's crop ripened, or spoiled past saving.
+    CropsRipened {
+        tick: Tick,
+        plot: String,
+        tiles: u16,
+    },
+    CropsSpoiled {
+        tick: Tick,
+        plot: String,
+        tiles: u16,
+    },
+    /// `who` worked one tile of a field. A harvest that made up a whole unit of the good
+    /// says what went into the store.
+    Tended {
+        tick: Tick,
+        who: VillagerId,
+        plot: String,
+        x: u16,
+        y: u16,
+        work: FieldWork,
+        stored: Option<GoodsLine>,
+        cause: Cause,
     },
     /// What `who` told themselves about something.
     Thought {
@@ -474,6 +501,10 @@ pub enum SummaryKind {
     Railway,
     /// Animals: eggs laid.
     Animals,
+    /// Fields: harvests, crops ripening and spoiling.
+    Fields,
+    /// Rain.
+    Weather,
     /// Everything else worth a count: greetings, weeding.
     Other,
 }
@@ -673,6 +704,10 @@ impl Emitted {
             | Emitted::TrainArrived { tick, .. }
             | Emitted::TrainLeft { tick, .. }
             | Emitted::TrainPassed { tick }
+            | Emitted::Rained { tick }
+            | Emitted::CropsRipened { tick, .. }
+            | Emitted::CropsSpoiled { tick, .. }
+            | Emitted::Tended { tick, .. }
             | Emitted::Thought { tick, .. } => *tick,
         }
     }
@@ -699,6 +734,7 @@ impl Emitted {
             | Emitted::ConversationEnded { who, .. }
             | Emitted::Mishap { who, .. }
             | Emitted::Consigned { who, .. }
+            | Emitted::Tended { who, .. }
             | Emitted::Thought { who, .. } => Some(*who),
             _ => None,
         }
@@ -772,6 +808,64 @@ pub struct RailView {
     pub place: PlaceId,
     pub tiles: Vec<Pos>,
     pub stop: u16,
+}
+
+/// Where a field tile is in its year: fallow ground, tilled, sown, growing, ripe, spoiling
+/// if left too long, and stubble after the harvest.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum FieldStage {
+    Fallow,
+    Tilled,
+    Sown,
+    Sprouting,
+    Growing,
+    Ripe,
+    Spoiling,
+    Stubble,
+}
+
+/// A farmer's work on one field tile.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum FieldWork {
+    Till,
+    Sow,
+    Water,
+    Weed,
+    Harvest,
+}
+
+/// One field tile now. Water runs 0 (dry) to `water_full`, weeds 0 to `weeds_max`,
+/// fertility 0 to `fertility_max`, and growth 0 to the plot's `grow` (ripe).
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct FieldTileView {
+    pub stage: FieldStage,
+    pub growth: u8,
+    pub water: u8,
+    pub weeds: u8,
+    pub fertility: u8,
+}
+
+/// A plot and the state of every tile, row by row across `rect`, with the scales the
+/// numbers are on.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct FieldView {
+    pub id: String,
+    pub place: PlaceId,
+    pub rect: Rect,
+    pub crop: content::Crop,
+    pub grow: u8,
+    pub water_full: u8,
+    pub weeds_max: u8,
+    pub fertility_max: u8,
+    pub tiles: Vec<FieldTileView>,
 }
 
 /// A bed of tilled ground and its crop.
@@ -984,6 +1078,36 @@ pub fn world_view<C: CharacterSet>(sim: &Sim<C>) -> WorldView {
             })
             .collect(),
     }
+}
+
+#[must_use]
+pub fn field_views<C: CharacterSet>(sim: &Sim<C>) -> Vec<FieldView> {
+    sim.state()
+        .fields
+        .plots
+        .iter()
+        .map(|p| FieldView {
+            id: p.id.clone(),
+            place: p.place,
+            rect: p.rect,
+            crop: p.crop,
+            grow: crate::fields::crop_rules(p.crop).grow,
+            water_full: crate::fields::WATER_FULL,
+            weeds_max: crate::fields::WEEDS_MAX,
+            fertility_max: crate::fields::FERTILITY_MAX,
+            tiles: p
+                .tiles
+                .iter()
+                .map(|t| FieldTileView {
+                    stage: t.stage,
+                    growth: t.growth,
+                    water: t.water,
+                    weeds: t.weeds,
+                    fertility: t.fertility,
+                })
+                .collect(),
+        })
+        .collect()
 }
 
 #[must_use]
