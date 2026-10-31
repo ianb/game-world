@@ -70,6 +70,7 @@ pub fn validate(content: &Content) -> Vec<ContentError> {
     check_roofs(content, &world, &mut r);
     check_zone_extras(content, &world, &mut r);
     check_villagers(content, &world, &mut r);
+    check_moods(content, &mut r);
     r.errors.sort_by(|a, b| {
         b.severity
             .cmp(&a.severity)
@@ -130,6 +131,14 @@ fn check_plots(content: &Content, world: &World, z: &crate::model::Zone, r: &mut
             r.error(
                 format!("zones/{} plot {}", z.id, p.id),
                 "rect is empty or outside the zone",
+            );
+        }
+        if let Some(k) = &p.keeper
+            && !content.villagers.iter().any(|v| &v.id == k)
+        {
+            r.error(
+                format!("zones/{} plot {}", z.id, p.id),
+                format!("keeper {k} is not a villager"),
             );
         }
         if let Some(h) = &p.household
@@ -580,6 +589,45 @@ fn check_doors(world: &World, r: &mut Report) {
             && parse_hours(h).is_none()
         {
             r.error(&subj, format!("hours {h:?} is not HH:MM-HH:MM"));
+        }
+    }
+}
+
+/// Each villager's moods: no mood twice, no empty list of sources, and pride in work only
+/// for an activity in their own schedule.
+fn check_moods(content: &Content, r: &mut Report) {
+    use crate::model::{MoodSpec, Pride};
+    for v in &content.villagers {
+        let subject = format!("villagers/{}", v.id);
+        let mut seen = BTreeSet::new();
+        for m in &v.moods {
+            let (name, empty) = match m {
+                MoodSpec::Lonely { .. } => ("lonely", false),
+                MoodSpec::Restless { .. } => ("restless", false),
+                MoodSpec::Irritable { by } => ("irritable", by.is_empty()),
+                MoodSpec::Anxious { about } => ("anxious", about.is_empty()),
+                MoodSpec::Gloomy { by } => ("gloomy", by.is_empty()),
+                MoodSpec::Cheerful { by } => ("cheerful", by.is_empty()),
+                MoodSpec::Proud { of } => ("proud", of.is_empty()),
+            };
+            if !seen.insert(name) {
+                r.error(&subject, format!("mood {name} is given twice"));
+            }
+            if empty {
+                r.error(&subject, format!("mood {name} has nothing to set it off"));
+            }
+            if let MoodSpec::Proud { of } = m {
+                for p in of {
+                    if let Pride::Work(activity) = p
+                        && !v.schedule.iter().any(|e| &e.activity == activity)
+                    {
+                        r.warn(
+                            &subject,
+                            format!("proud of work at {activity}, which is not in their schedule"),
+                        );
+                    }
+                }
+            }
         }
     }
 }

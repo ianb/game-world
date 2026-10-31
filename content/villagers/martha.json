@@ -59,5 +59,21 @@
       "object": "jars_martha",
       "good": "honey"
     }
+  ],
+  "moods": [
+    {
+      "mood": "cheerful",
+      "by": [
+        "fine_days"
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "tend-bees"
+        }
+      ]
+    }
   ]
 }

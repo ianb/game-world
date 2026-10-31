@@ -41,5 +41,17 @@
       "object": "bed_nan",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "lonely",
+      "after_hours": 3
+    },
+    {
+      "mood": "gloomy",
+      "by": [
+        "rain"
+      ]
+    }
   ]
 }

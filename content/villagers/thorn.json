@@ -41,5 +41,19 @@
       "object": "bed_thorn",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "anxious",
+      "about": [
+        "garden"
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        "garden"
+      ]
+    }
   ]
 }

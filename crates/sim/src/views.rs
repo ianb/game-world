@@ -461,3 +461,41 @@ pub fn fields<C: CharacterSet>(sim: &Sim<C>) -> String {
     }
     out
 }
+
+/// Everyone's spirits and each mood they are prone to: level, name and what moved it.
+#[must_use]
+pub fn moods<C: CharacterSet>(sim: &Sim<C>) -> String {
+    use std::fmt::Write as _;
+    let ctx = sim.ctx();
+    let mut out = format!("{}\n", sim.tick().calendar());
+    for (i, v) in sim.state().villagers.iter().enumerate() {
+        let who = crate::ids::VillagerId(u16::try_from(i).unwrap_or(0));
+        let spirits = ctx.spirits(who);
+        let moods: Vec<String> = sim.state().moods[i]
+            .moods
+            .iter()
+            .map(|m| {
+                let level = m.level();
+                let kind = format!("{:?}", m.kind).to_lowercase();
+                if level == 0 {
+                    format!("{kind} 0")
+                } else {
+                    format!(
+                        "{kind} {level} ({}: {})",
+                        crate::moods::level_name(m.kind, level),
+                        m.cause
+                    )
+                }
+            })
+            .collect();
+        let _ = writeln!(
+            out,
+            "{:<8} {:>2} {:<16} {}",
+            v.name,
+            spirits,
+            crate::moods::spirits_name(spirits),
+            moods.join("; ")
+        );
+    }
+    out
+}

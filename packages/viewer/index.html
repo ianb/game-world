@@ -137,6 +137,13 @@
       .meter.level2 .fill { background: var(--pressing); }
       .meter.level3 .fill { background: var(--urgent); }
       .meter .value { text-align: right; font-weight: 900; }
+      .pips { display: grid; grid-template-columns: 5.2em auto 1fr; gap: 8px; align-items: center; }
+      .pips .dots { display: inline-flex; gap: 3px; }
+      .pips .dots span { width: 14px; height: 10px; border-radius: 3px; background: var(--inset); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); }
+      .pips.good .dots span.on { background: var(--good); }
+      .pips.bad .dots span.on { background: var(--pressing); }
+      .pips .name { font-weight: 800; }
+      .card-body p.cause { margin: -3px 0 2px 5.8em; font-size: 12px; }
       .meter .rate { color: var(--muted); font-size: 12px; }
       #inspect button.word { min-height: 0; padding: 0 6px; font-size: 12px; border-width: 1px; border-radius: 6px; }
       #hint { left: var(--gap); bottom: calc(var(--gap) + env(safe-area-inset-bottom, 0px)); padding: 8px 14px; color: var(--muted); pointer-events: none; }

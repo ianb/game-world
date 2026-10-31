@@ -61,5 +61,21 @@
       "object": "kiln_dory",
       "good": "pots"
     }
+  ],
+  "moods": [
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "throw-pots"
+        }
+      ]
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "good_things"
+      ]
+    }
   ]
 }

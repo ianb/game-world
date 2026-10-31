@@ -755,9 +755,10 @@ pub trait Interlocutor {
     fn memory(&self) -> &Memory;
     fn memory_mut(&mut self) -> &mut Memory;
 
-    /// How they feel in general right now, -3 to 3.
+    /// How they feel in general right now, -3 to 3: their spirits, from their moods and
+    /// their body.
     fn mood(&self, ctx: &Ctx<'_>, me: VillagerId) -> i8 {
-        needs_mood(ctx, me)
+        ctx.spirits(me)
     }
 
     /// What each gesture means to them, -3 to 3. Required, and written as a match with no

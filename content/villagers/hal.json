@@ -53,5 +53,18 @@
       "object": "bed_hal",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "irritable",
+      "by": [
+        "slights",
+        "stuck"
+      ]
+    },
+    {
+      "mood": "lonely",
+      "after_hours": 5
+    }
   ]
 }

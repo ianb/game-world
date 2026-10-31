@@ -58,8 +58,9 @@ out, each person is a dot. The text views are in the tools and in
 `window.__scene()`, not on the page. Hover a tile to see what it is in the
 card at the bottom left, click to pin it, or click a person (on the map or
 in the people page, which filters as you type) to follow them from place to
-place: what they are doing and why, coins, needs as bars, character,
-thoughts and what they have heard. The typeface is Nunito (SIL Open Font
+place: what they are doing and why, coins, needs as bars, their moods
+and spirits with what moved them, character, thoughts and what they have
+heard. `cargo run -p tools -- moods --day N` prints everyone's moods. The typeface is Nunito (SIL Open Font
 License), bundled from `@fontsource-variable/nunito`. The days tab pages through
 finished days, what was unusual first; click a line to replay the town to
 that moment, and "back to now" to return. The words tab lists every topic

@@ -49,5 +49,21 @@
       "amount": 12,
       "what": "timber"
     }
+  ],
+  "moods": [
+    {
+      "mood": "irritable",
+      "by": [
+        "crowds"
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "chop"
+        }
+      ]
+    }
   ]
 }

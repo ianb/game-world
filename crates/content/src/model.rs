@@ -110,6 +110,9 @@ pub struct PlotSpec {
     /// evening.
     #[serde(default)]
     pub household: Option<String>,
+    /// The villager who keeps this plot as their work.
+    #[serde(default)]
+    pub keeper: Option<String>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -454,6 +457,107 @@ pub struct Villager {
     /// Goods they collect from the goods shed when a train has stopped, paying for them.
     #[serde(default)]
     pub fetches: Vec<Fetches>,
+    /// The moods they are prone to, each with what sets it off for them. Two or three
+    /// each; nobody has all of them.
+    #[serde(default)]
+    pub moods: Vec<MoodSpec>,
+}
+
+/// A mood someone is prone to, and what moves it for them in particular.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(tag = "mood", rename_all = "snake_case")]
+pub enum MoodSpec {
+    /// Lonely after this many waking hours without a conversation.
+    Lonely {
+        after_hours: u8,
+    },
+    /// Restless after this many idle hours in a row.
+    Restless {
+        after_hours: u8,
+    },
+    Irritable {
+        by: Vec<Irritant>,
+    },
+    Anxious {
+        about: Vec<Worry>,
+    },
+    Gloomy {
+        by: Vec<Gloom>,
+    },
+    Cheerful {
+        by: Vec<Delight>,
+    },
+    Proud {
+        of: Vec<Pride>,
+    },
+}
+
+/// What gets under someone's skin.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Irritant {
+    /// Loud work nearby: the anvil, the axe, the cooper's mallet.
+    Noise,
+    /// Several people close around them.
+    Crowds,
+    /// Being slighted: a conversation that went badly, or blame they laid on someone.
+    Slights,
+    /// Not being able to get where they are going.
+    Stuck,
+}
+
+/// What someone frets about.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Worry {
+    /// Having fewer coins than this.
+    Money(u32),
+    /// Being out of doors after dark.
+    Dark,
+    /// Talking with someone they hardly know.
+    Strangers,
+    /// Their household's garden going to weeds or spoiling.
+    Garden,
+}
+
+/// What gets someone down.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Gloom {
+    Rain,
+}
+
+/// What lifts someone.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Delight {
+    Rain,
+    /// A day that dawns without rain.
+    FineDays,
+    /// A conversation that ends warmly.
+    Company,
+    /// Anything they think well of: animals they love, a frog, the train.
+    GoodThings,
+}
+
+/// What someone takes pride in.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Pride {
+    /// Their harvest coming in.
+    Harvest,
+    /// Being paid.
+    Earning,
+    /// Hours at this activity of theirs.
+    Work(String),
+    /// Their household's garden doing well.
+    Garden,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]

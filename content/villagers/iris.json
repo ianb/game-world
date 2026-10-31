@@ -67,5 +67,21 @@
       "object": "loom_reed",
       "good": "cloth"
     }
+  ],
+  "moods": [
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "weave"
+        }
+      ]
+    },
+    {
+      "mood": "anxious",
+      "about": [
+        "strangers"
+      ]
+    }
   ]
 }

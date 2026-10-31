@@ -73,5 +73,17 @@
       "amount": 15,
       "what": "soldier's pension"
     }
+  ],
+  "moods": [
+    {
+      "mood": "irritable",
+      "by": [
+        "noise"
+      ]
+    },
+    {
+      "mood": "lonely",
+      "after_hours": 6
+    }
   ]
 }

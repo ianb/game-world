@@ -67,5 +67,15 @@
       "amount": 15,
       "what": "widow's pension"
     }
+  ],
+  "moods": [
+    {
+      "mood": "lonely",
+      "after_hours": 4
+    },
+    {
+      "mood": "restless",
+      "after_hours": 3
+    }
   ]
 }

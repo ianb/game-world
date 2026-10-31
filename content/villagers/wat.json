@@ -41,5 +41,17 @@
       "object": "bed_wat",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "restless",
+      "after_hours": 2
+    },
+    {
+      "mood": "gloomy",
+      "by": [
+        "rain"
+      ]
+    }
   ]
 }

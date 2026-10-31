@@ -67,5 +67,23 @@
       "amount": 20,
       "what": "pension"
     }
+  ],
+  "moods": [
+    {
+      "mood": "anxious",
+      "about": [
+        "strangers"
+      ]
+    },
+    {
+      "mood": "lonely",
+      "after_hours": 5
+    },
+    {
+      "mood": "proud",
+      "of": [
+        "garden"
+      ]
+    }
   ]
 }

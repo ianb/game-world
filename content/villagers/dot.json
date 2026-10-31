@@ -67,5 +67,21 @@
       "price": 2,
       "keep": 8
     }
+  ],
+  "moods": [
+    {
+      "mood": "anxious",
+      "about": [
+        {
+          "money": 40
+        }
+      ]
+    },
+    {
+      "mood": "irritable",
+      "by": [
+        "slights"
+      ]
+    }
   ]
 }

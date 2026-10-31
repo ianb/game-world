@@ -53,5 +53,17 @@
       "object": "bed_ottilie",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "cheerful",
+      "by": [
+        "company"
+      ]
+    },
+    {
+      "mood": "lonely",
+      "after_hours": 3
+    }
   ]
 }

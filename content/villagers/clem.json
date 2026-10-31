@@ -43,5 +43,17 @@
       "amount": 2,
       "what": "carrier's fees"
     }
+  ],
+  "moods": [
+    {
+      "mood": "lonely",
+      "after_hours": 3
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "company"
+      ]
+    }
   ]
 }

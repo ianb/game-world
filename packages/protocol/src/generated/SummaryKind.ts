@@ -3,4 +3,4 @@
 /**
  * What a summary line is about.
  */
-export type SummaryKind = "PlanChange" | "Skipped" | "Unplanned" | "Talk" | "Note" | "Thought" | "Money" | "Shortage" | "Need" | "Body" | "Stuck" | "Absent" | "Railway" | "Animals" | "Fields" | "Weather" | "Other";
+export type SummaryKind = "PlanChange" | "Skipped" | "Unplanned" | "Talk" | "Note" | "Thought" | "Money" | "Shortage" | "Need" | "Body" | "Stuck" | "Absent" | "Railway" | "Animals" | "Mood" | "Fields" | "Weather" | "Other";

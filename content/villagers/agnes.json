@@ -67,5 +67,22 @@
       "amount": 12,
       "what": "stipend"
     }
+  ],
+  "moods": [
+    {
+      "mood": "irritable",
+      "by": [
+        "noise",
+        "crowds"
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "teach"
+        }
+      ]
+    }
   ]
 }

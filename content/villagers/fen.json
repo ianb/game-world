@@ -55,5 +55,22 @@
       "amount": 10,
       "what": "fish to market"
     }
+  ],
+  "moods": [
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "fish"
+        },
+        "earning"
+      ]
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "fine_days"
+      ]
+    }
   ]
 }

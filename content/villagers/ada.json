@@ -69,5 +69,22 @@
       "object": "coop_hollins",
       "good": "eggs"
     }
+  ],
+  "moods": [
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "dairy"
+        },
+        "earning"
+      ]
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "fine_days"
+      ]
+    }
   ]
 }

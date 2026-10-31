@@ -74,5 +74,22 @@
       "object": "sacks_ashby",
       "good": "carrots"
     }
+  ],
+  "moods": [
+    {
+      "mood": "anxious",
+      "about": [
+        {
+          "money": 120
+        }
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        "harvest",
+        "earning"
+      ]
+    }
   ]
 }

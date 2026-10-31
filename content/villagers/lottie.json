@@ -47,5 +47,23 @@
       "object": "bed_lottie",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "restless",
+      "after_hours": 2
+    },
+    {
+      "mood": "gloomy",
+      "by": [
+        "rain"
+      ]
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "good_things"
+      ]
+    }
   ]
 }

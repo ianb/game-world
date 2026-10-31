@@ -5,7 +5,7 @@ use rand_pcg::Pcg32;
 use sim::brain::{Command, Ctx, Party, Planned, Target, Trigger};
 use sim::ids::{ObjectId, PlaceId, VillagerId};
 use sim::needs::Need;
-use sim::protocol::{Blame, Cause, Emitted, Frame, Mishap, Thought, Topic};
+use sim::protocol::{Blame, Cause, Emitted, Frame, Mishap, MoodKind, Thought, Topic};
 use sim::recall::Perceived;
 use sim::social::Interlocutor;
 use sim::time::{TICKS_PER_MINUTE, Tick, TimeOfDay, Weekday};
@@ -646,6 +646,7 @@ pub fn seen_seeking_out(
 #[must_use]
 pub fn human(trigger: &Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
     match trigger {
+        Trigger::Mood { mood, .. } => feel_mood(ctx, me, *mood),
         Trigger::Need { need, level } => satisfy(ctx, me, *need, *level),
         // Most people put a stumble down to bad luck and forget it.
         Trigger::Mishap {
@@ -661,7 +662,7 @@ pub fn human(trigger: &Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
         Trigger::Arrived if activity_of(ctx, me) == "send-goods" => send_goods(ctx, me),
         Trigger::Arrived if activity_of(ctx, me) == "fetch-goods" => fetch_goods(ctx, me),
         Trigger::Arrived if activity_of(ctx, me) == "buy-luxuries" => buy_luxuries(ctx, me),
-        Trigger::Arrived | Trigger::Waited if activity_of(ctx, me) == "garden" => {
+        Trigger::Arrived | Trigger::Waited if activity_of(ctx, me) == "tend-garden" => {
             work_garden(ctx, me)
         }
         Trigger::Arrived if activity_of(ctx, me) == "drink" => buy_ale_nearest(ctx, me)
@@ -676,6 +677,136 @@ pub fn human(trigger: &Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
             cmds
         }
         _ => Vec::new(),
+    }
+}
+
+/// The topic someone's work gives them to talk about, for the activities that have one.
+fn work_topic(activity: &str) -> Option<&'static str> {
+    Some(match activity {
+        "smith" => "ironwork",
+        "chop" => "firewood",
+        "make-barrels" => "barrels",
+        "weave" => "cloth",
+        "throw-pots" | "fire-pots" => "pots",
+        "bake" => "bread",
+        "fish" => "the-catch",
+        "burn" => "charcoal",
+        "tend-bees" | "jar-honey" => "honey",
+        "dairy" => "cheese",
+        _ => return None,
+    })
+}
+
+/// The shared answer to a mood strong enough to act on: the lonely look for someone to
+/// talk to, the restless take a walk, the anxious, the irritable and the proud think
+/// about what moved them (the proud, and the irritable at noise, aloud). Cheer and gloom
+/// show only in how they talk.
+#[must_use]
+#[deny(clippy::wildcard_enum_match_arm)]
+pub fn feel_mood(ctx: &Ctx<'_>, me: &str, mood: MoodKind) -> Vec<Command> {
+    use sim::moods::Source as S;
+    let who = villager(ctx, me);
+    let Some(m) = ctx.moods(who).get(mood) else {
+        return Vec::new();
+    };
+    let mine = |key: &str| ctx.topic(key).about(who);
+    match (mood, m.source) {
+        (MoodKind::Lonely, _) => {
+            let company = around(ctx, who, 8)
+                .into_iter()
+                .find_map(|o| chat(ctx, who, o, Frame::SmallTalk, "how-they-are", 10));
+            if let Some(talk) = company {
+                return vec![talk];
+            }
+            // Nobody about: a while at the nearest bar, where there usually is someone.
+            let v = ctx.villager(who);
+            let bar = BARS
+                .iter()
+                .filter_map(|(keg, _)| ctx.object_id(keg))
+                .min_by_key(|o| {
+                    let at = ctx.world.objects[o.index()].at;
+                    at.x.abs_diff(v.pos.x) + at.y.abs_diff(v.pos.y)
+                });
+            let mut cmds = vec![think(mine("nobody-came"), Blame::World, false, false, -1)];
+            if let Some(bar) = bar {
+                cmds.push(Command::Interlude {
+                    target: Target::Object(bar),
+                    activity: "company".into(),
+                    minutes: 45,
+                });
+            }
+            cmds
+        }
+        (MoodKind::Restless, _) => {
+            let v = ctx.villager(who);
+            // A short walk, in a direction that follows from the hour, to somewhere
+            // passable.
+            let steps: [(i32, i32); 4] = [(6, 0), (0, 6), (-6, 0), (0, -6)];
+            let start = usize::try_from(ctx.tick.0 / sim::time::TICKS_PER_HOUR).unwrap_or(0);
+            (0..4)
+                .map(|k| steps[(start + k) % 4])
+                .find_map(|(dx, dy)| {
+                    let x = u16::try_from(i32::from(v.pos.x) + dx).ok()?;
+                    let y = u16::try_from(i32::from(v.pos.y) + dy).ok()?;
+                    ctx.world.passable(v.place.index(), x, y).then(|| {
+                        vec![Command::Interlude {
+                            target: Target::Tile {
+                                place: v.place,
+                                pos: content::Pos { x, y },
+                            },
+                            activity: "wander".into(),
+                            minutes: 20,
+                        }]
+                    })
+                })
+                .unwrap_or_default()
+        }
+        (MoodKind::Anxious, S::Money) => {
+            vec![think(mine("money"), Blame::World, false, false, -1)]
+        }
+        (MoodKind::Anxious, S::Dark) => {
+            vec![think(mine("the-dark"), Blame::World, false, false, -2)]
+        }
+        (MoodKind::Anxious | MoodKind::Proud, S::Garden) => {
+            let feeling = if mood == MoodKind::Proud { 2 } else { -1 };
+            vec![think(mine("the-garden"), Blame::Me, false, false, feeling)]
+        }
+        (MoodKind::Irritable, S::Noise(loud)) => {
+            let topic = work_topic(&ctx.villager(loud).activity).unwrap_or("the-news");
+            vec![think_aloud(
+                ctx.topic(topic).about(loud),
+                Blame::Them(loud),
+                false,
+                false,
+                -2,
+            )]
+        }
+        (MoodKind::Irritable, S::Slight(them)) => vec![think(
+            ctx.topic("what-was-said").about(them),
+            Blame::Them(them),
+            false,
+            false,
+            -2,
+        )],
+        (MoodKind::Proud, S::Harvest) => {
+            vec![think_aloud(mine("the-garden"), Blame::Me, false, false, 2)]
+        }
+        // Pride in earning is about custom: "money" is the topic of money trouble, and a
+        // listener would take it as a call for help.
+        (MoodKind::Proud, S::Earning) => {
+            vec![think_aloud(mine("custom"), Blame::Me, false, false, 1)]
+        }
+        (MoodKind::Proud, S::Work) => work_topic(&ctx.villager(who).activity)
+            .map(|t| vec![think_aloud(mine(t), Blame::Me, false, false, 2)])
+            .unwrap_or_default(),
+        (
+            MoodKind::Anxious
+            | MoodKind::Irritable
+            | MoodKind::Proud
+            | MoodKind::Cheerful
+            | MoodKind::Gloomy,
+            _,
+        ) => Vec::new(),
     }
 }
 
@@ -1062,7 +1193,7 @@ pub fn garden_turn(ctx: &Ctx<'_>, who: VillagerId, plan: &mut Vec<Planned>) {
         place: garden.place,
         pos: garden.pos(0),
     };
-    sim::brain::add_errand(plan, at, target, "garden", GARDEN_MINUTES);
+    sim::brain::add_errand(plan, at, target, "tend-garden", GARDEN_MINUTES);
 }
 
 /// In the garden: the next job it wants, or a stand in it when it wants nothing.
@@ -1072,8 +1203,8 @@ pub fn work_garden(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
     let Some(garden) = gardens(ctx, who).into_iter().next() else {
         return Vec::new();
     };
-    tend_in(ctx, who, garden.place, garden.rect, "garden")
-        .unwrap_or_else(|| vec![wait_minutes(10, "garden")])
+    tend_in(ctx, who, garden.place, garden.rect, "tend-garden")
+        .unwrap_or_else(|| vec![wait_minutes(10, "tend-garden")])
 }
 
 /// Loop of work over an area: go to a random spot in it, do `activity` there for

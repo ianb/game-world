@@ -10,6 +10,8 @@ use crate::time::Season;
 use content::{Crop, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
+/// Label of the nightly chance of rain, for tests to force.
+pub const RAINS: &str = "rains";
 /// Water a tile holds after rain or watering, in days of drying.
 pub const WATER_FULL: u8 = 6;
 /// Weeds run from 0 to this.

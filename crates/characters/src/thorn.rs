@@ -1,7 +1,7 @@
 //! Thorn, the manor's gardener. Frets aloud when the garden gets ahead of him, and stays late to catch up.
 //! Description and design notes: `docs/characters/thorn.md`.
 use crate::Character;
-use crate::toolbox::{Plan, activity_of, go, think_aloud, villager, work_area};
+use crate::toolbox::{Plan, activity_of, go, tend_fields, think_aloud, villager};
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{Command, Ctx, Planned, Trigger};
@@ -41,8 +41,7 @@ impl Character for Thorn {
         Some(match trigger {
             Trigger::Arrived | Trigger::Waited if activity_of(ctx, "thorn") == "garden" => {
                 let me = villager(ctx, "thorn");
-                let mut cmds =
-                    work_area(ctx, "thorn", trigger, "manor-garden", "garden", 30, 2, rng);
+                let mut cmds = tend_fields(ctx, "thorn", trigger, "manor-garden", "garden", rng);
                 if matches!(trigger, Trigger::Waited) && !self.fretted && Thorn::wild(ctx) > WILD {
                     self.fretted = true;
                     cmds.push(think_aloud(

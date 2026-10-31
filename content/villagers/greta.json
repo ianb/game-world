@@ -85,5 +85,21 @@
       "price": 4,
       "keep": 24
     }
+  ],
+  "moods": [
+    {
+      "mood": "anxious",
+      "about": [
+        {
+          "money": 100
+        }
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        "earning"
+      ]
+    }
   ]
 }

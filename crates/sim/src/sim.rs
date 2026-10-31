@@ -36,6 +36,7 @@ const TRIP_LONG_GRASS: u32 = 40;
 mod animals;
 mod conversation;
 mod fields;
+mod moods;
 mod railway;
 
 /// Everything that determines the future. Serializable in full; hashed by subsystem.
@@ -66,6 +67,8 @@ pub struct SimState<C> {
     pub terrain: Terrain,
     /// Every field tile: what is sown, how far it has grown, water, weeds and fertility.
     pub fields: crate::fields::Fields,
+    /// Each villager's moods, by villager.
+    pub moods: Vec<crate::moods::Moods>,
     pub day_rollovers: u32,
     pub markers: Vec<(Tick, String)>,
     /// Recent events worth knowing, with who could perceive them.
@@ -193,6 +196,11 @@ impl<C: CharacterSet> Sim<C> {
                 next_conversation: 0,
                 terrain: Terrain::new(&world),
                 fields: crate::fields::Fields::default(),
+                moods: content
+                    .villagers
+                    .iter()
+                    .map(|v| crate::moods::Moods::new(&v.moods))
+                    .collect(),
                 day_rollovers: 0,
                 markers: Vec::new(),
                 record: Record::default(),
@@ -282,6 +290,7 @@ impl<C: CharacterSet> Sim<C> {
             villagers: &self.state.villagers,
             terrain: &self.state.terrain,
             fields: &self.state.fields,
+            moods: &self.state.moods,
             stock: &self.state.stock,
             record: &self.state.record,
             odds: &self.state.odds,
@@ -321,6 +330,7 @@ impl<C: CharacterSet> Sim<C> {
             self.state.tick = scheduled.tick;
             let start = out.len();
             self.handle(scheduled.event, &mut out);
+            self.feel_events(start, &mut out);
             self.keep_record(&out[start..]);
         }
         self.state.tick = target;
@@ -483,6 +493,7 @@ impl<C: CharacterSet> Sim<C> {
                 self.react(who, Trigger::Need { need, level }, out);
             }
         }
+        self.mood_hour(who, out);
     }
 
     fn handle_input(&mut self, input: &Input, out: &mut Vec<Emitted>) {
@@ -562,6 +573,7 @@ impl<C: CharacterSet> Sim<C> {
                     villagers: &self.state.villagers,
                     terrain: &self.state.terrain,
                     fields: &self.state.fields,
+                    moods: &self.state.moods,
                     stock: &self.state.stock,
                     record: &self.state.record,
                     odds: &self.state.odds,
@@ -657,6 +669,7 @@ impl<C: CharacterSet> Sim<C> {
                 villagers: &self.state.villagers,
                 terrain: &self.state.terrain,
                 fields: &self.state.fields,
+                moods: &self.state.moods,
                 stock: &self.state.stock,
                 record: &self.state.record,
                 odds: &self.state.odds,

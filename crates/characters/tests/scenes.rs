@@ -602,7 +602,7 @@ fn a_household_takes_turns_in_its_garden() {
                     if ids.contains(who)
                         && items
                             .iter()
-                            .any(|i| i.activity.as_deref() == Some("garden")) =>
+                            .any(|i| i.activity.as_deref() == Some("tend-garden")) =>
                 {
                     Some(*who)
                 }
@@ -620,4 +620,94 @@ fn a_household_takes_turns_in_its_garden() {
     }
     turns.dedup();
     assert_eq!(turns.len(), 3, "a different one each day");
+}
+
+/// Rain lifts Wynn, who loves it, and gets Josie down; a fine morning does neither.
+#[test]
+fn rain_cheers_one_and_dampens_another() {
+    use sim::protocol::MoodKind;
+    let level = |s: &Scene, who: &str, mood: MoodKind| s.sim.ctx().moods(s.id(who)).level(mood);
+    let mut wet = Scene::new();
+    wet.force(sim::fields::RAINS, true);
+    wet.run_until(at(1, 0, 5));
+    assert!(
+        level(&wet, "wynn", MoodKind::Cheerful) >= 1,
+        "Wynn cheered by rain"
+    );
+    assert!(
+        level(&wet, "josie", MoodKind::Gloomy) >= 1,
+        "Josie glum in rain"
+    );
+    let mut dry = Scene::new();
+    dry.force(sim::fields::RAINS, false);
+    dry.run_until(at(1, 0, 5));
+    assert_eq!(level(&dry, "wynn", MoodKind::Cheerful), 0);
+    assert_eq!(level(&dry, "josie", MoodKind::Gloomy), 0);
+}
+
+/// Bess, afraid of the dark, grows anxious out of doors at night (from the hour, or from
+/// her own fretting before she hurries home), and someone who is not afraid of it does not.
+#[test]
+fn bess_frets_out_after_dark() {
+    use sim::protocol::MoodKind;
+    let mut s = Scene::new();
+    s.run_until(at(0, 20, 30));
+    s.put_by("bess", "well_square")
+        .put_by("bram", "well_square");
+    s.needs("bess").sleep = 0;
+    // Kept out at the well past her bedtime.
+    s.cue(
+        "bess",
+        at(0, 20, 31),
+        sim::brain::Command::Wait {
+            ticks: 3 * 3600,
+            activity: "watch".into(),
+        },
+    );
+    let events = s.run_until(at(0, 23, 30)).to_vec();
+    let bess = s.id("bess");
+    assert!(
+        events.iter().any(
+            |e| matches!(e, Emitted::MoodShifted { who, mood: MoodKind::Anxious, cause, .. }
+            if *who == bess && (cause == "out after dark" || cause == "the dark"))
+        ),
+        "Bess grew anxious in the dark: {:#?}",
+        events
+            .iter()
+            .filter(|e| e.who() == Some(bess) && !matches!(e, Emitted::Moved { .. }))
+            .map(|e| format!("{e:?}"))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(s.sim.ctx().moods(s.id("bram")).level(MoodKind::Anxious), 0);
+}
+
+/// Elias, lonely with nobody about, goes where there usually is company.
+#[test]
+fn a_lonely_villager_goes_looking_for_company() {
+    use sim::protocol::MoodKind;
+    let mut s = Scene::new();
+    s.run_until(at(0, 13, 0));
+    let elias = s.id("elias");
+    {
+        let m = &mut s.sim.state_mut().moods[elias.index()];
+        let lonely = m
+            .moods
+            .iter_mut()
+            .find(|m| m.kind == MoodKind::Lonely)
+            .unwrap();
+        lonely.points = 7;
+        m.alone_hours = 10;
+    }
+    let events = s.run_until(at(0, 16, 0)).to_vec();
+    assert!(
+        events.iter().any(|e| matches!(e, Emitted::MoodShifted { who, mood: MoodKind::Lonely, level: 2, .. } if *who == elias)),
+        "Elias grew lonely"
+    );
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, Emitted::Activity { who, activity, .. }
+            if *who == elias && (activity == "company" || activity == "talk"))),
+        "and went for company"
+    );
 }

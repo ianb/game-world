@@ -53,5 +53,22 @@
       "object": "desk_townhall",
       "activity": "accounts"
     }
+  ],
+  "moods": [
+    {
+      "mood": "irritable",
+      "by": [
+        "noise",
+        "slights"
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "accounts"
+        }
+      ]
+    }
   ]
 }

@@ -127,6 +127,32 @@
         "sun"
       ]
     },
+    "Delight": {
+      "description": "What lifts someone.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "rain"
+          ]
+        },
+        {
+          "description": "A day that dawns without rain.",
+          "type": "string",
+          "const": "fine_days"
+        },
+        {
+          "description": "A conversation that ends warmly.",
+          "type": "string",
+          "const": "company"
+        },
+        {
+          "description": "Anything they think well of: animals they love, a frog, the train.",
+          "type": "string",
+          "const": "good_things"
+        }
+      ]
+    },
     "DoorEnd": {
       "description": "One end of a door record, in building-local coordinates when `floor` is set, zone\ncoordinates when `zone` is set.",
       "type": "object",
@@ -352,6 +378,13 @@
         }
       ]
     },
+    "Gloom": {
+      "description": "What gets someone down.",
+      "type": "string",
+      "enum": [
+        "rain"
+      ]
+    },
     "GoodsCount": {
       "type": "object",
       "properties": {
@@ -413,6 +446,171 @@
         "at",
         "amount",
         "what"
+      ]
+    },
+    "Irritant": {
+      "description": "What gets under someone's skin.",
+      "oneOf": [
+        {
+          "description": "Loud work nearby: the anvil, the axe, the cooper's mallet.",
+          "type": "string",
+          "const": "noise"
+        },
+        {
+          "description": "Several people close around them.",
+          "type": "string",
+          "const": "crowds"
+        },
+        {
+          "description": "Being slighted: a conversation that went badly, or blame they laid on someone.",
+          "type": "string",
+          "const": "slights"
+        },
+        {
+          "description": "Not being able to get where they are going.",
+          "type": "string",
+          "const": "stuck"
+        }
+      ]
+    },
+    "MoodSpec": {
+      "description": "A mood someone is prone to, and what moves it for them in particular.",
+      "oneOf": [
+        {
+          "description": "Lonely after this many waking hours without a conversation.",
+          "type": "object",
+          "properties": {
+            "after_hours": {
+              "type": "integer",
+              "format": "uint8",
+              "maximum": 255,
+              "minimum": 0
+            },
+            "mood": {
+              "type": "string",
+              "const": "lonely"
+            }
+          },
+          "required": [
+            "mood",
+            "after_hours"
+          ]
+        },
+        {
+          "description": "Restless after this many idle hours in a row.",
+          "type": "object",
+          "properties": {
+            "after_hours": {
+              "type": "integer",
+              "format": "uint8",
+              "maximum": 255,
+              "minimum": 0
+            },
+            "mood": {
+              "type": "string",
+              "const": "restless"
+            }
+          },
+          "required": [
+            "mood",
+            "after_hours"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "by": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Irritant"
+              }
+            },
+            "mood": {
+              "type": "string",
+              "const": "irritable"
+            }
+          },
+          "required": [
+            "mood",
+            "by"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "about": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Worry"
+              }
+            },
+            "mood": {
+              "type": "string",
+              "const": "anxious"
+            }
+          },
+          "required": [
+            "mood",
+            "about"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "by": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Gloom"
+              }
+            },
+            "mood": {
+              "type": "string",
+              "const": "gloomy"
+            }
+          },
+          "required": [
+            "mood",
+            "by"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "by": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Delight"
+              }
+            },
+            "mood": {
+              "type": "string",
+              "const": "cheerful"
+            }
+          },
+          "required": [
+            "mood",
+            "by"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "mood": {
+              "type": "string",
+              "const": "proud"
+            },
+            "of": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Pride"
+              }
+            }
+          },
+          "required": [
+            "mood",
+            "of"
+          ]
+        }
       ]
     },
     "ObjectSpec": {
@@ -518,6 +716,14 @@
         "id": {
           "type": "string"
         },
+        "keeper": {
+          "description": "The villager who keeps this plot as their work.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
         "rect": {
           "$ref": "#/$defs/Rect"
         },
@@ -555,6 +761,39 @@
       "required": [
         "x",
         "y"
+      ]
+    },
+    "Pride": {
+      "description": "What someone takes pride in.",
+      "oneOf": [
+        {
+          "description": "Their harvest coming in.",
+          "type": "string",
+          "const": "harvest"
+        },
+        {
+          "description": "Being paid.",
+          "type": "string",
+          "const": "earning"
+        },
+        {
+          "description": "Hours at this activity of theirs.",
+          "type": "object",
+          "properties": {
+            "work": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "work"
+          ]
+        },
+        {
+          "description": "Their household's garden doing well.",
+          "type": "string",
+          "const": "garden"
+        }
       ]
     },
     "RailwaySpec": {
@@ -834,6 +1073,14 @@
             "$ref": "#/$defs/Income"
           }
         },
+        "moods": {
+          "description": "The moods they are prone to, each with what sets it off for them. Two or three\neach; nobody has all of them.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/MoodSpec"
+          }
+        },
         "name": {
           "type": "string"
         },
@@ -880,6 +1127,41 @@
           "description": "Rough boards: huts, barns, sheds.",
           "type": "string",
           "const": "boards"
+        }
+      ]
+    },
+    "Worry": {
+      "description": "What someone frets about.",
+      "oneOf": [
+        {
+          "description": "Having fewer coins than this.",
+          "type": "object",
+          "properties": {
+            "money": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "money"
+          ]
+        },
+        {
+          "description": "Being out of doors after dark.",
+          "type": "string",
+          "const": "dark"
+        },
+        {
+          "description": "Talking with someone they hardly know.",
+          "type": "string",
+          "const": "strangers"
+        },
+        {
+          "description": "Their household's garden going to weeds or spoiling.",
+          "type": "string",
+          "const": "garden"
         }
       ]
     },

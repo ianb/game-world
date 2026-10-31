@@ -41,5 +41,22 @@
       "object": "bed_wynn",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "cheerful",
+      "by": [
+        "rain",
+        "good_things"
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "mix"
+        }
+      ]
+    }
   ]
 }

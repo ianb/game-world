@@ -215,6 +215,7 @@ type Seg = string | { word: Word; label: string };
 type Block =
   | { kind: "text"; segs: Seg[]; muted?: boolean }
   | { kind: "meter"; label: string; value: number; level: number; note: string }
+  | { kind: "pips"; label: string; level: number; max: number; good: boolean; name: string; note: string }
   | { kind: "stats"; items: { label: string; value: string }[] }
   | { kind: "head"; text: string };
 interface Card {
@@ -308,11 +309,26 @@ function describeVillager(v: VillagerView): Card {
       kind: "stats",
       items: [
         { label: "coins", value: String(v.coins) },
-        ...(mind ? [{ label: "mood", value: signed(mind.mood) }] : []),
+        ...(mind ? [{ label: "spirits", value: `${mind.spirits} (${signed(mind.mood)})` }] : []),
       ],
     },
     ...describeNeeds(v),
   ];
+  if (mind && mind.moods.length) {
+    blocks.push(head("Moods"));
+    for (const m of mind.moods) {
+      blocks.push({
+        kind: "pips",
+        label: words(m.mood),
+        level: m.level,
+        max: m.max,
+        good: m.good,
+        name: m.name,
+        note: m.level > 0 ? `${m.cause}, since ${sinceText(m.since)}` : "",
+      });
+    }
+    blocks.push(note("Each mood runs 0 to 3. Spirits add the good moods, take away the bad ones and the body's discomfort, -3 to 3."));
+  }
   if (mind) blocks.push(...describeMind(mind, sim.villagers()));
   return {
     picture: { villager: v.key },
@@ -492,6 +508,13 @@ function renderCard(card: Card): void {
         row.append(s);
       }
       body.append(row);
+    } else if (b.kind === "pips") {
+      const row = el("div", `pips ${b.good ? "good" : "bad"}`);
+      const pips = el("span", "dots");
+      for (let i = 0; i < b.max; i++) pips.append(el("span", i < b.level ? "on" : ""));
+      row.append(el("span", "label", b.label), pips, el("span", "name", b.level > 0 ? b.name : "—"));
+      body.append(row);
+      if (b.note) body.append(el("p", "muted cause", b.note));
     } else if (b.kind === "meter") {
       const row = el("div", `meter level${b.level}`);
       const bar = el("span", "bar");

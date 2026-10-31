@@ -59,5 +59,18 @@
       "object": "bed_kit",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "restless",
+      "after_hours": 2
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "good_things",
+        "fine_days"
+      ]
+    }
   ]
 }

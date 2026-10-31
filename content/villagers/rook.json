@@ -41,5 +41,17 @@
       "object": "bed_rook",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "lonely",
+      "after_hours": 10
+    },
+    {
+      "mood": "irritable",
+      "by": [
+        "crowds"
+      ]
+    }
   ]
 }

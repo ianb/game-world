@@ -53,5 +53,21 @@
       "object": "bed_mara",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "cheerful",
+      "by": [
+        "company"
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "bake"
+        }
+      ]
+    }
   ]
 }

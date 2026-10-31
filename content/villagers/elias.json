@@ -61,5 +61,17 @@
       "amount": 10,
       "what": "tithes"
     }
+  ],
+  "moods": [
+    {
+      "mood": "lonely",
+      "after_hours": 4
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "company"
+      ]
+    }
   ]
 }

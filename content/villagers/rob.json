@@ -79,5 +79,21 @@
       "object": "workbench_cooper",
       "good": "barrel"
     }
+  ],
+  "moods": [
+    {
+      "mood": "irritable",
+      "by": [
+        "slights"
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "make-barrels"
+        }
+      ]
+    }
   ]
 }

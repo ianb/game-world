@@ -41,5 +41,14 @@
       "object": "bed_ivo",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "irritable",
+      "by": [
+        "crowds",
+        "noise"
+      ]
+    }
   ]
 }

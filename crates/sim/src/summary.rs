@@ -301,6 +301,7 @@ impl Summarizer {
             Emitted::TrainPassed { .. }
             | Emitted::TrainArrived { .. }
             | Emitted::TrainLeft { .. } => self.train(tick, e),
+            Emitted::MoodShifted { .. } => self.mood(tick, e),
             Emitted::Rained { .. }
             | Emitted::CropsRipened { .. }
             | Emitted::CropsSpoiled { .. }
@@ -320,6 +321,27 @@ impl Summarizer {
                     Some(cause.clone()),
                     key,
                 );
+            }
+            _ => {}
+        }
+    }
+
+    /// A mood rising to where it is acted on.
+    fn mood(&mut self, tick: Tick, e: &Emitted) {
+        match e {
+            Emitted::MoodShifted {
+                who,
+                mood,
+                was,
+                level,
+                cause,
+                ..
+            } if *level >= crate::moods::ACTS_AT && level > was => {
+                let name = self.name(*who).to_string();
+                let feeling = crate::moods::level_name(*mood, *level);
+                let key = format!("mood:{}:{feeling}", name.to_lowercase());
+                let text = format!("{name} is {feeling}: {cause}");
+                self.line(tick, *who, SummaryKind::Mood, text, None, key);
             }
             _ => {}
         }

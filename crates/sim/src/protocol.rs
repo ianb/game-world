@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 25;
+pub const PROTOCOL_VERSION: u32 = 26;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -222,6 +222,15 @@ pub enum Emitted {
     /// A train went through without stopping.
     TrainPassed {
         tick: Tick,
+    },
+    /// One of `who`'s moods changed level, `was` to `level` (0 to 3), with what moved it.
+    MoodShifted {
+        tick: Tick,
+        who: VillagerId,
+        mood: MoodKind,
+        was: u8,
+        level: u8,
+        cause: String,
     },
     /// It rained in the night: every field is soaked.
     Rained {
@@ -501,6 +510,8 @@ pub enum SummaryKind {
     Railway,
     /// Animals: eggs laid.
     Animals,
+    /// A mood strong enough to act on.
+    Mood,
     /// Fields: harvests, crops ripening and spoiling.
     Fields,
     /// Rain.
@@ -705,6 +716,7 @@ impl Emitted {
             | Emitted::TrainLeft { tick, .. }
             | Emitted::TrainPassed { tick }
             | Emitted::Rained { tick }
+            | Emitted::MoodShifted { tick, .. }
             | Emitted::CropsRipened { tick, .. }
             | Emitted::CropsSpoiled { tick, .. }
             | Emitted::Tended { tick, .. }
@@ -735,6 +747,7 @@ impl Emitted {
             | Emitted::Mishap { who, .. }
             | Emitted::Consigned { who, .. }
             | Emitted::Tended { who, .. }
+            | Emitted::MoodShifted { who, .. }
             | Emitted::Thought { who, .. } => Some(*who),
             _ => None,
         }
@@ -808,6 +821,35 @@ pub struct RailView {
     pub place: PlaceId,
     pub tiles: Vec<Pos>,
     pub stop: u16,
+}
+
+/// A mood from the shared library. Each villager is prone to a few of them.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub enum MoodKind {
+    Lonely,
+    Restless,
+    Irritable,
+    Anxious,
+    Gloomy,
+    Cheerful,
+    Proud,
+}
+
+/// One of someone's moods now: its level (0 to `max`) and that level's name, whether it
+/// feels good, and what last moved it.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct MoodView {
+    pub mood: MoodKind,
+    pub level: u8,
+    pub max: u8,
+    pub name: String,
+    pub good: bool,
+    pub cause: String,
+    pub since: Tick,
 }
 
 /// Where a field tile is in its year: fallow ground, tilled, sown, growing, ripe, spoiling
@@ -1229,7 +1271,12 @@ pub struct MindView {
     pub rejection_sensitivity: u8,
     pub charity: i8,
     pub discretion: u8,
+    /// Spirits, -3 to 3: the good moods' levels less the bad ones' and the body's
+    /// discomfort, with its name.
     pub mood: i8,
+    pub spirits: String,
+    /// Each mood they are prone to, in their content's order.
+    pub moods: Vec<MoodView>,
     pub worry: Option<String>,
     pub regard: Vec<RegardView>,
     /// Most recent last.
@@ -1304,6 +1351,24 @@ pub fn gesture_views<C: CharacterSet>(sim: &Sim<C>) -> Vec<GestureView> {
 const MIND_RECENT: usize = 8;
 
 /// `None` for a villager with no program of their own.
+/// Each mood `who` is prone to, now.
+#[must_use]
+pub fn mood_views<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Vec<MoodView> {
+    sim.state().moods[who.index()]
+        .moods
+        .iter()
+        .map(|m| MoodView {
+            mood: m.kind,
+            level: m.level(),
+            max: crate::moods::MAX_LEVEL,
+            name: crate::moods::level_name(m.kind, m.level()).to_string(),
+            good: crate::moods::good(m.kind),
+            cause: m.cause.clone(),
+            since: m.since,
+        })
+        .collect()
+}
+
 #[must_use]
 pub fn mind_view<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Option<MindView> {
     let ctx = sim.ctx();
@@ -1351,6 +1416,8 @@ pub fn mind_view<C: CharacterSet>(sim: &Sim<C>, who: VillagerId) -> Option<MindV
         charity: p.charity,
         discretion: p.discretion,
         mood: mind.mood(&ctx, who),
+        spirits: crate::moods::spirits_name(mind.mood(&ctx, who)).to_string(),
+        moods: mood_views(sim, who),
         worry: mind.worry(&ctx, who).map(|t| t.label(&ctx)),
         regard,
         episodes: memory.episodes[recent(memory.episodes.len())..]

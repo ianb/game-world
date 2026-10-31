@@ -55,5 +55,19 @@
       "amount": 9,
       "what": "wool"
     }
+  ],
+  "moods": [
+    {
+      "mood": "irritable",
+      "by": [
+        "crowds"
+      ]
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "fine_days"
+      ]
+    }
   ]
 }

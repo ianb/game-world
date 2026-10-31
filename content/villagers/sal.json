@@ -47,5 +47,19 @@
       "object": "bed_sal",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "smith"
+        }
+      ]
+    },
+    {
+      "mood": "restless",
+      "after_hours": 2
+    }
   ]
 }

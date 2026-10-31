@@ -47,5 +47,16 @@
       "object": "bed_rosa",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "anxious",
+      "about": [
+        {
+          "money": 20
+        },
+        "garden"
+      ]
+    }
   ]
 }

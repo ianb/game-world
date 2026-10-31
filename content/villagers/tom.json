@@ -29,5 +29,21 @@
       "object": "bed_tom",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "irritable",
+      "by": [
+        "slights"
+      ]
+    },
+    {
+      "mood": "anxious",
+      "about": [
+        {
+          "money": 20
+        }
+      ]
+    }
   ]
 }

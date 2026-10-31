@@ -47,5 +47,23 @@
       "object": "bed_jory",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "restless",
+      "after_hours": 3
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "company"
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        "harvest"
+      ]
+    }
   ]
 }

@@ -75,5 +75,19 @@
       "object": "sacks_loft_hollins",
       "good": "beans"
     }
+  ],
+  "moods": [
+    {
+      "mood": "irritable",
+      "by": [
+        "slights"
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        "harvest"
+      ]
+    }
   ]
 }

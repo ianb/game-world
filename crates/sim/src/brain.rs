@@ -26,6 +26,8 @@ pub struct Ctx<'a> {
     pub terrain: &'a Terrain,
     /// Every field tile.
     pub fields: &'a crate::fields::Fields,
+    /// Every villager's moods, by villager.
+    pub moods: &'a [crate::moods::Moods],
     /// Goods on objects, by object index then good.
     pub stock: &'a BTreeMap<u16, BTreeMap<String, u16>>,
     /// What the town keeps of recent events, with who could perceive each.
@@ -165,6 +167,18 @@ impl Ctx<'_> {
             .filter(|(_, o)| o.kind == kind)
             .map(|(i, _)| ObjectId(u16::try_from(i).expect("few objects")))
             .collect()
+    }
+
+    /// `who`'s moods.
+    #[must_use]
+    pub fn moods(&self, who: VillagerId) -> &crate::moods::Moods {
+        &self.moods[who.index()]
+    }
+
+    /// `who`'s spirits, -3 to 3: their moods and their body together.
+    #[must_use]
+    pub fn spirits(&self, who: VillagerId) -> i8 {
+        crate::moods::spirits(self.moods(who), crate::social::needs_mood(self, who))
     }
 
     /// The field tile at a spot, with its plot, if there is one.
@@ -458,6 +472,11 @@ pub struct Planned {
 /// Why the brain was asked.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Trigger {
+    /// One of their moods rose to `level`, strong enough to act on (`moods::ACTS_AT`).
+    Mood {
+        mood: crate::protocol::MoodKind,
+        level: u8,
+    },
     /// Animals close by: a flock of `kind` that belongs to `owner`. Fires again for the
     /// same flock only after a few hours.
     Animals {
@@ -527,6 +546,7 @@ impl Trigger {
                 format!("{}'s {}", name(owner), animal_plural(*kind))
             }
             Trigger::Look { .. } => "looked around".into(),
+            Trigger::Mood { mood, level } => crate::moods::level_name(*mood, *level).to_string(),
             Trigger::Mishap { what } => format!("{what:?}").to_lowercase(),
             Trigger::Overheard {
                 speaker,

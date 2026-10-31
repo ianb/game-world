@@ -1387,3 +1387,34 @@ Decided:
 Implications: the order in `design/direction.md` is revised at its end.
 The feelings change replaces `warmth_of` as the only felt quantity, so it
 will touch every character module.
+
+## 2026-10-31: Components and systems; moods as personal configuration
+
+Ian: "Put a bit of thought into that structure, with modules and ECS inspiration (but i
+agree not to use an ECS library). And I want you to create a more diverse mood system.
+Like, people have specific personal attributes that personally effect them. You might
+use a combination of these module/ecs ideas, and configuration essentially on a
+character basis, to make this happen."
+
+Decided and built (see `design/components.md`):
+
+- The sim is organised as ECS-style tables without a library: entities are ids,
+  components are typed tables keyed by id in `SimState`, configuration is per-entity
+  data in content with closed enums, systems are functions the event queue runs, and
+  systems hear each other through the emitted events. Modules for characters follow the
+  same shape when they are built.
+- Moods are a component: a library of seven (lonely, restless, irritable, anxious,
+  gloomy, cheerful, proud), each villager prone to two or three, configured in their
+  content file with their own sources (Bess anxious about the dark, Silas about money
+  below 120, Wynn cheered by rain, Rob irritated by slights, Fen proud of his fishing).
+  Levels have names and every change has a cause.
+- Spirits replace the bare mood number: good moods less bad ones less the body, -3 to
+  3, named. Conversations read it.
+- A mood at its second level is a trigger; the shared answer is small and visible (the
+  lonely seek company or go to a bar, the restless walk, the anxious and the proud think
+  about it).
+
+Implications: protocol 26, snapshot 17. The level names and every villager's mood
+configuration are placeholders from the character notes, for Ian to rewrite. Pride in
+earning talks about "custom", not "money", because "money" is the topic of money
+trouble and a listener took a proud shopkeeper's remark as a call for help.

@@ -19,9 +19,7 @@ use sim::brain::{Command, Ctx, Planned, Trigger};
 use sim::ids::VillagerId;
 use sim::needs::{Need, URGENT};
 use sim::protocol::{Act, Blame, Frame, Gesture, Mishap, Topic};
-use sim::social::{
-    Episode, Interlocutor, Memory, Persona, Situation, act, default_next_act, needs_mood,
-};
+use sim::social::{Episode, Interlocutor, Memory, Persona, Situation, act, default_next_act};
 use sim::time::Weekday;
 
 /// The tavern's yard (an area in content): the building, the lane along its south side
@@ -375,7 +373,7 @@ impl Interlocutor for Tom {
     }
 
     fn mood(&self, ctx: &Ctx<'_>, me: VillagerId) -> i8 {
-        (needs_mood(ctx, me) + self.mood / 2).clamp(-3, 3)
+        (ctx.spirits(me) + self.mood / 2).clamp(-3, 3)
     }
 
     fn worry(&self, ctx: &Ctx<'_>, me: VillagerId) -> Option<Topic> {

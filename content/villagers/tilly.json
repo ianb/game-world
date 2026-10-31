@@ -53,5 +53,17 @@
       "object": "bed_tilly",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "restless",
+      "after_hours": 2
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "good_things"
+      ]
+    }
   ]
 }

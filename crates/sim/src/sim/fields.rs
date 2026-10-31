@@ -7,8 +7,9 @@ use crate::ids::{ObjectId, PlaceId, VillagerId};
 use crate::protocol::{Emitted, FieldWork, GoodsLine};
 use crate::time::Season;
 
-/// Label and chance, in percent, of rain on a night in each season.
-pub const RAINS: &str = "rains";
+use crate::fields::RAINS;
+
+/// Chance, in percent, of rain on a night in each season.
 #[must_use]
 pub fn rain_percent(season: Season) -> i16 {
     match season {
@@ -58,6 +59,7 @@ impl<C: CharacterSet> Sim<C> {
         if rained {
             out.push(Emitted::Rained { tick });
         }
+        self.moods_weather(rained, out);
         let night = self.state.fields.new_day(season, rained);
         let id = |p: u16| self.state.fields.plots[usize::from(p)].id.clone();
         for (p, tiles) in night.ripened {

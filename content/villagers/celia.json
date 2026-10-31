@@ -55,5 +55,23 @@
       "amount": 30,
       "what": "annuity"
     }
+  ],
+  "moods": [
+    {
+      "mood": "lonely",
+      "after_hours": 4
+    },
+    {
+      "mood": "proud",
+      "of": [
+        "earning"
+      ]
+    },
+    {
+      "mood": "irritable",
+      "by": [
+        "crowds"
+      ]
+    }
   ]
 }

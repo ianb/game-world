@@ -55,5 +55,17 @@
       "amount": 8,
       "what": "sexton's wage"
     }
+  ],
+  "moods": [
+    {
+      "mood": "anxious",
+      "about": [
+        "dark"
+      ]
+    },
+    {
+      "mood": "lonely",
+      "after_hours": 6
+    }
   ]
 }

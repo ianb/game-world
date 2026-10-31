@@ -47,5 +47,20 @@
       "object": "bed_dan",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "anxious",
+      "about": [
+        "strangers",
+        {
+          "money": 10
+        }
+      ]
+    },
+    {
+      "mood": "lonely",
+      "after_hours": 5
+    }
   ]
 }

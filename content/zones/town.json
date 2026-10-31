@@ -2978,7 +2978,7 @@
         "h": 3
       },
       "crop": "flowers",
-      "household": "manor"
+      "keeper": "thorn"
     },
     {
       "id": "carrots_manor",
@@ -2989,7 +2989,7 @@
         "h": 2
       },
       "crop": "carrots",
-      "household": "manor"
+      "keeper": "thorn"
     },
     {
       "id": "garden_cottage",
@@ -3121,7 +3121,7 @@
         "h": 3
       },
       "crop": "flowers",
-      "household": "manor"
+      "keeper": "thorn"
     }
   ]
 }

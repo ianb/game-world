@@ -12,6 +12,7 @@ pub mod hash;
 pub mod history;
 pub mod ids;
 pub mod input;
+pub mod moods;
 pub mod needs;
 pub mod odds;
 pub mod protocol;

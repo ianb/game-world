@@ -35,5 +35,18 @@
       "object": "bed_pip",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "restless",
+      "after_hours": 2
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "company",
+        "good_things"
+      ]
+    }
   ]
 }

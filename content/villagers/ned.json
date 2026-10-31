@@ -41,5 +41,25 @@
       "object": "bed_ned",
       "activity": "sleep"
     }
+  ],
+  "moods": [
+    {
+      "mood": "anxious",
+      "about": [
+        {
+          "money": 15
+        }
+      ]
+    },
+    {
+      "mood": "proud",
+      "of": [
+        "earning"
+      ]
+    },
+    {
+      "mood": "restless",
+      "after_hours": 3
+    }
   ]
 }
