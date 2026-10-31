@@ -1418,3 +1418,25 @@ Implications: protocol 26, snapshot 17. The level names and every villager's moo
 configuration are placeholders from the character notes, for Ian to rewrite. Pride in
 earning talks about "custom", not "money", because "money" is the topic of money
 trouble and a listener took a proud shopkeeper's remark as a call for help.
+
+## 2026-10-31: A second world
+
+Ian: "I want to support a second world. There will presumably be a lot of work just to
+support two worlds, while keeping a lot of engine stuff shared between them. But they are
+also two codebases, as there are a lot of qualitative differences between them.
+Presumably you select the world, and all the interface/sim comes after that. There's no
+crossover, no shared timeline, no nothing, just completely different." And: "We should
+keep the principles and concepts well documented so there's a certain consistency (and
+diversity!) in the world. Start with the basics, we'll focus on just one zone."
+
+Decided:
+
+- A second world, the raft city (working name), from Ian's dossier
+  (`worlds/raft/dossier.md`, verbatim). The world is chosen first; nothing is shared
+  between worlds at run time.
+- The engine is shared; content, character programs, art and docs are per world.
+- The world's rules are kept as checkable statements in `worlds/raft/principles.md`.
+
+Proposed, for Ian to confirm: the layout and order in `worlds/README.md` (move the valley
+into `worlds/valley/`, generalise the valley words in the content model, then add the
+raft world), and the first slice in `worlds/raft/plan.md` (the scrap zone).
