@@ -1,6 +1,6 @@
 # Iris
 
-Lives in the hamlet, the Reed house. Program: `crates/characters/src/iris.rs`.
+Lives in the hamlet, the Reed house. Program: `worlds/valley/characters/src/iris.rs`.
 
 ## Description
 

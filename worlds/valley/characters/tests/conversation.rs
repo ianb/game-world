@@ -1,14 +1,14 @@
 //! Conversations between the real characters: what four weeks of them contain, and that a
 //! conversation in progress survives a snapshot.
-use characters::Town;
 use content::{Content, load_dir};
 use sim::Sim;
 use sim::protocol::{Act, BidAnswer, Caught, Emitted};
 use sim::time::{TICKS_PER_DAY, Tick};
 use std::path::PathBuf;
+use valley::Town;
 
 fn town() -> Content {
-    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../content")).unwrap()
+    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content")).unwrap()
 }
 
 fn at(day: u32, hour: u32, minute: u32) -> Tick {

@@ -1,13 +1,13 @@
 //! What villagers perceive, what they tell themselves, and what it builds to.
-use characters::Town;
 use content::{Content, load_dir};
 use sim::Sim;
 use sim::protocol::{Act, Blame, Emitted, Gesture};
 use sim::time::{TICKS_PER_DAY, Tick};
 use std::path::PathBuf;
+use valley::Town;
 
 fn town() -> Content {
-    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../content")).unwrap()
+    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content")).unwrap()
 }
 
 #[test]

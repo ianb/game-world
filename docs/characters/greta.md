@@ -1,6 +1,6 @@
 # Greta
 
-Lives in the hamlet, the smithy; keeps the store. Program: `crates/characters/src/greta.rs`.
+Lives in the hamlet, the smithy; keeps the store. Program: `worlds/valley/characters/src/greta.rs`.
 
 ## Description
 

@@ -1,6 +1,6 @@
 # Abel
 
-Lives in the south woods, the woodcutter's hut. Program: `crates/characters/src/abel.rs`.
+Lives in the south woods, the woodcutter's hut. Program: `worlds/valley/characters/src/abel.rs`.
 
 ## Description
 

@@ -17,7 +17,7 @@ reason is gone.
 Three pieces, each small.
 
 **Shared rules over memories.** A rule is a plain function in
-`crates/characters/src/toolbox.rs` that reads a character's heard
+`worlds/valley/characters/src/toolbox.rs` that reads a character's heard
 memories and returns commands. Any character can run it; whether they do,
 and how readily, comes from their persona. The first rule is `kindness`:
 if you heard, in words and in the last week, a topic that content marks
@@ -31,7 +31,7 @@ sets the cause of the next event to `Cause::Knew`, so the `Paid` event
 records who said what, and when. The summary line spells out the chain:
 "Nell gave Mara 3 coins: Pip had told Nell about money (Mara) (11:22am)".
 The viewer shows the cause in the inspector and on summary items. A test
-(`crates/characters/tests/knowledge.rs`) checks that every cited turn
+(`worlds/valley/characters/tests/knowledge.rs`) checks that every cited turn
 happened and that the giver caught the words.
 
 **News moves.** `default_gossip` (in `crates/sim/src/social.rs`) is the

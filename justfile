@@ -39,18 +39,27 @@ wasm-check:
 tileset:
     node scripts/make-tileset.mjs
 
-build-wasm:
+build-wasm: bundles
     cargo build -p sim-wasm --release --target wasm32-unknown-unknown
     wasm-bindgen --target bundler --out-dir packages/sim-wasm/pkg target/wasm32-unknown-unknown/release/sim_wasm.wasm
     wasm-bindgen --target nodejs --out-dir packages/sim-wasm/pkg-node target/wasm32-unknown-unknown/release/sim_wasm.wasm
     echo '{ "type": "commonjs" }' > packages/sim-wasm/pkg-node/package.json
-    cargo run -q -p tools -- bundle > target/content-bundle.json
-    mkdir -p packages/viewer/public && cp target/content-bundle.json packages/viewer/public/content.json
+
+# Each world's content as one JSON document, for the wasm smoke, vitest and the viewer.
+bundles:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p target/bundles
+    for world in valley; do
+        cargo run -q -p tools -- --world "$world" bundle > "target/bundles/$world.json"
+        mkdir -p "packages/viewer/public/worlds/$world"
+        cp "target/bundles/$world.json" "packages/viewer/public/worlds/$world/content.json"
+    done
 
 # Build the wasm, run a week in Node, and compare the hash with the native golden snapshot.
 wasm-smoke: build-wasm
-    node packages/sim-wasm/smoke.mjs target/content-bundle.json \
-        "$(grep -v '^---' crates/characters/tests/snapshots/town__golden_hash_after_a_week_matches_the_wasm_smoke.snap | grep -v '^$' | grep -v '^source' | grep -v '^expression' | tail -1)"
+    node packages/sim-wasm/smoke.mjs valley target/bundles/valley.json \
+        "$(grep -v '^---' worlds/valley/characters/tests/snapshots/town__golden_hash_after_a_week_matches_the_wasm_smoke.snap | grep -v '^$' | grep -v '^source' | grep -v '^expression' | tail -1)"
 
 # Regenerate the TypeScript bindings and the content JSON Schema from the Rust types.
 gen-types:

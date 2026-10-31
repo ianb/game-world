@@ -1,12 +1,12 @@
 //! Scenes: the town set up at a moment so that one behavior has what it needs, with the
 //! chances that would decide it forced. Each states its preconditions instead of relying
 //! on a seed that happens to produce them.
-use characters::scene::{Scene, at};
-use characters::{benny, kit, penn};
 use sim::needs::Need;
 use sim::protocol::{Act, BidAnswer, Cause, Emitted, Frame, Gesture};
 use sim::social::chances;
 use sim::time::TICKS_PER_MINUTE;
+use valley::scene::{Scene, at};
+use valley::{benny, kit, penn};
 
 /// Nell, short of money, confides it to Elias in her cottage; he takes the bid, hears it,
 /// and helps her when the talk ends, citing what she said.
@@ -439,7 +439,7 @@ fn pip_chases_the_hens_and_they_run() {
 #[test]
 fn lottie_watches_the_train_go() {
     let mut s = Scene::new();
-    s.force_for(characters::lottie::SAYS_SO, "lottie", true);
+    s.force_for(valley::lottie::SAYS_SO, "lottie", true);
     let lottie = s.id("lottie");
     let events = s.run_until(at(1, 11, 0)).to_vec();
     let watching = events.iter().find_map(|e| match e {
@@ -479,7 +479,7 @@ fn lottie_watches_the_train_go() {
 /// what she keeps by her. The shelf goes down by what she took.
 #[test]
 fn money_to_spare_goes_on_luxuries_at_the_store() {
-    use characters::toolbox::{COMFORT_COINS, LUXURIES};
+    use valley::toolbox::{COMFORT_COINS, LUXURIES};
     let mut s = Scene::new();
     s.run_until(at(1, 13, 50));
     let counter = s.sim.ctx().object_id("counter_store").unwrap();
@@ -529,7 +529,7 @@ fn money_to_spare_goes_on_luxuries_at_the_store() {
 /// keep by them.
 #[test]
 fn only_money_to_spare_sends_someone_shopping() {
-    use characters::toolbox::COMFORT_COINS;
+    use valley::toolbox::COMFORT_COINS;
     let plans_trip = |coins: u32| {
         let mut s = Scene::new();
         let celia = s.id("celia");

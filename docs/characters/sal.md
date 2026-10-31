@@ -1,6 +1,6 @@
 # Sal
 
-Lives in south of the old town, the Coopers' house; works at the smithy. Program: `crates/characters/src/sal.rs`.
+Lives in south of the old town, the Coopers' house; works at the smithy. Program: `worlds/valley/characters/src/sal.rs`.
 
 ## Description
 

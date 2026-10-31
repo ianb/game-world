@@ -1,6 +1,5 @@
 //! Hal is sweet on Mara, Mara is fond of Tom, and Tom does not notice. What each of them
 //! does comes from what they saw and heard.
-use characters::Town;
 use content::{Content, load_dir};
 use sim::Sim;
 use sim::ids::VillagerId;
@@ -9,9 +8,10 @@ use sim::recall::Record;
 use sim::time::{TICKS_PER_HOUR, Tick};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use valley::Town;
 
 fn town() -> Content {
-    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../content")).unwrap()
+    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content")).unwrap()
 }
 
 #[test]

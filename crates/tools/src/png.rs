@@ -1,10 +1,10 @@
 //! A PNG of a place: cells coloured by kind, objects as dark squares, roofs as outlines,
 //! villagers as bright squares with a per-villager outline. For a person, or the agent's
 //! image reader, to glance at.
-use characters::Town;
 use content::{Cell, Pos, World};
 use image::{Rgb, RgbImage};
 use sim::Sim;
+use sim::brain::CharacterSet;
 use sim::terrain::Surface;
 
 const TILE: u32 = 8;
@@ -122,7 +122,7 @@ pub fn render_place(
 
 /// Every place stacked vertically with a gap, villagers drawn in.
 #[must_use]
-pub fn render_town(sim: &Sim<Town>) -> RgbImage {
+pub fn render_world<C: CharacterSet>(sim: &Sim<C>) -> RgbImage {
     let world = sim.world();
     let villagers: Vec<(usize, content::Pos, usize)> = sim
         .state()

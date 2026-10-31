@@ -1,6 +1,6 @@
 # Amos
 
-Lives in the hamlet, the Reed house. Program: `crates/characters/src/amos.rs`.
+Lives in the hamlet, the Reed house. Program: `worlds/valley/characters/src/amos.rs`.
 
 ## Description
 

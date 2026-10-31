@@ -1,6 +1,6 @@
 # Agnes
 
-Lives in the west end, the school (a room behind the schoolroom). Program: `crates/characters/src/agnes.rs`.
+Lives in the west end, the school (a room behind the schoolroom). Program: `worlds/valley/characters/src/agnes.rs`.
 
 ## Description
 

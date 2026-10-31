@@ -1440,3 +1440,22 @@ Decided:
 Proposed, for Ian to confirm: the layout and order in `worlds/README.md` (move the valley
 into `worlds/valley/`, generalise the valley words in the content model, then add the
 raft world), and the first slice in `worlds/raft/plan.md` (the scrap zone).
+
+## 2026-10-31: The Welling, and the valley moves into `worlds/`
+
+Ian, on the second-world proposal: "sounds good. Fire isn't necessary to start. Kelp
+isn't like a super strong thing, just a mood/energy booster, mildly addictive. The repo
+sounds fine. Keep valley playable throughout. For the name of the world, let's call it
+The Welling".
+
+Decided:
+
+- The second world is The Welling, id `welling`. Its docs are in `docs/worlds/welling/`
+  (the previous entry's `worlds/raft/` paths now live there).
+- The layout in `docs/worlds/README.md` stands. The valley's content, characters crate
+  (renamed `valley`) and fixture are under `worlds/valley/`.
+- The tools take `--world`, the wasm `Sim` takes a world id, and the viewer opens the
+  world named by `?world=`, else the last one opened.
+- The first slice is the scrap zone, without fire. Kelp is a mild mood and energy
+  booster with a mild craving.
+- The valley stays playable at every step.

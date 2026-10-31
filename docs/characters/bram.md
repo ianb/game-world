@@ -1,6 +1,6 @@
 # Bram
 
-Lives in the hamlet, the smithy. Program: `crates/characters/src/bram.rs`.
+Lives in the hamlet, the smithy. Program: `worlds/valley/characters/src/bram.rs`.
 
 ## Description
 

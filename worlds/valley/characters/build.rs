@@ -29,27 +29,23 @@ fn fnv(hash: &mut u64, bytes: &[u8]) {
 
 fn main() {
     let root = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").expect("set by cargo"));
+    // Each directory with the name its files are fingerprinted under, so the fingerprint
+    // does not depend on where the checkout or the crates live.
     let dirs = [
-        root.join("src"),
-        root.join("../sim/src"),
-        root.join("../content/src"),
+        ("characters/src", root.join("src")),
+        ("sim/src", root.join("../../../crates/sim/src")),
+        ("content/src", root.join("../../../crates/content/src")),
     ];
-    let mut files = Vec::new();
-    for dir in &dirs {
+    let mut named: Vec<(String, PathBuf)> = Vec::new();
+    for (label, dir) in &dirs {
         println!("cargo:rerun-if-changed={}", dir.display());
+        let mut files = Vec::new();
         rust_files(dir, &mut files);
+        for p in files {
+            let rel = p.strip_prefix(dir).expect("under its directory").display();
+            named.push((format!("{label}/{rel}").replace('\\', "/"), p));
+        }
     }
-    // Sort by path relative to the workspace so the fingerprint does not depend on where
-    // the checkout lives or on directory order.
-    let mut named: Vec<(String, PathBuf)> = files
-        .into_iter()
-        .map(|p| {
-            let rel = p
-                .strip_prefix(root.join(".."))
-                .map_or_else(|_| p.display().to_string(), |r| r.display().to_string());
-            (rel.replace('\\', "/").replace("characters/../", ""), p)
-        })
-        .collect();
     named.sort();
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
     for (name, path) in &named {

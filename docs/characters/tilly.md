@@ -1,6 +1,6 @@
 # Tilly
 
-Lives in the farms, the Hollins farmhouse. Program: `crates/characters/src/tilly.rs`.
+Lives in the farms, the Hollins farmhouse. Program: `worlds/valley/characters/src/tilly.rs`.
 
 ## Description
 

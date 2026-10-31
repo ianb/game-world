@@ -2,7 +2,8 @@ use content::{Content, Nav, Pos, Spot, compile, load_dir, nav, render_place};
 use std::path::PathBuf;
 
 fn town() -> Content {
-    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../content")).unwrap()
+    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../worlds/valley/content"))
+        .unwrap()
 }
 
 fn object_access(world: &content::World, id: &str) -> Spot {

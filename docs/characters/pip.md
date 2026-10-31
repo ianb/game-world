@@ -1,6 +1,6 @@
 # Pip
 
-Lives in the old town; sleeps upstairs in the house. Program: `crates/characters/src/pip.rs`.
+Lives in the old town; sleeps upstairs in the house. Program: `worlds/valley/characters/src/pip.rs`.
 
 ## Description
 

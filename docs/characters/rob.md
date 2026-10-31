@@ -1,6 +1,6 @@
 # Rob
 
-Lives in south of the old town, the Coopers' house. Program: `crates/characters/src/rob.rs`.
+Lives in south of the old town, the Coopers' house. Program: `worlds/valley/characters/src/rob.rs`.
 
 ## Description
 

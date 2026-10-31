@@ -1,6 +1,6 @@
 # Penn
 
-Lives in the hamlet, the Dory house. Program: `crates/characters/src/penn.rs`.
+Lives in the hamlet, the Dory house. Program: `worlds/valley/characters/src/penn.rs`.
 
 ## Description
 

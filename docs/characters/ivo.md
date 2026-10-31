@@ -1,6 +1,6 @@
 # Ivo
 
-Lives in the south woods, the hermitage. Program: `crates/characters/src/ivo.rs`.
+Lives in the south woods, the hermitage. Program: `worlds/valley/characters/src/ivo.rs`.
 
 ## Description
 

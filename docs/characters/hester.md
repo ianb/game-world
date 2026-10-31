@@ -1,6 +1,6 @@
 # Hester
 
-Lives in the old town, the Pike house on the square. Program: `crates/characters/src/hester.rs`.
+Lives in the old town, the Pike house on the square. Program: `worlds/valley/characters/src/hester.rs`.
 
 ## Description
 

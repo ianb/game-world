@@ -1,6 +1,6 @@
 # Elias
 
-Lives in the west end, the vicarage. Program: `crates/characters/src/elias.rs`.
+Lives in the west end, the vicarage. Program: `worlds/valley/characters/src/elias.rs`.
 
 ## Description
 

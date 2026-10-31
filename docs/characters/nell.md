@@ -1,6 +1,6 @@
 # Nell
 
-Lives in the old town, the cottage. Program: `crates/characters/src/nell.rs`.
+Lives in the old town, the cottage. Program: `worlds/valley/characters/src/nell.rs`.
 
 ## Description
 

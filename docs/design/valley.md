@@ -45,7 +45,7 @@ undeclared id, the way `Ctx::topic` does.
 ## People
 
 Each villager has a file in [docs/characters](../characters/README.md) with a
-description and design notes, and a module in `crates/characters/src` with at
+description and design notes, and a module in `worlds/valley/characters/src` with at
 least one behavior of their own. The old town's five are unchanged except that
 their hard-coded coordinates became areas.
 

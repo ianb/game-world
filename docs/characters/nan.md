@@ -1,6 +1,6 @@
 # Nan
 
-Lives in the river, the mill. Program: `crates/characters/src/nan.rs`.
+Lives in the river, the mill. Program: `worlds/valley/characters/src/nan.rs`.
 
 ## Description
 

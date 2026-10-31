@@ -1,6 +1,6 @@
 # Jenna
 
-Lives in south of the old town, the Coopers' house. Program: `crates/characters/src/jenna.rs`.
+Lives in south of the old town, the Coopers' house. Program: `worlds/valley/characters/src/jenna.rs`.
 
 ## Description
 

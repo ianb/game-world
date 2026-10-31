@@ -1,6 +1,6 @@
 # Tom
 
-Lives in the old town, the tavern; sleeps upstairs in the house. Program: `crates/characters/src/tom.rs`.
+Lives in the old town, the tavern; sleeps upstairs in the house. Program: `worlds/valley/characters/src/tom.rs`.
 
 ## Description
 

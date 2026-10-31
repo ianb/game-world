@@ -1,6 +1,6 @@
 # Gid
 
-Lives in the river, the mill. Program: `crates/characters/src/gid.rs`.
+Lives in the river, the mill. Program: `worlds/valley/characters/src/gid.rs`.
 
 ## Description
 

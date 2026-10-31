@@ -1,6 +1,6 @@
 # Thorn
 
-Lives in the manor, the lodge. Program: `crates/characters/src/thorn.rs`.
+Lives in the manor, the lodge. Program: `worlds/valley/characters/src/thorn.rs`.
 
 ## Description
 

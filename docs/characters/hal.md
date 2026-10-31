@@ -1,6 +1,6 @@
 # Hal
 
-Lives in the old town, the cart yard. Program: `crates/characters/src/hal.rs`.
+Lives in the old town, the cart yard. Program: `worlds/valley/characters/src/hal.rs`.
 
 ## Description
 

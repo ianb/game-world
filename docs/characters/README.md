@@ -4,7 +4,7 @@ One file per villager: who they are (a placeholder description) and design notes
 
 Every character says how they take to each kind of animal (`fondness`), and how they feel about hens and sheep is part of who they are: Pip, Kit, Tilly and Benny are delighted by the hens, Tom, Agnes, Silas, Penn and Thorn are annoyed by them, Ivo is afraid of them, and Benny is afraid of the sheep.
 
-When a program rolls for something, it uses `ctx.chance` with a `pub const` label in the villager's module, and gets a scene in `crates/characters/tests/scenes.rs` that forces it. See [testing](../testing.md).
+When a program rolls for something, it uses `ctx.chance` with a `pub const` label in the villager's module, and gets a scene in `worlds/valley/characters/tests/scenes.rs` that forces it. See [testing](../testing.md).
 
 - [Mara](mara.md), the old town, the bakery; sleeps upstairs in the house. The baker.
 - [Tom](tom.md), the old town, the tavern; sleeps upstairs in the house. Keeps the tavern.

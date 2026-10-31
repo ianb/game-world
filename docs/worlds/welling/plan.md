@@ -1,14 +1,15 @@
-# The raft city: how to get there
+# The Welling: how to get there
 
-A proposal, 2026-10-31, from Ian's dossier (`dossier.md`) and the valley as built. Not
-decided until Ian says so. Names are placeholders.
+From Ian's dossier (`dossier.md`) and the valley as built, 2026-10-31. Ian agreed the
+scrap zone first, the repository layout, and keeping the valley playable, and named the
+world The Welling. Other names are placeholders.
 
 ## What carries over
 
 Most of what the valley built is setting-agnostic already, and some of it maps onto the
-raft city closely:
+Welling closely:
 
-| valley | raft city | change needed |
+| valley | the Welling | change needed |
 | --- | --- | --- |
 | the train on a timetable, buying exports and bringing goods | ships calling at the docks: outside fleets buying crust, gas and live fish, bringing what the shelf cannot make; later, newcomers | timetabled arrivals become a general system with a berth instead of a track |
 | fields: tile state, growth, water, weeds, fertility, worked tile by tile | seep plant beds (kelp and others) under and beside the rafts, growing fast near a seep and slower as it declines | plants declared in content; "water" becomes the local seep's strength |
@@ -24,8 +25,8 @@ raft city closely:
 In the order each is needed:
 
 1. **Substances.** Anything consumed (kelp, a bar's drinks, raw fish, gas) has effects
-   declared in content as mood pushes and need changes: kelp lifts a little and staves
-   off gloom, a drink calms the anxious, gas is a strong high and leaves a craving. Each
+   declared in content as mood pushes and need changes: kelp lifts mood and energy a
+   little and leaves a mild craving, a drink calms the anxious, gas is a strong high and leaves a craving. Each
    portion comes from a batch with an id, so effects can vary within a batch (sushi's
    unplanned effects) and a bad batch can be traced through who bought it where. Raw
    keeps the seep in fish, cooking removes it. Addiction is a craving need that grows
@@ -76,12 +77,8 @@ One zone, small, to prove the second world end to end before anything else is bu
 - **Not in it.** Fire, the exchange, claims, the council, divers, fish trainers, other
   zones.
 
-## Questions for Ian
+## Answered
 
-1. The scrap zone as the first zone, with the cast and activities above?
-2. Is the repository layout in `../README.md` right: one repo, shared engine crates,
-   each world's content and characters under `worlds/<id>/`?
-3. Should the valley stay playable alongside, or is it now a reference only? The plan
-   keeps it playable, which also keeps the engine honest about being shared.
-4. Names: a working name for the world and the zone, and for kelp's cousins and the two
-   grades of gas, or placeholders until you write them?
+Ian, 2026-10-31: "sounds good. Fire isn't necessary to start. Kelp isn't like a super
+strong thing, just a mood/energy booster, mildly addictive. The repo sounds fine. Keep
+valley playable throughout. For the name of the world, let's call it The Welling".

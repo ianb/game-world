@@ -1,6 +1,6 @@
 # Moss
 
-Lives in the north-west hill, the shepherd's hut. Program: `crates/characters/src/moss.rs`.
+Lives in the north-west hill, the shepherd's hut. Program: `worlds/valley/characters/src/moss.rs`.
 
 ## Description
 

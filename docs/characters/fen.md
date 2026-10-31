@@ -1,6 +1,6 @@
 # Fen
 
-Lives in the river, the fisher's shack. Program: `crates/characters/src/fen.rs`.
+Lives in the river, the fisher's shack. Program: `worlds/valley/characters/src/fen.rs`.
 
 ## Description
 

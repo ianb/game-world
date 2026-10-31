@@ -1,13 +1,13 @@
 [package]
-name = "characters"
+name = "valley"
 edition.workspace = true
 version.workspace = true
 license.workspace = true
 publish.workspace = true
 
 [dependencies]
-sim = { path = "../sim" }
-content = { path = "../content" }
+sim = { path = "../../../crates/sim" }
+content = { path = "../../../crates/content" }
 serde.workspace = true
 rand.workspace = true
 rand_pcg.workspace = true

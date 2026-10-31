@@ -1,6 +1,6 @@
 # Lottie
 
-Lives in the old town, the Pike house. Program: `crates/characters/src/lottie.rs`.
+Lives in the old town, the Pike house. Program: `worlds/valley/characters/src/lottie.rs`.
 
 ## Description
 

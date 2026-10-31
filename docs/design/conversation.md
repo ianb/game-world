@@ -207,7 +207,7 @@ The first spike is in. Where things are:
   trait and its research defaults.
 - `crates/sim/src/sim/conversation.rs`: conversations as beats, bystanders,
   frame changes, episodes.
-- `crates/characters/src/*.rs`: one placeholder program per villager.
+- `worlds/valley/characters/src/*.rs`: one placeholder program per villager.
 - `crates/sim/src/summary/talk.rs`: the summary line for a conversation.
 - `cargo run -p tools -- talks --seed 2 --day 36 --who mara` prints
   transcripts; the viewer's inspector shows a villager's mind.
@@ -230,5 +230,5 @@ confide it; summaries that say why a misreading happened.
 
 Since then (2026-10-25): moves are called gestures in the code
 (`Gesture`), each character has an exhaustive table of what each gesture
-means to them, and topics are declared in `content/topics/`. See the
+means to them, and topics are declared in `worlds/valley/content/topics/`. See the
 decision log.

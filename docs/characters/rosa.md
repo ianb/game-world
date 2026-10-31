@@ -1,6 +1,6 @@
 # Rosa
 
-Lives in the hamlet, the Dory house. Program: `crates/characters/src/rosa.rs`.
+Lives in the hamlet, the Dory house. Program: `worlds/valley/characters/src/rosa.rs`.
 
 ## Description
 

@@ -1,6 +1,6 @@
 # Wynn
 
-Lives in south of the old town, the herbalist's cottage. Program: `crates/characters/src/wynn.rs`.
+Lives in south of the old town, the herbalist's cottage. Program: `worlds/valley/characters/src/wynn.rs`.
 
 ## Description
 

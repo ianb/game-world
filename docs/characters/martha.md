@@ -1,6 +1,6 @@
 # Martha
 
-Lives in the farms, the Ashby farmhouse. Program: `crates/characters/src/martha.rs`.
+Lives in the farms, the Ashby farmhouse. Program: `worlds/valley/characters/src/martha.rs`.
 
 ## Description
 

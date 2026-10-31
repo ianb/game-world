@@ -92,7 +92,7 @@ document skeleton stripped for hosts that add their own.
 ## Status
 
 Building. The Rust simulation core exists and runs the first town: a Cargo
-workspace (`content`, `sim`, `characters`, `tools`, `sim-wasm`), a
+workspace (`content`, `sim`, `tools`, `sim-wasm`, and one characters crate per world under `worlds/`), a
 discrete-event scheduler with a calendar, seeded RNG streams, snapshots and
 per-subsystem hashes, content as JSON compiled to tile grids with
 validators, hierarchical pathfinding, villagers on baseline schedules, text
@@ -101,12 +101,14 @@ On top of it: generated TypeScript types with a drift check, a protocol
 package wrapping the wasm behind a `Sim` interface, a vitest contract test
 against a committed fixture, a text viewer in the browser driven by
 Playwright in CI, and the first three placeholder villagers written as Rust modules
-(`crates/characters`), who greet, talk and remember. `just check` runs it all; `cargo run -p tools -- day`
+(`worlds/valley/characters`), who greet, talk and remember. `just check` runs it all; `cargo run -p tools -- day`
 shows a day in the town. Next: more villagers and buildings, then the
 renderer spike (see [docs/design/what-remains.md](docs/design/what-remains.md)).
 
 ## What is here
 
+- [docs/worlds/README.md](docs/worlds/README.md): the worlds this engine runs (the valley,
+  and The Welling to come), what they share and what each keeps to itself.
 - [docs/testing.md](docs/testing.md): how behavior tests set up scenes and
   force named chances instead of relying on seeds.
 - [docs/decisions.md](docs/decisions.md): design calls made so far and what

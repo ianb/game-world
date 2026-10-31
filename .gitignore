@@ -6,5 +6,5 @@ dist/
 node_modules/
 packages/sim-wasm/pkg-node/
 packages/sim-wasm/pkg/
-packages/viewer/public/content.json
+packages/viewer/public/worlds/
 target/

@@ -1,6 +1,6 @@
 # Mara
 
-Lives in the old town, the bakery; sleeps upstairs in the house. Program: `crates/characters/src/mara.rs`.
+Lives in the old town, the bakery; sleeps upstairs in the house. Program: `worlds/valley/characters/src/mara.rs`.
 
 ## Description
 

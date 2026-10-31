@@ -1,6 +1,6 @@
 # Ottilie
 
-Lives in the river, the fisher's shack. Program: `crates/characters/src/ottilie.rs`.
+Lives in the river, the fisher's shack. Program: `worlds/valley/characters/src/ottilie.rs`.
 
 ## Description
 

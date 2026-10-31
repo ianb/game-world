@@ -33,7 +33,7 @@ Snapshots: run `just snap` (which is `cargo insta test --accept`) locally,
 read the `.snap` diff, and commit it with a reason in the message. CI never
 writes snapshots and fails on a mismatch or a stale file.
 
-## Determinism rules for `crates/sim` and `crates/characters`
+## Determinism rules for `crates/sim` and `worlds/*/characters`
 
 The sim is a pure function of (content, seed, inputs). Enforced by
 `crates/sim/clippy.toml` and `#![deny(clippy::float_arithmetic)]`:
@@ -57,7 +57,7 @@ has to reach. A closed set is an enum. Where a new variant should force a
 decision, match it exhaustively with no `_` arm and put
 `#[deny(clippy::wildcard_enum_match_arm)]` on that function (as each
 character's `warmth_of(Gesture)` does). Strings are for open sets that
-grow with content (topics), and then they are declared in `content/` and
+grow with content (topics), and then they are declared in the world's `content/` and
 checked, not matched by luck.
 
 ## Character state is for behavior
@@ -77,8 +77,9 @@ carry no `u64`, `usize`, `HashMap` or floats, and use no `serde(with)`.
 hand-edited: `packages/protocol/src/generated/` (ts-rs) and
 `schemas/content.schema.json` (schemars) are written by `just gen-types`,
 committed, and diff-checked. The test run regenerates them as a side effect.
-The fixture `fixtures/day0-seed1.json` is regenerated with
-`cargo run -p tools -- events` whenever emitted events change; both the Rust
+The fixture `worlds/valley/fixtures/day0-seed1.json` is regenerated with
+`cargo run -p tools -- events > worlds/valley/fixtures/day0-seed1.json`
+whenever emitted events change; both the Rust
 test and the vitest contract test check it.
 
 ## Prose

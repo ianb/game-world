@@ -1,6 +1,6 @@
 # Will
 
-Lives in the farms, the Hollins farmhouse. Program: `crates/characters/src/will.rs`.
+Lives in the farms, the Hollins farmhouse. Program: `worlds/valley/characters/src/will.rs`.
 
 ## Description
 

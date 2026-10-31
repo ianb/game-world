@@ -1,6 +1,6 @@
 # Celia
 
-Lives in the manor. Program: `crates/characters/src/celia.rs`.
+Lives in the manor. Program: `worlds/valley/characters/src/celia.rs`.
 
 ## Description
 

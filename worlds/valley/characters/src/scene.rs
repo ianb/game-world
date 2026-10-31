@@ -23,8 +23,7 @@ use std::path::PathBuf;
 /// The town's content, from the repository's `content/` directory.
 #[must_use]
 pub fn town_content() -> Content {
-    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../content"))
-        .expect("content loads")
+    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content")).expect("content loads")
 }
 
 /// Day `day` at `hour:minute`.

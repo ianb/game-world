@@ -11,9 +11,30 @@ const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) 
 const clockEl = $("clock");
 const everyoneEl = $("everyone");
 
+/** The world to open: `?world=<id>`, else the last one opened, else the first built. */
+function chooseWorld(): string {
+  const built = wasm.worlds();
+  const asked = new URLSearchParams(location.search).get("world");
+  let last: string | null = null;
+  try {
+    last = localStorage.getItem("world");
+  } catch {
+    // storage can be blocked; fall through to the default
+  }
+  const id = [asked, last].find((w): w is string => w !== null && built.includes(w)) ?? built[0]!;
+  try {
+    localStorage.setItem("world", id);
+  } catch {
+    // as above
+  }
+  return id;
+}
+
+const worldId = chooseWorld();
+
 async function loadContent(): Promise<string> {
-  const res = await fetch(new URL("content.json", document.baseURI));
-  if (!res.ok) throw new Error(`content.json: HTTP ${res.status}`);
+  const res = await fetch(new URL(`worlds/${worldId}/content.json`, document.baseURI));
+  if (!res.ok) throw new Error(`worlds/${worldId}/content.json: HTTP ${res.status}`);
   return res.text();
 }
 
@@ -37,7 +58,7 @@ interface RailwaySpec {
 let railway: RailwaySpec | null = null;
 try {
   const contentJson = await loadContent();
-  sim = LocalSim.create(wasm, 1, contentJson);
+  sim = LocalSim.create(wasm, worldId, 1, contentJson);
   const parsed = JSON.parse(contentJson) as { topics?: TopicDef[]; zones?: { railway?: RailwaySpec | null }[] };
   topicDefs = parsed.topics ?? [];
   railway = parsed.zones?.find((z) => z.railway)?.railway ?? null;

@@ -1,6 +1,6 @@
 # Ned
 
-Lives in south of the old town, a shack behind the cart yard. Program: `crates/characters/src/ned.rs`.
+Lives in south of the old town, a shack behind the cart yard. Program: `worlds/valley/characters/src/ned.rs`.
 
 ## Description
 

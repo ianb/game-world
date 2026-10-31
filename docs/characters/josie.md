@@ -1,6 +1,6 @@
 # Josie
 
-Lives in the manor. Program: `crates/characters/src/josie.rs`.
+Lives in the manor. Program: `worlds/valley/characters/src/josie.rs`.
 
 ## Description
 

@@ -3,7 +3,7 @@ use content::{Content, compile, list_doors, list_objects, load_dir, render_place
 use std::path::PathBuf;
 
 fn content_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../content")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../worlds/valley/content")
 }
 
 fn town() -> Content {

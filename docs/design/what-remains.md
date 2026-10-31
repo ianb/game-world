@@ -251,7 +251,7 @@ matches the native weekly hash. Also done the same day: ts-rs
 type generation with a drift check, the TypeScript protocol package wrapping
 the wasm behind a `Sim` interface, the vitest contract test against a
 committed fixture, a Vite text viewer with a Playwright smoke, and the
-two-character code-first spike (Mara and Tom in `crates/characters`), whose
+two-character code-first spike (Mara and Tom in `worlds/valley/characters`), whose
 verdict is in decisions.md. Also: interactions (encounters, passing, greetings, conversations with
 resume), a decision trace, a PNG renderer, and a third placeholder villager
 (see `interactions.md`), terrain costs with cowpaths and regrowth, a

@@ -1,6 +1,6 @@
 # Benny
 
-Lives in the hamlet, the Dory house. Program: `crates/characters/src/benny.rs`.
+Lives in the hamlet, the Dory house. Program: `worlds/valley/characters/src/benny.rs`.
 
 ## Description
 

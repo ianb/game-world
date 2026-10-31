@@ -1,6 +1,6 @@
 # Wat
 
-Lives in the hamlet, the alehouse. Program: `crates/characters/src/wat.rs`.
+Lives in the hamlet, the alehouse. Program: `worlds/valley/characters/src/wat.rs`.
 
 ## Description
 

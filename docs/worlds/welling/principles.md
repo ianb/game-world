@@ -1,4 +1,4 @@
-# The raft city: principles
+# The Welling: principles
 
 The rules of this world as checkable statements, distilled from Ian's dossier
 (`dossier.md`), so the systems and the content stay consistent with each other, and so
@@ -27,7 +27,8 @@ The dossier is the source; where this page and the dossier differ, the dossier w
   which is useful, valuable and intriguing, not only economically necessary. It is used
   locally and sold.
 - **Decided.** Kelp, a seep plant, is a mild stimulant chewed all day by nearly
-  everyone: background life. Other seep plants have other effects. Bars serve drinks and
+  everyone: background life. Ian, 2026-10-31: a mild mood and energy booster, mildly
+  addictive, not a strong thing. Other seep plants have other effects. Bars serve drinks and
   snacks made from them.
 - **Decided.** Plant effects map onto the moods the sim already has, so they can be
   tuned and so moods become visible.
@@ -58,7 +59,8 @@ The dossier is the source; where this page and the dossier differ, the dossier w
   their own supply. Some secretly sell to addicts, against their creed.
 - **Decided.** The scrap zone is a shantytown of discards. Its gas refining is cheap and
   poorer, and sold openly off a table even where restricted.
-- **Decided.** Fire is the shared danger. Cooking fires are normal; heavy uses such as
+- **Decided.** Fire is the shared danger. Not needed for the first slice (Ian,
+  2026-10-31). Cooking fires are normal; heavy uses such as
   smelting may be regulated. Firefighters extort a little: slower if you have not paid.
 - **Decided.** Clerks are everywhere, concentrated downtown, perhaps with an exchange for
   crust, gas, live fish and kelp. Prices are a readout of the world.

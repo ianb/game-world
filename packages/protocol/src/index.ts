@@ -78,9 +78,11 @@ export const TICKS_PER_DAY = 86_400;
 export interface WasmModule {
   protocol_version(): number;
   Sim: {
-    new (seedLo: number, seedHi: number, contentJson: string): WasmSim;
-    restore(bytes: Uint8Array, contentJson: string): WasmSim;
+    new (world: string, seedLo: number, seedHi: number, contentJson: string): WasmSim;
+    restore(world: string, bytes: Uint8Array, contentJson: string): WasmSim;
   };
+  /** The world ids this build can run. */
+  worlds(): string[];
 }
 
 export interface WasmSim {
@@ -190,21 +192,23 @@ export class LocalSim implements Sim {
 
   private constructor(
     private readonly wasm: WasmModule,
+    /** The world id this sim runs, such as "valley". */
+    readonly worldId: string,
     private readonly contentJson: string,
     inner: WasmSim,
   ) {
     this.inner = inner;
   }
 
-  static create(wasm: WasmModule, seed: number, contentJson: string): LocalSim {
+  static create(wasm: WasmModule, world: string, seed: number, contentJson: string): LocalSim {
     assertProtocol(wasm);
     const [lo, hi] = splitSeed(seed);
-    return new LocalSim(wasm, contentJson, new wasm.Sim(lo, hi, contentJson));
+    return new LocalSim(wasm, world, contentJson, new wasm.Sim(world, lo, hi, contentJson));
   }
 
-  static restore(wasm: WasmModule, bytes: Uint8Array, contentJson: string): LocalSim {
+  static restore(wasm: WasmModule, world: string, bytes: Uint8Array, contentJson: string): LocalSim {
     assertProtocol(wasm);
-    return new LocalSim(wasm, contentJson, wasm.Sim.restore(bytes, contentJson));
+    return new LocalSim(wasm, world, contentJson, wasm.Sim.restore(world, bytes, contentJson));
   }
 
   /** Runs a facade call; a wasm trap marks this instance dead for every later call. */
@@ -235,7 +239,7 @@ export class LocalSim implements Sim {
   }
   /** Replaces this instance's state with a snapshot made from the same content. */
   load(bytes: Uint8Array): void {
-    const next = this.wasm.Sim.restore(bytes, this.contentJson);
+    const next = this.wasm.Sim.restore(this.worldId, bytes, this.contentJson);
     this.inner.free();
     this.inner = next;
     this.dead = null;

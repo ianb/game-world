@@ -1,6 +1,6 @@
 # Bess
 
-Lives in the west end, the sexton's cottage. Program: `crates/characters/src/bess.rs`.
+Lives in the west end, the sexton's cottage. Program: `worlds/valley/characters/src/bess.rs`.
 
 ## Description
 

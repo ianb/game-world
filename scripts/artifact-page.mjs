@@ -33,5 +33,5 @@ ${body.trim()}
 `;
 writeFileSync(join(out, "index.html"), page);
 for (const f of readdirSync(join(dist, "assets"))) cpSync(join(dist, "assets", f), join(out, "assets", f));
-for (const f of ["content.json", "tiles.png", "tiles.json"]) cpSync(join(dist, f), join(out, f));
+for (const f of ["worlds", "tiles.png", "tiles.json"]) cpSync(join(dist, f), join(out, f), { recursive: true });
 console.log(`wrote ${out}/index.html and ${readdirSync(join(out, "assets")).length} assets`);

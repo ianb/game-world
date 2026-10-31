@@ -1,11 +1,11 @@
 //! `sim-tools`: validators, text views, record and replay. The agent's eyes.
 mod paint;
 mod png;
-use characters::Town;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use content::{
     Nav, Pos, Spot, compile, list_doors, list_objects, load_dir, nav, render_place, validate,
 };
+use sim::brain::CharacterSet;
 use sim::time::{TICKS_PER_DAY, Tick};
 use sim::{Sim, views};
 use std::path::PathBuf;
@@ -17,14 +17,31 @@ use std::process::ExitCode;
     about = "Validators, text views, record and replay"
 )]
 struct Cli {
-    /// Content directory.
-    #[arg(long, default_value = "content")]
-    content: PathBuf,
+    /// Which world to run.
+    #[arg(long, value_enum, default_value_t = World::Valley)]
+    world: World,
+    /// Content directory. Defaults to `worlds/<world>/content`.
+    #[arg(long)]
+    content: Option<PathBuf>,
     /// Colour the map views even when not writing to a terminal.
     #[arg(long)]
     color: bool,
     #[command(subcommand)]
     command: Command,
+}
+
+/// The worlds this repository holds (`docs/worlds/`).
+#[derive(Clone, Copy, Debug, ValueEnum)]
+enum World {
+    Valley,
+}
+
+impl World {
+    fn id(self) -> &'static str {
+        match self {
+            World::Valley => "valley",
+        }
+    }
 }
 
 #[derive(Subcommand, Debug)]
@@ -154,12 +171,13 @@ enum Command {
     },
 }
 
-#[allow(clippy::too_many_lines)]
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    let colour = paint::wanted(cli.color);
-    let show = |text: String| if colour { paint::paint(&text) } else { text };
-    let content = match load_dir(&cli.content) {
+    let dir = cli
+        .content
+        .clone()
+        .unwrap_or_else(|| PathBuf::from("worlds").join(cli.world.id()).join("content"));
+    let content = match load_dir(&dir) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("error: {e}");
@@ -177,6 +195,16 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     }
+    match cli.world {
+        World::Valley => run::<valley::Town>(cli, content),
+    }
+}
+
+/// Runs a command against one world's content, with that world's characters.
+#[allow(clippy::too_many_lines)]
+fn run<C: CharacterSet>(cli: Cli, content: content::Content) -> ExitCode {
+    let colour = paint::wanted(cli.color);
+    let show = |text: String| if colour { paint::paint(&text) } else { text };
     match cli.command {
         Command::Validate => {
             let problems = validate(&content);
@@ -222,7 +250,7 @@ fn main() -> ExitCode {
             day,
             snapshots,
         } => {
-            let mut sim: Sim<Town> = Sim::new(seed, content);
+            let mut sim: Sim<C> = Sim::new(seed, content);
             let start = Tick(day * TICKS_PER_DAY);
             let mut events = sim.step_until(start).unwrap();
             events.retain(|e| e.tick() >= start);
@@ -251,7 +279,7 @@ fn main() -> ExitCode {
             days,
             who,
         } => {
-            let mut sim: Sim<Town> = Sim::new(seed, content);
+            let mut sim: Sim<C> = Sim::new(seed, content);
             let start = Tick(day * TICKS_PER_DAY);
             let mut events = sim.step_until(start).unwrap();
             events.retain(|e| e.tick() >= start);
@@ -295,7 +323,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Command::Events { seed, day } => {
-            let mut sim: Sim<Town> = Sim::new(seed, content);
+            let mut sim: Sim<C> = Sim::new(seed, content);
             let start = Tick(day * TICKS_PER_DAY);
             let mut events = sim.step_until(start).unwrap();
             events.retain(|e| e.tick() >= start);
@@ -315,10 +343,10 @@ fn main() -> ExitCode {
                 eprintln!("--at must be a time of day, like 2pm, 7:15am or 19:15");
                 return ExitCode::from(1);
             };
-            let mut sim: Sim<Town> = Sim::new(seed, content);
+            let mut sim: Sim<C> = Sim::new(seed, content);
             sim.step_until(Tick(day * TICKS_PER_DAY).plus(secs))
                 .unwrap();
-            let img = png::render_town(&sim);
+            let img = png::render_world(&sim);
             if let Err(e) = img.save(&out) {
                 eprintln!("could not write {}: {e}", out.display());
                 return ExitCode::from(1);
@@ -333,8 +361,7 @@ fn main() -> ExitCode {
             from,
             routine,
         } => {
-            let mut history: sim::history::History<Town> =
-                sim::history::History::new(seed, content);
+            let mut history: sim::history::History<C> = sim::history::History::new(seed, content);
             // A little past the last day, so its last planned items settle.
             history
                 .step_until(Tick(days * TICKS_PER_DAY + 2 * 3600 + 1))
@@ -349,7 +376,7 @@ fn main() -> ExitCode {
                 eprintln!("--at must be a time of day, like 2pm, 7:15am or 19:15");
                 return ExitCode::from(1);
             };
-            let mut sim: Sim<Town> = Sim::new(seed, content);
+            let mut sim: Sim<C> = Sim::new(seed, content);
             sim.step_until(Tick(day * TICKS_PER_DAY).plus(secs))
                 .unwrap();
             print!("{}", views::economy(&sim));
@@ -360,7 +387,7 @@ fn main() -> ExitCode {
                 eprintln!("--at must be a time of day, like 2pm, 7:15am or 19:15");
                 return ExitCode::from(1);
             };
-            let mut sim: Sim<Town> = Sim::new(seed, content);
+            let mut sim: Sim<C> = Sim::new(seed, content);
             sim.step_until(Tick(day * TICKS_PER_DAY).plus(secs))
                 .unwrap();
             print!("{}", views::fields(&sim));
@@ -371,7 +398,7 @@ fn main() -> ExitCode {
                 eprintln!("--at must be a time of day, like 2pm, 7:15am or 19:15");
                 return ExitCode::from(1);
             };
-            let mut sim: Sim<Town> = Sim::new(seed, content);
+            let mut sim: Sim<C> = Sim::new(seed, content);
             sim.step_until(Tick(day * TICKS_PER_DAY).plus(secs))
                 .unwrap();
             print!("{}", views::moods(&sim));
@@ -382,7 +409,7 @@ fn main() -> ExitCode {
                 eprintln!("--at must be a time of day, like 2pm, 7:15am or 19:15");
                 return ExitCode::from(1);
             };
-            let mut sim: Sim<Town> = Sim::new(seed, content);
+            let mut sim: Sim<C> = Sim::new(seed, content);
             sim.step_until(Tick(day * TICKS_PER_DAY).plus(secs))
                 .unwrap();
             print!("{}", views::where_is_everyone(&sim));

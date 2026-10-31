@@ -1,6 +1,6 @@
 # Rook
 
-Lives in the south woods, the charcoal burner's hut. Program: `crates/characters/src/rook.rs`.
+Lives in the south woods, the charcoal burner's hut. Program: `worlds/valley/characters/src/rook.rs`.
 
 ## Description
 

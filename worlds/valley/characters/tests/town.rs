@@ -1,5 +1,4 @@
 //! The town with its real characters: Mara and Tom as code.
-use characters::Town;
 use content::{Content, load_dir};
 use sim::Sim;
 use sim::protocol::Emitted;
@@ -7,9 +6,10 @@ use sim::time::{TICKS_PER_DAY, Tick};
 use sim::views;
 use std::fmt::Write as _;
 use std::path::PathBuf;
+use valley::Town;
 
 fn root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..")
 }
 
 fn town() -> Content {
@@ -48,7 +48,7 @@ fn tom_fishes_on_sunday_and_mara_bakes() {
         &events,
         "mara",
         "shelf_bakery",
-        characters::mara::LOAVES_PER_BATCH,
+        valley::mara::LOAVES_PER_BATCH,
     );
     assert!(bakes >= 6, "Mara bakes most days: {bakes}");
 }
@@ -119,7 +119,7 @@ fn day0_fixture_matches_native_run() {
     assert_eq!(
         fixture.protocol_version,
         sim::protocol::PROTOCOL_VERSION,
-        "regenerate the fixture: cargo run -p tools -- events > fixtures/day0-seed1.json"
+        "regenerate the fixture: cargo run -p tools -- events > worlds/valley/fixtures/day0-seed1.json"
     );
     let mut sim: Sim<Town> = Sim::new(fixture.seed, town());
     let start = Tick(fixture.day * TICKS_PER_DAY);

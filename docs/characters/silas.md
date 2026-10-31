@@ -1,6 +1,6 @@
 # Silas
 
-Lives in the farms, the Ashby farmhouse. Program: `crates/characters/src/silas.rs`.
+Lives in the farms, the Ashby farmhouse. Program: `worlds/valley/characters/src/silas.rs`.
 
 ## Description
 

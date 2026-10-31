@@ -9,7 +9,8 @@ use sim::{DataCharacters, Sim, SimError};
 use std::path::PathBuf;
 
 fn town() -> Content {
-    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../content")).unwrap()
+    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../worlds/valley/content"))
+        .unwrap()
 }
 
 fn new_sim(seed: u64) -> Sim<DataCharacters> {

@@ -1,6 +1,6 @@
 # Clem
 
-Lives in the hamlet, a lodging. Program: `crates/characters/src/clem.rs`.
+Lives in the hamlet, a lodging. Program: `worlds/valley/characters/src/clem.rs`.
 
 ## Description
 

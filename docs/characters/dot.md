@@ -1,6 +1,6 @@
 # Dot
 
-Lives in the hamlet, the alehouse. Program: `crates/characters/src/dot.rs`.
+Lives in the hamlet, the alehouse. Program: `worlds/valley/characters/src/dot.rs`.
 
 ## Description
 

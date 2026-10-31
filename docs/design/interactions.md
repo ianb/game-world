@@ -2,7 +2,7 @@
 
 Status: built 2026-10-23 as an experiment in authored routines that interact.
 The mechanics are in the sim; the routines are placeholder characters in
-`crates/characters` (Mara, Tom, Pip) whose text is not final.
+`worlds/valley/characters` (Mara, Tom, Pip) whose text is not final.
 
 ## Mechanics
 

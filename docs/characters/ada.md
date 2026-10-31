@@ -1,6 +1,6 @@
 # Ada
 
-Lives in the farms, the Hollins farmhouse. Program: `crates/characters/src/ada.rs`.
+Lives in the farms, the Hollins farmhouse. Program: `worlds/valley/characters/src/ada.rs`.
 
 ## Description
 

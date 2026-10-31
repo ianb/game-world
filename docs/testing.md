@@ -38,7 +38,7 @@ Day plans are made at midnight, and day 0's when the sim is built. A chance
 read while planning (Kit dawdling, Hal calling at the bakery) takes effect from
 day 1.
 
-`crates/characters/tests/scenes.rs` has the examples: a confidence taken up and
+`worlds/valley/characters/tests/scenes.rs` has the examples: a confidence taken up and
 acted on, news passed on to someone who acts on it, errands queuing, Agnes and
 a late pupil, Benny hiding, Penn forgetting, the Tuesday train taking Ada's eggs
 and bringing Greta's tea, and three people taking to the same hens in their own
@@ -57,6 +57,6 @@ a scene instead.
 ## Snapshots and fixtures
 
 `just snap` accepts insta snapshots; read the diff and give the reason in the
-commit. `cargo run -p tools -- events` regenerates `fixtures/day0-seed1.json`.
+commit. `cargo run -p tools -- events > worlds/valley/fixtures/day0-seed1.json` regenerates the valley fixture.
 The golden hash in `golden_hash_after_a_week_matches_the_wasm_smoke` is the native and wasm
 determinism check.

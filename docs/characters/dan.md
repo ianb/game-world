@@ -1,6 +1,6 @@
 # Dan
 
-Lives in the farms, Ashby's barn. Program: `crates/characters/src/dan.rs`.
+Lives in the farms, Ashby's barn. Program: `worlds/valley/characters/src/dan.rs`.
 
 ## Description
 

@@ -1,6 +1,6 @@
 # Pell
 
-Lives in the manor. Program: `crates/characters/src/pell.rs`.
+Lives in the manor. Program: `worlds/valley/characters/src/pell.rs`.
 
 ## Description
 

@@ -1,6 +1,6 @@
 # Kit
 
-Lives in south of the old town, the Coopers' house. Program: `crates/characters/src/kit.rs`.
+Lives in south of the old town, the Coopers' house. Program: `worlds/valley/characters/src/kit.rs`.
 
 ## Description
 

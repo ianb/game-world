@@ -1,14 +1,14 @@
 //! Knowledge turning into action: a gift cites who said what. The chains that lead to
 //! gifts are set up as scenes in `tests/scenes.rs`.
-use characters::Town;
 use content::{Content, load_dir};
 use sim::Sim;
 use sim::protocol::{Act, Caught, Cause, Emitted};
 use sim::time::{TICKS_PER_DAY, Tick};
 use std::path::PathBuf;
+use valley::Town;
 
 fn town() -> Content {
-    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../content")).unwrap()
+    load_dir(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content")).unwrap()
 }
 
 fn weeks(seed: u64, weeks: u32) -> Vec<Emitted> {

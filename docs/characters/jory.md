@@ -1,6 +1,6 @@
 # Jory
 
-Lives in the farms, the Hollins farmhouse. Program: `crates/characters/src/jory.rs`.
+Lives in the farms, the Hollins farmhouse. Program: `worlds/valley/characters/src/jory.rs`.
 
 ## Description
 
