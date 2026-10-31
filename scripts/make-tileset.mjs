@@ -214,6 +214,8 @@ put("floor", tiles("tiles/house-interior/interior.png", 0, 3));
 // Room floors by material (`Flooring` in content).
 put("floor_planks", tiles("tiles/house-interior/interior.png", 0, 3));
 put("floor_darkplanks", tiles("tiles/base/inside.png", 0, 4));
+// Decks over open water: the dark boards for now.
+put("deck", tiles("tiles/base/inside.png", 0, 4));
 put("floor_flagstone", tiles("tiles/atlas/build_atlas.png", 1, 3));
 put("floor_cobbles", tiles("tiles/house-interior/interior.png", 1, 4));
 put("floor_checker", tiles("tiles/house-interior/interior.png", 0, 4));

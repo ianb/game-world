@@ -20,6 +20,7 @@ fn cell_colour(c: Cell) -> Rgb<u8> {
         Cell::Opening => Rgb([220, 200, 150]),
         Cell::Door => Rgb([230, 190, 90]),
         Cell::Void => Rgb([20, 20, 20]),
+        Cell::Deck => Rgb([150, 110, 70]),
     }
 }
 

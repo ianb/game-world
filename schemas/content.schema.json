@@ -1272,6 +1272,14 @@
             "$ref": "#/$defs/Rect"
           }
         },
+        "decks": {
+          "description": "Planking over water (rafts, gangplanks, open decks): walkable, laid after water.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Rect"
+          }
+        },
         "flocks": {
           "description": "Animals kept in the zone.",
           "type": "array",

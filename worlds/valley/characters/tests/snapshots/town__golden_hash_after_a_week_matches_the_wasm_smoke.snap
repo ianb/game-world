@@ -2,4 +2,4 @@
 source: worlds/valley/characters/tests/town.rs
 expression: sim.hash().hex()
 ---
-85873afd188e5fcd
+22ddda8f5391fa45

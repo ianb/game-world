@@ -118,5 +118,6 @@ pub fn cell_name(c: Cell) -> &'static str {
         Cell::Opening => "opening",
         Cell::Door => "door",
         Cell::Void => "void",
+        Cell::Deck => "deck",
     }
 }

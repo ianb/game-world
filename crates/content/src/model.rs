@@ -73,6 +73,9 @@ pub struct Zone {
     /// Water: impassable, drawn as water.
     #[serde(default)]
     pub water: Vec<Rect>,
+    /// Planking over water (rafts, gangplanks, open decks): walkable, laid after water.
+    #[serde(default)]
+    pub decks: Vec<Rect>,
     /// Made paths and roads: cheap to walk, so routes prefer them.
     #[serde(default)]
     pub paths: Vec<Rect>,

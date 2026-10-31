@@ -267,6 +267,7 @@ const CELL_TILE: Record<Cell, string> = {
   Opening: "opening",
   Door: "door",
   Void: "void",
+  Deck: "deck",
 };
 
 const SURFACE_TILE: Record<Surface, string> = {
@@ -404,6 +405,19 @@ export function groundNames(sim: Sim, place: PlaceView): string[] {
   return names;
 }
 
+const openWater = new Map<string, boolean>();
+
+/** What shaped features sit on in a zone: water for a zone of decks on open water, where
+ * the sea is the ground, else grass. */
+function zoneBackground(place: PlaceView): string {
+  let open = openWater.get(place.key);
+  if (open === undefined) {
+    open = place.cells.includes("Deck");
+    openWater.set(place.key, open);
+  }
+  return open ? "water" : "grass";
+}
+
 /** Paints a place's ground: surfaces, water, paths and walls, auto-shaped at their edges.
  * With `flatWalls` a wall shows only its top and a door is open floor, for a view that
  * raises the walls itself. */
@@ -416,7 +430,7 @@ export function paintGround(
   mat: Materials,
   region: TileRect | null = null,
 ): void {
-  const background = place.kind === "Zone" ? "grass" : "floor";
+  const background = place.kind === "Zone" ? zoneBackground(place) : "floor";
   const w = place.width;
   const h = place.height;
   const r = within(region, w, h);

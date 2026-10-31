@@ -25,6 +25,8 @@ pub enum Cell {
     Door,
     /// Nothing authored here (outside every room on a detached floor).
     Void,
+    /// Planking over water: a raft, a gangplank, a hulk's open deck.
+    Deck,
 }
 
 impl Cell {
@@ -32,7 +34,7 @@ impl Cell {
     pub fn walkable(self) -> bool {
         matches!(
             self,
-            Cell::Ground | Cell::Path | Cell::Floor | Cell::Opening | Cell::Door
+            Cell::Ground | Cell::Path | Cell::Floor | Cell::Opening | Cell::Door | Cell::Deck
         )
     }
 
@@ -42,7 +44,7 @@ impl Cell {
     pub fn base_cost(self) -> u32 {
         match self {
             Cell::Ground => 4,
-            Cell::Path | Cell::Floor | Cell::Opening | Cell::Door => 1,
+            Cell::Path | Cell::Floor | Cell::Opening | Cell::Door | Cell::Deck => 1,
             Cell::Blocked | Cell::Water | Cell::Wall | Cell::Void => 0,
         }
     }
@@ -59,6 +61,7 @@ impl Cell {
             Cell::Floor | Cell::Void => ' ',
             Cell::Opening => '▫',
             Cell::Door => '▪',
+            Cell::Deck => '=',
         }
     }
 }
@@ -296,6 +299,9 @@ pub fn compile(content: &Content) -> World {
         }
         for r in &z.water {
             fill(&mut place, *r, Cell::Water);
+        }
+        for r in &z.decks {
+            fill(&mut place, *r, Cell::Deck);
         }
         // Paths last: a road across water is a bridge, and a track through woods is cut.
         for r in &z.paths {

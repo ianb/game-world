@@ -847,7 +847,7 @@ fn check_objects(world: &World, r: &mut Report) {
         let cell = p.cell(o.at.x, o.at.y);
         // A zone object (no room) stands outdoors; a building object stands on its floor.
         let ok = if o.room.is_empty() {
-            matches!(cell, Cell::Ground | Cell::Path)
+            matches!(cell, Cell::Ground | Cell::Path | Cell::Deck)
         } else {
             cell == Cell::Floor
         };
