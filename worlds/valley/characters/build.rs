@@ -35,6 +35,7 @@ fn main() {
         ("characters/src", root.join("src")),
         ("sim/src", root.join("../../../crates/sim/src")),
         ("content/src", root.join("../../../crates/content/src")),
+        ("behaviour/src", root.join("../../../crates/behaviour/src")),
     ];
     let mut named: Vec<(String, PathBuf)> = Vec::new();
     for (label, dir) in &dirs {

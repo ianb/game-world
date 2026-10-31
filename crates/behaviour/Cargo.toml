@@ -1,0 +1,15 @@
+[package]
+name = "behaviour"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+sim = { path = "../sim" }
+content = { path = "../content" }
+rand.workspace = true
+rand_pcg.workspace = true
+
+[lints]
+workspace = true
