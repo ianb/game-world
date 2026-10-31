@@ -28,7 +28,7 @@ export function dressingFor(world: WorldView, place: PlaceView): Dressing {
   }
   return {
     plots: world.plots.filter((p) => p.place === place.id),
-    rails: world.rail && world.rail.place === place.id ? world.rail.tiles : [],
+    rails: world.rail && world.rail.place === place.id && world.rail.vehicle === "train" ? world.rail.tiles : [],
     ladders,
     // Decks mean open water: no lilies, which belong to the valley's ponds and river.
     lilies: !place.cells.includes("Deck"),

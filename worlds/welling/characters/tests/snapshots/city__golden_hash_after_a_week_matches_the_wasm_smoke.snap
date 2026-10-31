@@ -2,4 +2,4 @@
 source: worlds/welling/characters/tests/city.rs
 expression: sim.hash().hex()
 ---
-76a84b4bff4ec9a1
+b5fffed84ff85f0b

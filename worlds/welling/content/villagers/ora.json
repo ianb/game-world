@@ -63,5 +63,11 @@
       "substance": "kelp",
       "hooked": 25
     }
+  ],
+  "sends": [
+    {
+      "object": "casks_mire",
+      "good": "refined-gas"
+    }
   ]
 }

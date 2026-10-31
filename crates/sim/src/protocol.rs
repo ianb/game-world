@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 29;
+pub const PROTOCOL_VERSION: u32 = 30;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -883,6 +883,7 @@ pub struct RailView {
     pub place: PlaceId,
     pub tiles: Vec<Pos>,
     pub stop: u16,
+    pub vehicle: content::Vehicle,
 }
 
 /// A mood from the shared library. Each villager is prone to a few of them.
@@ -1169,6 +1170,7 @@ pub fn world_view<C: CharacterSet>(sim: &Sim<C>) -> WorldView {
             place: place_id(r.place),
             tiles: r.tiles.clone(),
             stop: u16::try_from(r.stop).unwrap_or(0),
+            vehicle: r.vehicle,
         }),
         plots: sim
             .content()

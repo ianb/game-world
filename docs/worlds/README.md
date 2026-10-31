@@ -87,4 +87,6 @@ hash and the fixtures are per world (`worlds/<id>/fixtures/`, each world's own s
 3. Add the Welling as a second, small world (see `welling/plan.md`). Started
    2026-10-31: the scrap zone (decks over open water, vessels afloat, a hold below the
    Mire), eight placeholder people, and the shared behaviour crate (`crates/behaviour`)
-   both worlds' characters are written against. Substances and boat calls are next.
+   both worlds' characters are written against. Then substances (doses, habits,
+   cravings, batches) and a boat calling at the berth on the timetabled line, which now
+   names its vehicle.

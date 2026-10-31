@@ -143,6 +143,14 @@
       }
     },
     {
+      "id": "crates_berth",
+      "kind": "crates",
+      "at": {
+        "x": 46,
+        "y": 18
+      }
+    },
+    {
       "id": "spot_south",
       "kind": "bucket",
       "at": {
@@ -217,6 +225,55 @@
       }
     }
   ],
+  "railway": {
+    "vehicle": "boat",
+    "track": [
+      {
+        "x": 47,
+        "y": 0
+      },
+      {
+        "x": 47,
+        "y": 15
+      },
+      {
+        "x": 44,
+        "y": 15
+      }
+    ],
+    "platform": "berth",
+    "shed": "crates_berth",
+    "runs": [
+      {
+        "days": "tue",
+        "arrive": "10:00am",
+        "depart": "12:00pm",
+        "from": "start"
+      },
+      {
+        "days": "fri",
+        "arrive": "10:00am",
+        "depart": "12:00pm",
+        "from": "start"
+      }
+    ],
+    "delivers": [
+      {
+        "good": "kelp",
+        "count": 40
+      },
+      {
+        "good": "drink",
+        "count": 30
+      }
+    ],
+    "buys": [
+      {
+        "good": "refined-gas",
+        "price": 6
+      }
+    ]
+  },
   "arrival": {
     "x": 24,
     "y": 17

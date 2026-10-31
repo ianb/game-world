@@ -103,6 +103,8 @@ try {
 }
 
 const world = sim.world();
+/** What runs on the world's timetabled line, for the words around it. */
+const vehicle: string = world.rail?.vehicle ?? "train";
 const canvases: PlaceCanvas[] = [];
 // One place on screen at a time, picked by a tab or by following whoever is pinned.
 const mapEl = $("map");
@@ -1106,7 +1108,7 @@ function draw(): void {
   shownClock = clock;
   const cal = clock.calendar;
   clockEl.textContent = `${cal.weekday} ${twelveHour(clock.time.hour, clock.time.minute)}`;
-  dateEl.textContent = watching ? "watching the train" : `${cal.season} ${cal.day_of_season}, year ${cal.year}`;
+  dateEl.textContent = watching ? `watching the ${vehicle}` : `${cal.season} ${cal.day_of_season}, year ${cal.year}`;
   pauseEl.setAttribute("aria-label", paused ? "resume" : "pause");
   pauseEl.setAttribute("aria-pressed", String(paused));
   speedButtons.forEach((b, i) => b.setAttribute("aria-pressed", String(!paused && i === speedIndex)));
@@ -1228,9 +1230,13 @@ function openSkipMenu(): void {
   };
   const items = [item("Morning", whenText(nextMorning()), () => skipTo(nextMorning()))];
   const onTrack = trains[0] && trains[0].enter <= sim.tick ? trains[0] : undefined;
-  if (onTrack) items.push(item("The train now", onTrack.stops && sim.tick < onTrack.depart ? "at the station" : "on the line", () => watchTrain(onTrack)));
-  if (stopping && stopping !== onTrack) items.push(item("Train stopping", whenText(stopping.arrive), () => watchTrain(stopping)));
-  if (passing && passing !== onTrack) items.push(item("Train passing through", whenText(passing.arrive), () => watchTrain(passing)));
+  const boat = vehicle === "boat";
+  const Vehicle = boat ? "Boat" : "Train";
+  const stopped = boat ? "at the berth" : "at the station";
+  const moving = boat ? "on its way" : "on the line";
+  if (onTrack) items.push(item(`The ${vehicle} now`, onTrack.stops && sim.tick < onTrack.depart ? stopped : moving, () => watchTrain(onTrack)));
+  if (stopping && stopping !== onTrack) items.push(item(`${Vehicle} ${boat ? "calling" : "stopping"}`, whenText(stopping.arrive), () => watchTrain(stopping)));
+  if (passing && passing !== onTrack) items.push(item(`${Vehicle} passing through`, whenText(passing.arrive), () => watchTrain(passing)));
   skipMenu.replaceChildren(...items);
   skipMenu.hidden = false;
   // Under the button, kept inside the map.

@@ -34,5 +34,7 @@ little hooked on kelp (Grue most), Pike hooked on refined gas, Sab on raw gas. K
 kept at home and bought at the Kettle three at a time; Pike buys gas at the stall one
 measure at a time and scrounges 5 coins a day.
 
-Not yet: kelp has no supply once the Kettle's 40 are gone, and nothing brings money in
-from outside. Both come with the boats (`plan.md`).
+A boat calls at the berth on Tuesdays and Fridays at ten and leaves at noon (the
+timetabled line, `vehicle: boat`). It tops the berth's crates up to 40 kelp and 30
+drink, and buys refined gas at 6 a measure. Ora sends the Mire's refined gas; Lark
+fetches kelp and drink for the Kettle at 1 each and sells kelp at 2.

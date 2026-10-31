@@ -86,6 +86,37 @@ export class Tileset {
   }
 
   /** Draws a tile at a fractional position, for things that slide between cells. */
+  /** A boat with one mast, its bow at (x, y) in tile units, drawn rather than tiled: the
+   * LPC sheets have no boats. Placeholder art. */
+  drawBoat(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+    const s = this.atlas.tile;
+    const px = x * s;
+    const py = y * s;
+    if (this.outside(px - s, py - s * 1.2, s * 3, s * 2.2)) return;
+    ctx.save();
+    ctx.fillStyle = "#6b4a2b";
+    ctx.strokeStyle = "#3b2715";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px - s * 0.9, py + s * 0.3);
+    ctx.lineTo(px + s * 1.9, py + s * 0.3);
+    ctx.lineTo(px + s * 1.5, py + s * 0.95);
+    ctx.lineTo(px - s * 0.5, py + s * 0.95);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#3b2715";
+    ctx.fillRect(px + s * 0.45, py - s * 1.1, 3, s * 1.4);
+    ctx.fillStyle = "#e8dcc0";
+    ctx.beginPath();
+    ctx.moveTo(px + s * 0.55, py - s * 1.0);
+    ctx.lineTo(px + s * 1.45, py + s * 0.2);
+    ctx.lineTo(px + s * 0.55, py + s * 0.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
   drawAt(ctx: CanvasRenderingContext2D, name: string, x: number, y: number): void {
     const t = this.atlas.tiles[name];
     if (!t) return;
@@ -333,6 +364,13 @@ export function objectTileAt(o: ObjectView, all: ObjectView[]): string | null {
   if (o.kind !== "bed_double") return objectTile(o.kind);
   const left = all.some((p) => p.kind === "bed_double" && p.place === o.place && p.pos.y === o.pos.y && p.pos.x === o.pos.x - 1);
   return left ? null : "obj_bed_double";
+}
+
+/** The tile `head` sixteenths of a tile along a track, which may turn corners. */
+export function alongTrack(track: { x: number; y: number }[], head: number): { x: number; y: number } | null {
+  if (!track.length) return null;
+  const i = Math.max(0, Math.min(track.length - 1, Math.floor(head / 16)));
+  return track[i] ?? null;
 }
 
 /** Where each car of a train is drawn, in tile units, engine first. The track runs left to
@@ -788,7 +826,10 @@ export class PlaceCanvas {
       if (near(a.pos.x, a.pos.y)) sprites.push({ y: a.pos.y + 0.4, draw: () => tiles.drawAnimal(ctx, a, g.facing, g.frame) });
     }
     const train = this.rail ? sim.train() : null;
-    if (train && this.rail) {
+    if (train && this.rail?.vehicle === "boat") {
+      const at = alongTrack(this.rail.tiles, train.head);
+      if (at && near(at.x, at.y)) sprites.push({ y: at.y + 0.9, draw: () => tiles.drawBoat(ctx, at.x, at.y) });
+    } else if (train && this.rail) {
       for (const c of trainCars(train, this.rail.tiles)) {
         if (near(c.x, c.y)) sprites.push({ y: c.y + 0.6, draw: () => tiles.drawAt(ctx, c.tile, c.x, c.y) });
       }

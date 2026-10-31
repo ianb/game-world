@@ -14,7 +14,7 @@ pub const GAS_TRADE_PRICE: u32 = 3;
 /// What the stall charges for a measure of refined gas.
 pub const GAS_PRICE: u32 = 5;
 /// A twist of kelp at the Kettle, and how many people buy at once.
-pub const KELP_PRICE: u32 = 1;
+pub const KELP_PRICE: u32 = 2;
 pub const KELP_BUY: u16 = 3;
 pub const KELP: &str = "kelp";
 /// Where kelp is sold.
@@ -308,6 +308,8 @@ pub fn human(trigger: &sim::brain::Trigger, ctx: &Ctx<'_>, me: &str) -> Vec<Comm
             -1,
         )],
         Trigger::Craving { good, .. } => crave(ctx, me, good),
+        Trigger::Arrived if activity_of(ctx, me) == "send-goods" => send_goods(ctx, me),
+        Trigger::Arrived if activity_of(ctx, me) == "fetch-goods" => fetch_goods(ctx, me),
         Trigger::Arrived if activity_of(ctx, me) == "drink" => {
             buy_drink(ctx, me).unwrap_or_else(|| vec![Command::Note("no drink to be had".into())])
         }

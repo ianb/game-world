@@ -76,6 +76,9 @@ One zone, small, to prove the second world end to end before anything else is bu
   comes next.
 - **Not in it.** Fire, the exchange, claims, the council, divers, fish trainers, other
   zones.
+- **Built, 2026-10-31.** The map, the cast (`people.md`), substances and the boat. Not
+  yet: seeps that wax and wane, a raft tileset of its own (decks use the dark boards and
+  the boat is drawn, not tiled), and newcomers off the boat.
 
 ## Answered
 

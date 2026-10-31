@@ -196,3 +196,27 @@ fn cooked_fish_has_no_surprises() {
     s.run_until(at(1, 0, 0));
     assert!(took(&s, "cooked-fish").all(|t| t.2 == Odd::No));
 }
+
+#[test]
+fn the_boat_takes_refined_gas_and_brings_kelp_for_the_kettle() {
+    let mut s = Scene::new();
+    // Day 0 is a Monday; the boat calls on Tuesday at ten.
+    s.run_until(at(1, 15, 0));
+    let came = s.events.iter().any(|e| {
+        matches!(e, Emitted::TrainArrived { delivered, .. }
+            if delivered.iter().any(|g| g.good == "kelp"))
+    });
+    assert!(came, "no boat with kelp on Tuesday");
+    let paid = s.events.iter().any(|e| {
+        matches!(e, Emitted::Paid { to, what, .. }
+            if *to == Some(s.id("ora")) && what.ends_with("refined-gas by boat"))
+    });
+    assert!(paid, "the boat paid Ora nothing for gas");
+    let lark = s.id("lark");
+    let restocked = s.events.iter().any(|e| {
+        matches!(e, Emitted::Stocked { who, good, delta, object, .. }
+            if *who == lark && good == "kelp" && *delta > 0
+                && s.sim.world().objects[object.index()].id == "counter_kettle")
+    });
+    assert!(restocked, "Lark did not restock the Kettle's kelp");
+}

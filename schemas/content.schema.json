@@ -941,7 +941,7 @@
       ]
     },
     "RailwaySpec": {
-      "description": "A railway line across the zone: goods only. The track is a polyline of zone tiles\njoined by straight runs. Trains stop at the tile beside `platform`.",
+      "description": "A timetabled line across the zone, for goods: a railway, or a boat route to a berth.\nThe track is a polyline of zone tiles joined by straight runs. Arrivals stop at the\ntile beside `platform`.",
       "type": "object",
       "properties": {
         "buys": {
@@ -979,6 +979,10 @@
           "items": {
             "$ref": "#/$defs/Pos"
           }
+        },
+        "vehicle": {
+          "description": "What runs on it. Left out of the serialized content for a train.",
+          "$ref": "#/$defs/Vehicle"
         }
       },
       "required": [
@@ -1243,6 +1247,14 @@
           "type": "string",
           "const": "food"
         }
+      ]
+    },
+    "Vehicle": {
+      "description": "What runs a timetabled line: a train on rails, or a boat over water.",
+      "type": "string",
+      "enum": [
+        "train",
+        "boat"
       ]
     },
     "Villager": {

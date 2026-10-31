@@ -53,5 +53,19 @@
       "substance": "kelp",
       "hooked": 25
     }
+  ],
+  "fetches": [
+    {
+      "good": "kelp",
+      "to": "counter_kettle",
+      "price": 1,
+      "keep": 40
+    },
+    {
+      "good": "drink",
+      "to": "barrel_kettle",
+      "price": 1,
+      "keep": 20
+    }
   ]
 }

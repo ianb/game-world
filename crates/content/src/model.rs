@@ -171,11 +171,42 @@ pub struct FlockSpec {
     pub coop: Option<String>,
 }
 
-/// A railway line across the zone: goods only. The track is a polyline of zone tiles
-/// joined by straight runs. Trains stop at the tile beside `platform`.
+/// What runs a timetabled line: a train on rails, or a boat over water.
+#[derive(Copy, Clone, Default, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+#[serde(rename_all = "lowercase")]
+pub enum Vehicle {
+    #[default]
+    Train,
+    Boat,
+}
+
+impl Vehicle {
+    #[must_use]
+    pub fn is_train(&self) -> bool {
+        *self == Vehicle::Train
+    }
+
+    /// The word for one: "train", "boat".
+    #[must_use]
+    pub fn word(self) -> &'static str {
+        match self {
+            Vehicle::Train => "train",
+            Vehicle::Boat => "boat",
+        }
+    }
+}
+
+/// A timetabled line across the zone, for goods: a railway, or a boat route to a berth.
+/// The track is a polyline of zone tiles joined by straight runs. Arrivals stop at the
+/// tile beside `platform`.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct RailwaySpec {
+    /// What runs on it. Left out of the serialized content for a train.
+    #[serde(default, skip_serializing_if = "Vehicle::is_train")]
+    pub vehicle: Vehicle,
     pub track: Vec<Pos>,
     /// Where goods for sending are left, and where the train stops.
     pub platform: String,

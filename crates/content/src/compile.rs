@@ -185,6 +185,7 @@ pub struct Rail {
     /// Object indexes.
     pub platform: usize,
     pub shed: usize,
+    pub vehicle: crate::model::Vehicle,
 }
 
 /// The tiles of a polyline of axis-aligned runs, each corner once.
@@ -365,6 +366,13 @@ pub fn compile(content: &Content) -> World {
         }
     }
 
+    compile_rail(content, &mut world);
+    world.finish();
+    world
+}
+
+/// The timetabled line, if a zone has one: its track as tiles, and where arrivals stop.
+fn compile_rail(content: &Content, world: &mut World) {
     for z in &content.zones {
         let Some(r) = &z.railway else { continue };
         let place = world.place_index[&z.id];
@@ -385,11 +393,9 @@ pub fn compile(content: &Content) -> World {
             stop,
             platform,
             shed,
+            vehicle: r.vehicle,
         });
     }
-
-    world.finish();
-    world
 }
 
 fn mark_door(place: &mut Place, at: Pos) {

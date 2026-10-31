@@ -516,3 +516,73 @@ pub fn heard_lately(
         .words()
         .any()
 }
+
+/// Today's trains, in timetable order.
+#[must_use]
+pub fn trains_today(ctx: &Ctx<'_>) -> Vec<sim::railway::Timing> {
+    let (Some(rail), Some(spec)) = (
+        ctx.world.rail.as_ref(),
+        ctx.content.zones.iter().find_map(|z| z.railway.as_ref()),
+    ) else {
+        return Vec::new();
+    };
+    sim::railway::timings(spec, rail, ctx.tick.day_start(), ctx.calendar.weekday)
+}
+
+/// The railway platform's object id, if there is a railway.
+#[must_use]
+pub fn platform<'a>(ctx: &Ctx<'a>) -> Option<&'a str> {
+    let rail = ctx.world.rail.as_ref()?;
+    Some(ctx.world.objects[rail.platform].id.as_str())
+}
+
+/// At the platform: everything they send by rail, from where they keep it.
+#[must_use]
+pub fn send_goods(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
+    let Some(v) = ctx.content.villagers.iter().find(|v| v.id == me) else {
+        return Vec::new();
+    };
+    v.sends
+        .iter()
+        .filter(|x| stock_of(ctx, &x.object, &x.good) > 0)
+        .map(|x| Command::Consign {
+            from: object(ctx, &x.object),
+            good: x.good.clone(),
+            count: u16::MAX,
+        })
+        .collect()
+}
+
+/// At the goods shed: what they fetch, as much as is there, paid for and carried to where
+/// it goes.
+#[must_use]
+pub fn fetch_goods(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
+    let (Some(v), Some(rail)) = (
+        ctx.content.villagers.iter().find(|v| v.id == me),
+        ctx.world.rail.as_ref(),
+    ) else {
+        return Vec::new();
+    };
+    let shed = ctx.world.objects[rail.shed].id.clone();
+    let who = villager(ctx, me);
+    let mut cmds = Vec::new();
+    for f in &v.fetches {
+        let wanted = f.keep.saturating_sub(stock_of(ctx, &f.to, &f.good));
+        let n = stock_of(ctx, &shed, &f.good).min(wanted);
+        let afford = ctx.coins(who) / f.price.max(1);
+        let n = u32::from(n).min(afford);
+        if n == 0 {
+            continue;
+        }
+        let n = i32::try_from(n).unwrap_or(0);
+        cmds.push(stock(ctx, &shed, &f.good, -n));
+        cmds.push(stock(ctx, &f.to, &f.good, n));
+        cmds.push(Command::Pay {
+            from: Party::Villager(who),
+            to: Party::Outside,
+            amount: f.price * n.unsigned_abs(),
+            what: f.good.clone(),
+        });
+    }
+    cmds
+}

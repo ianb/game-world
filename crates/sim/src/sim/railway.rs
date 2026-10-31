@@ -94,6 +94,14 @@ impl<C: CharacterSet> Sim<C> {
                 *n = d.count;
             }
         }
+        // What came in is a batch from outside, made by nobody here.
+        for line in &delivered {
+            if let Some(s) = self.content.substance_index(&line.good) {
+                let s = u16::try_from(s).expect("few substances");
+                let id = self.state.batches.make(s, tick, None, false);
+                self.state.batches.put(shed, &line.good, id, line.count);
+            }
+        }
         out.push(Emitted::TrainArrived { tick, delivered });
     }
 
@@ -109,6 +117,10 @@ impl<C: CharacterSet> Sim<C> {
             .map(|b| (b.good.clone(), b.price))
             .collect();
         let consigned = std::mem::take(&mut self.state.railway.consigned);
+        let how = match self.world.rail.as_ref().map(|r| r.vehicle) {
+            Some(content::Vehicle::Boat) => "boat",
+            Some(content::Vehicle::Train) | None => "rail",
+        };
         let mut shipped = Vec::new();
         for c in consigned {
             let price = prices
@@ -130,7 +142,7 @@ impl<C: CharacterSet> Sim<C> {
                 from: None,
                 to: Some(c.who),
                 amount: paid,
-                what: format!("{} {} by rail", c.count, c.good),
+                what: format!("{} {} by {how}", c.count, c.good),
                 payer_left: 0,
                 cause: Cause::Sim,
             });

@@ -77,6 +77,8 @@ pub struct Summarizer {
     talks: BTreeMap<u32, talk::Talk>,
     /// Topic glosses by key, for showing what conversations were about.
     glosses: BTreeMap<String, String>,
+    /// What runs on the timetabled line: "train", "boat".
+    vehicle: &'static str,
 }
 
 fn time(tick: Tick) -> String {
@@ -118,7 +120,13 @@ impl Summarizer {
             habits: BTreeMap::new(),
             talks: BTreeMap::new(),
             glosses,
+            vehicle: "train",
         }
+    }
+
+    /// Names what runs on the timetabled line in the lines about it.
+    pub fn set_vehicle(&mut self, vehicle: content::Vehicle) {
+        self.vehicle = vehicle.word();
     }
 
     /// Finished days, oldest first.
@@ -439,7 +447,7 @@ impl Summarizer {
                 self.world_line(
                     tick,
                     SummaryKind::Railway,
-                    "a train went through".into(),
+                    format!("a {} went through", self.vehicle),
                     "train:passed".into(),
                 );
             }
@@ -449,9 +457,9 @@ impl Summarizer {
                     .map(|g| format!("{} {}", g.count, g.good))
                     .collect();
                 let text = if goods.is_empty() {
-                    "the train stopped".to_string()
+                    format!("the {} stopped", self.vehicle)
                 } else {
-                    format!("the train stopped and left {}", goods.join(", "))
+                    format!("the {} stopped and left {}", self.vehicle, goods.join(", "))
                 };
                 self.world_line(tick, SummaryKind::Railway, text, "train:arrived".into());
             }
@@ -469,9 +477,9 @@ impl Summarizer {
                     })
                     .collect();
                 let text = if sent.is_empty() {
-                    "the train left with nothing".to_string()
+                    format!("the {} left with nothing", self.vehicle)
                 } else {
-                    format!("the train took {}", sent.join(", "))
+                    format!("the {} took {}", self.vehicle, sent.join(", "))
                 };
                 // Who sent what changes from train to train, so this is never routine.
                 let key = format!("train:left:{}", tick.0);

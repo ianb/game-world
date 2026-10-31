@@ -443,7 +443,8 @@ export class Diorama {
   /** The train's cars as upright sprites along the track. */
   private syncTrain(t: TrainView | null): void {
     const rail = this.o.world.rail;
-    const cars = t && rail && this.place && rail.place === this.place.id ? trainCars(t, rail.tiles) : [];
+    // The 3D view draws trains only; a boat line shows on the map.
+    const cars = t && rail && rail.vehicle === "train" && this.place && rail.place === this.place.id ? trainCars(t, rail.tiles) : [];
     while (this.trainMeshes.length < cars.length) {
       const m = this.sprite("train_wagon", 0, 0);
       if (!m) break;

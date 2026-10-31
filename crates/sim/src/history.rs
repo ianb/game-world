@@ -66,10 +66,14 @@ impl<C: CharacterSet> History<C> {
         let mut snapshots = BTreeMap::new();
         snapshots.insert(sim.tick().0, sim.snapshot());
         let inputs = sim.state().inputs.clone();
+        let mut summarizer = Summarizer::new(names, objects, glosses);
+        if let Some(r) = content.zones.iter().find_map(|z| z.railway.as_ref()) {
+            summarizer.set_vehicle(r.vehicle);
+        }
         History {
             sim,
             content,
-            summarizer: Summarizer::new(names, objects, glosses),
+            summarizer,
             snapshots,
             frontier: None,
             inputs,
