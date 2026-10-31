@@ -1,6 +1,5 @@
-// Turns packages/viewer/dist into a page for a host that supplies its own document
-// skeleton (claude.ai artifacts): keeps the viewer's own stylesheet and body, drops the
-// outer tags, and copies the assets and content next to it.
+// Turns packages/viewer/dist into a page for claude.ai artifacts: the viewer's own
+// stylesheet and body in a plain document, with the assets and content copied next to it.
 // Usage: node scripts/artifact-page.mjs <outdir>
 import { cpSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -15,12 +14,22 @@ const style = html.match(/<style>[\s\S]*?<\/style>/)?.[0];
 const body = html.match(/<body>([\s\S]*)<\/body>/)?.[1];
 if (!script || !style || !body) throw new Error("unexpected dist/index.html shape");
 
-// The viewer is one dark look by design, and its stylesheet sets every colour itself.
-const page = `<title>Game World</title>
+// A whole document: the viewer is one dark look by design, and its stylesheet sets every
+// colour itself.
+const page = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game World</title>
 ${links.join("\n")}
 ${style}
 ${script}
+</head>
+<body>
 ${body.trim()}
+</body>
+</html>
 `;
 writeFileSync(join(out, "index.html"), page);
 for (const f of readdirSync(join(dist, "assets"))) cpSync(join(dist, "assets", f), join(out, "assets", f));
