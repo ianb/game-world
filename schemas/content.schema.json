@@ -532,6 +532,64 @@
         "hooked"
       ]
     },
+    "HullShape": {
+      "description": "What a hull is shaped like.",
+      "oneOf": [
+        {
+          "description": "A pointed bow and a rounded stern.",
+          "type": "string",
+          "const": "boat"
+        },
+        {
+          "description": "Square-ended, with cut corners.",
+          "type": "string",
+          "const": "barge"
+        },
+        {
+          "description": "Logs or planks lashed flat.",
+          "type": "string",
+          "const": "raft"
+        }
+      ]
+    },
+    "HullSpec": {
+      "description": "A vessel's hull on the water, in zone coordinates. The body is `rect`; a boat's bow\nruns `bow_length` tiles beyond it on the `bow` side, narrowing to a point. Whatever\nstands on it (a cabin, a hold) is a building placed on the body.",
+      "type": "object",
+      "properties": {
+        "bow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Side"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bow_length": {
+          "type": "integer",
+          "format": "uint16",
+          "default": 0,
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "id": {
+          "type": "string"
+        },
+        "rect": {
+          "$ref": "#/$defs/Rect"
+        },
+        "shape": {
+          "$ref": "#/$defs/HullShape"
+        }
+      },
+      "required": [
+        "id",
+        "shape",
+        "rect"
+      ]
+    },
     "Income": {
       "description": "Money that reaches a villager from outside the town on a schedule, such as a pension.",
       "type": "object",
@@ -1097,6 +1155,16 @@
         "good"
       ]
     },
+    "Side": {
+      "description": "A compass side of a rectangle: which way a bow points.",
+      "type": "string",
+      "enum": [
+        "north",
+        "south",
+        "east",
+        "west"
+      ]
+    },
     "SubstanceDef": {
       "description": "Something people take for its effect: chewed, drunk, eaten raw, breathed. Its id is the\ngood it comes as. Declared in the world's `substances/`.",
       "type": "object",
@@ -1476,6 +1544,13 @@
           "format": "uint16",
           "maximum": 65535,
           "minimum": 0
+        },
+        "hulls": {
+          "description": "Vessels' hulls: decked over and walkable, laid after water and decks. Left out of\nthe serialized content when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HullSpec"
+          }
         },
         "id": {
           "type": "string"

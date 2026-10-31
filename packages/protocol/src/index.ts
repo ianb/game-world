@@ -57,6 +57,7 @@ export type { FieldTileView } from "./generated/FieldTileView";
 export type { FieldStage } from "./generated/FieldStage";
 export type { RailView } from "./generated/RailView";
 export type { PlotView } from "./generated/PlotView";
+export type { HullView } from "./generated/HullView";
 export type { GoodsLine } from "./generated/GoodsLine";
 export type { Shipment } from "./generated/Shipment";
 export type { Pos } from "./generated/Pos";
@@ -66,7 +67,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 30;
+export const PROTOCOL_VERSION = 31;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;

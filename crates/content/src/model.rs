@@ -76,6 +76,10 @@ pub struct Zone {
     /// Planking over water (rafts, gangplanks, open decks): walkable, laid after water.
     #[serde(default)]
     pub decks: Vec<Rect>,
+    /// Vessels' hulls: decked over and walkable, laid after water and decks. Left out of
+    /// the serialized content when empty.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hulls: Vec<HullSpec>,
     /// Made paths and roads: cheap to walk, so routes prefer them.
     #[serde(default)]
     pub paths: Vec<Rect>,
@@ -97,6 +101,96 @@ pub struct Zone {
     pub railway: Option<RailwaySpec>,
     /// Where a debug warp lands.
     pub arrival: Pos,
+}
+
+/// What a hull is shaped like.
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+#[serde(rename_all = "lowercase")]
+pub enum HullShape {
+    /// A pointed bow and a rounded stern.
+    Boat,
+    /// Square-ended, with cut corners.
+    Barge,
+    /// Logs or planks lashed flat.
+    Raft,
+}
+
+/// A compass side of a rectangle: which way a bow points.
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+#[serde(rename_all = "lowercase")]
+pub enum Side {
+    North,
+    South,
+    East,
+    West,
+}
+
+/// A vessel's hull on the water, in zone coordinates. The body is `rect`; a boat's bow
+/// runs `bow_length` tiles beyond it on the `bow` side, narrowing to a point. Whatever
+/// stands on it (a cabin, a hold) is a building placed on the body.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct HullSpec {
+    pub id: String,
+    pub shape: HullShape,
+    pub rect: Rect,
+    #[serde(default)]
+    pub bow: Option<Side>,
+    #[serde(default)]
+    pub bow_length: u16,
+}
+
+impl HullSpec {
+    /// The deck rows of the bow, nearest the body first, each as a rect of zone tiles:
+    /// row `d` of `n` spans `(n + 1 - d) / (n + 1)` of the body's width, centred.
+    #[must_use]
+    pub fn bow_rows(&self) -> Vec<Rect> {
+        let (Some(side), n) = (self.bow, self.bow_length) else {
+            return Vec::new();
+        };
+        let r = self.rect;
+        let across = match side {
+            Side::North | Side::South => r.w,
+            Side::East | Side::West => r.h,
+        };
+        (1..=n)
+            .filter_map(|d| {
+                let span = (u32::from(across) * u32::from(n + 1 - d) / u32::from(n + 1)).max(1);
+                let span = u16::try_from(span).ok()?;
+                let off = (across - span) / 2;
+                Some(match side {
+                    Side::North => Rect {
+                        x: r.x + off,
+                        y: r.y.checked_sub(d)?,
+                        w: span,
+                        h: 1,
+                    },
+                    Side::South => Rect {
+                        x: r.x + off,
+                        y: r.bottom() + d - 1,
+                        w: span,
+                        h: 1,
+                    },
+                    Side::West => Rect {
+                        x: r.x.checked_sub(d)?,
+                        y: r.y + off,
+                        w: 1,
+                        h: span,
+                    },
+                    Side::East => Rect {
+                        x: r.right() + d - 1,
+                        y: r.y + off,
+                        w: 1,
+                        h: span,
+                    },
+                })
+            })
+            .collect()
+    }
 }
 
 /// A bed of tilled ground with one crop.

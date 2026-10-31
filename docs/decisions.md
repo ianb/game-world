@@ -1475,3 +1475,22 @@ Decided (by the agent, within what Ian agreed):
 - Thirst is met at cisterns, since there are no wells at sea.
 - The viewer chooses a world with a picker in the top bar. People without their own sprite
   sheet are drawn with one of the valley's, chosen by their id, until they get their own.
+
+## 2026-10-31: Vessels have hull shapes
+
+Ian: "Right now actual seep change and newcomers aren't important. The boats don't look
+much like boats though. Even if there are rectangle rooms, I want most boats to have a
+boat shape in the bow. A few might be rafts or barges."
+
+Decided:
+
+- Seeps that wax and wane, and newcomers, are set aside.
+- A zone declares hulls: boat (a pointed bow on one side and a rounded stern), barge
+  (square-ended, corners cut) or raft. The content compiler lays the body and the bow as
+  deck, the bow narrowing row by row, so people can walk to the point of it. Cabins and
+  holds are buildings standing on the body, as before.
+- The viewer draws each hull's outline as a shape with a dark rim (rafts with a lighter
+  log edge inside it), and on open water decks and hulls float with no shore drawn round
+  them.
+- In the scrap zone the Mire, the cutter and the tug are boats, the Kettle is a barge,
+  and the yard, the shanty raft, the south raft and the vent raft are rafts.

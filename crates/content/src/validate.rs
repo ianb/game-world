@@ -138,6 +138,21 @@ fn check_kinds(content: &Content, r: &mut Report) {
         }
     }
     for z in &content.zones {
+        for h in &z.hulls {
+            let subject = format!("zones/{} hull {}", z.id, h.id);
+            let rows = h.bow_rows();
+            let all = std::iter::once(h.rect).chain(rows.iter().copied());
+            if all
+                .clone()
+                .any(|r| r.right() > z.width || r.bottom() > z.height)
+                || rows.len() < usize::from(h.bow_length)
+            {
+                r.error(&subject, "hull runs off the zone");
+            }
+            if h.shape == crate::model::HullShape::Boat && (h.bow.is_none() || h.bow_length == 0) {
+                r.error(&subject, "a boat needs a bow and a bow_length");
+            }
+        }
         for p in &z.plots {
             if content.crop_index(&p.crop).is_none() {
                 r.error(

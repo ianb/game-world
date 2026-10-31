@@ -2,7 +2,7 @@
 // in public/tiles.png (built by scripts/make-tileset.mjs). Pixel art at native size, scaled
 // by CSS at an integer factor. The text views stay the source of truth for tests; this is
 // for eyes.
-import type { AnimalView, Cell, FieldView, ObjectView, PlaceView, RoofView, Sim, Surface, TrainView, VillagerView, Walling, WorldView } from "@game-world/protocol";
+import type { AnimalView, Cell, FieldView, HullView, ObjectView, PlaceView, RoofView, Sim, Surface, TrainView, VillagerView, Walling, WorldView } from "@game-world/protocol";
 import { type Dressing, SOUTHERN_WOODS, dressingFor, paintDressing, treeAt } from "./dressing";
 
 interface AtlasTile {
@@ -394,9 +394,94 @@ export function trainCars(t: TrainView, track: { x: number; y: number }[]): { ti
 export interface Materials {
   floor: (string | undefined)[];
   walls: (Walling | undefined)[];
+  /** The hulls whose shapes reach each cell, if any: their decks, and open water round them. */
+  hull?: (HullView[] | undefined)[];
 }
 
-export function materials(place: PlaceView, rooms: WorldView["rooms"], roofs: RoofView[]): Materials {
+/** A hull's outline in pixels, at `s` pixels a tile. Built facing north (body from (0, 0)
+ * to (across, along), bow toward negative along) and turned to face its bow. */
+export function hullPath(h: HullView, s: number): Path2D {
+  const r = h.rect;
+  const bow = h.bow ?? "north";
+  const sideways = bow === "east" || bow === "west";
+  const across = sideways ? r.h : r.w;
+  const along = sideways ? r.w : r.h;
+  const at = (u: number, v: number): [number, number] => {
+    switch (bow) {
+      case "north": return [(r.x + u) * s, (r.y + v) * s];
+      case "south": return [(r.x + across - u) * s, (r.y + along - v) * s];
+      case "east": return [(r.x + along - v) * s, (r.y + u) * s];
+      case "west": return [(r.x + v) * s, (r.y + across - u) * s];
+    }
+  };
+  const p = new Path2D();
+  const move = (u: number, v: number): void => p.moveTo(...at(u, v));
+  const line = (u: number, v: number): void => p.lineTo(...at(u, v));
+  const curve = (cu: number, cv: number, u: number, v: number): void => p.quadraticCurveTo(...at(cu, cv), ...at(u, v));
+  const sweep = (au: number, av: number, bu: number, bv: number, u: number, v: number): void =>
+    p.bezierCurveTo(...at(au, av), ...at(bu, bv), ...at(u, v));
+  const len = h.bow_length;
+  if (h.shape === "boat" && h.bow && len > 0) {
+    const round = Math.min(1, across / 3);
+    // Straight sides that sweep in to a point.
+    move(0, 0);
+    sweep(0, -len * 0.55, across * 0.3, -len * 0.9, across / 2, -len);
+    sweep(across * 0.7, -len * 0.9, across, -len * 0.55, across, 0);
+    line(across, along - round);
+    curve(across, along, across - round, along);
+    line(round, along);
+    curve(0, along, 0, along - round);
+  } else if (h.shape === "barge") {
+    const c = 0.6;
+    move(c, 0);
+    line(across - c, 0);
+    line(across, c);
+    line(across, along - c);
+    line(across - c, along);
+    line(c, along);
+    line(0, along - c);
+    line(0, c);
+  } else {
+    move(0, 0);
+    line(across, 0);
+    line(across, along);
+    line(0, along);
+  }
+  p.closePath();
+  return p;
+}
+
+/** A boat's bow as rows of deck, as the content compiler lays them (`HullSpec::bow_rows`). */
+function bowRows(h: HullView): { x: number; y: number; w: number; h: number }[] {
+  const r = h.rect;
+  const n = h.bow_length;
+  if (!h.bow || n === 0) return [];
+  const across = h.bow === "north" || h.bow === "south" ? r.w : r.h;
+  const rows = [];
+  for (let d = 1; d <= n; d++) {
+    const span = Math.max(1, Math.floor((across * (n + 1 - d)) / (n + 1)));
+    const off = Math.floor((across - span) / 2);
+    if (h.bow === "north") rows.push({ x: r.x + off, y: r.y - d, w: span, h: 1 });
+    else if (h.bow === "south") rows.push({ x: r.x + off, y: r.y + r.h + d - 1, w: span, h: 1 });
+    else if (h.bow === "west") rows.push({ x: r.x - d, y: r.y + off, w: 1, h: span });
+    else rows.push({ x: r.x + r.w + d - 1, y: r.y + off, w: 1, h: span });
+  }
+  return rows;
+}
+
+/** The tiles a hull's shape can reach: its body and bow, and one more all round. */
+function hullCells(h: HullView): TileRect {
+  const r = h.rect;
+  const n = h.bow ? h.bow_length : 0;
+  return {
+    x0: r.x - 1 - (h.bow === "west" ? n : 0),
+    y0: r.y - 1 - (h.bow === "north" ? n : 0),
+    x1: r.x + r.w + 1 + (h.bow === "east" ? n : 0),
+    y1: r.y + r.h + 1 + (h.bow === "south" ? n : 0),
+  };
+}
+
+export function materials(place: PlaceView, rooms: WorldView["rooms"], roofs: RoofView[], hulls: HullView[] = []): Materials {
   const w = place.width;
   const n = w * place.height;
   const floor = new Array<string | undefined>(n).fill(undefined);
@@ -429,7 +514,24 @@ export function materials(place: PlaceView, rooms: WorldView["rooms"], roofs: Ro
       }
     }
   }
-  return { floor, walls };
+  // A hull claims its own deck, and the open water round it its outline can reach; a
+  // gangplank beside it stays a gangplank.
+  const hull = new Array<HullView[] | undefined>(n).fill(undefined);
+  const claim = (i: number, h: HullView): void => {
+    const list = (hull[i] ??= []);
+    if (!list.includes(h)) list.push(h);
+  };
+  for (const h of hulls) {
+    if (h.place !== place.id) continue;
+    for (const r of [h.rect, ...bowRows(h)]) {
+      for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (inside(x, y)) claim(y * w + x, h);
+    }
+    const c = hullCells(h);
+    for (let y = c.y0; y < c.y1; y++) {
+      for (let x = c.x0; x < c.x1; x++) if (inside(x, y) && place.cells[y * w + x] === "Water") claim(y * w + x, h);
+    }
+  }
+  return { floor, walls, hull };
 }
 
 /** A rectangle of cells, from (x0, y0) up to but not including (x1, y1). */
@@ -488,17 +590,42 @@ export function paintGround(
   const r = within(region, w, h);
   const at = (x: number, y: number): string | undefined =>
     x < 0 || y < 0 || x >= w || y >= h ? undefined : names[y * w + x];
+  // On open water, decks and hulls float on it: the water runs on under them, with no
+  // shore drawn round their edges.
+  const sea = background === "water";
+  const afloat = (x: number, y: number): boolean => {
+    const n = at(x, y);
+    return sea && (n === "deck" || (n === "water" && !!mat.hull?.[y * w + x]));
+  };
   const group = (x: number, y: number, self: string): boolean => {
     const n = at(x, y);
     if (n === undefined) return RUNS_OFF_MAP.has(self);
+    if (afloat(x, y)) return self === "water";
     return FEATURE_GROUP[n] === self;
   };
+  const px = tiles.atlas.tile;
   for (let y = r.y0; y < r.y1; y++) {
     for (let x = r.x0; x < r.x1; x++) {
       let name = names[y * w + x] ?? "void";
       if (flatWalls && name === "door") name = place.kind === "Zone" ? "path" : "floor";
       const g = FEATURE_GROUP[name];
       const i = y * w + x;
+      const hull = sea ? mat.hull?.[i] : undefined;
+      if (hull?.length && (name === "deck" || name === "water")) {
+        paintHullCell(ctx, tiles, hull, x, y);
+        continue;
+      }
+      if (sea && name === "deck") {
+        tiles.draw(ctx, "deck", x, y);
+        // A dark edge where the planking meets open water.
+        ctx.fillStyle = "rgba(40, 24, 12, 0.7)";
+        const open = (dx: number, dy: number): boolean => at(x + dx, y + dy) === "water" && !mat.hull?.[(y + dy) * w + x + dx];
+        if (open(0, -1)) ctx.fillRect(x * px, y * px, px, 2);
+        if (open(0, 1)) ctx.fillRect(x * px, (y + 1) * px - 3, px, 3);
+        if (open(-1, 0)) ctx.fillRect(x * px, y * px, 2, px);
+        if (open(1, 0)) ctx.fillRect((x + 1) * px - 2, y * px, 2, px);
+        continue;
+      }
       if (g === "wall" && !flatWalls) {
         const face = name === "door" ? null : wallFace(at(x, y + 1), mat.walls[i] ?? "timber");
         if (face) {
@@ -527,6 +654,44 @@ export function paintGround(
       if (name === "door") tiles.draw(ctx, "door", x, y);
     }
   }
+}
+
+const hullPaths = new Map<string, Path2D>();
+
+/** One cell under hulls: the sea, then each hull's deck inside its outline, and its rim.
+ * Drawn cell by cell, clipped to the cell, so walls and objects drawn later stay on top. */
+function paintHullCell(ctx: CanvasRenderingContext2D, tiles: Tileset, hulls: HullView[], x: number, y: number): void {
+  tiles.draw(ctx, "water", x, y);
+  for (const h of hulls) paintHull(ctx, tiles, h, x, y);
+}
+
+function paintHull(ctx: CanvasRenderingContext2D, tiles: Tileset, h: HullView, x: number, y: number): void {
+  const s = tiles.atlas.tile;
+  const key = `${h.place}:${h.id}:${s}`;
+  let path = hullPaths.get(key);
+  if (!path) {
+    path = hullPath(h, s);
+    hullPaths.set(key, path);
+  }
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x * s, y * s, s, s);
+  ctx.clip();
+  ctx.save();
+  ctx.clip(path);
+  tiles.draw(ctx, h.shape === "raft" ? "deck" : "floor_planks", x, y);
+  ctx.restore();
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#2e1d10";
+  ctx.lineWidth = 6;
+  ctx.stroke(path);
+  // A raft's lashed log edge, a lighter line inside the dark one.
+  if (h.shape === "raft") {
+    ctx.strokeStyle = "#9a7444";
+    ctx.lineWidth = 3;
+    ctx.stroke(path);
+  }
+  ctx.restore();
 }
 
 /** Forest cells that get a tree drawn on them, scattered so they do not line up. */
@@ -613,7 +778,7 @@ export class PlaceCanvas {
   ) {
     this.objects = world.objects.filter((o) => o.place === place.id);
     this.roofs = world.roofs.filter((r) => r.place === place.id);
-    this.mat = materials(place, world.rooms, world.roofs);
+    this.mat = materials(place, world.rooms, world.roofs, world.hulls);
     this.dressing = dressingFor(world, place);
     this.rail = world.rail && world.rail.place === place.id ? world.rail : null;
   }

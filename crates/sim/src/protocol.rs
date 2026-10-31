@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 30;
+pub const PROTOCOL_VERSION: u32 = 31;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -974,6 +974,19 @@ pub struct FieldView {
     pub tiles: Vec<FieldTileView>,
 }
 
+/// A vessel's hull: its shape, body and bow, in zone coordinates.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(ts_rs::TS))]
+#[cfg_attr(feature = "schema", ts(export))]
+pub struct HullView {
+    pub id: String,
+    pub place: PlaceId,
+    pub shape: content::HullShape,
+    pub rect: Rect,
+    pub bow: Option<content::Side>,
+    pub bow_length: u16,
+}
+
 /// A bed of tilled ground and its crop.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(ts_rs::TS))]
@@ -1084,6 +1097,8 @@ pub struct WorldView {
     pub rooms: Vec<RoomView>,
     pub rail: Option<RailView>,
     pub plots: Vec<PlotView>,
+    /// Vessels' hulls, for the views to draw their shape under the deck.
+    pub hulls: Vec<HullView>,
 }
 
 /// Snapshot of the clock, for the viewer's header.
@@ -1182,6 +1197,22 @@ pub fn world_view<C: CharacterSet>(sim: &Sim<C>) -> WorldView {
                     place,
                     rect: p.rect,
                     crop: p.crop.clone(),
+                })
+            })
+            .collect(),
+        hulls: sim
+            .content()
+            .zones
+            .iter()
+            .flat_map(|z| {
+                let place = place_id(w.place_index[&z.id]);
+                z.hulls.iter().map(move |h| HullView {
+                    id: h.id.clone(),
+                    place,
+                    shape: h.shape,
+                    rect: h.rect,
+                    bow: h.bow,
+                    bow_length: h.bow_length,
                 })
             })
             .collect(),

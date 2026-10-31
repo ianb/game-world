@@ -304,6 +304,11 @@ pub fn compile(content: &Content) -> World {
         for r in &z.decks {
             fill(&mut place, *r, Cell::Deck);
         }
+        for h in &z.hulls {
+            for r in std::iter::once(h.rect).chain(h.bow_rows()) {
+                fill(&mut place, r, Cell::Deck);
+            }
+        }
         // Paths last: a road across water is a bridge, and a track through woods is cut.
         for r in &z.paths {
             fill(&mut place, *r, Cell::Path);
