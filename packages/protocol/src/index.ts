@@ -50,7 +50,6 @@ export type { RoomView } from "./generated/RoomView";
 export type { Flooring } from "./generated/Flooring";
 export type { Walling } from "./generated/Walling";
 export type { AnimalView } from "./generated/AnimalView";
-export type { AnimalKind } from "./generated/AnimalKind";
 export type { TrainView } from "./generated/TrainView";
 export type { TrainTimeView } from "./generated/TrainTimeView";
 export type { FieldView } from "./generated/FieldView";
@@ -58,7 +57,6 @@ export type { FieldTileView } from "./generated/FieldTileView";
 export type { FieldStage } from "./generated/FieldStage";
 export type { RailView } from "./generated/RailView";
 export type { PlotView } from "./generated/PlotView";
-export type { Crop } from "./generated/Crop";
 export type { GoodsLine } from "./generated/GoodsLine";
 export type { Shipment } from "./generated/Shipment";
 export type { Pos } from "./generated/Pos";
@@ -68,7 +66,7 @@ export type { PlaceId } from "./generated/PlaceId";
 export type { VillagerId } from "./generated/VillagerId";
 
 /** Must equal `PROTOCOL_VERSION` in crates/sim/src/protocol.rs. */
-export const PROTOCOL_VERSION = 26;
+export const PROTOCOL_VERSION = 27;
 
 export const TICKS_PER_MINUTE = 60;
 export const TICKS_PER_HOUR = 3600;

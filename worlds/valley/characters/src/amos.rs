@@ -17,10 +17,10 @@ impl Character for Amos {
     const ID: &'static str = "amos";
 
     #[deny(clippy::wildcard_enum_match_arm)]
-    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+    fn fondness(&self, kind: crate::Animal) -> crate::Fondness {
         match kind {
-            content::AnimalKind::Chicken => crate::Fondness::Fond,
-            content::AnimalKind::Sheep => crate::Fondness::Wary,
+            crate::Animal::Chicken => crate::Fondness::Fond,
+            crate::Animal::Sheep => crate::Fondness::Wary,
         }
     }
     fn react(

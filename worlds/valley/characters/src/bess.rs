@@ -17,11 +17,9 @@ impl Character for Bess {
     const ID: &'static str = "bess";
 
     #[deny(clippy::wildcard_enum_match_arm)]
-    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+    fn fondness(&self, kind: crate::Animal) -> crate::Fondness {
         match kind {
-            content::AnimalKind::Chicken | content::AnimalKind::Sheep => {
-                crate::Fondness::Indifferent
-            }
+            crate::Animal::Chicken | crate::Animal::Sheep => crate::Fondness::Indifferent,
         }
     }
     fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {

@@ -22,10 +22,10 @@ impl Character for Benny {
     const ID: &'static str = "benny";
 
     #[deny(clippy::wildcard_enum_match_arm)]
-    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+    fn fondness(&self, kind: crate::Animal) -> crate::Fondness {
         match kind {
-            content::AnimalKind::Chicken => crate::Fondness::Delighted,
-            content::AnimalKind::Sheep => crate::Fondness::Afraid,
+            crate::Animal::Chicken => crate::Fondness::Delighted,
+            crate::Animal::Sheep => crate::Fondness::Afraid,
         }
     }
     fn react(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Option<Vec<Command>> {

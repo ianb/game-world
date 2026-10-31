@@ -62,12 +62,44 @@ pub mod behavior {
     include!(concat!(env!("OUT_DIR"), "/behavior.rs"));
 }
 
-use content::AnimalKind;
 use rand_pcg::Pcg32;
 use serde::{Deserialize, Serialize};
 use sim::brain::{CharacterSet, Command, Ctx, Planned, Trigger, baseline_plan};
-use sim::ids::VillagerId;
+use sim::ids::{AnimalKindId, VillagerId};
 use sim::social::Interlocutor;
+
+/// The valley's kinds of animal. Every character's `fondness` matches them all, so a new
+/// kind makes each of them decide. Each is declared in `content/animals/` under its `id`;
+/// `Town::new` refuses content that declares a kind this code does not know.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Animal {
+    Chicken,
+    Sheep,
+}
+
+impl Animal {
+    pub const ALL: [Animal; 2] = [Animal::Chicken, Animal::Sheep];
+
+    /// The id the content declares it under.
+    #[must_use]
+    #[deny(clippy::wildcard_enum_match_arm)]
+    pub fn id(self) -> &'static str {
+        match self {
+            Animal::Chicken => "chicken",
+            Animal::Sheep => "sheep",
+        }
+    }
+
+    fn from_id(id: &str) -> Option<Animal> {
+        Animal::ALL.into_iter().find(|a| a.id() == id)
+    }
+
+    /// The kind behind a declared kind of animal.
+    #[must_use]
+    pub fn of(ctx: &Ctx<'_>, kind: AnimalKindId) -> Animal {
+        Animal::from_id(&ctx.content.animals[kind.index()].id).expect("checked in Town::new")
+    }
+}
 
 /// How someone takes to a kind of animal. The shared response is in
 /// `toolbox::meet_animals`; a character can answer `Trigger::Animals` itself instead.
@@ -92,7 +124,7 @@ pub trait Character: Interlocutor {
 
     /// How they take to each kind of animal. Every character decides; a new kind of animal
     /// makes each of them decide again.
-    fn fondness(&self, kind: AnimalKind) -> Fondness;
+    fn fondness(&self, kind: Animal) -> Fondness;
 
     /// The day's plan: the content schedule, unless the character changes it.
     fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {
@@ -107,14 +139,14 @@ pub trait Character: Interlocutor {
 
 /// `Character` without its constant, so the town can hold any of them behind one pointer.
 trait Dispatch: Interlocutor {
-    fn fond(&self, kind: AnimalKind) -> Fondness;
+    fn fond(&self, kind: Animal) -> Fondness;
     fn plan(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned>;
     fn answer(&mut self, trigger: &Trigger, ctx: &Ctx<'_>, rng: &mut Pcg32)
     -> Option<Vec<Command>>;
 }
 
 impl<T: Character> Dispatch for T {
-    fn fond(&self, kind: AnimalKind) -> Fondness {
+    fn fond(&self, kind: Animal) -> Fondness {
         Character::fondness(self, kind)
     }
     fn plan(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
@@ -217,7 +249,14 @@ impl CharacterSet for Town {
     const LAYOUT_VERSION: u32 = 10;
     const BEHAVIOR: u64 = behavior::BEHAVIOR;
 
-    fn new(_content: &content::Content, _world: &content::World) -> Self {
+    fn new(content: &content::Content, _world: &content::World) -> Self {
+        for a in &content.animals {
+            assert!(
+                Animal::from_id(&a.id).is_some(),
+                "the valley's characters do not know the animal {:?}",
+                a.id
+            );
+        }
         Town::default()
     }
 
@@ -250,7 +289,7 @@ impl CharacterSet for Town {
             (None, Trigger::Animals { kind, owner, .. }) => {
                 let fondness = self
                     .character_ref(id)
-                    .map_or(Fondness::Indifferent, |c| c.fond(*kind));
+                    .map_or(Fondness::Indifferent, |c| c.fond(Animal::of(ctx, *kind)));
                 toolbox::meet_animals(ctx, who, *kind, *owner, fondness)
             }
             (None, _) => toolbox::human(&trigger, ctx, id),

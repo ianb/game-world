@@ -4,10 +4,11 @@
 //! sowing to ripe), ripe crops spoil if nobody takes them, and spoiled or stubble ground
 //! goes fallow. Farmers change it by working one tile at a time (`Work`). All of it is in
 //! the state and the hash, so a field's history replays.
+use crate::ids::CropId;
 use crate::ids::{ObjectId, PlaceId};
 use crate::protocol::{FieldStage as Stage, FieldWork as Work};
 use crate::time::Season;
-use content::{Crop, Pos, Rect};
+use content::{CropDef, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
 /// Label of the nightly chance of rain, for tests to force.
@@ -31,39 +32,6 @@ pub const FALLOW_DAYS_PER_FERTILITY: u8 = 4;
 /// Fertility at or below which growth slows, and below which a farmer rests the ground
 /// rather than tilling it.
 pub const POOR: u8 = 2;
-
-/// What a crop needs and gives.
-#[must_use]
-#[deny(clippy::wildcard_enum_match_arm)]
-pub fn crop_rules(crop: Crop) -> CropRules {
-    let (grow, good, tiles_per_unit, feeds) = match crop {
-        Crop::Wheat => (24, "wheat", 4, false),
-        Crop::Corn => (24, "corn", 3, false),
-        Crop::Potatoes => (20, "potatoes", 3, false),
-        Crop::Carrots => (16, "carrots", 2, false),
-        Crop::Cabbages => (14, "cabbages", 2, false),
-        Crop::Beans => (14, "beans", 2, true),
-        Crop::Flowers => (12, "flowers", 2, false),
-    };
-    CropRules {
-        grow,
-        good,
-        tiles_per_unit,
-        feeds,
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct CropRules {
-    /// Growth points from sowing to ripe. A well-watered, weeded tile gains 2 a day.
-    pub grow: u8,
-    /// The good a harvest yields.
-    pub good: &'static str,
-    /// Tiles harvested for one unit of the good.
-    pub tiles_per_unit: u8,
-    /// Whether a harvest leaves the ground richer (beans) rather than poorer.
-    pub feeds: bool,
-}
 
 /// One tile of a field.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -96,7 +64,7 @@ pub struct Plot {
     pub id: String,
     pub place: PlaceId,
     pub rect: Rect,
-    pub crop: Crop,
+    pub crop: CropId,
     /// Where the harvest goes, if anywhere; without one it is eaten at home.
     pub store: Option<ObjectId>,
     /// Harvested tiles not yet making up a whole unit of the good.
@@ -146,11 +114,12 @@ pub fn growing_season(season: Season) -> bool {
 }
 
 impl Fields {
-    /// One day's change on every tile. `rained` soaks every field.
-    pub fn new_day(&mut self, season: Season, rained: bool) -> Overnight {
+    /// One day's change on every tile. `rained` soaks every field. `crops` are the world's
+    /// declared crops, which plots index.
+    pub fn new_day(&mut self, crops: &[CropDef], season: Season, rained: bool) -> Overnight {
         let mut night = Overnight::default();
         for (p, plot) in self.plots.iter_mut().enumerate() {
-            let rules = crop_rules(plot.crop);
+            let rules = &crops[plot.crop.index()];
             let (mut spoiled, mut ripened) = (0u16, 0u16);
             for t in &mut plot.tiles {
                 t.water = if rained {
@@ -274,7 +243,7 @@ pub fn minutes(work: Work) -> u32 {
 
 /// Does `work` to a tile of `crop`. Returns false when the tile does not take that work
 /// now. A harvest is counted by the caller.
-pub fn work(t: &mut FieldTile, crop: Crop, work: Work) -> bool {
+pub fn work(t: &mut FieldTile, crop: &CropDef, work: Work) -> bool {
     let ok = match (work, t.stage) {
         (Work::Till, Stage::Fallow | Stage::Stubble) => {
             t.stage = Stage::Tilled;
@@ -297,7 +266,7 @@ pub fn work(t: &mut FieldTile, crop: Crop, work: Work) -> bool {
         (Work::Harvest, Stage::Ripe | Stage::Spoiling) => {
             t.stage = Stage::Stubble;
             t.growth = 0;
-            t.fertility = if crop_rules(crop).feeds {
+            t.fertility = if crop.feeds {
                 (t.fertility + 1).min(FERTILITY_MAX)
             } else {
                 t.fertility.saturating_sub(1)
@@ -315,8 +284,8 @@ pub fn work(t: &mut FieldTile, crop: Crop, work: Work) -> bool {
 /// The tiles a new world starts with: sown, and some way along, varying by plot so the
 /// harvests do not all come at once.
 #[must_use]
-pub fn starting_tiles(index: usize, rect: Rect, crop: Crop) -> Vec<FieldTile> {
-    let grow = crop_rules(crop).grow;
+pub fn starting_tiles(index: usize, rect: Rect, crop: &CropDef) -> Vec<FieldTile> {
+    let grow = crop.grow;
     // Plots start between a sixth and two thirds of the way to ripe.
     let sixths = u8::try_from(1 + index % 4).unwrap_or(1);
     let growth = grow * sixths / 6;
@@ -334,6 +303,18 @@ pub fn starting_tiles(index: usize, rect: Rect, crop: Crop) -> Vec<FieldTile> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Cabbages, then beans, as the valley declares them.
+    fn crops() -> Vec<CropDef> {
+        let crop = |id: &str, feeds| CropDef {
+            id: id.into(),
+            grow: 14,
+            good: id.into(),
+            tiles_per_unit: 2,
+            feeds,
+        };
+        vec![crop("cabbages", false), crop("beans", true)]
+    }
 
     fn sown() -> FieldTile {
         FieldTile {
@@ -357,7 +338,7 @@ mod tests {
                     w: 1,
                     h: 1,
                 },
-                crop: Crop::Cabbages,
+                crop: CropId(0),
                 store: None,
                 gathered: 0,
                 tiles: vec![tile],
@@ -372,7 +353,7 @@ mod tests {
         while f.plots[0].tiles[0].stage != Stage::Ripe {
             f.plots[0].tiles[0].water = WATER_FULL;
             f.plots[0].tiles[0].weeds = 0;
-            f.new_day(Season::Spring, false);
+            f.new_day(&crops(), Season::Spring, false);
             days += 1;
             assert!(days < 30, "never ripened");
         }
@@ -386,7 +367,7 @@ mod tests {
         t.stage = Stage::Growing;
         t.water = 0;
         let mut f = plot(t);
-        f.new_day(Season::Summer, false);
+        f.new_day(&crops(), Season::Summer, false);
         assert_eq!(f.plots[0].tiles[0].growth, 5);
     }
 
@@ -396,7 +377,7 @@ mod tests {
         t.water = 0;
         t.weeds = WEEDY;
         let mut f = plot(t);
-        f.new_day(Season::Spring, true);
+        f.new_day(&crops(), Season::Spring, true);
         assert_eq!(f.plots[0].tiles[0].water, WATER_FULL);
         assert_eq!(f.plots[0].tiles[0].growth, 1);
     }
@@ -410,7 +391,7 @@ mod tests {
         let mut lost = 0;
         for _ in 0..(RIPE_DAYS + SPOIL_DAYS) {
             lost += f
-                .new_day(Season::Summer, true)
+                .new_day(&crops(), Season::Summer, true)
                 .spoiled
                 .iter()
                 .map(|(_, n)| *n)
@@ -428,17 +409,17 @@ mod tests {
         };
         assert_eq!(wants(&t, Season::Spring), Some(Work::Till));
         assert_eq!(wants(&t, Season::Winter), None);
-        assert!(work(&mut t, Crop::Cabbages, Work::Till));
+        assert!(work(&mut t, &crops()[0], Work::Till));
         assert_eq!(wants(&t, Season::Spring), Some(Work::Sow));
-        assert!(work(&mut t, Crop::Cabbages, Work::Sow));
+        assert!(work(&mut t, &crops()[0], Work::Sow));
         assert!(
-            !work(&mut t, Crop::Cabbages, Work::Harvest),
+            !work(&mut t, &crops()[0], Work::Harvest),
             "nothing to harvest yet"
         );
         t.growth = 14;
         t.stage = Stage::Ripe;
         assert_eq!(wants(&t, Season::Spring), Some(Work::Harvest));
-        assert!(work(&mut t, Crop::Cabbages, Work::Harvest));
+        assert!(work(&mut t, &crops()[0], Work::Harvest));
         assert_eq!(t.stage, Stage::Stubble);
         assert_eq!(t.fertility, FERTILITY_START - 1);
     }
@@ -454,7 +435,7 @@ mod tests {
         t.stage = Stage::Fallow;
         let mut f = plot(t);
         for _ in 0..FALLOW_DAYS_PER_FERTILITY {
-            f.new_day(Season::Spring, true);
+            f.new_day(&crops(), Season::Spring, true);
         }
         let t = f.plots[0].tiles[0];
         assert_eq!(t.fertility, POOR + 1);
@@ -467,7 +448,7 @@ mod tests {
             stage: Stage::Ripe,
             ..sown()
         };
-        assert!(work(&mut t, Crop::Beans, Work::Harvest));
+        assert!(work(&mut t, &crops()[1], Work::Harvest));
         assert_eq!(t.fertility, FERTILITY_START + 1);
     }
 }

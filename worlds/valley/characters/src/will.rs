@@ -22,10 +22,10 @@ impl Character for Will {
     const ID: &'static str = "will";
 
     #[deny(clippy::wildcard_enum_match_arm)]
-    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+    fn fondness(&self, kind: crate::Animal) -> crate::Fondness {
         match kind {
-            content::AnimalKind::Chicken => crate::Fondness::Indifferent,
-            content::AnimalKind::Sheep => crate::Fondness::Annoyed,
+            crate::Animal::Chicken => crate::Fondness::Indifferent,
+            crate::Animal::Sheep => crate::Fondness::Annoyed,
         }
     }
     fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {

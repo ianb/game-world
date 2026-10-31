@@ -24,10 +24,10 @@ impl Character for Iris {
     const ID: &'static str = "iris";
 
     #[deny(clippy::wildcard_enum_match_arm)]
-    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+    fn fondness(&self, kind: crate::Animal) -> crate::Fondness {
         match kind {
-            content::AnimalKind::Chicken => crate::Fondness::Wary,
-            content::AnimalKind::Sheep => crate::Fondness::Fond,
+            crate::Animal::Chicken => crate::Fondness::Wary,
+            crate::Animal::Sheep => crate::Fondness::Fond,
         }
     }
     fn react(

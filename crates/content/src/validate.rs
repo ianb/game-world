@@ -55,6 +55,7 @@ pub fn validate(content: &Content) -> Vec<ContentError> {
     let mut r = Report { errors: Vec::new() };
     check_ids(content, &mut r);
     check_topics(content, &mut r);
+    check_kinds(content, &mut r);
     check_areas(content, &mut r);
     check_buildings(content, &mut r);
     if r.errors.iter().any(|e| e.severity == Severity::Error) {
@@ -77,6 +78,61 @@ pub fn validate(content: &Content) -> Vec<ContentError> {
             .then_with(|| a.subject.cmp(&b.subject))
     });
     r.errors
+}
+
+/// Crops and animals: declared once each, with rules that make sense.
+fn check_kinds(content: &Content, r: &mut Report) {
+    let mut seen = BTreeSet::new();
+    for c in &content.crops {
+        let subject = format!("crop {}", c.id);
+        if !seen.insert(&c.id) {
+            r.error(&subject, "declared twice");
+        }
+        if c.grow == 0 || c.tiles_per_unit == 0 {
+            r.error(&subject, "grow and tiles_per_unit must be above zero");
+        }
+    }
+    let mut seen = BTreeSet::new();
+    for a in &content.animals {
+        let subject = format!("animal {}", a.id);
+        if !seen.insert(&a.id) {
+            r.error(&subject, "declared twice");
+        }
+        match (parse_time(&a.wakes), parse_time(&a.sleeps)) {
+            (Some(w), Some(s)) if w < s => {}
+            _ => r.error(
+                &subject,
+                "wakes and sleeps must be times of day, waking first",
+            ),
+        }
+        if a.step_min == 0 || a.step_min > a.step_max {
+            r.error(&subject, "step_min must be above zero and at most step_max");
+        }
+        if content.topic(&a.plural).is_none() {
+            r.error(
+                &subject,
+                format!("plural {} is not a declared topic", a.plural),
+            );
+        }
+    }
+    for z in &content.zones {
+        for p in &z.plots {
+            if content.crop_index(&p.crop).is_none() {
+                r.error(
+                    format!("zones/{} plot {}", z.id, p.id),
+                    format!("crop {} is not declared", p.crop),
+                );
+            }
+        }
+        for f in &z.flocks {
+            if content.animal_index(&f.kind).is_none() {
+                r.error(
+                    format!("zones/{} flock {}", z.id, f.id),
+                    format!("animal {} is not declared", f.kind),
+                );
+            }
+        }
+    }
 }
 
 fn check_topics(content: &Content, r: &mut Report) {

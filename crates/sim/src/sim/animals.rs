@@ -1,13 +1,13 @@
 //! Animals on their own clocks: wandering in their area by day, roosting at night, laying
 //! in the morning, and noticed by villagers who pass close.
 use super::Sim;
-use crate::animals::{Animal, Flock, LAY_CHANCE, LAYS, NOTICE_HOURS, step_gap, waking_hours};
+use crate::animals::{Animal, Flock, LAY_CHANCE, LAYS, NOTICE_HOURS};
 use crate::brain::{CharacterSet, Trigger};
 use crate::event::Event;
-use crate::ids::{ObjectId, PlaceId, VillagerId};
+use crate::ids::{AnimalKindId, ObjectId, PlaceId, VillagerId};
 use crate::protocol::Emitted;
 use crate::time::{TICKS_PER_DAY, TICKS_PER_HOUR, Tick};
-use content::{AnimalKind, Pos};
+use content::Pos;
 use rand::RngExt;
 
 /// Kind of `met` entry for a villager noticing a flock.
@@ -29,9 +29,12 @@ impl<C: CharacterSet> Sim<C> {
                     .position(|v| v.id == f.owner)
                     .map(|i| VillagerId(u16::try_from(i).expect("few villagers")));
                 let area = self.world.area(&f.area).map(|a| a.rect);
-                let (Some(owner), Some(area)) = (owner, area) else {
+                let kind = self.content.animal_index(&f.kind);
+                let (Some(owner), Some(area), Some(kind)) = (owner, area, kind) else {
                     continue;
                 };
+                let def = &self.content.animals[kind];
+                let time = |t: &str| content::validate::parse_time(t).unwrap_or(0);
                 let coop = f.coop.as_ref().and_then(|c| {
                     self.world
                         .objects
@@ -41,11 +44,15 @@ impl<C: CharacterSet> Sim<C> {
                 });
                 out.push(Flock {
                     id: f.id.clone(),
-                    kind: f.kind,
+                    kind: AnimalKindId(u16::try_from(kind).expect("few kinds")),
                     owner,
                     place,
                     area,
                     coop,
+                    wakes: time(&def.wakes),
+                    sleeps: time(&def.sleeps),
+                    step: (def.step_min, def.step_max),
+                    lays: def.lays.clone(),
                 });
             }
         }
@@ -84,8 +91,7 @@ impl<C: CharacterSet> Sim<C> {
                     pos,
                     roosting,
                 });
-                let (wake, _) = waking_hours(flock.kind);
-                let at = Tick(wake + u32::from(index) * 37);
+                let at = Tick(flock.wakes + u32::from(index) * 37);
                 self.state.queue.schedule(at, Event::Animal { index });
             }
         }
@@ -120,7 +126,7 @@ impl<C: CharacterSet> Sim<C> {
         let flock = self.flocks[usize::from(a.flock)].clone();
         let tick = self.state.tick;
         let now = tick.seconds_into_day();
-        let (wake, sleep) = waking_hours(a.kind);
+        let (wake, sleep) = (flock.wakes, flock.sleeps);
         let index = u16::try_from(i).expect("few animals");
         let next_dawn = if now < wake {
             tick.day_start().plus(wake)
@@ -131,7 +137,7 @@ impl<C: CharacterSet> Sim<C> {
         if a.roosting {
             if awake {
                 self.come_out(i, &flock, out);
-                self.schedule_step(index, a.kind);
+                self.schedule_step(index, flock.step);
             } else {
                 self.state
                     .queue
@@ -172,7 +178,7 @@ impl<C: CharacterSet> Sim<C> {
         }
         self.wander(i, &flock);
         self.noticed_by_villagers(i, out);
-        self.schedule_step(index, a.kind);
+        self.schedule_step(index, flock.step);
     }
 
     /// Where someone chasing this animal stands, if they are within two tiles.
@@ -211,8 +217,7 @@ impl<C: CharacterSet> Sim<C> {
         }
     }
 
-    fn schedule_step(&mut self, index: u16, kind: AnimalKind) {
-        let (lo, hi) = step_gap(kind);
+    fn schedule_step(&mut self, index: u16, (lo, hi): (u32, u32)) {
         let gap = self.state.rng.animals.random_range(lo..=hi);
         self.state
             .queue
@@ -238,7 +243,7 @@ impl<C: CharacterSet> Sim<C> {
         let Some(spot) = spot else { return };
         self.state.animals[i].roosting = false;
         self.state.animals[i].pos = spot;
-        if flock.kind == AnimalKind::Chicken
+        if let Some(good) = &flock.lays
             && self
                 .state
                 .odds
@@ -246,7 +251,7 @@ impl<C: CharacterSet> Sim<C> {
         {
             let now = {
                 let goods = self.state.stock.entry(coop.0).or_default();
-                let n = goods.entry("eggs".to_string()).or_insert(0);
+                let n = goods.entry(good.clone()).or_insert(0);
                 *n = n.saturating_add(1);
                 *n
             };

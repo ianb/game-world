@@ -515,3 +515,15 @@ fn rewinding_into_the_first_day() {
     fresh.step_until(at(0, 12, 0)).unwrap();
     assert_eq!(history.sim().hash(), fresh.hash());
 }
+
+#[test]
+fn the_content_declares_every_animal_the_characters_know() {
+    let content = town();
+    for a in valley::Animal::ALL {
+        assert!(
+            content.animal_index(a.id()).is_some(),
+            "{} is not declared in content/animals",
+            a.id()
+        );
+    }
+}

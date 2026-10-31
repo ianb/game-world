@@ -17,11 +17,9 @@ impl Character for Wat {
     const ID: &'static str = "wat";
 
     #[deny(clippy::wildcard_enum_match_arm)]
-    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+    fn fondness(&self, kind: crate::Animal) -> crate::Fondness {
         match kind {
-            content::AnimalKind::Chicken | content::AnimalKind::Sheep => {
-                crate::Fondness::Indifferent
-            }
+            crate::Animal::Chicken | crate::Animal::Sheep => crate::Fondness::Indifferent,
         }
     }
     fn react(

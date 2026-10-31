@@ -20,10 +20,10 @@ impl Character for Hester {
     const ID: &'static str = "hester";
 
     #[deny(clippy::wildcard_enum_match_arm)]
-    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+    fn fondness(&self, kind: crate::Animal) -> crate::Fondness {
         match kind {
-            content::AnimalKind::Chicken => crate::Fondness::Annoyed,
-            content::AnimalKind::Sheep => crate::Fondness::Indifferent,
+            crate::Animal::Chicken => crate::Fondness::Annoyed,
+            crate::Animal::Sheep => crate::Fondness::Indifferent,
         }
     }
     fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {

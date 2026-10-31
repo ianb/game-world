@@ -449,7 +449,7 @@ pub fn fields<C: CharacterSet>(sim: &Sim<C>) -> String {
             out,
             "{:<18} {:<9} {:<44} water {}/{} weeds {}/{} soil {}/{}",
             p.id,
-            format!("{:?}", p.crop).to_lowercase(),
+            sim.content().crops[p.crop.index()].id,
             counts.join(", "),
             mean(|t| t.water),
             crate::fields::WATER_FULL,

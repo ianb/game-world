@@ -102,7 +102,8 @@ pub struct Zone {
 pub struct PlotSpec {
     pub id: String,
     pub rect: Rect,
-    pub crop: Crop,
+    /// A crop declared in `crops/`.
+    pub crop: String,
     /// The object the harvest goes into. Without one, what is grown is eaten at home.
     #[serde(default)]
     pub store: Option<String>,
@@ -115,28 +116,39 @@ pub struct PlotSpec {
     pub keeper: Option<String>,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
-#[cfg_attr(feature = "schema", ts(export))]
-#[serde(rename_all = "lowercase")]
-pub enum Crop {
-    Wheat,
-    Cabbages,
-    Carrots,
-    Potatoes,
-    Beans,
-    Corn,
-    Flowers,
+/// A crop a world grows, with what it needs and gives. Declared in the world's `crops/`.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct CropDef {
+    pub id: String,
+    /// Growth points from sowing to ripe. A well-watered, weeded tile gains 2 a day.
+    pub grow: u8,
+    /// The good a harvest yields.
+    pub good: String,
+    /// Tiles harvested for one unit of the good.
+    pub tiles_per_unit: u8,
+    /// Whether a harvest leaves the ground richer (beans) rather than poorer.
+    #[serde(default)]
+    pub feeds: bool,
 }
 
-/// A kind of animal. Every character says how they feel about each kind.
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "schema", derive(JsonSchema, TS))]
-#[cfg_attr(feature = "schema", ts(export))]
-#[serde(rename_all = "lowercase")]
-pub enum AnimalKind {
-    Chicken,
-    Sheep,
+/// A kind of animal a world keeps, with how it lives. Declared in the world's `animals/`.
+/// Every character says how they feel about each kind.
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub struct AnimalDef {
+    pub id: String,
+    /// How people speak of a flock of them ("hens"). Also the topic of remarks about them.
+    pub plural: String,
+    /// When they come out and when they settle, as times of day ("6am", "7:30pm").
+    pub wakes: String,
+    pub sleeps: String,
+    /// Seconds between one step and the next, as a range to draw from.
+    pub step_min: u32,
+    pub step_max: u32,
+    /// The good one may lay in its coop when it comes out in the morning.
+    #[serde(default)]
+    pub lays: Option<String>,
 }
 
 /// Animals of one kind that belong to someone and keep to one area. Chickens roost and
@@ -145,7 +157,8 @@ pub enum AnimalKind {
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct FlockSpec {
     pub id: String,
-    pub kind: AnimalKind,
+    /// An animal declared in `animals/`.
+    pub kind: String,
     pub count: u8,
     /// The villager they belong to.
     pub owner: String,
@@ -612,11 +625,29 @@ pub struct Content {
     /// The topics conversations can be about. A topic that code uses must be listed here.
     #[serde(default)]
     pub topics: Vec<TopicDef>,
+    /// The crops this world grows, in declaration order.
+    #[serde(default)]
+    pub crops: Vec<CropDef>,
+    /// The kinds of animal this world keeps, in declaration order.
+    #[serde(default)]
+    pub animals: Vec<AnimalDef>,
 }
 
 impl Content {
     #[must_use]
     pub fn topic(&self, id: &str) -> Option<&TopicDef> {
         self.topics.iter().find(|t| t.id == id)
+    }
+
+    /// The index of a declared crop.
+    #[must_use]
+    pub fn crop_index(&self, id: &str) -> Option<usize> {
+        self.crops.iter().position(|c| c.id == id)
+    }
+
+    /// The index of a declared kind of animal.
+    #[must_use]
+    pub fn animal_index(&self, id: &str) -> Option<usize> {
+        self.animals.iter().position(|a| a.id == id)
     }
 }

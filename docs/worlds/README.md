@@ -52,6 +52,16 @@ closed enums in the engine (field stages, field work, moods, gestures). Where a
 character must decide about every kind (how they take each animal), the world's crate
 keeps its own exhaustive enum and checks it against its content when it loads.
 
+Built for crops and animals. A world declares them in `content/crops/` (growth, the good,
+tiles per unit, whether a harvest feeds the ground) and `content/animals/` (plural and
+topic, waking hours, step pace, what it lays). Plots and flocks name them by id; the sim
+holds `CropId` and `AnimalKindId`, indexes in declaration order. The valley's `Animal`
+enum is what every character's `fondness` matches, and `Town::new` refuses content
+declaring a kind it does not know. `Flooring` and `Walling` are still shared enums, which
+only the views read; the Welling's decks and hulls are added to them or made declared
+kinds when its tiles are drawn. The railway is still valley-shaped; the Welling's boats
+come through it generalised as timetabled arrivals.
+
 **One wasm module, a choice of world.** `sim-wasm` builds every world and dispatches on
 the id given at start (`World::Valley(History<valley::Town>)`, then `World::Welling(...)`).
 Each world's content bundle is served from `worlds/<id>/content.json`. The viewer opens
@@ -70,5 +80,7 @@ hash and the fixtures are per world (`worlds/<id>/fixtures/`, each world's own s
    the valley as the only world. Nothing visible changes; the snapshots must not move.
    Done 2026-10-31: the characters crate is now `valley`.
 2. Generalise the valley words in the content model into declared kinds. Snapshots must
-   not move.
+   not move. Done 2026-10-31 for crops and animals. Behaviour is unchanged; the golden
+   hash moved only in its first part, which includes a hash of the content, now that the
+   content carries the declarations.
 3. Add the Welling as a second, small world (see `welling/plan.md`).

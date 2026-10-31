@@ -7,7 +7,7 @@ use crate::time::{Calendar, Tick, TimeOfDay};
 use content::{Cell, PlaceKind, Pos, Rect};
 use serde::{Deserialize, Serialize};
 
-pub const PROTOCOL_VERSION: u32 = 26;
+pub const PROTOCOL_VERSION: u32 = 27;
 
 /// Events the sim emits for viewers and external actors.
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -780,7 +780,8 @@ pub struct Shipment {
 #[cfg_attr(feature = "schema", ts(export))]
 pub struct AnimalView {
     pub id: u16,
-    pub kind: content::AnimalKind,
+    /// The kind's id, as the world declares it ("chicken").
+    pub kind: String,
     pub flock: String,
     pub place: PlaceId,
     pub pos: Pos,
@@ -902,7 +903,8 @@ pub struct FieldView {
     pub id: String,
     pub place: PlaceId,
     pub rect: Rect,
-    pub crop: content::Crop,
+    /// The crop's id, as the world declares it ("wheat").
+    pub crop: String,
     pub grow: u8,
     pub water_full: u8,
     pub weeds_max: u8,
@@ -917,7 +919,8 @@ pub struct FieldView {
 pub struct PlotView {
     pub place: PlaceId,
     pub rect: Rect,
-    pub crop: content::Crop,
+    /// The crop's id, as the world declares it.
+    pub crop: String,
 }
 
 /// A villager as the viewer sees it.
@@ -1115,7 +1118,7 @@ pub fn world_view<C: CharacterSet>(sim: &Sim<C>) -> WorldView {
                 z.plots.iter().map(move |p| PlotView {
                     place,
                     rect: p.rect,
-                    crop: p.crop,
+                    crop: p.crop.clone(),
                 })
             })
             .collect(),
@@ -1132,8 +1135,8 @@ pub fn field_views<C: CharacterSet>(sim: &Sim<C>) -> Vec<FieldView> {
             id: p.id.clone(),
             place: p.place,
             rect: p.rect,
-            crop: p.crop,
-            grow: crate::fields::crop_rules(p.crop).grow,
+            crop: sim.content().crops[p.crop.index()].id.clone(),
+            grow: sim.content().crops[p.crop.index()].grow,
             water_full: crate::fields::WATER_FULL,
             weeds_max: crate::fields::WEEDS_MAX,
             fertility_max: crate::fields::FERTILITY_MAX,
@@ -1160,7 +1163,7 @@ pub fn animal_views<C: CharacterSet>(sim: &Sim<C>) -> Vec<AnimalView> {
         .enumerate()
         .map(|(i, a)| AnimalView {
             id: u16::try_from(i).unwrap_or(u16::MAX),
-            kind: a.kind,
+            kind: sim.content().animals[a.kind.index()].id.clone(),
             flock: sim.flocks()[usize::from(a.flock)].id.clone(),
             place: a.place,
             pos: a.pos,

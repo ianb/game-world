@@ -480,7 +480,7 @@ pub enum Trigger {
     /// Animals close by: a flock of `kind` that belongs to `owner`. Fires again for the
     /// same flock only after a few hours.
     Animals {
-        kind: content::AnimalKind,
+        kind: crate::ids::AnimalKindId,
         owner: VillagerId,
         /// Where the one they noticed is.
         place: PlaceId,
@@ -543,7 +543,7 @@ impl Trigger {
             Trigger::Need { need, level } => format!("{} ({level})", need.name()),
             Trigger::Resumed => "resumed".into(),
             Trigger::Animals { kind, owner, .. } => {
-                format!("{}'s {}", name(owner), animal_plural(*kind))
+                format!("{}'s {}", name(owner), animal_plural(ctx, *kind))
             }
             Trigger::Look { .. } => "looked around".into(),
             Trigger::Mood { mood, level } => crate::moods::level_name(*mood, *level).to_string(),
@@ -685,13 +685,11 @@ pub fn day_applies(d: &content::DayPattern, weekday: crate::time::Weekday) -> bo
     }
 }
 
-/// "hens", "sheep": how people speak of a flock.
+/// "hens", "sheep": how people speak of a flock, from the kind's declaration. It is also
+/// the topic of remarks about them.
 #[must_use]
-pub fn animal_plural(kind: content::AnimalKind) -> &'static str {
-    match kind {
-        content::AnimalKind::Chicken => "hens",
-        content::AnimalKind::Sheep => "sheep",
-    }
+pub fn animal_plural<'a>(ctx: &Ctx<'a>, kind: crate::ids::AnimalKindId) -> &'a str {
+    &ctx.content.animals[kind.index()].plural
 }
 
 /// The content schedule for `who` on the current day: most specific day pattern wins per

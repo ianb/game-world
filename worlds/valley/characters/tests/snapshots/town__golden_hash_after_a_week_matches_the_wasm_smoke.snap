@@ -1,5 +1,5 @@
 ---
-source: crates/characters/tests/town.rs
+source: worlds/valley/characters/tests/town.rs
 expression: sim.hash().hex()
 ---
-6903d4a27a3df6f3
+85873afd188e5fcd

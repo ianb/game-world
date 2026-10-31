@@ -4,10 +4,26 @@
   "description": "Everything loaded from the content directory.",
   "type": "object",
   "properties": {
+    "animals": {
+      "description": "The kinds of animal this world keeps, in declaration order.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/AnimalDef"
+      }
+    },
     "buildings": {
       "type": "array",
       "items": {
         "$ref": "#/$defs/Building"
+      }
+    },
+    "crops": {
+      "description": "The crops this world grows, in declaration order.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CropDef"
       }
     },
     "topics": {
@@ -37,12 +53,51 @@
     "villagers"
   ],
   "$defs": {
-    "AnimalKind": {
-      "description": "A kind of animal. Every character says how they feel about each kind.",
-      "type": "string",
-      "enum": [
-        "chicken",
-        "sheep"
+    "AnimalDef": {
+      "description": "A kind of animal a world keeps, with how it lives. Declared in the world's `animals/`.\nEvery character says how they feel about each kind.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "lays": {
+          "description": "The good one may lay in its coop when it comes out in the morning.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "plural": {
+          "description": "How people speak of a flock of them (\"hens\"). Also the topic of remarks about them.",
+          "type": "string"
+        },
+        "sleeps": {
+          "type": "string"
+        },
+        "step_max": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "step_min": {
+          "description": "Seconds between one step and the next, as a range to draw from.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "wakes": {
+          "description": "When they come out and when they settle, as times of day (\"6am\", \"7:30pm\").",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "plural",
+        "wakes",
+        "sleeps",
+        "step_min",
+        "step_max"
       ]
     },
     "AreaSpec": {
@@ -99,16 +154,42 @@
         "floors"
       ]
     },
-    "Crop": {
-      "type": "string",
-      "enum": [
-        "wheat",
-        "cabbages",
-        "carrots",
-        "potatoes",
-        "beans",
-        "corn",
-        "flowers"
+    "CropDef": {
+      "description": "A crop a world grows, with what it needs and gives. Declared in the world's `crops/`.",
+      "type": "object",
+      "properties": {
+        "feeds": {
+          "description": "Whether a harvest leaves the ground richer (beans) rather than poorer.",
+          "type": "boolean",
+          "default": false
+        },
+        "good": {
+          "description": "The good a harvest yields.",
+          "type": "string"
+        },
+        "grow": {
+          "description": "Growth points from sowing to ripe. A well-watered, weeded tile gains 2 a day.",
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "id": {
+          "type": "string"
+        },
+        "tiles_per_unit": {
+          "description": "Tiles harvested for one unit of the good.",
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        }
+      },
+      "required": [
+        "id",
+        "grow",
+        "good",
+        "tiles_per_unit"
       ]
     },
     "DayPattern": {
@@ -274,7 +355,8 @@
           "type": "string"
         },
         "kind": {
-          "$ref": "#/$defs/AnimalKind"
+          "description": "An animal declared in `animals/`.",
+          "type": "string"
         },
         "owner": {
           "description": "The villager they belong to.",
@@ -703,7 +785,8 @@
       "type": "object",
       "properties": {
         "crop": {
-          "$ref": "#/$defs/Crop"
+          "description": "A crop declared in `crops/`.",
+          "type": "string"
         },
         "household": {
           "description": "The building whose people keep this plot as their garden, in turns, in the early\nevening.",

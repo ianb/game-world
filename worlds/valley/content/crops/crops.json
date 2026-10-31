@@ -1,0 +1,9 @@
+[
+  { "id": "wheat", "grow": 24, "good": "wheat", "tiles_per_unit": 4 },
+  { "id": "cabbages", "grow": 14, "good": "cabbages", "tiles_per_unit": 2 },
+  { "id": "carrots", "grow": 16, "good": "carrots", "tiles_per_unit": 2 },
+  { "id": "potatoes", "grow": 20, "good": "potatoes", "tiles_per_unit": 3 },
+  { "id": "beans", "grow": 14, "good": "beans", "tiles_per_unit": 2, "feeds": true },
+  { "id": "corn", "grow": 24, "good": "corn", "tiles_per_unit": 3 },
+  { "id": "flowers", "grow": 12, "good": "flowers", "tiles_per_unit": 2 }
+]

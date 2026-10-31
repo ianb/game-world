@@ -30,3 +30,7 @@ id!(/// A door record, both directions.
     DoorId);
 id!(/// A smart object (bed, counter, oven).
     ObjectId);
+id!(/// A crop the world declares (`content.crops`), by declaration order.
+    CropId);
+id!(/// A kind of animal the world declares (`content.animals`), by declaration order.
+    AnimalKindId);

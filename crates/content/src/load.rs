@@ -1,6 +1,7 @@
-//! Loading from a content directory: `zones/*.json`, `buildings/*.json`, `villagers/*.json`.
+//! Loading from a content directory: `zones/*.json`, `buildings/*.json`, `villagers/*.json`,
+//! and lists in `topics/`, `crops/` and `animals/`.
 //! Files are read in sorted name order so ids are assigned deterministically.
-use crate::model::{Building, Content, TopicDef, Villager, Zone};
+use crate::model::{AnimalDef, Building, Content, CropDef, TopicDef, Villager, Zone};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -52,6 +53,14 @@ pub fn load_dir(root: &Path) -> Result<Content, LoadError> {
         buildings: read_all::<Building>(&root.join("buildings"))?,
         villagers: read_all::<Villager>(&root.join("villagers"))?,
         topics: read_all::<Vec<TopicDef>>(&root.join("topics"))?
+            .into_iter()
+            .flatten()
+            .collect(),
+        crops: read_all::<Vec<CropDef>>(&root.join("crops"))?
+            .into_iter()
+            .flatten()
+            .collect(),
+        animals: read_all::<Vec<AnimalDef>>(&root.join("animals"))?
             .into_iter()
             .flatten()
             .collect(),

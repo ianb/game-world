@@ -2,8 +2,8 @@
 //! inside their flock's area on their own clock, and chickens roost in their coop at night
 //! and lay there in the morning. Animals have no minds; what they mean to people is each
 //! character's business (`Trigger::Animals`).
-use crate::ids::{ObjectId, PlaceId, VillagerId};
-use content::{AnimalKind, Pos, Rect};
+use crate::ids::{AnimalKindId, ObjectId, PlaceId, VillagerId};
+use content::{Pos, Rect};
 use serde::{Deserialize, Serialize};
 
 /// One animal.
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 pub struct Animal {
     /// Index into the sim's flocks.
     pub flock: u16,
-    pub kind: AnimalKind,
+    pub kind: AnimalKindId,
     pub place: PlaceId,
     pub pos: Pos,
     /// In the coop for the night, out of sight.
@@ -22,29 +22,18 @@ pub struct Animal {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Flock {
     pub id: String,
-    pub kind: AnimalKind,
+    pub kind: AnimalKindId,
     pub owner: VillagerId,
     pub place: PlaceId,
     pub area: Rect,
     pub coop: Option<ObjectId>,
-}
-
-/// When an animal kind is up and about, as seconds into the day.
-#[must_use]
-pub fn waking_hours(kind: AnimalKind) -> (u32, u32) {
-    match kind {
-        AnimalKind::Chicken => (6 * 3600, 19 * 3600 + 30 * 60),
-        AnimalKind::Sheep => (5 * 3600 + 30 * 60, 21 * 3600),
-    }
-}
-
-/// Seconds between one step and the next, as a range to draw from.
-#[must_use]
-pub fn step_gap(kind: AnimalKind) -> (u32, u32) {
-    match kind {
-        AnimalKind::Chicken => (15, 90),
-        AnimalKind::Sheep => (60, 240),
-    }
+    /// From the kind's declaration: when they are up and about, as seconds into the day.
+    pub wakes: u32,
+    pub sleeps: u32,
+    /// Seconds between one step and the next, as a range to draw from.
+    pub step: (u32, u32),
+    /// The good one may lay in the coop in the morning.
+    pub lays: Option<String>,
 }
 
 /// The chance label for a hen laying when she comes out in the morning.

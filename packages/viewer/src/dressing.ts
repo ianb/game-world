@@ -2,7 +2,7 @@
 // a path crosses water, sills in doorways, ladders up to lofts, and the flowers, stones and
 // reeds scattered over the ground. All of it lies flat, so the 2D map and the 3D ground
 // share it. Also which tree stands where.
-import type { Calendar, DoorView, FieldTileView, FieldView, PlaceView, PlotView, Crop, WorldView } from "@game-world/protocol";
+import type { Calendar, DoorView, FieldTileView, FieldView, PlaceView, PlotView, WorldView } from "@game-world/protocol";
 import { type Materials, type TileRect, type Tileset, variantAt, within } from "./render";
 
 export interface Dressing {
@@ -49,7 +49,7 @@ function stage(c: Calendar): Stage {
 
 /** The tile drawn over the soil for a crop at a stage, or null for bare soil. A crop that
  * fills its ground (wheat) replaces the soil instead. */
-function cropTile(crop: Crop, s: Stage, x: number, y: number): { tile: string; covers: boolean } | null {
+function cropTile(crop: string, s: Stage, x: number, y: number): { tile: string; covers: boolean } | null {
   if (s === "bare") return null;
   if (s === "sprout") return { tile: "crop_sprout", covers: false };
     if (crop === "wheat") return { tile: s === "ready" ? "crop_wheat_ready" : "crop_wheat_growing", covers: true };

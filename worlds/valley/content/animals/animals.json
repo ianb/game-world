@@ -1,0 +1,19 @@
+[
+  {
+    "id": "chicken",
+    "plural": "hens",
+    "wakes": "6am",
+    "sleeps": "7:30pm",
+    "step_min": 15,
+    "step_max": 90,
+    "lays": "eggs"
+  },
+  {
+    "id": "sheep",
+    "plural": "sheep",
+    "wakes": "5:30am",
+    "sleeps": "9pm",
+    "step_min": 60,
+    "step_max": 240
+  }
+]

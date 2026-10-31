@@ -362,7 +362,7 @@ pub fn fetch_goods(ctx: &Ctx<'_>, me: &str) -> Vec<Command> {
 #[must_use]
 pub fn chase_hens(ctx: &Ctx<'_>, me: &str, trigger: &Trigger) -> Option<Vec<Command>> {
     let Trigger::Animals {
-        kind: content::AnimalKind::Chicken,
+        kind,
         owner,
         place,
         at,
@@ -370,6 +370,9 @@ pub fn chase_hens(ctx: &Ctx<'_>, me: &str, trigger: &Trigger) -> Option<Vec<Comm
     else {
         return None;
     };
+    if crate::Animal::of(ctx, *kind) != crate::Animal::Chicken {
+        return None;
+    }
     let busy = matches!(
         activity_of(ctx, me),
         "school" | "sleep" | "talk" | "service" | "chase-hens"
@@ -404,7 +407,7 @@ pub fn chase_hens(ctx: &Ctx<'_>, me: &str, trigger: &Trigger) -> Option<Vec<Comm
 pub fn meet_animals(
     ctx: &Ctx<'_>,
     me: VillagerId,
-    kind: content::AnimalKind,
+    kind: sim::ids::AnimalKindId,
     owner: VillagerId,
     fondness: crate::Fondness,
 ) -> Vec<Command> {
@@ -412,7 +415,7 @@ pub fn meet_animals(
     if me == owner {
         return Vec::new();
     }
-    let topic = ctx.topic(sim::brain::animal_plural(kind)).about(owner);
+    let topic = ctx.topic(sim::brain::animal_plural(ctx, kind)).about(owner);
     match fondness {
         F::Delighted => vec![think_aloud(topic, Blame::Them(owner), false, false, 2)],
         F::Fond => vec![think(topic, Blame::Them(owner), false, false, 1)],

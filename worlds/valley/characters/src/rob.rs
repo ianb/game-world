@@ -28,11 +28,9 @@ impl Character for Rob {
     const ID: &'static str = "rob";
 
     #[deny(clippy::wildcard_enum_match_arm)]
-    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+    fn fondness(&self, kind: crate::Animal) -> crate::Fondness {
         match kind {
-            content::AnimalKind::Chicken | content::AnimalKind::Sheep => {
-                crate::Fondness::Indifferent
-            }
+            crate::Animal::Chicken | crate::Animal::Sheep => crate::Fondness::Indifferent,
         }
     }
     fn plan_day(&mut self, ctx: &Ctx<'_>, _rng: &mut Pcg32) -> Vec<Planned> {

@@ -2,8 +2,8 @@
 //! some nights), and worked tile by tile by whoever stands on them.
 use super::Sim;
 use crate::brain::CharacterSet;
-use crate::fields::{Fields, Plot, crop_rules, starting_tiles, work};
-use crate::ids::{ObjectId, PlaceId, VillagerId};
+use crate::fields::{Fields, Plot, starting_tiles, work};
+use crate::ids::{CropId, ObjectId, PlaceId, VillagerId};
 use crate::protocol::{Emitted, FieldWork, GoodsLine};
 use crate::time::Season;
 
@@ -34,14 +34,18 @@ impl<C: CharacterSet> Sim<C> {
                         .position(|o| &o.id == s)
                         .map(|i| ObjectId(u16::try_from(i).expect("few objects")))
                 });
+                // Validation guarantees the crop is declared.
+                let Some(c) = self.content.crop_index(&p.crop) else {
+                    continue;
+                };
                 plots.push(Plot {
                     id: p.id.clone(),
                     place,
                     rect: p.rect,
-                    crop: p.crop,
+                    crop: CropId(u16::try_from(c).expect("few crops")),
                     store,
                     gathered: 0,
-                    tiles: starting_tiles(plots.len(), p.rect, p.crop),
+                    tiles: starting_tiles(plots.len(), p.rect, &self.content.crops[c]),
                 });
             }
         }
@@ -60,7 +64,10 @@ impl<C: CharacterSet> Sim<C> {
             out.push(Emitted::Rained { tick });
         }
         self.moods_weather(rained, out);
-        let night = self.state.fields.new_day(season, rained);
+        let night = self
+            .state
+            .fields
+            .new_day(&self.content.crops, season, rained);
         let id = |p: u16| self.state.fields.plots[usize::from(p)].id.clone();
         for (p, tiles) in night.ripened {
             out.push(Emitted::CropsRipened {
@@ -98,13 +105,12 @@ impl<C: CharacterSet> Sim<C> {
             return;
         };
         let plot = &mut self.state.fields.plots[p];
-        let crop = plot.crop;
-        if !work(&mut plot.tiles[i], crop, job) {
+        let rules = &self.content.crops[plot.crop.index()];
+        if !work(&mut plot.tiles[i], rules, job) {
             return;
         }
         let mut stored = None;
         if job == FieldWork::Harvest {
-            let rules = crop_rules(plot.crop);
             plot.gathered += 1;
             if plot.gathered >= rules.tiles_per_unit {
                 plot.gathered -= rules.tiles_per_unit;
@@ -114,11 +120,11 @@ impl<C: CharacterSet> Sim<C> {
                         .stock
                         .entry(store.0)
                         .or_default()
-                        .entry(rules.good.to_string())
+                        .entry(rules.good.clone())
                         .or_insert(0);
                     *n = n.saturating_add(1);
                     stored = Some(GoodsLine {
-                        good: rules.good.to_string(),
+                        good: rules.good.clone(),
                         count: 1,
                     });
                 }

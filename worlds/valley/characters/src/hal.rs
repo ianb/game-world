@@ -432,10 +432,10 @@ impl crate::Character for Hal {
     const ID: &'static str = "hal";
 
     #[deny(clippy::wildcard_enum_match_arm)]
-    fn fondness(&self, kind: content::AnimalKind) -> crate::Fondness {
+    fn fondness(&self, kind: crate::Animal) -> crate::Fondness {
         match kind {
-            content::AnimalKind::Chicken => crate::Fondness::Indifferent,
-            content::AnimalKind::Sheep => crate::Fondness::Wary,
+            crate::Animal::Chicken => crate::Fondness::Indifferent,
+            crate::Animal::Sheep => crate::Fondness::Wary,
         }
     }
     fn plan_day(&mut self, ctx: &Ctx<'_>, rng: &mut Pcg32) -> Vec<Planned> {
