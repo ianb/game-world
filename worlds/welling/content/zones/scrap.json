@@ -1,0 +1,224 @@
+{
+  "id": "scrap",
+  "width": 48,
+  "height": 36,
+  "water": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 48,
+      "h": 36
+    }
+  ],
+  "decks": [
+    {
+      "x": 16,
+      "y": 14,
+      "w": 16,
+      "h": 8
+    },
+    {
+      "x": 13,
+      "y": 16,
+      "w": 3,
+      "h": 1
+    },
+    {
+      "x": 23,
+      "y": 11,
+      "w": 1,
+      "h": 3
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "w": 5,
+      "h": 4
+    },
+    {
+      "x": 5,
+      "y": 6,
+      "w": 1,
+      "h": 6
+    },
+    {
+      "x": 34,
+      "y": 9,
+      "w": 10,
+      "h": 18
+    },
+    {
+      "x": 32,
+      "y": 17,
+      "w": 2,
+      "h": 1
+    },
+    {
+      "x": 44,
+      "y": 16,
+      "w": 4,
+      "h": 4
+    },
+    {
+      "x": 14,
+      "y": 23,
+      "w": 18,
+      "h": 6
+    },
+    {
+      "x": 22,
+      "y": 22,
+      "w": 1,
+      "h": 1
+    },
+    {
+      "x": 4,
+      "y": 25,
+      "w": 8,
+      "h": 6
+    },
+    {
+      "x": 12,
+      "y": 26,
+      "w": 2,
+      "h": 1
+    }
+  ],
+  "objects": [
+    {
+      "id": "hood_vent",
+      "kind": "hood",
+      "at": {
+        "x": 5,
+        "y": 3
+      },
+      "activity": "capture"
+    },
+    {
+      "id": "stall_gas",
+      "kind": "stall",
+      "at": {
+        "x": 20,
+        "y": 16
+      },
+      "activity": "sell",
+      "owner": "tully",
+      "stock": {
+        "refined-gas": 4
+      }
+    },
+    {
+      "id": "privy_yard",
+      "kind": "privy",
+      "at": {
+        "x": 30,
+        "y": 20
+      },
+      "activity": "relieve"
+    },
+    {
+      "id": "cistern_yard",
+      "kind": "cistern",
+      "at": {
+        "x": 17,
+        "y": 20
+      },
+      "activity": "drink-water"
+    },
+    {
+      "id": "cistern_shanty",
+      "kind": "cistern",
+      "at": {
+        "x": 42,
+        "y": 10
+      },
+      "activity": "drink-water"
+    },
+    {
+      "id": "berth",
+      "kind": "platform",
+      "at": {
+        "x": 45,
+        "y": 17
+      }
+    },
+    {
+      "id": "spot_south",
+      "kind": "bucket",
+      "at": {
+        "x": 20,
+        "y": 28
+      },
+      "activity": "fish"
+    },
+    {
+      "id": "spot_east",
+      "kind": "bucket",
+      "at": {
+        "x": 43,
+        "y": 13
+      },
+      "activity": "fish"
+    },
+    {
+      "id": "bollard_yard",
+      "kind": "fence",
+      "at": {
+        "x": 31,
+        "y": 14
+      },
+      "activity": "lash"
+    },
+    {
+      "id": "bollard_shanty",
+      "kind": "fence",
+      "at": {
+        "x": 43,
+        "y": 26
+      },
+      "activity": "lash"
+    },
+    {
+      "id": "bollard_vent",
+      "kind": "fence",
+      "at": {
+        "x": 7,
+        "y": 2
+      },
+      "activity": "lash"
+    }
+  ],
+  "areas": [
+    {
+      "id": "yard",
+      "rect": {
+        "x": 16,
+        "y": 14,
+        "w": 16,
+        "h": 8
+      }
+    },
+    {
+      "id": "shanty-raft",
+      "rect": {
+        "x": 34,
+        "y": 9,
+        "w": 10,
+        "h": 18
+      }
+    },
+    {
+      "id": "south-raft",
+      "rect": {
+        "x": 14,
+        "y": 23,
+        "w": 18,
+        "h": 6
+      }
+    }
+  ],
+  "arrival": {
+    "x": 24,
+    "y": 17
+  }
+}

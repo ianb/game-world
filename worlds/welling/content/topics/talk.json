@@ -1,0 +1,59 @@
+[
+  {
+    "id": "greeting",
+    "gloss": "a greeting"
+  },
+  {
+    "id": "day",
+    "gloss": "the day"
+  },
+  {
+    "id": "how-they-are",
+    "gloss": "how they are"
+  },
+  {
+    "id": "nobody-came",
+    "gloss": "nobody about"
+  },
+  {
+    "id": "money",
+    "gloss": "money",
+    "trouble": "money"
+  },
+  {
+    "id": "custom",
+    "gloss": "custom"
+  },
+  {
+    "id": "the-dark",
+    "gloss": "the dark"
+  },
+  {
+    "id": "what-was-said",
+    "gloss": "what was said"
+  },
+  {
+    "id": "the-news",
+    "gloss": "the news"
+  },
+  {
+    "id": "tripped",
+    "gloss": "a stumble"
+  },
+  {
+    "id": "gas",
+    "gloss": "the gas"
+  },
+  {
+    "id": "the-catch",
+    "gloss": "the catch"
+  },
+  {
+    "id": "the-lashings",
+    "gloss": "the lashings"
+  },
+  {
+    "id": "drink",
+    "gloss": "a drink"
+  }
+]

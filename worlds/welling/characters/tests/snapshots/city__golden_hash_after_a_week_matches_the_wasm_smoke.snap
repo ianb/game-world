@@ -1,0 +1,5 @@
+---
+source: worlds/welling/characters/tests/city.rs
+expression: sim.hash().hex()
+---
+75714b0377942ace

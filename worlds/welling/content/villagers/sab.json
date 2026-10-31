@@ -1,0 +1,57 @@
+{
+  "id": "sab",
+  "name": "Sab",
+  "home": "mire",
+  "bed": "bed_sab",
+  "coins": 18,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:00am",
+      "object": "hood_vent",
+      "activity": "capture"
+    },
+    {
+      "days": "daily",
+      "at": "11:00am",
+      "object": "bench_refine_2",
+      "activity": "refine"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_mire",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "hood_vent",
+      "activity": "capture"
+    },
+    {
+      "days": "daily",
+      "at": "5:00pm",
+      "object": "bench_refine_2",
+      "activity": "refine"
+    },
+    {
+      "days": "daily",
+      "at": "9:30pm",
+      "object": "bed_sab",
+      "activity": "sleep"
+    }
+  ],
+  "moods": [
+    {
+      "mood": "restless",
+      "after_hours": 5
+    },
+    {
+      "mood": "anxious",
+      "about": [
+        "dark"
+      ]
+    }
+  ]
+}

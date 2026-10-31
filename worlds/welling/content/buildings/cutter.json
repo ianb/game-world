@@ -1,0 +1,76 @@
+{
+  "id": "cutter",
+  "zone": "scrap",
+  "at": {
+    "x": 25,
+    "y": 24
+  },
+  "floors": [
+    {
+      "id": "deck",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "cabin",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 4,
+            "h": 2
+          },
+          "flooring": "planks"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 0,
+            "y": 1
+          },
+          "between": [
+            "cabin"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_nessa",
+          "kind": "bed",
+          "at": {
+            "x": 4,
+            "y": 1
+          },
+          "room": "cabin",
+          "activity": "sleep",
+          "owner": "nessa"
+        },
+        {
+          "id": "stove_nessa",
+          "kind": "stove",
+          "at": {
+            "x": 4,
+            "y": 2
+          },
+          "room": "cabin",
+          "activity": "cook"
+        },
+        {
+          "id": "table_nessa",
+          "kind": "table",
+          "at": {
+            "x": 2,
+            "y": 2
+          },
+          "room": "cabin",
+          "activity": "eat"
+        }
+      ],
+      "arrival": {
+        "x": 2,
+        "y": 1
+      }
+    }
+  ],
+  "walls": "boards",
+  "afloat": true
+}

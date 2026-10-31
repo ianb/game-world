@@ -1,0 +1,99 @@
+{
+  "id": "kettle",
+  "zone": "scrap",
+  "at": {
+    "x": 18,
+    "y": 4
+  },
+  "floors": [
+    {
+      "id": "deck",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "bar",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 10,
+            "h": 5
+          },
+          "flooring": "darkplanks"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 5,
+            "y": 6
+          },
+          "between": [
+            "bar"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "counter_kettle",
+          "kind": "counter",
+          "at": {
+            "x": 5,
+            "y": 2
+          },
+          "room": "bar",
+          "activity": "serve",
+          "owner": "lark"
+        },
+        {
+          "id": "barrel_kettle",
+          "kind": "barrel",
+          "at": {
+            "x": 2,
+            "y": 1
+          },
+          "room": "bar",
+          "stock": {
+            "drink": 20
+          }
+        },
+        {
+          "id": "table_kettle_1",
+          "kind": "table",
+          "at": {
+            "x": 2,
+            "y": 4
+          },
+          "room": "bar",
+          "activity": "drink"
+        },
+        {
+          "id": "table_kettle_2",
+          "kind": "table",
+          "at": {
+            "x": 8,
+            "y": 4
+          },
+          "room": "bar",
+          "activity": "drink"
+        },
+        {
+          "id": "bed_lark",
+          "kind": "bed",
+          "at": {
+            "x": 10,
+            "y": 1
+          },
+          "room": "bar",
+          "activity": "sleep",
+          "owner": "lark"
+        }
+      ],
+      "arrival": {
+        "x": 5,
+        "y": 4
+      }
+    }
+  ],
+  "walls": "boards",
+  "afloat": true
+}

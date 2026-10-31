@@ -1,0 +1,66 @@
+{
+  "id": "shanty_tully",
+  "zone": "scrap",
+  "at": {
+    "x": 36,
+    "y": 9
+  },
+  "floors": [
+    {
+      "id": "deck",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "room",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 4,
+            "h": 3
+          },
+          "flooring": "planks"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 0,
+            "y": 2
+          },
+          "between": [
+            "room"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_tully",
+          "kind": "bed",
+          "at": {
+            "x": 1,
+            "y": 1
+          },
+          "room": "room",
+          "activity": "sleep",
+          "owner": "tully"
+        },
+        {
+          "id": "table_tully",
+          "kind": "table",
+          "at": {
+            "x": 4,
+            "y": 3
+          },
+          "room": "room",
+          "activity": "eat"
+        }
+      ],
+      "arrival": {
+        "x": 2,
+        "y": 2
+      }
+    }
+  ],
+  "walls": "boards",
+  "afloat": true
+}

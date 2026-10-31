@@ -1,0 +1,61 @@
+{
+  "id": "tully",
+  "name": "Tully",
+  "home": "shanty_tully",
+  "bed": "bed_tully",
+  "coins": 40,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:30am",
+      "object": "table_tully",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "9:00am",
+      "object": "stall_gas",
+      "activity": "sell"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "table_tully",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "stall_gas",
+      "activity": "sell"
+    },
+    {
+      "days": "daily",
+      "at": "7:00pm",
+      "object": "table_kettle_2",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "11:00pm",
+      "object": "bed_tully",
+      "activity": "sleep"
+    }
+  ],
+  "moods": [
+    {
+      "mood": "proud",
+      "of": [
+        "earning"
+      ]
+    },
+    {
+      "mood": "anxious",
+      "about": [
+        {
+          "money": 20
+        }
+      ]
+    }
+  ]
+}

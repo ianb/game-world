@@ -50,16 +50,22 @@ bundles:
     #!/usr/bin/env bash
     set -euo pipefail
     mkdir -p target/bundles
-    for world in valley; do
+    for world in valley welling; do
         cargo run -q -p tools -- --world "$world" bundle > "target/bundles/$world.json"
         mkdir -p "packages/viewer/public/worlds/$world"
         cp "target/bundles/$world.json" "packages/viewer/public/worlds/$world/content.json"
     done
 
-# Build the wasm, run a week in Node, and compare the hash with the native golden snapshot.
+# Build the wasm, run a week of each world in Node, and compare each hash with that
+# world's native golden snapshot.
 wasm-smoke: build-wasm
+    #!/usr/bin/env bash
+    set -euo pipefail
+    golden() { grep -v '^---' "$1" | grep -v '^$' | grep -v '^source' | grep -v '^expression' | tail -1; }
     node packages/sim-wasm/smoke.mjs valley target/bundles/valley.json \
-        "$(grep -v '^---' worlds/valley/characters/tests/snapshots/town__golden_hash_after_a_week_matches_the_wasm_smoke.snap | grep -v '^$' | grep -v '^source' | grep -v '^expression' | tail -1)"
+        "$(golden worlds/valley/characters/tests/snapshots/town__golden_hash_after_a_week_matches_the_wasm_smoke.snap)"
+    node packages/sim-wasm/smoke.mjs welling target/bundles/welling.json \
+        "$(golden worlds/welling/characters/tests/snapshots/city__golden_hash_after_a_week_matches_the_wasm_smoke.snap)"
 
 # Regenerate the TypeScript bindings and the content JSON Schema from the Rust types.
 gen-types:
@@ -95,8 +101,12 @@ viewer-smoke: ts
         if curl -sf -o /dev/null http://localhost:4173/; then break; fi
         sleep 0.2
     done
-    node scripts/viewer-smoke.mjs http://localhost:4173/
+    node scripts/viewer-smoke.mjs http://localhost:4173/ town
     status=$?
+    if [ "$status" -eq 0 ]; then
+        node scripts/viewer-smoke.mjs "http://localhost:4173/?world=welling" scrap
+        status=$?
+    fi
     kill "$server" 2>/dev/null; wait "$server" 2>/dev/null
     if [ "$status" -ne 0 ]; then echo "--- preview server log"; cat "$log"; fi
     exit $status

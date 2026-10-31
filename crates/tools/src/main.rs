@@ -34,12 +34,14 @@ struct Cli {
 #[derive(Clone, Copy, Debug, ValueEnum)]
 enum World {
     Valley,
+    Welling,
 }
 
 impl World {
     fn id(self) -> &'static str {
         match self {
             World::Valley => "valley",
+            World::Welling => "welling",
         }
     }
 }
@@ -197,6 +199,7 @@ fn main() -> ExitCode {
     }
     match cli.world {
         World::Valley => run::<valley::Town>(cli, content),
+        World::Welling => run::<welling::City>(cli, content),
     }
 }
 

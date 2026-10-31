@@ -1,0 +1,162 @@
+{
+  "id": "mire",
+  "zone": "scrap",
+  "at": {
+    "x": 4,
+    "y": 12
+  },
+  "floors": [
+    {
+      "id": "deck",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "cabin",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 7,
+            "h": 7
+          },
+          "flooring": "darkplanks"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 8,
+            "y": 4
+          },
+          "between": [
+            "cabin"
+          ]
+        },
+        {
+          "at": {
+            "x": 1,
+            "y": 0
+          },
+          "between": [
+            "cabin"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bench_refine_1",
+          "kind": "workbench",
+          "at": {
+            "x": 3,
+            "y": 2
+          },
+          "room": "cabin",
+          "activity": "refine"
+        },
+        {
+          "id": "bench_refine_2",
+          "kind": "workbench",
+          "at": {
+            "x": 6,
+            "y": 2
+          },
+          "room": "cabin",
+          "activity": "refine"
+        },
+        {
+          "id": "table_mire",
+          "kind": "table",
+          "at": {
+            "x": 5,
+            "y": 5
+          },
+          "room": "cabin",
+          "activity": "eat"
+        },
+        {
+          "id": "bed_ora",
+          "kind": "bed",
+          "at": {
+            "x": 1,
+            "y": 7
+          },
+          "room": "cabin",
+          "activity": "sleep",
+          "owner": "ora"
+        },
+        {
+          "id": "bed_sab",
+          "kind": "bed",
+          "at": {
+            "x": 3,
+            "y": 7
+          },
+          "room": "cabin",
+          "activity": "sleep",
+          "owner": "sab"
+        }
+      ],
+      "arrival": {
+        "x": 4,
+        "y": 4
+      }
+    },
+    {
+      "id": "hold",
+      "level": -1,
+      "rooms": [
+        {
+          "id": "hold",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 7,
+            "h": 5
+          },
+          "flooring": "cobbles"
+        }
+      ],
+      "openings": [],
+      "objects": [
+        {
+          "id": "casks_mire",
+          "kind": "barrels",
+          "at": {
+            "x": 2,
+            "y": 2
+          },
+          "room": "hold",
+          "stock": {
+            "raw-gas": 6,
+            "refined-gas": 2
+          }
+        }
+      ],
+      "arrival": {
+        "x": 4,
+        "y": 3
+      },
+      "detached": "below the waterline"
+    }
+  ],
+  "walls": "boards",
+  "afloat": true,
+  "doors": [
+    {
+      "id": "ladder_mire",
+      "from": {
+        "floor": "deck",
+        "at": {
+          "x": 7,
+          "y": 7
+        }
+      },
+      "to": {
+        "floor": "hold",
+        "at": {
+          "x": 7,
+          "y": 5
+        }
+      }
+    }
+  ]
+}

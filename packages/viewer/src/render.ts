@@ -119,6 +119,18 @@ export class Tileset {
     ctx.drawImage(this.image, t.col * s + qx * h, t.row * s + qy * h, h, h, x * s + qx * h, y * s + qy * h, h, h);
   }
 
+  /** The sheet a villager is drawn from: their own, or for someone without one (another
+   * world's people, for now) one of the others, picked by a hash of their key so it stays
+   * the same. */
+  sheetOf(key: string): string {
+    const top = this.atlas.villagers.top;
+    if (key in top) return key;
+    const keys = Object.keys(top).sort();
+    let h = 0;
+    for (const c of key) h = (Math.imul(h, 31) + c.charCodeAt(0)) >>> 0;
+    return keys[h % keys.length] ?? key;
+  }
+
   private readonly portraits = new Map<string, HTMLCanvasElement>();
 
   /** A villager's head and shoulders, facing out, for cards and lists. Made once per
@@ -133,10 +145,11 @@ export class Tileset {
     canvas.width = side;
     canvas.height = side;
     const ctx = canvas.getContext("2d");
-    const top = v.top[key] ?? Object.values(v.top)[0];
+    const sheet = this.sheetOf(key);
+    const top = v.top[sheet];
     if (ctx && top !== undefined) {
       ctx.imageSmoothingEnabled = false;
-      const sx = (v.left?.[key] ?? 0) + f / 4;
+      const sx = (v.left?.[sheet] ?? 0) + f / 4;
       const sy = top + FACING_ROW.down * f + f / 8;
       ctx.drawImage(this.image, sx, sy, side, side, 0, 0, side, side);
     }
@@ -164,11 +177,12 @@ export class Tileset {
    * `dx` pixels when sharing the cell. */
   drawVillager(ctx: CanvasRenderingContext2D, key: string, facing: Facing, frame: number, x: number, y: number, dx = 0): void {
     const v = this.atlas.villagers;
-    const top = v.top[key] ?? Object.values(v.top)[0];
+    const sheet = this.sheetOf(key);
+    const top = v.top[sheet];
     if (top === undefined) return;
     const s = this.atlas.tile;
     const f = v.frame;
-    const sx = (v.left?.[key] ?? 0) + (frame % v.frames) * f;
+    const sx = (v.left?.[sheet] ?? 0) + (frame % v.frames) * f;
     const sy = top + FACING_ROW[facing] * f;
     ctx.drawImage(this.image, sx, sy, f, f, x * s + s / 2 - f / 2 + dx, (y + 1) * s - f + FEET, f, f);
   }

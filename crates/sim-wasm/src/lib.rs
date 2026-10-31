@@ -30,12 +30,13 @@ fn to_js<T: serde::Serialize>(value: &T) -> Result<JsValue, JsError> {
 #[wasm_bindgen]
 #[must_use]
 pub fn worlds() -> Vec<String> {
-    vec!["valley".into()]
+    vec!["valley".into(), "welling".into()]
 }
 
 #[derive(Debug)]
 enum World {
-    Valley(History<valley::Town>),
+    Valley(Box<History<valley::Town>>),
+    Welling(Box<History<welling::City>>),
 }
 
 /// Evaluates `$body` with `$h` bound to the world's history, whichever world it is.
@@ -43,6 +44,7 @@ macro_rules! each {
     ($world:expr, $h:ident => $body:expr) => {
         match $world {
             World::Valley($h) => $body,
+            World::Welling($h) => $body,
         }
     };
 }
@@ -50,7 +52,8 @@ macro_rules! each {
 impl World {
     fn new(id: &str, seed: u64, content: content::Content) -> Result<World, JsError> {
         match id {
-            "valley" => Ok(World::Valley(History::new(seed, content))),
+            "valley" => Ok(World::Valley(Box::new(History::new(seed, content)))),
+            "welling" => Ok(World::Welling(Box::new(History::new(seed, content)))),
             _ => Err(JsError::new(&format!("unknown world {id:?}"))),
         }
     }
@@ -58,9 +61,12 @@ impl World {
     fn restore(id: &str, bytes: &[u8], content: content::Content) -> Result<World, JsError> {
         let fail = |e: sim::SimError| JsError::new(&e.to_string());
         match id {
-            "valley" => Ok(World::Valley(
+            "valley" => Ok(World::Valley(Box::new(
                 History::restore(bytes, content).map_err(fail)?,
-            )),
+            ))),
+            "welling" => Ok(World::Welling(Box::new(
+                History::restore(bytes, content).map_err(fail)?,
+            ))),
             _ => Err(JsError::new(&format!("unknown world {id:?}"))),
         }
     }

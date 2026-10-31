@@ -1,0 +1,57 @@
+{
+  "id": "grue",
+  "name": "Grue",
+  "home": "shanty_grue",
+  "bed": "bed_grue",
+  "coins": 15,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "5:00am",
+      "object": "spot_east",
+      "activity": "fish"
+    },
+    {
+      "days": "daily",
+      "at": "10:00am",
+      "object": "table_grue",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "spot_east",
+      "activity": "fish"
+    },
+    {
+      "days": "daily",
+      "at": "5:00pm",
+      "object": "table_grue",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00pm",
+      "object": "table_kettle_1",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "11:00pm",
+      "object": "bed_grue",
+      "activity": "sleep"
+    }
+  ],
+  "moods": [
+    {
+      "mood": "lonely",
+      "after_hours": 8
+    },
+    {
+      "mood": "cheerful",
+      "by": [
+        "rain"
+      ]
+    }
+  ]
+}

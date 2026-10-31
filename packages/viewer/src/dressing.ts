@@ -11,6 +11,8 @@ export interface Dressing {
   rails: { x: number; y: number }[];
   /** Cells at either end of a ladder. */
   ladders: Set<number>;
+  /** Whether lily pads float on still water here. */
+  lilies: boolean;
 }
 
 export function dressingFor(world: WorldView, place: PlaceView): Dressing {
@@ -28,6 +30,8 @@ export function dressingFor(world: WorldView, place: PlaceView): Dressing {
     plots: world.plots.filter((p) => p.place === place.id),
     rails: world.rail && world.rail.place === place.id ? world.rail.tiles : [],
     ladders,
+    // Decks mean open water: no lilies, which belong to the valley's ponds and river.
+    lilies: !place.cells.includes("Deck"),
   };
 }
 
@@ -185,7 +189,7 @@ export function paintDressing(
       const v = variantAt(x * 7 + 3, y * 5 + 1, 120);
       if (n === WATER) {
         const bank = !waterAt(x - 1, y) || !waterAt(x + 1, y) || !waterAt(x, y - 1) || !waterAt(x, y + 1);
-        if (!bank && v < 6) tiles.draw(ctx, v < 2 ? "decor_lily_flower" : "decor_lily", x, y);
+        if (dressing.lilies && !bank && v < 6) tiles.draw(ctx, v < 2 ? "decor_lily_flower" : "decor_lily", x, y);
         continue;
       }
       if (n !== "grass") continue;

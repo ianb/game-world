@@ -1,0 +1,59 @@
+{
+  "id": "pike",
+  "name": "Pike",
+  "home": "shanty_pike",
+  "bed": "bed_pike",
+  "coins": 6,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "10:00am",
+      "object": "stall_gas",
+      "activity": "loiter"
+    },
+    {
+      "days": "daily",
+      "at": "1:00pm",
+      "object": "table_pike",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "3:00pm",
+      "object": "table_kettle_2",
+      "activity": "loiter"
+    },
+    {
+      "days": "daily",
+      "at": "8:00pm",
+      "object": "stall_gas",
+      "activity": "loiter"
+    },
+    {
+      "days": "daily",
+      "at": "11:30pm",
+      "object": "bed_pike",
+      "activity": "sleep"
+    }
+  ],
+  "moods": [
+    {
+      "mood": "anxious",
+      "about": [
+        {
+          "money": 10
+        }
+      ]
+    },
+    {
+      "mood": "gloomy",
+      "by": [
+        "rain"
+      ]
+    },
+    {
+      "mood": "restless",
+      "after_hours": 3
+    }
+  ]
+}

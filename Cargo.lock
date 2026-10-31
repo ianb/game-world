@@ -1072,6 +1072,7 @@ dependencies = [
  "sim",
  "valley",
  "wasm-bindgen",
+ "welling",
 ]
 
 [[package]]
@@ -1224,6 +1225,7 @@ dependencies = [
  "serde_json",
  "sim",
  "valley",
+ "welling",
 ]
 
 [[package]]
@@ -1344,6 +1346,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23f0c9c52aa7cd7d77769a4cfe2a9adb1b331f489a41d912ce14513d5ab995c6"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "welling"
+version = "0.1.0"
+dependencies = [
+ "behaviour",
+ "content",
+ "insta",
+ "rand",
+ "rand_pcg",
+ "serde",
+ "serde_json",
+ "sim",
 ]
 
 [[package]]

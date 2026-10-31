@@ -384,6 +384,10 @@ pub struct Building {
     pub doors: Vec<DoorSpec>,
     #[serde(default)]
     pub walls: Walling,
+    /// A vessel: its footprint stands on water. Left out of the serialized content when
+    /// false, so worlds without vessels keep the content hash they had.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub afloat: bool,
 }
 
 /// Which days a schedule entry applies to. More specific patterns win over `daily`.

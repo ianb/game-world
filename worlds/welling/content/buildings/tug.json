@@ -1,0 +1,66 @@
+{
+  "id": "tug",
+  "zone": "scrap",
+  "at": {
+    "x": 6,
+    "y": 26
+  },
+  "floors": [
+    {
+      "id": "deck",
+      "level": 0,
+      "rooms": [
+        {
+          "id": "cabin",
+          "rect": {
+            "x": 1,
+            "y": 1,
+            "w": 3,
+            "h": 2
+          },
+          "flooring": "planks"
+        }
+      ],
+      "openings": [
+        {
+          "at": {
+            "x": 2,
+            "y": 0
+          },
+          "between": [
+            "cabin"
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "bed_hobb",
+          "kind": "bed",
+          "at": {
+            "x": 1,
+            "y": 2
+          },
+          "room": "cabin",
+          "activity": "sleep",
+          "owner": "hobb"
+        },
+        {
+          "id": "table_hobb",
+          "kind": "table",
+          "at": {
+            "x": 3,
+            "y": 2
+          },
+          "room": "cabin",
+          "activity": "eat"
+        }
+      ],
+      "arrival": {
+        "x": 2,
+        "y": 1
+      }
+    }
+  ],
+  "walls": "boards",
+  "afloat": true
+}

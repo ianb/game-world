@@ -1,0 +1,67 @@
+{
+  "id": "hobb",
+  "name": "Hobb",
+  "home": "tug",
+  "bed": "bed_hobb",
+  "coins": 25,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "6:30am",
+      "object": "table_hobb",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "7:30am",
+      "object": "bollard_yard",
+      "activity": "lash"
+    },
+    {
+      "days": "daily",
+      "at": "10:00am",
+      "object": "bollard_shanty",
+      "activity": "lash"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_hobb",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "bollard_vent",
+      "activity": "lash"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_kettle_1",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "10:00pm",
+      "object": "bed_hobb",
+      "activity": "sleep"
+    }
+  ],
+  "moods": [
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "lash"
+        }
+      ]
+    },
+    {
+      "mood": "irritable",
+      "by": [
+        "stuck"
+      ]
+    }
+  ]
+}

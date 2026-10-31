@@ -787,7 +787,8 @@ export class Diorama {
   /** Points a walker's quad at a frame of their sheet, facing relative to the camera. */
   private setFrame(w: Walker, frame: number, force = false): void {
     const vs = this.o.tiles.atlas.villagers;
-    const top = vs.top[String(w.mesh.userData.key)] ?? 0;
+    const sheet = this.o.tiles.sheetOf(String(w.mesh.userData.key));
+    const top = vs.top[sheet] ?? 0;
     // Which of the four drawn directions is nearest the heading as the camera sees it.
     const rel = w.heading - this.view.yaw;
     const quarter = ((Math.round(rel / (Math.PI / 2)) % 4) + 4) % 4;
@@ -798,7 +799,7 @@ export class Diorama {
     const iw = this.o.tiles.image.width;
     const ih = this.o.tiles.image.height;
     const f = vs.frame;
-    const sx = (vs.left?.[String(w.mesh.userData.key)] ?? 0) + (frame % vs.frames) * f;
+    const sx = (vs.left?.[sheet] ?? 0) + (frame % vs.frames) * f;
     const sy = top + row * f;
     const u0 = sx / iw, u1 = (sx + f) / iw, v0 = 1 - (sy + f) / ih, v1 = 1 - sy / ih;
     w.uv.set([u0, v1, u1, v1, u0, v0, u1, v0]);

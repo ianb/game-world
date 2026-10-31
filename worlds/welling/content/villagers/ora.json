@@ -1,0 +1,61 @@
+{
+  "id": "ora",
+  "name": "Ora",
+  "home": "mire",
+  "bed": "bed_ora",
+  "coins": 30,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "7:00am",
+      "object": "table_mire",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "8:00am",
+      "object": "bench_refine_1",
+      "activity": "refine"
+    },
+    {
+      "days": "daily",
+      "at": "12:30pm",
+      "object": "table_mire",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "1:30pm",
+      "object": "bench_refine_1",
+      "activity": "refine"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "table_kettle_1",
+      "activity": "drink"
+    },
+    {
+      "days": "daily",
+      "at": "10:00pm",
+      "object": "bed_ora",
+      "activity": "sleep"
+    }
+  ],
+  "moods": [
+    {
+      "mood": "proud",
+      "of": [
+        {
+          "work": "refine"
+        }
+      ]
+    },
+    {
+      "mood": "irritable",
+      "by": [
+        "crowds"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "id": "nessa",
+  "name": "Nessa",
+  "home": "cutter",
+  "bed": "bed_nessa",
+  "coins": 22,
+  "schedule": [
+    {
+      "days": "daily",
+      "at": "5:30am",
+      "object": "spot_south",
+      "activity": "fish"
+    },
+    {
+      "days": "daily",
+      "at": "11:00am",
+      "object": "stove_nessa",
+      "activity": "cook"
+    },
+    {
+      "days": "daily",
+      "at": "11:45am",
+      "object": "table_nessa",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "2:00pm",
+      "object": "spot_south",
+      "activity": "fish"
+    },
+    {
+      "days": "daily",
+      "at": "6:00pm",
+      "object": "stove_nessa",
+      "activity": "cook"
+    },
+    {
+      "days": "daily",
+      "at": "6:45pm",
+      "object": "table_nessa",
+      "activity": "eat"
+    },
+    {
+      "days": "daily",
+      "at": "9:00pm",
+      "object": "bed_nessa",
+      "activity": "sleep"
+    }
+  ],
+  "moods": [
+    {
+      "mood": "cheerful",
+      "by": [
+        "fine_days"
+      ]
+    },
+    {
+      "mood": "gloomy",
+      "by": [
+        "rain"
+      ]
+    }
+  ]
+}

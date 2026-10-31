@@ -32,6 +32,32 @@ function chooseWorld(): string {
 
 const worldId = chooseWorld();
 
+/** What each world is called in the picker. */
+const WORLD_NAMES: Record<string, string> = { valley: "The valley", welling: "The Welling" };
+
+/** The picker: choosing a world reloads the page on it. */
+function setUpWorldPicker(): void {
+  const select = $<HTMLSelectElement>("world");
+  for (const id of wasm.worlds()) {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = WORLD_NAMES[id] ?? id;
+    option.selected = id === worldId;
+    select.append(option);
+  }
+  select.addEventListener("change", () => {
+    try {
+      localStorage.setItem("world", select.value);
+    } catch {
+      // storage can be blocked; the query string still carries the choice
+    }
+    const url = new URL(location.href);
+    url.searchParams.set("world", select.value);
+    location.assign(url.href);
+  });
+}
+setUpWorldPicker();
+
 async function loadContent(): Promise<string> {
   const res = await fetch(new URL(`worlds/${worldId}/content.json`, document.baseURI));
   if (!res.ok) throw new Error(`worlds/${worldId}/content.json: HTTP ${res.status}`);

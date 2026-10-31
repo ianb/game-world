@@ -6,8 +6,9 @@ docs, and nothing crosses between worlds: no shared timeline, people or saves.
 
 - **valley**: the village this project started with. Code and content in
   `../../worlds/valley/`. Docs: `../design/valley.md`, `../characters/`.
-- **welling**: The Welling, a city of lashed boats over a seabed that seeps. Docs:
-  `welling/`, starting with Ian's `welling/dossier.md`.
+- **welling**: The Welling, a city of lashed boats over a seabed that seeps. Code and
+  content in `../../worlds/welling/`. Docs: `welling/`, starting with Ian's
+  `welling/dossier.md`; the cast in `welling/people.md`.
 
 Status: agreed 2026-10-31. Step 1 below is built; steps 2 and 3 are next.
 
@@ -83,4 +84,7 @@ hash and the fixtures are per world (`worlds/<id>/fixtures/`, each world's own s
    not move. Done 2026-10-31 for crops and animals. Behaviour is unchanged; the golden
    hash moved only in its first part, which includes a hash of the content, now that the
    content carries the declarations.
-3. Add the Welling as a second, small world (see `welling/plan.md`).
+3. Add the Welling as a second, small world (see `welling/plan.md`). Started
+   2026-10-31: the scrap zone (decks over open water, vessels afloat, a hold below the
+   Mire), eight placeholder people, and the shared behaviour crate (`crates/behaviour`)
+   both worlds' characters are written against. Substances and boat calls are next.

@@ -1,9 +1,10 @@
 // Loads the built viewer in headless Chromium, waits for the sim to advance, and prints the
-// scene dump. Usage: node scripts/viewer-smoke.mjs <url>
+// scene dump. Usage: node scripts/viewer-smoke.mjs <url> [place to draw in 3D]
 import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 
 const url = process.argv[2] ?? "http://localhost:4173/";
+const place3d = process.argv[3] ?? "town";
 // Prefer an explicit CHROMIUM_PATH, then the cloud container's preinstalled Chromium, else
 // whatever `playwright install chromium` provided.
 const preinstalled = "/opt/pw-browsers/chromium";
@@ -26,7 +27,7 @@ try {
 const first = await page.evaluate(() => window.__scene());
 await page.waitForTimeout(1500);
 const second = await page.evaluate(() => window.__scene());
-await page.screenshot({ path: "target/viewer-smoke.png" });
+await page.screenshot({ path: `target/viewer-smoke-${place3d}.png` });
 // A day on, replay a moment from the first day (its snapshot was taken before the first
 // step), then draw the town in 3D.
 await page.evaluate(() => window.__advance(1));
@@ -34,7 +35,7 @@ await page.getByRole("tab", { name: "days" }).click();
 await page.locator("#days button.moment").first().click();
 await page.waitForTimeout(300);
 const replayed = await page.evaluate(() => window.__scene());
-const shot = await page.evaluate(() => window.__show3d("town"));
+const shot = await page.evaluate((key) => window.__show3d(key), place3d);
 await browser.close();
 console.log(`first:  ${first.clock} tick ${first.tick}`);
 console.log(`second: ${second.clock} tick ${second.tick}`);

@@ -119,6 +119,10 @@
     "Building": {
       "type": "object",
       "properties": {
+        "afloat": {
+          "description": "A vessel: its footprint stands on water. Left out of the serialized content when\nfalse, so worlds without vessels keep the content hash they had.",
+          "type": "boolean"
+        },
         "at": {
           "description": "Where building-local (0, 0) lands in the zone.",
           "$ref": "#/$defs/Pos"

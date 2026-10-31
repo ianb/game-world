@@ -416,7 +416,9 @@ fn check_buildings(content: &Content, r: &mut Report) {
                         ),
                     );
                 }
-                for z in zone.blocked.iter().chain(&zone.water) {
+                // A vessel floats: its footprint may stand on water, not on blocked ground.
+                let water: &[Rect] = if b.afloat { &[] } else { &zone.water };
+                for z in zone.blocked.iter().chain(water) {
                     if z.overlaps(&rect) {
                         r.error(
                             subj(&format!("floor {}", f.id)),

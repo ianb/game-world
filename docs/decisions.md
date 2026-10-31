@@ -1459,3 +1459,19 @@ Decided:
 - The first slice is the scrap zone, without fire. Kelp is a mild mood and energy
   booster with a mild craving.
 - The valley stays playable at every step.
+
+## 2026-10-31: The Welling's first slice
+
+Following the entry above.
+
+Decided (by the agent, within what Ian agreed):
+
+- The scrap zone is open water with decks laid on it (`Cell::Deck`). Vessels are buildings
+  marked `afloat`, which may stand on water; the Mire has a hold below the waterline.
+- Eight placeholder people, in `docs/worlds/welling/people.md`. All names, roles, moods
+  and programs are for Ian to rewrite.
+- Both worlds' characters are written against `crates/behaviour`, the world-agnostic half
+  of the valley's old toolbox. World-specific errands stay in each world's crate.
+- Thirst is met at cisterns, since there are no wells at sea.
+- The viewer chooses a world with a picker in the top bar. People without their own sprite
+  sheet are drawn with one of the valley's, chosen by their id, until they get their own.

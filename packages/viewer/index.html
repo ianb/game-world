@@ -111,6 +111,7 @@
       #place-tabs button { white-space: nowrap; min-height: 32px; padding: 3px 12px; border-width: 1px; }
       .viewbtns { display: flex; gap: 4px; padding: 4px; flex: none; }
       .viewbtns button { min-height: 32px; border-width: 1px; }
+      .viewbtns select { min-height: 32px; font: inherit; color: inherit; background: inherit; border: 1px solid currentColor; border-radius: 6px; padding: 0 6px; }
       #zoom { right: var(--gap); bottom: calc(var(--gap) + env(safe-area-inset-bottom, 0px)); flex-direction: column; padding: 4px; gap: 4px; }
       #zoom button { width: 40px; padding: 0; font-size: 18px; border-width: 1px; }
       #turn { display: flex; flex-direction: column; gap: 4px; }
@@ -234,6 +235,7 @@
         <div id="views">
           <nav class="panel" id="place-tabs" role="tablist" aria-label="Places"></nav>
           <div class="panel viewbtns">
+            <select id="world" aria-label="world" title="which world to watch"></select>
             <button id="view3d" aria-pressed="false" title="switch between the map and the 3D view">3D</button>
             <button id="journal" aria-pressed="true" title="show or hide the journal: people, days, words and the key (J)">Journal</button>
           </div>
